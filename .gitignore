@@ -1,0 +1,50 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebugPublic/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*_i.c
+*_p.c
+*.rsuser
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+.dotnet/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# ASP.NET / DataProtection secrets
+appsettings.*.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local development data volume
+/data/
+# Local dev data dir created by launchSettings / EF design-time
+**/data-dev/

@@ -1,0 +1,58 @@
+name: Build and push Docker image
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute date
+        id: date
+        run: echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Compute version and tags
+        id: meta
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            VERSION="1.0.${{ github.run_number }}-${{ steps.date.outputs.date }}"
+            TAGS="ghcr.io/real-ttx/matpaper:${VERSION}
+          ghcr.io/real-ttx/matpaper:latest"
+          else
+            VERSION="nightly-${{ github.run_number }}-${{ steps.date.outputs.date }}"
+            TAGS="ghcr.io/real-ttx/matpaper:${VERSION}
+          ghcr.io/real-ttx/matpaper:nightly"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          {
+            echo "tags<<EOF"
+            echo "${TAGS}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            APP_VERSION=${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}

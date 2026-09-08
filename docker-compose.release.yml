@@ -1,0 +1,27 @@
+services:
+  matpaper:
+    image: ghcr.io/real-ttx/matpaper:latest
+    ports:
+      - "4994:8080"
+    volumes:
+      - matpaper-data:/data
+      - matpaper-storage:/storage
+    environment:
+      APP_VERSION: local
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: matpaper
+      POSTGRES_DB: matpaper
+    volumes:
+      - matpaper-db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  matpaper-data:
+  matpaper-db:
+  matpaper-storage:

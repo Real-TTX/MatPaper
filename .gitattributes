@@ -1,0 +1,23 @@
+# Normalize line endings: LF in the repo, checked out as-is.
+# Keeps Docker (Linux) builds and diffs consistent across Windows/Linux.
+* text=auto eol=lf
+
+*.cs      text eol=lf
+*.cshtml  text eol=lf
+*.css     text eol=lf
+*.js      text eol=lf
+*.json    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.md      text eol=lf
+*.csproj  text eol=lf
+Dockerfile text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary

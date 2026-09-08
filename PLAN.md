@@ -18,10 +18,10 @@ Wichtigster konzeptioneller Unterschied zu Paperless: Die Dateien liegen nicht i
 
 | Bereich | Entscheidung |
 |---|---|
-| Runtime | .NET 8, ASP.NET Core **Razor Pages** (kein Blazor, kein SPA-Framework) |
+| Runtime | .NET 10 (LTS), ASP.NET Core **Razor Pages** (kein Blazor, kein SPA-Framework). Hinweis: ursprünglich war .NET 8 vorgesehen; auf dem Build-Rechner ist SDK 10 + EF-Tools 10 installiert, daher .NET 10 → lokaler Build == Container-Build. |
 | Datenbank | PostgreSQL 16 (Npgsql + EF Core, Migrations werden beim App-Start automatisch angewendet) |
 | Configs | JSON-Dateien im Daten-Volume (`/data/config/*.json`) |
-| Container | Dockerfile auf `mcr.microsoft.com/dotnet/aspnet:8.0`-Basis, Multi-Stage-Build |
+| Container | Dockerfile auf `mcr.microsoft.com/dotnet/aspnet:10.0`-Basis, Multi-Stage-Build (`sdk:10.0` → `aspnet:10.0`) |
 | Port | **4994** (Host → Container) |
 | Compose | `docker-compose.dev.yml` (mit pgAdmin) und `docker-compose.release.yml` — so einfach wie möglich, keine unnötigen ENV-Variablen |
 | OCR | Tesseract CLI im Image (`tesseract-ocr` + `deu` + `eng`), Textextraktion aus PDFs zuerst mit PdfPig; nur wenn kein Textlayer vorhanden → Seiten rendern + Tesseract |
@@ -201,7 +201,7 @@ Manifest + Icons + Service Worker (App-Shell-Cache). „Dokument scannen“: mob
 
 ## 10. Docker & Compose
 
-**Dockerfile** (Multi-Stage): `sdk:8.0` build → `aspnet:8.0` runtime + `apt-get install tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng`. App lauscht auf 8080, `VOLUME /data`.
+**Dockerfile** (Multi-Stage): `sdk:10.0` build → `aspnet:10.0` runtime + `apt-get install tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng`. App lauscht auf 8080, `VOLUME /data`.
 
 **docker-compose.dev.yml** — Services so schlicht wie möglich:
 ```yaml

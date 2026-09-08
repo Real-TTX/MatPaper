@@ -1,0 +1,64 @@
+@page
+@model MatPaper.Pages.System.Users.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Users / Edit" : "System / Users / New";
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <div class="form-row">
+        <label asp-for="Input.Username">Username</label>
+        <input class="form-control" asp-for="Input.Username" autocomplete="off" />
+        <span class="field-error" asp-validation-for="Input.Username"></span>
+    </div>
+
+    <div class="form-row">
+        <label asp-for="Input.DisplayName">Display name</label>
+        <input class="form-control" asp-for="Input.DisplayName" autocomplete="off" />
+        <span class="field-error" asp-validation-for="Input.DisplayName"></span>
+    </div>
+
+    <div class="form-row">
+        <label asp-for="Input.Email">Email</label>
+        <input class="form-control" type="email" asp-for="Input.Email" autocomplete="off" />
+        <span class="field-error" asp-validation-for="Input.Email"></span>
+    </div>
+
+    <div class="form-row">
+        <label asp-for="Input.RoleId">Role</label>
+        <select class="form-control" asp-for="Input.RoleId" asp-items="Model.RoleOptions"></select>
+        <span class="field-error" asp-validation-for="Input.RoleId"></span>
+    </div>
+
+    <div class="form-check">
+        <input type="checkbox" asp-for="Input.IsActive" />
+        <label asp-for="Input.IsActive">Active</label>
+    </div>
+
+    <div class="form-row">
+        <label asp-for="Input.Password">Password</label>
+        <input class="form-control" type="password" asp-for="Input.Password" autocomplete="new-password"
+               placeholder="@(Model.IsEdit ? "Leave blank to keep current" : "At least 8 characters")" />
+        <span class="field-error" asp-validation-for="Input.Password"></span>
+    </div>
+
+    <div class="form-row">
+        <label asp-for="Input.ConfirmPassword">Confirm password</label>
+        <input class="form-control" type="password" asp-for="Input.ConfirmPassword" autocomplete="new-password" />
+        <span class="field-error" asp-validation-for="Input.ConfirmPassword"></span>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn btn--primary" type="submit">Save</button>
+        <a class="btn btn--secondary" href="/System/Users">Back</a>
+        <span class="btn-row__spacer"></span>
+        @if (Model.IsEdit)
+        {
+            <button class="btn btn--danger" type="submit" asp-page-handler="Delete"
+                    onclick="return confirm('Delete this user? This cannot be undone.');">Delete</button>
+        }
+    </div>
+</form>

@@ -1,0 +1,99 @@
+@page
+@model MatPaper.Pages.System.Users.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / Users";
+}
+
+<form class="toolbar" method="get">
+    <div class="toolbar__group toolbar__search">
+        <label for="Search">Search</label>
+        <input class="form-control" type="text" id="Search" name="Search" value="@Model.Search" placeholder="Username, display name or email" />
+    </div>
+    <div class="toolbar__group toolbar__filter">
+        <label for="Role">Role</label>
+        <select class="form-control" id="Role" name="Role">
+            <option value="All" selected="@(Model.Role == "All")">All</option>
+            <option value="Admin" selected="@(Model.Role == "Admin")">Admin</option>
+            <option value="User" selected="@(Model.Role == "User")">User</option>
+            <option value="Anonymous" selected="@(Model.Role == "Anonymous")">Anonymous</option>
+        </select>
+    </div>
+    <div class="toolbar__group toolbar__filter">
+        <label for="Sort">Sort</label>
+        <select class="form-control" id="Sort" name="Sort">
+            <option value="username_asc" selected="@(Model.Sort == "username_asc")">Username (A–Z)</option>
+            <option value="username_desc" selected="@(Model.Sort == "username_desc")">Username (Z–A)</option>
+        </select>
+    </div>
+    <div class="toolbar__group">
+        <button class="btn btn--secondary" type="submit">Apply</button>
+    </div>
+</form>
+
+@if (Model.Users.Count == 0)
+{
+    <div class="empty-state">No users match your criteria.</div>
+}
+else
+{
+    <div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Display name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Active</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users)
+            {
+                var roleName = user.Role?.Name ?? "";
+                var roleBadge = roleName switch
+                {
+                    "Admin" => "badge--admin",
+                    "User" => "badge--user",
+                    _ => "badge--muted"
+                };
+                <tr>
+                    <td>@user.Username</td>
+                    <td>@user.DisplayName</td>
+                    <td>@user.Email</td>
+                    <td><span class="badge @roleBadge">@(string.IsNullOrEmpty(roleName) ? "—" : roleName)</span></td>
+                    <td>
+                        @if (user.IsActive)
+                        {
+                            <span class="badge badge--ok">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge--off">Inactive</span>
+                        }
+                    </td>
+                    <td class="is-actions">
+                        <a href="/System/Users/Edit?id=@user.Id">Edit</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/System/Users/Edit">New user</a>
+</div>
+
+@if (Model.TotalCount > Model.PageSizeValue)
+{
+    <nav class="pagination">
+        @for (var p = 1; p <= Model.TotalPages; p++)
+        {
+            <a class="pagination__link @(p == Model.PageNumber ? "is-active" : "")"
+               href="?Search=@Model.Search&Role=@Model.Role&Sort=@Model.Sort&PageNumber=@p">@p</a>
+        }
+    </nav>
+}

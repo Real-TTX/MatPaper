@@ -1,0 +1,576 @@
+/* ==========================================================================
+   MatPaper — reusable component styles (auth, forms, buttons, tables, badges…)
+   Builds on the theme custom properties defined in app.css.
+   Works in both light (:root) and dark ([data-theme=dark] / system) themes.
+   ========================================================================== */
+
+/* Extra tokens layered on top of app.css variables. */
+:root {
+    --color-primary-soft: #dfe9ff;
+    --color-danger-soft: #fbe3e3;
+    --color-ok: #2e9e5b;
+    --color-ok-soft: #dcf3e6;
+    --color-warn: #b7791f;
+    --color-warn-soft: #f8ecd2;
+    --focus-ring: 0 0 0 3px rgba(47, 109, 246, 0.28);
+}
+
+[data-theme="dark"] {
+    --color-primary-soft: #22314f;
+    --color-danger-soft: #4a2a2a;
+    --color-ok: #57c98a;
+    --color-ok-soft: #1f3a2c;
+    --color-warn: #e0b25a;
+    --color-warn-soft: #3a3222;
+    --focus-ring: 0 0 0 3px rgba(91, 140, 255, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        --color-primary-soft: #22314f;
+        --color-danger-soft: #4a2a2a;
+        --color-ok: #57c98a;
+        --color-ok-soft: #1f3a2c;
+        --color-warn: #e0b25a;
+        --color-warn-soft: #3a3222;
+        --focus-ring: 0 0 0 3px rgba(91, 140, 255, 0.35);
+    }
+}
+
+/* ==========================================================================
+   Auth page + card
+   ========================================================================== */
+.auth-page {
+    min-height: 100vh;
+}
+
+.auth-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    min-height: 100vh;
+    padding: 32px 20px;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.auth-brand__mark {
+    width: 30px;
+    height: 30px;
+    color: var(--color-primary);
+    flex: 0 0 auto;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 28px 28px 30px;
+}
+
+.auth-card__brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.auth-card__title {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.auth-card__sub {
+    margin: 0 0 22px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.form-control {
+    width: 100%;
+    font: inherit;
+    font-size: 14.5px;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.form-control::placeholder {
+    color: var(--color-text-muted);
+}
+
+.form-control:hover {
+    border-color: var(--color-text-muted);
+}
+
+.form-control:focus,
+.form-control:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+}
+
+select.form-control {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7482' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 34px;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.form-check input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.form-check label {
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0;
+}
+
+.field-error {
+    font-size: 12.5px;
+    color: var(--color-danger);
+}
+
+/* Highlight the control when it has an adjacent field error. */
+.form-control.input-validation-error {
+    border-color: var(--color-danger);
+}
+
+.form-summary {
+    background: var(--color-danger-soft);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13.5px;
+}
+
+.form-summary ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.form-summary:empty,
+.form-summary.validation-summary-valid {
+    display: none;
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 10px 18px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.btn:disabled,
+.btn.is-disabled {
+    opacity: 0.55;
+    cursor: default;
+    pointer-events: none;
+}
+
+.btn--primary {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border-color: var(--color-primary);
+}
+
+.btn--primary:hover {
+    background: #2a62dd;
+    border-color: #2a62dd;
+}
+
+[data-theme="dark"] .btn--primary:hover {
+    background: #6e9bff;
+    border-color: #6e9bff;
+}
+
+.btn--secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+}
+
+.btn--secondary:hover {
+    background: var(--color-hover);
+    border-color: var(--color-text-muted);
+}
+
+.btn--danger {
+    background: transparent;
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.btn--danger:hover {
+    background: var(--color-danger);
+    color: var(--color-primary-contrast);
+}
+
+.btn--block {
+    width: 100%;
+}
+
+/* Button row: Save (primary) | Back (secondary) | spacer | Delete (danger) */
+.btn-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.btn-row__spacer {
+    margin-left: auto;
+}
+
+/* ==========================================================================
+   Toolbar (filter / search bar above lists)
+   ========================================================================== */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.toolbar__group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.toolbar__search {
+    min-width: 220px;
+    flex: 1 1 220px;
+    max-width: 360px;
+}
+
+.toolbar__filter {
+    min-width: 150px;
+}
+
+.toolbar__spacer {
+    flex: 1 1 auto;
+}
+
+/* ==========================================================================
+   Data table
+   ========================================================================== */
+.data-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.data-table th {
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background: var(--color-hover);
+}
+
+.data-table td.is-actions,
+.data-table th.is-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.badge--admin {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.badge--user {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+.badge--muted {
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+
+.badge--ok {
+    background: var(--color-ok-soft);
+    color: var(--color-ok);
+}
+
+.badge--off {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+/* ==========================================================================
+   List actions (below a table)
+   ========================================================================== */
+.list-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.pagination__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.pagination__link:hover {
+    background: var(--color-hover);
+    border-color: var(--color-text-muted);
+}
+
+.pagination__link.is-active {
+    background: var(--color-primary);
+    color: var(--color-primary-contrast);
+    border-color: var(--color-primary);
+    cursor: default;
+}
+
+.pagination__link.is-disabled,
+.pagination__link[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default;
+}
+
+/* ==========================================================================
+   Empty state
+   ========================================================================== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+}
+
+.empty-state__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* ==========================================================================
+   System landing — card grid of feature links
+   ========================================================================== */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.link-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+a.link-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.link-card__title {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.link-card__desc {
+    font-size: 13.5px;
+    color: var(--color-text-muted);
+}
+
+.link-card.is-disabled {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.link-card.is-disabled .link-card__title::after {
+    content: "Coming soon";
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: var(--color-surface-alt);
+    border-radius: 999px;
+    padding: 3px 8px;
+    vertical-align: middle;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 560px) {
+    .auth-card {
+        padding: 22px 20px 24px;
+    }
+
+    .btn-row {
+        gap: 10px;
+    }
+
+    .btn-row__spacer {
+        flex-basis: 100%;
+        margin-left: 0;
+    }
+}

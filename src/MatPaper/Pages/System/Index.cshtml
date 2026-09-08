@@ -1,0 +1,27 @@
+@page
+@model MatPaper.Pages.System.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System";
+}
+
+<section class="card-grid">
+    <a class="link-card" href="/System/Users">
+        <span class="link-card__title">Users</span>
+        <span class="link-card__desc">Manage local accounts and roles</span>
+    </a>
+
+    <div class="link-card is-disabled" aria-disabled="true">
+        <span class="link-card__title">Storage locations</span>
+        <span class="link-card__desc">Coming soon</span>
+    </div>
+
+    <div class="link-card is-disabled" aria-disabled="true">
+        <span class="link-card__title">Import / Export tasks</span>
+        <span class="link-card__desc">Coming soon</span>
+    </div>
+
+    <div class="link-card is-disabled" aria-disabled="true">
+        <span class="link-card__title">Settings</span>
+        <span class="link-card__desc">Coming soon</span>
+    </div>
+</section>

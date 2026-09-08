@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MatPaper;
 using MatPaper.Configuration;
 using MatPaper.Data;
+using MatPaper.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,15 +29,42 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(dataDir, "keys")))
     .SetApplicationName("MatPaper");
 
+// Authentication / session / authorization services.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<PasswordHasher<User>>();
+builder.Services.AddScoped<SignInService>();
+builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddSingleton<SetupState>();
+builder.Services.AddScoped<SessionCookieEvents>();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
-        o.LoginPath = "/Account/Login";
         o.Cookie.Name = "MatPaper.Session";
+        o.Cookie.HttpOnly = true;
+        o.Cookie.SameSite = SameSiteMode.Lax;
+        o.Cookie.IsEssential = true;
+        o.LoginPath = "/Account/Login";
+        o.LogoutPath = "/Account/Logout";
+        o.AccessDeniedPath = "/Account/AccessDenied";
+        o.SlidingExpiration = true;
+        o.ExpireTimeSpan = TimeSpan.FromDays(14);
+        o.EventsType = typeof(SessionCookieEvents);
     });
-builder.Services.AddAuthorization();
 
-builder.Services.AddRazorPages();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AllowAnonymousToFolder("/Account");
+    options.Conventions.AuthorizeFolder("/System", "AdminOnly");
+});
 
 var app = builder.Build();
 
@@ -66,6 +96,7 @@ for (var attempt = 1; attempt <= maxAttempts; attempt++)
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+app.UseMiddleware<SetupRedirectMiddleware>();
 app.UseAuthorization();
 app.MapRazorPages();
 

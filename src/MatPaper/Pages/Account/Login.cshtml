@@ -1,0 +1,38 @@
+@page
+@model MatPaper.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<div class="auth-card">
+    <div class="auth-card__brand">MatPaper</div>
+    <h1 class="auth-card__title">Sign in</h1>
+    <p class="auth-card__sub">Enter your credentials to continue.</p>
+
+    <form method="post" class="form">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+        <div class="form-row">
+            <label asp-for="Input.Username">Username</label>
+            <input asp-for="Input.Username" class="form-control" autocomplete="username" autofocus />
+            <span asp-validation-for="Input.Username" class="field-error"></span>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Input.Password">Password</label>
+            <input asp-for="Input.Password" class="form-control" type="password" autocomplete="current-password" />
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+
+        <div class="form-check">
+            <input asp-for="Input.RememberMe" type="checkbox" />
+            <label asp-for="Input.RememberMe">Remember me</label>
+        </div>
+
+        <div class="btn-row">
+            <button type="submit" class="btn btn--primary">Sign in</button>
+        </div>
+    </form>
+</div>

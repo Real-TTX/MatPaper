@@ -1,0 +1,129 @@
+@page "/Documents"
+@using MatPaper.Data
+@model MatPaper.Pages.Documents.IndexModel
+@{
+    ViewData["Breadcrumb"] = "Documents";
+
+    var corrValue = Model.CorrespondentId?.ToString() ?? "";
+    var typeValue = Model.DocumentTypeId?.ToString() ?? "";
+    var tagValue = Model.TagId?.ToString() ?? "";
+    var projValue = Model.ProjectId?.ToString() ?? "";
+    var locValue = Model.StorageLocationId?.ToString() ?? "";
+}
+
+@if (TempData["UploadSummary"] is string uploadSummary)
+{
+    <div class="form-summary" style="color:var(--color-text)">@uploadSummary</div>
+}
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Full-text search" />
+
+    <mp-toolbar-select name="CorrespondentId" label="Correspondent" value="@corrValue">
+        <option value="">All</option>
+        @foreach (var c in Model.Correspondents)
+        {
+            <option value="@c.Id">@c.Name</option>
+        }
+    </mp-toolbar-select>
+
+    <mp-toolbar-select name="DocumentTypeId" label="Type" value="@typeValue">
+        <option value="">All</option>
+        @foreach (var t in Model.DocumentTypes)
+        {
+            <option value="@t.Id">@t.Name</option>
+        }
+    </mp-toolbar-select>
+
+    <mp-toolbar-select name="TagId" label="Tag" value="@tagValue">
+        <option value="">All</option>
+        @foreach (var t in Model.Tags)
+        {
+            <option value="@t.Id">@t.Name</option>
+        }
+    </mp-toolbar-select>
+
+    <mp-toolbar-select name="ProjectId" label="Project" value="@projValue">
+        <option value="">All</option>
+        @foreach (var p in Model.Projects)
+        {
+            <option value="@p.Id">@p.Name</option>
+        }
+    </mp-toolbar-select>
+
+    <mp-toolbar-select name="StorageLocationId" label="Location" value="@locValue">
+        <option value="">All</option>
+        @foreach (var s in Model.StorageLocations)
+        {
+            <option value="@s.Id">@s.Name</option>
+        }
+    </mp-toolbar-select>
+
+    <div class="toolbar__group toolbar__filter">
+        <label for="DateFrom">From</label>
+        <input class="form-control" type="date" id="DateFrom" name="DateFrom"
+               value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" />
+    </div>
+    <div class="toolbar__group toolbar__filter">
+        <label for="DateTo">To</label>
+        <input class="form-control" type="date" id="DateTo" name="DateTo"
+               value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" />
+    </div>
+
+    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="title">Title</option>
+    </mp-toolbar-select>
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No documents match your criteria.">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Title</th>
+            <th>Correspondent</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>OCR</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var d in Model.Rows)
+        {
+            var displayDate = (d.DocumentDate ?? d.CreateDate).ToString("yyyy-MM-dd");
+            var ocrBadge = d.OcrState switch
+            {
+                OcrState.Done => "badge--ok",
+                OcrState.Failed => "badge--off",
+                _ => "badge--muted"
+            };
+            <tr>
+                <td>
+                    @if (d.ThumbnailPath != null)
+                    {
+                        <img src="/Documents/@d.Token/thumb" loading="lazy" width="40" alt="" />
+                    }
+                    else
+                    {
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                            <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                        </svg>
+                    }
+                </td>
+                <td><a href="/Documents/Edit?id=@d.Id">@d.Title</a></td>
+                <td>@(d.Correspondent?.Name ?? "—")</td>
+                <td>@(d.DocumentType?.Name ?? "—")</td>
+                <td>@displayDate</td>
+                <td><span class="badge @ocrBadge">@d.OcrState</span></td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/Documents/Upload">Upload</a>
+</div>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

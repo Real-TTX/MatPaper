@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MatPaper;
@@ -36,6 +37,23 @@ builder.Services.AddScoped<SignInService>();
 builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddSingleton<SetupState>();
 builder.Services.AddScoped<SessionCookieEvents>();
+
+// Document ingest + processing pipeline.
+builder.Services.AddSingleton<DocumentProcessingQueue>();
+builder.Services.AddSingleton<DocumentStorageService>();
+builder.Services.AddSingleton<TesseractOcrRunner>();
+builder.Services.AddSingleton<DocumentTextExtractor>();
+builder.Services.AddSingleton<ThumbnailService>();
+builder.Services.AddScoped<DocumentIngestService>();
+builder.Services.AddHostedService<DocumentProcessingService>();
+
+// Allow large document uploads (multipart) — default limits are too small for PDFs.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 512L * 1024 * 1024);
+builder.Services.Configure<FormOptions>(o =>
+{
+    o.MultipartBodyLengthLimit = 512L * 1024 * 1024;
+    o.ValueLengthLimit = int.MaxValue;
+});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>

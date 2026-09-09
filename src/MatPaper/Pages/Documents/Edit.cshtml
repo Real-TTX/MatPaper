@@ -1,0 +1,223 @@
+@page "/Documents/Edit"
+@model MatPaper.Pages.Documents.EditModel
+@{
+    ViewData["Breadcrumb"] = "Documents / Edit";
+
+    var (ocrLabel, ocrBadge) = Model.OcrState switch
+    {
+        MatPaper.Data.OcrState.Done => ("Processed", "badge--ok"),
+        MatPaper.Data.OcrState.Failed => ("Failed", "badge--off"),
+        _ => ("Pending", "badge--muted")
+    };
+}
+
+<style>
+    .doc-edit {
+        display: grid;
+        grid-template-columns: minmax(260px, 340px) 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .doc-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.25rem;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        background: var(--color-surface);
+    }
+
+    .doc-preview__thumb {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
+        border-radius: 8px;
+        background: var(--color-surface-muted, rgba(0, 0, 0, 0.04));
+        overflow: hidden;
+    }
+
+    .doc-preview__thumb img {
+        max-width: 100%;
+        max-height: 360px;
+        display: block;
+    }
+
+    .doc-preview__thumb svg {
+        width: 64px;
+        height: 64px;
+        color: var(--color-text-muted, #888);
+    }
+
+    .doc-facts {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .doc-facts li {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .doc-facts .doc-facts__key {
+        color: var(--color-text-muted, #777);
+    }
+
+    .doc-facts .doc-facts__val {
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .doc-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+    }
+
+    .doc-tags label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: normal;
+        margin: 0;
+    }
+
+    .doc-tags .color-swatch {
+        display: inline-block;
+        width: 0.9em;
+        height: 0.9em;
+        border-radius: 3px;
+        vertical-align: middle;
+    }
+
+    @@media (max-width: 800px) {
+        .doc-edit {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="doc-edit">
+    <aside class="doc-preview">
+        <div class="doc-preview__thumb">
+            @if (!string.IsNullOrEmpty(Model.ThumbnailPath))
+            {
+                <img src="/Documents/@Model.Token/thumb" alt="Document preview" />
+            }
+            else
+            {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg>
+            }
+        </div>
+
+        <ul class="doc-facts">
+            <li>
+                <span class="doc-facts__key">OCR status</span>
+                <span class="doc-facts__val"><span class="badge @ocrBadge">@ocrLabel</span></span>
+            </li>
+            <li>
+                <span class="doc-facts__key">Pages</span>
+                <span class="doc-facts__val">@Model.PageCount</span>
+            </li>
+            <li>
+                <span class="doc-facts__key">File size</span>
+                <span class="doc-facts__val">@FormatSize(Model.FileSize)</span>
+            </li>
+            <li>
+                <span class="doc-facts__key">Original file</span>
+                <span class="doc-facts__val">@Model.OriginalFileName</span>
+            </li>
+            <li>
+                <span class="doc-facts__key">Added</span>
+                <span class="doc-facts__val">@Model.AddedDate.ToString("yyyy-MM-dd HH:mm") UTC</span>
+            </li>
+        </ul>
+
+        <a class="btn btn--secondary" href="/Documents/@Model.Token/download">Download</a>
+    </aside>
+
+    <form class="form" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+        <mp-field asp-for="Input.Title" label="Title" placeholder="Document title" />
+
+        <div class="form-row">
+            <label asp-for="Input.DocumentDate">Document date</label>
+            <input class="form-control" type="date" asp-for="Input.DocumentDate" />
+            <span class="field-error" asp-validation-for="Input.DocumentDate"></span>
+        </div>
+
+        <mp-field asp-for="Input.DocumentTypeId" kind="select" label="Document type"
+                  asp-items="Model.DocumentTypeOptions" />
+
+        <mp-field asp-for="Input.CorrespondentId" kind="select" label="Correspondent"
+                  asp-items="Model.CorrespondentOptions" />
+
+        <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
+                  asp-items="Model.ProjectOptions" />
+
+        <mp-field asp-for="Input.StorageLocationId" kind="select" label="Storage location"
+                  asp-items="Model.StorageLocationOptions"
+                  help="Changing this moves the file into the selected location." />
+
+        <div class="form-row">
+            <label>Tags</label>
+            @if (Model.TagOptions.Count == 0)
+            {
+                <p class="form-help">No tags defined yet.</p>
+            }
+            else
+            {
+                <div class="doc-tags">
+                    @foreach (var tag in Model.TagOptions)
+                    {
+                        var swatch = string.IsNullOrWhiteSpace(tag.Color) ? "#808080" : tag.Color;
+                        <label>
+                            <input type="checkbox" name="SelectedTagIds" value="@tag.Id"
+                                   checked="@tag.Selected" />
+                            <span class="color-swatch" style="background:@swatch"></span>@tag.Name
+                        </label>
+                    }
+                </div>
+            }
+        </div>
+
+        <mp-button-row>
+            <mp-button variant="primary" type="submit">Save</mp-button>
+            <mp-button variant="secondary" href="/Documents">Back</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" type="submit" handler="Delete"
+                       confirm="Delete this document? The file stays on disk but the document is removed from MatPaper.">Delete</mp-button>
+        </mp-button-row>
+    </form>
+</div>
+
+@functions {
+    private static string FormatSize(long bytes)
+    {
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        double size = bytes;
+        int unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        return unit == 0 ? $"{bytes} {units[unit]}" : $"{size:0.#} {units[unit]}";
+    }
+}

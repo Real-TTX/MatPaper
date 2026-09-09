@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>MatPaper</RootNamespace>
     <AssemblyName>MatPaper</AssemblyName>
+    <!-- PDFium/SkiaSharp rendering runs only on the container (Linux) and Windows dev,
+         both supported by PDFtoImage; the platform-compat analyzer noise is not useful here. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +16,14 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <!-- Phase 4: document text extraction, PDF rendering and thumbnails.
+         PDFtoImage brings SkiaSharp + the Linux (NoDependencies) native assets transitively. -->
+    <PackageReference Include="PdfPig" Version="0.1.*" />
+    <PackageReference Include="PDFtoImage" Version="5.*" />
+    <!-- Pin SkiaSharp managed + Linux native to the SAME version PDFtoImage targets,
+         otherwise the managed/native libSkiaSharp versions mismatch at runtime. -->
+    <PackageReference Include="SkiaSharp" Version="4.150.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.150.1" />
   </ItemGroup>
 
 </Project>

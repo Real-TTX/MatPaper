@@ -1,0 +1,63 @@
+@page "/System/TaskRuns"
+@model MatPaper.Pages.System.TaskRuns.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / Task history";
+}
+
+<mp-toolbar>
+    <mp-toolbar-select name="Kind" label="Kind" value="@Model.Kind">
+        <option value="all">All</option>
+        <option value="import">Import</option>
+        <option value="export">Export</option>
+    </mp-toolbar-select>
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No task runs recorded yet.">
+    <thead>
+        <tr>
+            <th>Started</th>
+            <th>Kind</th>
+            <th>Task</th>
+            <th>State</th>
+            <th>Items</th>
+            <th>Duration</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Rows)
+        {
+            <tr>
+                <td><a href="/System/TaskRuns/Details?id=@r.Id">@r.StartedAt.ToString("yyyy-MM-dd HH:mm")</a></td>
+                <td>@r.Kind</td>
+                <td>@r.TaskName</td>
+                <td>
+                    @switch (r.State)
+                    {
+                        case MatPaper.Data.TaskRunState.Success:
+                            <span class="badge badge--ok">Success</span>
+                            break;
+                        case MatPaper.Data.TaskRunState.Failed:
+                            <span class="badge badge--off">Failed</span>
+                            break;
+                        default:
+                            <span class="badge badge--muted">Running</span>
+                            break;
+                    }
+                </td>
+                <td>@r.ItemsProcessed</td>
+                <td>
+                    @if (r.Duration is { } d)
+                    {
+                        @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
+                    }
+                    else
+                    {
+                        <span class="badge badge--muted">—</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

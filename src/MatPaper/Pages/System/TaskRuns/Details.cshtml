@@ -1,0 +1,75 @@
+@page "/System/TaskRuns/Details"
+@model MatPaper.Pages.System.TaskRuns.DetailsModel
+@{
+    ViewData["Breadcrumb"] = "System / Task history / Run";
+}
+
+<dl class="form">
+    <div>
+        <strong>Task</strong>
+        <div>@Model.TaskName</div>
+    </div>
+    <div>
+        <strong>Kind</strong>
+        <div>@Model.Run.Kind</div>
+    </div>
+    <div>
+        <strong>State</strong>
+        <div>
+            @switch (Model.Run.State)
+            {
+                case MatPaper.Data.TaskRunState.Success:
+                    <span class="badge badge--ok">Success</span>
+                    break;
+                case MatPaper.Data.TaskRunState.Failed:
+                    <span class="badge badge--off">Failed</span>
+                    break;
+                default:
+                    <span class="badge badge--muted">Running</span>
+                    break;
+            }
+        </div>
+    </div>
+    <div>
+        <strong>Started</strong>
+        <div>@Model.Run.StartedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
+    </div>
+    <div>
+        <strong>Finished</strong>
+        <div>
+            @if (Model.Run.FinishedAt is { } finished)
+            {
+                @($"{finished:yyyy-MM-dd HH:mm:ss} UTC")
+            }
+            else
+            {
+                <span class="badge badge--muted">—</span>
+            }
+        </div>
+    </div>
+    <div>
+        <strong>Duration</strong>
+        <div>
+            @if (Model.Duration is { } d)
+            {
+                @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
+            }
+            else
+            {
+                <span class="badge badge--muted">—</span>
+            }
+        </div>
+    </div>
+    <div>
+        <strong>Items processed</strong>
+        <div>@Model.Run.ItemsProcessed</div>
+    </div>
+    <div>
+        <strong>Log</strong>
+        <pre>@(string.IsNullOrEmpty(Model.Run.Log) ? "(no log)" : Model.Run.Log)</pre>
+    </div>
+</dl>
+
+<mp-button-row>
+    <mp-button variant="secondary" href="/System/TaskRuns">Back</mp-button>
+</mp-button-row>

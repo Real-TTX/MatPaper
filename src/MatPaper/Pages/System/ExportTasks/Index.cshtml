@@ -1,0 +1,82 @@
+@page "/System/ExportTasks"
+@model MatPaper.Pages.System.ExportTasks.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / Export tasks";
+}
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name" />
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No export tasks match your criteria.">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Enabled</th>
+            <th>Cron</th>
+            <th>Last run</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model.Rows)
+        {
+            <tr>
+                <td>@t.Name</td>
+                <td>@t.Type</td>
+                <td>
+                    @if (t.IsEnabled)
+                    {
+                        <span class="badge badge--ok">Enabled</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge--off">Disabled</span>
+                    }
+                </td>
+                <td>
+                    @if (string.IsNullOrWhiteSpace(t.CronExpression))
+                    {
+                        <span class="badge badge--muted">Manual</span>
+                    }
+                    else
+                    {
+                        <code>@t.CronExpression</code>
+                    }
+                </td>
+                <td>
+                    @if (t.LastRunState is null)
+                    {
+                        <span class="badge badge--muted">Never</span>
+                    }
+                    else
+                    {
+                        @switch (t.LastRunState)
+                        {
+                            case MatPaper.Data.TaskRunState.Success:
+                                <span class="badge badge--ok">Success</span>
+                                break;
+                            case MatPaper.Data.TaskRunState.Failed:
+                                <span class="badge badge--off">Failed</span>
+                                break;
+                            default:
+                                <span class="badge badge--muted">Running</span>
+                                break;
+                        }
+                        <span>&nbsp;@t.LastRunStartedAt?.ToString("yyyy-MM-dd HH:mm")</span>
+                    }
+                </td>
+                <td class="is-actions">
+                    <a href="/System/ExportTasks/Edit?id=@t.Id">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/System/ExportTasks/Edit">New export task</a>
+</div>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

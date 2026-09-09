@@ -1,0 +1,69 @@
+@page "/System/ImportTasks"
+@model MatPaper.Pages.System.ImportTasks.IndexModel
+@using MatPaper.Data
+@{
+    ViewData["Breadcrumb"] = "System / Import tasks";
+}
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name" />
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No import tasks match your criteria.">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Enabled</th>
+            <th>Cron</th>
+            <th>Last run</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model.Rows)
+        {
+            <tr>
+                <td>@t.Name</td>
+                <td>@t.Type</td>
+                <td>
+                    @if (t.IsEnabled)
+                    {
+                        <span class="badge badge--ok">Enabled</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge--off">Disabled</span>
+                    }
+                </td>
+                <td>@(string.IsNullOrWhiteSpace(t.CronExpression) ? "—" : t.CronExpression)</td>
+                <td>
+                    @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
+                    {
+                        var css = state switch
+                        {
+                            TaskRunState.Success => "badge--ok",
+                            TaskRunState.Failed => "badge--off",
+                            _ => "badge--muted"
+                        };
+                        <span class="badge @css">@state</span>
+                        <span>&nbsp;@started.ToString("yyyy-MM-dd HH:mm")</span>
+                    }
+                    else
+                    {
+                        <span>—</span>
+                    }
+                </td>
+                <td class="is-actions">
+                    <a href="/System/ImportTasks/Edit?id=@t.Id">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/System/ImportTasks/Edit">New import task</a>
+</div>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

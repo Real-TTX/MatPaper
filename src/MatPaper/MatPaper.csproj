@@ -24,6 +24,9 @@
          otherwise the managed/native libSkiaSharp versions mismatch at runtime. -->
     <PackageReference Include="SkiaSharp" Version="4.150.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.150.1" />
+    <!-- Phase 6: task scheduling + e-mail import -->
+    <PackageReference Include="Cronos" Version="0.*" />
+    <PackageReference Include="MailKit" Version="4.*" />
   </ItemGroup>
 
 </Project>

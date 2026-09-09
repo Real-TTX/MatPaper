@@ -1,0 +1,115 @@
+@page "/System/ImportTasks/Edit"
+@model MatPaper.Pages.System.ImportTasks.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Import tasks / Edit" : "System / Import tasks / New";
+}
+
+@if (TempData["TaskMessage"] is string queued && !string.IsNullOrEmpty(queued))
+{
+    <div class="form-summary">@queued</div>
+}
+
+@if (!string.IsNullOrEmpty(Model.Notice))
+{
+    <div class="form-summary">
+        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? "OK" : "Failed")</span>
+        @Model.Notice
+    </div>
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Scanner watch folder" />
+
+    <mp-field asp-for="Input.Type" kind="select" label="Type">
+        <option value="2">Filesystem</option>
+        <option value="0">IMAP</option>
+        <option value="1">POP3</option>
+    </mp-field>
+
+    <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
+
+    <mp-field asp-for="Input.CronExpression" label="Cron expression"
+              help="5-field cron, e.g. */15 * * * * — leave blank for manual only" />
+
+    @* --- Filesystem group --- *@
+    <div data-show-when-field="Input.Type" data-show-when-value="2">
+        <mp-field asp-for="Input.SourcePath" label="Source path"
+                  help="Absolute path inside the container, e.g. a mounted watch folder" />
+        <mp-field asp-for="Input.Pattern" label="Pattern" placeholder="*" />
+        <mp-field asp-for="Input.Recursive" kind="checkbox" label="Recursive" />
+        <mp-field asp-for="Input.PostAction" kind="select" label="Post action">
+            <option value="none">Do nothing</option>
+            <option value="delete">Delete</option>
+            <option value="move">Move</option>
+        </mp-field>
+        <mp-field asp-for="Input.MoveToPath" label="Move to path"
+                  show-when-field="Input.PostAction" show-when-value="move"
+                  help="Absolute path inside the container to move processed files to" />
+    </div>
+
+    @* --- Mail group (IMAP / POP3) --- *@
+    <div data-show-when-field="Input.Type" data-show-when-value="0,1">
+        <mp-field asp-for="Input.Host" label="Host" placeholder="mail.example.com" />
+        <mp-field asp-for="Input.Port" kind="number" label="Port" />
+        <mp-field asp-for="Input.UseSsl" kind="checkbox" label="Use SSL" />
+        <mp-field asp-for="Input.Username" label="Username" />
+        <mp-field asp-for="Input.Password" kind="password" label="Password"
+                  help="leave blank to keep the stored password" />
+        <mp-field asp-for="Input.Folder" label="Folder"
+                  show-when-field="Input.Type" show-when-value="0" />
+        <mp-field asp-for="Input.SenderRegex" label="Sender regex" />
+        <mp-field asp-for="Input.SubjectRegex" label="Subject regex" />
+        <mp-field asp-for="Input.AttachmentExtensions" label="Attachment extensions" />
+        <mp-field asp-for="Input.MailPostAction" kind="select" label="Post action">
+            <option value="markseen">Mark seen</option>
+            <option value="delete">Delete</option>
+            <option value="none">Do nothing</option>
+        </mp-field>
+    </div>
+
+    @* --- Common metadata defaults --- *@
+    <mp-field asp-for="Input.StorageLocationId" kind="select" label="Storage location"
+              asp-items="Model.StorageLocationOptions" />
+    <mp-field asp-for="Input.CorrespondentId" kind="select" label="Correspondent"
+              asp-items="Model.CorrespondentOptions" />
+    <mp-field asp-for="Input.DocumentTypeId" kind="select" label="Document type"
+              asp-items="Model.DocumentTypeOptions" />
+    <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
+              asp-items="Model.ProjectOptions" />
+
+    @if (Model.TagOptions.Count > 0)
+    {
+        <div class="form-row">
+            <label>Tags</label>
+            <div class="checkbox-group">
+                @foreach (var tag in Model.TagOptions)
+                {
+                    <label class="form-check">
+                        <input type="checkbox" name="TagIds" value="@tag.Id" checked="@tag.Selected" />
+                        <span>@tag.Name</span>
+                    </label>
+                }
+            </div>
+        </div>
+    }
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">Save</mp-button>
+        <mp-button variant="secondary" href="/System/ImportTasks">Back</mp-button>
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="secondary" type="submit" handler="Run">Run now</mp-button>
+        }
+        <mp-button variant="secondary" type="submit" handler="Test">Test connection</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete"
+                       confirm="Delete this import task? This cannot be undone.">Delete</mp-button>
+        }
+    </mp-button-row>
+</form>

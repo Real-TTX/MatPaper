@@ -1,0 +1,52 @@
+@page "/System/ExportTasks/Edit"
+@model MatPaper.Pages.System.ExportTasks.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Export tasks / Edit" : "System / Export tasks / New";
+}
+
+@if (TempData["ExportTaskMessage"] is string message && !string.IsNullOrEmpty(message))
+{
+    <div class="form-summary">@message</div>
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Nightly backup" />
+
+    <mp-field asp-for="Input.Type" kind="select" label="Type" asp-items="Model.TypeOptions" />
+
+    <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
+
+    <mp-field asp-for="Input.CronExpression" label="Cron expression"
+              placeholder="0 3 * * *"
+              help="5-field cron, e.g. 0 3 * * * for 03:00 daily; blank = manual only" />
+
+    <mp-field asp-for="Input.TargetPath" label="Target path"
+              placeholder="/backup"
+              help="Absolute path inside the container, e.g. a mounted backup folder" />
+
+    <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label="Include configuration" />
+
+    <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label="Include documents" />
+
+    <mp-field asp-for="Input.Retention" kind="number" label="Retention"
+              help="how many backups to keep" />
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">Save</mp-button>
+        <mp-button variant="secondary" href="/System/ExportTasks">Back</mp-button>
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="secondary" type="submit" handler="Run">Run now</mp-button>
+        }
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete"
+                       confirm="Delete this export task? This cannot be undone.">Delete</mp-button>
+        }
+    </mp-button-row>
+</form>

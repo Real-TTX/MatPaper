@@ -48,6 +48,14 @@ builder.Services.AddScoped<DocumentIngestService>();
 builder.Services.AddScoped<StorageScanService>();
 builder.Services.AddHostedService<DocumentProcessingService>();
 
+// Import/export task scheduling + runners.
+builder.Services.AddSingleton(appConfig);
+builder.Services.AddSingleton<SecretProtector>();
+builder.Services.AddSingleton<TaskTriggerQueue>();
+builder.Services.AddScoped<ImportRunner>();
+builder.Services.AddScoped<ExportRunner>();
+builder.Services.AddHostedService<TaskSchedulerService>();
+
 // Allow large document uploads (multipart) — default limits are too small for PDFs.
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 512L * 1024 * 1024);
 builder.Services.Configure<FormOptions>(o =>

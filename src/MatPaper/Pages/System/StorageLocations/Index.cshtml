@@ -1,0 +1,48 @@
+@page "/System/StorageLocations"
+@model MatPaper.Pages.System.StorageLocations.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / Storage locations";
+}
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name or path" />
+    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
+        <option value="name_asc">Name (A–Z)</option>
+        <option value="name_desc">Name (Z–A)</option>
+    </mp-toolbar-select>
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No storage locations match your criteria.">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Root path</th>
+            <th>Default</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model.Rows)
+        {
+            <tr>
+                <td>@s.Name</td>
+                <td>@s.RootPath</td>
+                <td>
+                    @if (s.IsDefault)
+                    {
+                        <span class="badge badge--ok">Default</span>
+                    }
+                </td>
+                <td class="is-actions">
+                    <a href="/System/StorageLocations/Edit?id=@s.Id">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/System/StorageLocations/Edit">New storage location</a>
+</div>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

@@ -1,0 +1,28 @@
+@page "/Correspondents/Edit"
+@model MatPaper.Pages.Correspondents.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "Correspondents / Edit" : "Correspondents / New";
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Finanzamt" />
+
+    <mp-field asp-for="Input.MatchPattern" label="Match pattern"
+              help="Text or regex used to auto-assign this correspondent during import" />
+
+    <mp-field asp-for="Input.Notes" kind="textarea" rows="5" label="Notes" placeholder="Optional notes" />
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">Save</mp-button>
+        <mp-button variant="secondary" href="/Correspondents">Back</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete" confirm="Delete this correspondent? This cannot be undone.">Delete</mp-button>
+        }
+    </mp-button-row>
+</form>

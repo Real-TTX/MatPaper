@@ -1,0 +1,24 @@
+@page "/Projects/Edit"
+@model MatPaper.Pages.Projects.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "Projects / Edit" : "Projects / New";
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Website relaunch" />
+    <mp-field asp-for="Input.Color" kind="color" label="Colour" help="Optional. Defaults to grey when left unset." />
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">Save</mp-button>
+        <mp-button variant="secondary" href="/Projects">Back</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete" confirm="Delete this project? This cannot be undone.">Delete</mp-button>
+        }
+    </mp-button-row>
+</form>

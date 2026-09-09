@@ -1,0 +1,40 @@
+@page "/Projects"
+@model MatPaper.Pages.Projects.IndexModel
+@{
+    ViewData["Breadcrumb"] = "Projects";
+}
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name" />
+    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
+        <option value="name_asc">Name (A–Z)</option>
+        <option value="name_desc">Name (Z–A)</option>
+    </mp-toolbar-select>
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No projects match your criteria.">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var project in Model.Rows)
+        {
+            var swatch = string.IsNullOrWhiteSpace(project.Color) ? "#808080" : project.Color;
+            <tr>
+                <td>
+                    <span class="color-swatch" style="display:inline-block;width:0.9em;height:0.9em;border-radius:3px;vertical-align:middle;margin-right:0.5em;background:@swatch"></span>#@project.Name
+                </td>
+                <td class="is-actions"><a href="/Projects/Edit?id=@project.Id">Edit</a></td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/Projects/Edit">New project</a>
+</div>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

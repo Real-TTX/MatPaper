@@ -126,6 +126,42 @@
         }
     }
 
+    // Dependent form fields: a container carrying data-show-when-field /
+    // data-show-when-value is shown only while the referenced input's current
+    // value matches (comma-separated list allowed; checkboxes report
+    // "true"/"false"). Used by the mp-field control for conditional inputs.
+    function controllerValue(el) {
+        if (!el) {
+            return "";
+        }
+        if (el.type === "checkbox") {
+            return el.checked ? "true" : "false";
+        }
+        return el.value;
+    }
+
+    function wireDependentFields() {
+        var rows = document.querySelectorAll("[data-show-when-field]");
+        for (var i = 0; i < rows.length; i++) {
+            (function (row) {
+                var form = row.closest ? row.closest("form") : null;
+                var scope = form || document;
+                var name = row.getAttribute("data-show-when-field");
+                var ctrl = scope.querySelector('[name="' + name + '"]') || document.getElementById(name);
+                if (!ctrl) {
+                    return;
+                }
+                var wanted = (row.getAttribute("data-show-when-value") || "").split(",");
+                function evaluate() {
+                    row.style.display = wanted.indexOf(controllerValue(ctrl)) !== -1 ? "" : "none";
+                }
+                ctrl.addEventListener("change", evaluate);
+                ctrl.addEventListener("input", evaluate);
+                evaluate();
+            })(rows[i]);
+        }
+    }
+
     function markActiveNav() {
         var path = window.location.pathname.replace(/\/+$/, "") || "/";
         var links = document.querySelectorAll(".sidebar__nav .nav-item");
@@ -146,6 +182,7 @@
         wireThemeButtons();
         wireSystemListener();
         wireSidebarToggle();
+        wireDependentFields();
         markActiveNav();
     }
 

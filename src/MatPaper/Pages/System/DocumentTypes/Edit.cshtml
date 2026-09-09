@@ -1,0 +1,22 @@
+@page "/System/DocumentTypes/Edit"
+@model MatPaper.Pages.System.DocumentTypes.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Document types / Edit" : "System / Document types / New";
+}
+
+<form method="post" class="form">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Rechnung" />
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">Save</mp-button>
+        <mp-button variant="secondary" href="/System/DocumentTypes">Back</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete" confirm="Delete this document type? This cannot be undone.">Delete</mp-button>
+        }
+    </mp-button-row>
+</form>

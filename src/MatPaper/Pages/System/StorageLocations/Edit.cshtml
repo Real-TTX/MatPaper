@@ -1,0 +1,33 @@
+@page "/System/StorageLocations/Edit"
+@model MatPaper.Pages.System.StorageLocations.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Storage locations / Edit" : "System / Storage locations / New";
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. NAS archive" />
+
+    <mp-field asp-for="Input.RootPath" label="Root path"
+              placeholder="/storage"
+              help="Absolute path inside the container, e.g. a mounted NAS share like /storage" />
+
+    <mp-field asp-for="Input.PathTemplate" label="Path template"
+              help="Human-readable layout. Tokens: {Correspondent} {Year} {Month} {DocumentType} {Date} {Title} {Ext}" />
+
+    <mp-field asp-for="Input.IsDefault" kind="checkbox" label="Default location" />
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">Save</mp-button>
+        <mp-button variant="secondary" href="/System/StorageLocations">Back</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete"
+                       confirm="Delete this storage location? This cannot be undone.">Delete</mp-button>
+        }
+    </mp-button-row>
+</form>

@@ -1,0 +1,37 @@
+@page "/System/DocumentTypes"
+@model MatPaper.Pages.System.DocumentTypes.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / Document types";
+}
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name" />
+    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
+        <option value="name_asc">Name (A–Z)</option>
+        <option value="name_desc">Name (Z–A)</option>
+    </mp-toolbar-select>
+</mp-toolbar>
+
+<mp-table item-count="Model.Rows.Count" empty-text="No document types match your criteria.">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model.Rows)
+        {
+            <tr>
+                <td>@t.Name</td>
+                <td class="is-actions"><a href="/System/DocumentTypes/Edit?id=@t.Id">Edit</a></td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
+
+<div class="list-actions">
+    <a class="btn btn--primary" href="/System/DocumentTypes/Edit">New document type</a>
+</div>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

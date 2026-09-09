@@ -1,0 +1,160 @@
+@page "/System/Inbox"
+@model MatPaper.Pages.System.Inbox.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / Import inbox";
+}
+
+@if (TempData["InboxMessage"] is string message && !string.IsNullOrEmpty(message))
+{
+    <div class="form-summary">@message</div>
+}
+
+<form class="form" method="post">
+    <div class="form-row">
+        <label for="ScanLocationId">Storage location</label>
+        <select class="form-control" id="ScanLocationId" name="ScanLocationId">
+            @foreach (var loc in Model.StorageLocations)
+            {
+                <option value="@loc.Id" selected="@(loc.Id == Model.ScanLocationId)">@loc.Name</option>
+            }
+        </select>
+        <p class="form-help">Discover files on disk under this location and add unknown ones to the inbox.</p>
+    </div>
+    <mp-button-row>
+        <mp-button variant="primary" handler="Scan">Scan now</mp-button>
+    </mp-button-row>
+</form>
+
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="File name" />
+    <mp-toolbar-select name="LocationId" label="Location" value="@(Model.LocationId?.ToString() ?? string.Empty)">
+        <option value="">All locations</option>
+        @foreach (var loc in Model.StorageLocations)
+        {
+            <option value="@loc.Id">@loc.Name</option>
+        }
+    </mp-toolbar-select>
+</mp-toolbar>
+
+<form method="post">
+    <mp-table item-count="Model.Rows.Count" empty-text="Inbox is empty — scan a storage location to discover files.">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="select-all" aria-label="Select all" /></th>
+                <th>File name</th>
+                <th>Relative path</th>
+                <th>Location</th>
+                <th>Size</th>
+                <th>Modified</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Rows)
+            {
+                <tr>
+                    <td><input type="checkbox" class="row-select" name="SelectedIds" value="@item.Id" /></td>
+                    <td>@item.FileName</td>
+                    <td>@item.RelativePath</td>
+                    <td>@(item.StorageLocation?.Name ?? "—")</td>
+                    <td>@MatPaper.Pages.System.Inbox.IndexModel.FormatSize(item.FileSize)</td>
+                    <td>@item.FileModifiedUtc.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </mp-table>
+
+    @if (Model.Rows.Count > 0)
+    {
+        <div class="form">
+            <h2>Assign metadata to selected items</h2>
+
+            <div class="form-row">
+                <label for="CorrespondentId">Correspondent</label>
+                <select class="form-control" id="CorrespondentId" name="CorrespondentId">
+                    <option value="">— None —</option>
+                    @foreach (var c in Model.Correspondents)
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="DocumentTypeId">Document type</label>
+                <select class="form-control" id="DocumentTypeId" name="DocumentTypeId">
+                    <option value="">— None —</option>
+                    @foreach (var t in Model.DocumentTypes)
+                    {
+                        <option value="@t.Id">@t.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="ProjectId">Project</label>
+                <select class="form-control" id="ProjectId" name="ProjectId">
+                    <option value="">— None —</option>
+                    @foreach (var p in Model.Projects)
+                    {
+                        <option value="@p.Id">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            @if (Model.Tags.Count > 0)
+            {
+                <div class="form-row">
+                    <label>Tags</label>
+                    <div class="checkbox-group">
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <label class="form-check">
+                                <input type="checkbox" name="TagIds" value="@tag.Id" />
+                                <span>@tag.Name</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="form-row">
+                <label>Filing</label>
+                <div class="checkbox-group">
+                    <label class="form-check">
+                        <input type="radio" name="Refile" value="false" checked />
+                        <span>Keep in place</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="radio" name="Refile" value="true" />
+                        <span>Re-file by template</span>
+                    </label>
+                </div>
+                <p class="form-help">
+                    Keep in place registers files where they are. Re-file moves them into the location's path template.
+                </p>
+            </div>
+
+            <mp-button-row>
+                <mp-button variant="primary" handler="Import">Import selected</mp-button>
+                <mp-button-spacer />
+                <mp-button variant="danger" handler="Dismiss"
+                           confirm="Dismiss the selected inbox items? They will be hidden from the inbox.">Dismiss selected</mp-button>
+            </mp-button-row>
+        </div>
+    }
+</form>
+
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+
+<script>
+    (function () {
+        var selectAll = document.getElementById('select-all');
+        if (!selectAll) { return; }
+        selectAll.addEventListener('change', function () {
+            var boxes = document.querySelectorAll('.row-select');
+            for (var i = 0; i < boxes.length; i++) {
+                boxes[i].checked = selectAll.checked;
+            }
+        });
+    })();
+</script>

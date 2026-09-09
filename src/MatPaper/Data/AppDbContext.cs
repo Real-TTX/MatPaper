@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<ExportTask> ExportTasks => Set<ExportTask>();
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
+    public DbSet<InboxItem> InboxItems => Set<InboxItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +45,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ExportTask>().ToTable("ExportTask");
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
         modelBuilder.Entity<ShareLink>().ToTable("ShareLink");
+        modelBuilder.Entity<InboxItem>().ToTable("InboxItem");
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
@@ -63,6 +65,10 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<DocumentTag>()
             .HasIndex(dt => new { dt.DocumentId, dt.TagId })
+            .IsUnique();
+
+        modelBuilder.Entity<InboxItem>()
+            .HasIndex(i => new { i.StorageLocationId, i.RelativePath })
             .IsUnique();
 
         modelBuilder.Entity<Document>(entity =>

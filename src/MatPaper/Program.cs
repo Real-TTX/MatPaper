@@ -45,6 +45,7 @@ builder.Services.AddSingleton<TesseractOcrRunner>();
 builder.Services.AddSingleton<DocumentTextExtractor>();
 builder.Services.AddSingleton<ThumbnailService>();
 builder.Services.AddScoped<DocumentIngestService>();
+builder.Services.AddScoped<StorageScanService>();
 builder.Services.AddHostedService<DocumentProcessingService>();
 
 // Allow large document uploads (multipart) — default limits are too small for PDFs.

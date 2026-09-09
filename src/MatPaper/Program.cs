@@ -24,6 +24,10 @@ var appConfig = AppConfigLoader.Load(dataDir);
 // App version for the footer.
 AppInfo.Version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "local";
 
+// QuestPDF community licence (free below 1M USD annual revenue) — used for
+// camera-scan-to-PDF and mail-body-to-PDF generation.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(appConfig.Database.ConnectionString));
 
 builder.Services.AddDataProtection()
@@ -55,6 +59,11 @@ builder.Services.AddSingleton<TaskTriggerQueue>();
 builder.Services.AddScoped<ImportRunner>();
 builder.Services.AddScoped<ExportRunner>();
 builder.Services.AddHostedService<TaskSchedulerService>();
+
+// Phase 7: share links + PDF generation.
+builder.Services.AddScoped<ShareLinkService>();
+builder.Services.AddSingleton<ImageToPdfService>();
+builder.Services.AddSingleton<HtmlToPdfConverter>();
 
 // Allow large document uploads (multipart) — default limits are too small for PDFs.
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 512L * 1024 * 1024);
@@ -90,6 +99,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AllowAnonymousToFolder("/Account");
+    options.Conventions.AllowAnonymousToFolder("/Share");
     options.Conventions.AuthorizeFolder("/System", "AdminOnly");
 });
 

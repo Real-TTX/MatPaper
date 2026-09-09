@@ -20,17 +20,20 @@ public sealed class ImportRunner
     private readonly AppDbContext _db;
     private readonly DocumentIngestService _ingest;
     private readonly SecretProtector _secrets;
+    private readonly HtmlToPdfConverter _htmlToPdf;
     private readonly ILogger<ImportRunner> _logger;
 
     public ImportRunner(
         AppDbContext db,
         DocumentIngestService ingest,
         SecretProtector secrets,
+        HtmlToPdfConverter htmlToPdf,
         ILogger<ImportRunner> logger)
     {
         _db = db;
         _ingest = ingest;
         _secrets = secrets;
+        _htmlToPdf = htmlToPdf;
         _logger = logger;
     }
 
@@ -264,6 +267,10 @@ public sealed class ImportRunner
                 }
 
                 count += await ImportAttachmentsAsync(message, extensions, locationId, log, ct).ConfigureAwait(false);
+                if (settings.ImportBodyAsPdf)
+                {
+                    count += await ImportBodyAsPdfAsync(message, locationId, log, ct).ConfigureAwait(false);
+                }
 
                 switch (postAction)
                 {
@@ -325,6 +332,10 @@ public sealed class ImportRunner
                 }
 
                 count += await ImportAttachmentsAsync(message, extensions, locationId, log, ct).ConfigureAwait(false);
+                if (settings.ImportBodyAsPdf)
+                {
+                    count += await ImportBodyAsPdfAsync(message, locationId, log, ct).ConfigureAwait(false);
+                }
 
                 if (postAction == "delete")
                 {
@@ -341,6 +352,51 @@ public sealed class ImportRunner
         }
 
         return count;
+    }
+
+    private async Task<int> ImportBodyAsPdfAsync(
+        MimeMessage message,
+        long locationId,
+        StringBuilder log,
+        CancellationToken ct)
+    {
+        try
+        {
+            var html = message.HtmlBody ?? message.TextBody ?? string.Empty;
+            var subject = string.IsNullOrWhiteSpace(message.Subject) ? "E-Mail" : message.Subject;
+            var from = message.From?.ToString() ?? string.Empty;
+            var to = message.To?.ToString() ?? string.Empty;
+
+            var pdf = _htmlToPdf.Convert(html, subject, from, to, message.Date);
+            var fileName = SanitizeFileName(subject) + ".pdf";
+
+            await using var stream = new MemoryStream(pdf);
+            var result = await _ingest.IngestAsync(
+                stream, fileName, locationId, null, null, null, Array.Empty<long>(), null, ct).ConfigureAwait(false);
+
+            if (result.Status == IngestStatus.Created)
+            {
+                log.AppendLine("Imported mail body as PDF: " + fileName);
+                return 1;
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            log.AppendLine("Mail body -> PDF failed: " + ex.Message);
+            return 0;
+        }
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var cleaned = new string(name.Select(ch => Array.IndexOf(Path.GetInvalidFileNameChars(), ch) >= 0 ? '_' : ch).ToArray()).Trim();
+        if (cleaned.Length > 120)
+        {
+            cleaned = cleaned[..120];
+        }
+        return string.IsNullOrWhiteSpace(cleaned) ? "E-Mail" : cleaned;
     }
 
     private async Task<int> ImportAttachmentsAsync(

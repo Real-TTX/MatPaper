@@ -184,6 +184,17 @@
         wireSidebarToggle();
         wireDependentFields();
         markActiveNav();
+        registerServiceWorker();
+    }
+
+    // PWA: register the service worker for offline shell + installability.
+    function registerServiceWorker() {
+        if (!("serviceWorker" in navigator)) {
+            return;
+        }
+        navigator.serviceWorker.register("/service-worker.js").catch(function () {
+            /* registration failure is non-fatal */
+        });
     }
 
     if (document.readyState === "loading") {

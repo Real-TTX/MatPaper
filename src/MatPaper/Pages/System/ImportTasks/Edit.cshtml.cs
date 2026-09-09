@@ -82,6 +82,7 @@ public class EditModel : PageModel
         public string? SenderRegex { get; set; }
         public string? SubjectRegex { get; set; }
         public string AttachmentExtensions { get; set; } = DefaultAttachmentExtensions;
+        public bool ImportBodyAsPdf { get; set; }
         public string MailPostAction { get; set; } = "markseen";
 
         // Common metadata defaults.
@@ -314,6 +315,7 @@ public class EditModel : PageModel
             AttachmentExtensions = string.IsNullOrWhiteSpace(Input.AttachmentExtensions)
                 ? DefaultAttachmentExtensions
                 : Input.AttachmentExtensions.Trim(),
+            ImportBodyAsPdf = Input.ImportBodyAsPdf,
             PostAction = Input.MailPostAction,
             StorageLocationId = Input.StorageLocationId,
             CorrespondentId = Input.CorrespondentId,
@@ -359,6 +361,7 @@ public class EditModel : PageModel
             Input.AttachmentExtensions = string.IsNullOrWhiteSpace(mail.AttachmentExtensions)
                 ? DefaultAttachmentExtensions
                 : mail.AttachmentExtensions;
+            Input.ImportBodyAsPdf = mail.ImportBodyAsPdf;
             Input.MailPostAction = mail.PostAction;
             Input.StorageLocationId = mail.StorageLocationId;
             Input.CorrespondentId = mail.CorrespondentId;

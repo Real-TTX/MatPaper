@@ -12,13 +12,18 @@ public class EditModel : PageModel
     private readonly AppDbContext _db;
     private readonly DocumentStorageService _storage;
     private readonly CurrentUser _currentUser;
+    private readonly ShareLinkService _shareLinks;
 
-    public EditModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser)
+    public EditModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser, ShareLinkService shareLinks)
     {
         _db = db;
         _storage = storage;
         _currentUser = currentUser;
+        _shareLinks = shareLinks;
     }
+
+    public List<ShareLink> ShareLinks { get; private set; } = new();
+    public string ShareBaseUrl { get; private set; } = string.Empty;
 
     [BindProperty(SupportsGet = true)]
     public long Id { get; set; }
@@ -90,8 +95,41 @@ public class EditModel : PageModel
 
         FillPreview(document);
         await BuildOptionListsAsync(SelectedTagIds);
+        ShareLinks = await _shareLinks.ListForDocumentAsync(Id, HttpContext.RequestAborted);
+        ShareBaseUrl = $"{Request.Scheme}://{Request.Host}";
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostCreateShareAsync(int expiryDays)
+    {
+        if (Id == 0)
+        {
+            return NotFound();
+        }
+
+        var exists = await _db.Documents.AnyAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
+        if (!exists)
+        {
+            return NotFound();
+        }
+
+        DateTime? expiresAt = expiryDays > 0 ? DateTime.UtcNow.AddDays(expiryDays) : null;
+        await _shareLinks.CreateAsync(Id, expiresAt, HttpContext.RequestAborted);
+
+        return RedirectToPage("Edit", new { id = Id });
+    }
+
+    public async Task<IActionResult> OnPostRevokeShareAsync(long shareLinkId)
+    {
+        if (Id == 0)
+        {
+            return NotFound();
+        }
+
+        await _shareLinks.RevokeAsync(shareLinkId, HttpContext.RequestAborted);
+
+        return RedirectToPage("Edit", new { id = Id });
     }
 
     public async Task<IActionResult> OnPostAsync()

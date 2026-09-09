@@ -1,0 +1,94 @@
+@page "/Share/{token:guid}"
+@model MatPaper.Pages.Share.ViewModel
+@{
+    var title = Model.Document?.Title;
+    ViewData["Title"] = string.IsNullOrWhiteSpace(title) ? "Shared document" : title;
+    ViewData["Breadcrumb"] = string.IsNullOrWhiteSpace(title) ? "Shared document" : title;
+}
+
+<style>
+    .share-view {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .share-view__header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .share-view__title {
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    .share-view__frame {
+        width: 100%;
+        height: 75vh;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        background: var(--color-surface);
+        overflow: hidden;
+    }
+
+    .share-view__frame iframe,
+    .share-view__frame img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    .share-view__frame img {
+        object-fit: contain;
+        background: var(--color-surface-muted, rgba(0, 0, 0, 0.04));
+    }
+
+    .share-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        min-height: 60vh;
+        text-align: center;
+    }
+
+    .share-empty__icon {
+        font-size: 2.5rem;
+        line-height: 1;
+    }
+</style>
+
+@if (Model.Document is null)
+{
+    <div class="share-empty">
+        <div class="share-empty__icon" aria-hidden="true">🔗</div>
+        <h1 class="share-view__title">Link unavailable</h1>
+        <p class="empty-state">This share link is invalid or has expired.</p>
+    </div>
+}
+else
+{
+    <div class="share-view">
+        <div class="share-view__header">
+            <h1 class="share-view__title">@Model.Document.Title</h1>
+            <a class="btn btn--primary" href="/Share/@Model.Token/file?download=true">Download</a>
+        </div>
+
+        <div class="share-view__frame">
+            @if (Model.IsImage)
+            {
+                <img src="/Share/@Model.Token/file" alt="@Model.Document.Title" />
+            }
+            else
+            {
+                <iframe src="/Share/@Model.Token/file" title="@Model.Document.Title"></iframe>
+            }
+        </div>
+    </div>
+}

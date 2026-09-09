@@ -77,18 +77,13 @@
     </mp-toolbar-select>
 </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text="No documents match your criteria.">
-    <thead>
-        <tr>
-            <th></th>
-            <th>Title</th>
-            <th>Correspondent</th>
-            <th>Type</th>
-            <th>Date</th>
-            <th>OCR</th>
-        </tr>
-    </thead>
-    <tbody>
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty-state">No documents match your criteria.</div>
+}
+else
+{
+    <div class="doc-grid">
         @foreach (var d in Model.Rows)
         {
             var displayDate = (d.DocumentDate ?? d.CreateDate).ToString("yyyy-MM-dd");
@@ -98,32 +93,87 @@
                 OcrState.Failed => "badge--off",
                 _ => "badge--muted"
             };
-            <tr>
-                <td>
+            <article class="doc-card">
+                <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label="Preview @d.Title">
                     @if (d.ThumbnailPath != null)
                     {
-                        <img src="/Documents/@d.Token/thumb" loading="lazy" width="40" alt="" />
+                        <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
                     }
                     else
                     {
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M14 3v4a1 1 0 0 0 1 1h4" />
                             <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
                         </svg>
                     }
-                </td>
-                <td><a href="/Documents/Edit?id=@d.Id">@d.Title</a></td>
-                <td>@(d.Correspondent?.Name ?? "—")</td>
-                <td>@(d.DocumentType?.Name ?? "—")</td>
-                <td>@displayDate</td>
-                <td><span class="badge @ocrBadge">@d.OcrState</span></td>
-            </tr>
+                    <span class="doc-card__zoom" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" /></svg>
+                    </span>
+                </button>
+                <div class="doc-card__body">
+                    <a class="doc-card__title" href="/Documents/Edit?id=@d.Id" title="@d.Title">@d.Title</a>
+                    <div class="doc-card__meta">
+                        <span>@(d.Correspondent?.Name ?? "—")</span>
+                        <span>@(d.DocumentType?.Name ?? "—")</span>
+                        <span>@displayDate</span>
+                    </div>
+                    <div class="doc-card__footer">
+                        <span class="badge @ocrBadge">@d.OcrState</span>
+                        <span class="doc-card__links">
+                            <a href="/Documents/Edit?id=@d.Id">Edit</a>
+                            <a href="/Documents/@d.Token/download">Download</a>
+                        </span>
+                    </div>
+                </div>
+            </article>
         }
-    </tbody>
-</mp-table>
+    </div>
+}
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/Documents/Upload">Upload</a>
+    <a class="btn btn--secondary" href="/Documents/Scan">Scan</a>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+
+<dialog id="doc-preview" class="preview-dialog" aria-label="Document preview">
+    <div class="preview-dialog__head">
+        <span class="preview-dialog__title" id="doc-preview-title"></span>
+        <a class="btn btn--secondary" id="doc-preview-open" target="_blank" rel="noopener">Open in tab</a>
+        <button type="button" class="btn btn--secondary" id="doc-preview-close">Close</button>
+    </div>
+    <iframe class="preview-dialog__frame" id="doc-preview-frame" title="Document preview" src="about:blank"></iframe>
+</dialog>
+
+@section Scripts {
+    <script>
+        (function () {
+            var dlg = document.getElementById("doc-preview");
+            if (!dlg || typeof dlg.showModal !== "function") { return; }
+            var frame = document.getElementById("doc-preview-frame");
+            var titleEl = document.getElementById("doc-preview-title");
+            var openEl = document.getElementById("doc-preview-open");
+
+            function open(url, title) {
+                frame.src = url;
+                openEl.href = url;
+                titleEl.textContent = title || "Preview";
+                dlg.showModal();
+            }
+            function close() {
+                dlg.close();
+                frame.src = "about:blank";
+            }
+
+            document.querySelectorAll("[data-preview-url]").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    open(btn.getAttribute("data-preview-url"), btn.getAttribute("data-preview-title"));
+                });
+            });
+            document.getElementById("doc-preview-close").addEventListener("click", close);
+            dlg.addEventListener("click", function (e) { if (e.target === dlg) { close(); } });
+            dlg.addEventListener("cancel", function () { frame.src = "about:blank"; });
+        })();
+    </script>
+}

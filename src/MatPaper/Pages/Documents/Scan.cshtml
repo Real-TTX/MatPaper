@@ -1,0 +1,84 @@
+@page "/Documents/Scan"
+@model MatPaper.Pages.Documents.ScanModel
+@{
+    ViewData["Breadcrumb"] = "Documents / Scan";
+}
+
+@if (Model.Messages.Count > 0)
+{
+    <div class="form-summary">
+        <ul>
+            @foreach (var message in Model.Messages)
+            {
+                <li>@message</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (!Model.HasStorage)
+{
+    <div class="empty-state">
+        No storage locations are configured yet. Please
+        <a href="/System/StorageLocations/Edit">create a storage location</a>
+        before scanning documents.
+    </div>
+}
+else
+{
+    <form class="form" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+        <div class="form-row">
+            <label for="Title">Title</label>
+            <input class="form-control" type="text" id="Title" name="Title" value="@Model.Title" />
+            <p class="form-help">Optional. Used to name the generated PDF.</p>
+        </div>
+
+        <div class="form-row">
+            <label for="StorageLocationId">Storage location</label>
+            <select class="form-control" id="StorageLocationId" name="StorageLocationId">
+                @foreach (var s in Model.StorageLocations)
+                {
+                    <option value="@s.Id" selected="@(s.Id == Model.StorageLocationId)">@s.Name</option>
+                }
+            </select>
+            <span class="field-error" asp-validation-for="StorageLocationId"></span>
+        </div>
+
+        <div class="form-row">
+            <label for="CorrespondentId">Correspondent</label>
+            <select class="form-control" id="CorrespondentId" name="CorrespondentId">
+                <option value="">— None —</option>
+                @foreach (var c in Model.Correspondents)
+                {
+                    <option value="@c.Id" selected="@(c.Id == Model.CorrespondentId)">@c.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="DocumentTypeId">Document type</label>
+            <select class="form-control" id="DocumentTypeId" name="DocumentTypeId">
+                <option value="">— None —</option>
+                @foreach (var t in Model.DocumentTypes)
+                {
+                    <option value="@t.Id" selected="@(t.Id == Model.DocumentTypeId)">@t.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="Images">Photos</label>
+            <input class="form-control" type="file" id="Images" name="Images"
+                   accept="image/*" capture="environment" multiple />
+            <span class="field-error" asp-validation-for="Images"></span>
+            <p class="form-help">Take one or more photos; they become a single PDF.</p>
+        </div>
+
+        <mp-button-row>
+            <mp-button variant="primary" type="submit">Create PDF</mp-button>
+            <mp-button variant="secondary" href="/Documents">Back</mp-button>
+        </mp-button-row>
+    </form>
+}

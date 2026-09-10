@@ -37,22 +37,49 @@ public sealed class ImportRunner
         _logger = logger;
     }
 
-    public Task<RunReport> RunAsync(ImportTask task, CancellationToken ct)
+    public async Task<RunReport> RunAsync(ImportTask task, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(task);
 
+        // Imported documents are owned by whoever created the import task, falling
+        // back to the first active administrator so they never end up ownerless.
+        var ownerId = await ResolveOwnerIdAsync(task, ct).ConfigureAwait(false);
+
         return task.Type switch
         {
-            ImportTaskType.Filesystem => RunFilesystemAsync(task, ct),
-            ImportTaskType.Imap => RunMailAsync(task, isPop3: false, ct),
-            ImportTaskType.Pop3 => RunMailAsync(task, isPop3: true, ct),
-            _ => Task.FromResult(new RunReport(false, 0, $"Unsupported import type '{task.Type}'."))
+            ImportTaskType.Filesystem => await RunFilesystemAsync(task, ownerId, ct).ConfigureAwait(false),
+            ImportTaskType.Imap => await RunMailAsync(task, isPop3: false, ownerId, ct).ConfigureAwait(false),
+            ImportTaskType.Pop3 => await RunMailAsync(task, isPop3: true, ownerId, ct).ConfigureAwait(false),
+            _ => new RunReport(false, 0, $"Unsupported import type '{task.Type}'.")
         };
+    }
+
+    private async Task<long?> ResolveOwnerIdAsync(ImportTask task, CancellationToken ct)
+    {
+        if (task.CreateUserId is { } creator)
+        {
+            var stillActive = await _db.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == creator && u.IsActive, ct)
+                .ConfigureAwait(false);
+            if (stillActive)
+            {
+                return creator;
+            }
+        }
+
+        return await _db.Users
+            .AsNoTracking()
+            .Where(u => u.IsActive && u.Role != null && u.Role.Name == "Admin")
+            .OrderBy(u => u.Id)
+            .Select(u => (long?)u.Id)
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
     }
 
     // ----- Filesystem -------------------------------------------------------
 
-    private async Task<RunReport> RunFilesystemAsync(ImportTask task, CancellationToken ct)
+    private async Task<RunReport> RunFilesystemAsync(ImportTask task, long? ownerId, CancellationToken ct)
     {
         var settings = TaskSettingsJson.Read<FilesystemImportSettings>(task.SettingsJson);
 
@@ -101,7 +128,7 @@ public sealed class ImportRunner
                         settings.DocumentTypeId,
                         settings.ProjectId,
                         settings.TagIds ?? new List<long>(),
-                        actingUserId: null,
+                        actingUserId: ownerId,
                         ct).ConfigureAwait(false);
                 }
 
@@ -191,7 +218,7 @@ public sealed class ImportRunner
 
     // ----- Mail (IMAP / POP3) ----------------------------------------------
 
-    private async Task<RunReport> RunMailAsync(ImportTask task, bool isPop3, CancellationToken ct)
+    private async Task<RunReport> RunMailAsync(ImportTask task, bool isPop3, long? ownerId, CancellationToken ct)
     {
         var settings = TaskSettingsJson.Read<MailImportSettings>(task.SettingsJson);
 
@@ -212,8 +239,8 @@ public sealed class ImportRunner
         try
         {
             count = isPop3
-                ? await RunPop3Async(settings, password, extensions, senderRegex, subjectRegex, locationId.Value, log, ct).ConfigureAwait(false)
-                : await RunImapAsync(settings, password, extensions, senderRegex, subjectRegex, locationId.Value, log, ct).ConfigureAwait(false);
+                ? await RunPop3Async(settings, password, extensions, senderRegex, subjectRegex, locationId.Value, ownerId, log, ct).ConfigureAwait(false)
+                : await RunImapAsync(settings, password, extensions, senderRegex, subjectRegex, locationId.Value, ownerId, log, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -236,6 +263,7 @@ public sealed class ImportRunner
         Regex? senderRegex,
         Regex? subjectRegex,
         long locationId,
+        long? ownerId,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -266,10 +294,10 @@ public sealed class ImportRunner
                     continue;
                 }
 
-                count += await ImportAttachmentsAsync(message, extensions, locationId, log, ct).ConfigureAwait(false);
+                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, log, ct).ConfigureAwait(false);
                 if (settings.ImportBodyAsPdf)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, log, ct).ConfigureAwait(false);
+                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, log, ct).ConfigureAwait(false);
                 }
 
                 switch (postAction)
@@ -308,6 +336,7 @@ public sealed class ImportRunner
         Regex? senderRegex,
         Regex? subjectRegex,
         long locationId,
+        long? ownerId,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -331,10 +360,10 @@ public sealed class ImportRunner
                     continue;
                 }
 
-                count += await ImportAttachmentsAsync(message, extensions, locationId, log, ct).ConfigureAwait(false);
+                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, log, ct).ConfigureAwait(false);
                 if (settings.ImportBodyAsPdf)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, log, ct).ConfigureAwait(false);
+                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, log, ct).ConfigureAwait(false);
                 }
 
                 if (postAction == "delete")
@@ -357,6 +386,7 @@ public sealed class ImportRunner
     private async Task<int> ImportBodyAsPdfAsync(
         MimeMessage message,
         long locationId,
+        long? ownerId,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -372,7 +402,7 @@ public sealed class ImportRunner
 
             await using var stream = new MemoryStream(pdf);
             var result = await _ingest.IngestAsync(
-                stream, fileName, locationId, null, null, null, Array.Empty<long>(), null, ct).ConfigureAwait(false);
+                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct).ConfigureAwait(false);
 
             if (result.Status == IngestStatus.Created)
             {
@@ -403,6 +433,7 @@ public sealed class ImportRunner
         MimeMessage message,
         IReadOnlyCollection<string> extensions,
         long locationId,
+        long? ownerId,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -450,7 +481,7 @@ public sealed class ImportRunner
                     documentTypeId: null,
                     projectId: null,
                     tagIds: new List<long>(),
-                    actingUserId: null,
+                    actingUserId: ownerId,
                     ct).ConfigureAwait(false);
 
                 switch (result.Status)

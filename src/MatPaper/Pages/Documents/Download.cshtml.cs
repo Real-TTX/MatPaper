@@ -10,11 +10,13 @@ public class DownloadModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly DocumentStorageService _storage;
+    private readonly CurrentUser _currentUser;
 
-    public DownloadModel(AppDbContext db, DocumentStorageService storage)
+    public DownloadModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser)
     {
         _db = db;
         _storage = storage;
+        _currentUser = currentUser;
     }
 
     public async Task<IActionResult> OnGetAsync(Guid token)
@@ -22,6 +24,7 @@ public class DownloadModel : PageModel
         var document = await _db.Documents
             .AsNoTracking()
             .Include(d => d.StorageLocation)
+            .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted);
 
         if (document?.StorageLocation == null)

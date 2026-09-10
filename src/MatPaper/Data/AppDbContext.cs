@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentTag> DocumentTags => Set<DocumentTag>();
+    public DbSet<DocumentShare> DocumentShares => Set<DocumentShare>();
     public DbSet<ImportTask> ImportTasks => Set<ImportTask>();
     public DbSet<ExportTask> ExportTasks => Set<ExportTask>();
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
@@ -41,6 +42,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<DocumentType>().ToTable("DocumentType");
         modelBuilder.Entity<Document>().ToTable("Document");
         modelBuilder.Entity<DocumentTag>().ToTable("DocumentTag");
+        modelBuilder.Entity<DocumentShare>().ToTable("DocumentShare");
         modelBuilder.Entity<ImportTask>().ToTable("ImportTask");
         modelBuilder.Entity<ExportTask>().ToTable("ExportTask");
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
@@ -65,6 +67,31 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<DocumentTag>()
             .HasIndex(dt => new { dt.DocumentId, dt.TagId })
+            .IsUnique();
+
+        modelBuilder.Entity<Document>()
+            .HasIndex(d => d.OwnerId);
+
+        modelBuilder.Entity<Document>()
+            .HasOne(d => d.Owner)
+            .WithMany()
+            .HasForeignKey(d => d.OwnerId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Document>()
+            .HasMany(d => d.Shares)
+            .WithOne(s => s.Document!)
+            .HasForeignKey(s => s.DocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DocumentShare>()
+            .HasOne(s => s.User)
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DocumentShare>()
+            .HasIndex(s => new { s.DocumentId, s.UserId })
             .IsUnique();
 
         modelBuilder.Entity<InboxItem>()

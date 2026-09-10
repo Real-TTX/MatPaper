@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
+using MatPaper.Services;
 
 namespace MatPaper.Pages.Documents;
 
@@ -10,10 +11,12 @@ public class IndexModel : PageModel
     private const int PageSize = 24;
 
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public IndexModel(AppDbContext db)
+    public IndexModel(AppDbContext db, CurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -43,6 +46,14 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Sort { get; set; } = "newest";
 
+    /// <summary>Ownership scope: all | mine | shared | common.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Scope { get; set; } = "all";
+
+    /// <summary>Review state: all | pending | reviewed.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Review { get; set; } = "all";
+
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
@@ -66,7 +77,25 @@ public class IndexModel : PageModel
             .AsNoTracking()
             .Include(d => d.Correspondent)
             .Include(d => d.DocumentType)
-            .Where(d => d.UpdateState != UpdateState.Deleted);
+            .Where(d => d.UpdateState != UpdateState.Deleted)
+            .AccessibleTo(_currentUser);
+
+        var userId = _currentUser.UserId;
+        query = Scope switch
+        {
+            "mine" => query.Where(d => d.OwnerId == userId),
+            "shared" => query.Where(d => d.OwnerId != userId
+                && d.Shares.Any(s => s.UserId == userId && s.UpdateState != UpdateState.Deleted)),
+            "common" => query.Where(d => d.IsCommon),
+            _ => query,
+        };
+
+        query = Review switch
+        {
+            "pending" => query.Where(d => d.ReviewState == ReviewState.Pending),
+            "reviewed" => query.Where(d => d.ReviewState == ReviewState.Reviewed),
+            _ => query,
+        };
 
         if (!string.IsNullOrWhiteSpace(Search))
         {

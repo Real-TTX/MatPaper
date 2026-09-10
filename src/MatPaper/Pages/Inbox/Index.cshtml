@@ -1,0 +1,83 @@
+@page "/Inbox"
+@model MatPaper.Pages.Inbox.IndexModel
+@{
+    ViewData["Breadcrumb"] = "Inbox";
+}
+
+<p class="form-help">
+    New documents land here with auto-detected suggestions. Accept them, or open a
+    document to choose different values. Confirming clears it from your inbox.
+</p>
+
+@if (Model.Rows.Count == 0)
+{
+    <div class="empty-state">
+        Your inbox is empty — nothing to review.
+        <a href="/Documents/Upload">Upload documents</a>.
+    </div>
+}
+else
+{
+    <div class="list-actions" style="margin-bottom:1rem;display:flex;gap:.75rem;align-items:center">
+        <span class="form-help" style="margin:0">@Model.Rows.Count document(s) to review</span>
+        <form method="post" asp-page-handler="ConfirmAll" style="margin-left:auto">
+            <button class="btn btn--secondary" type="submit"
+                    onclick="return confirm('Accept the suggestions for all documents in your inbox?')">
+                Confirm all
+            </button>
+        </form>
+    </div>
+
+    @foreach (var row in Model.Rows)
+    {
+        var ocrBadge = row.OcrState switch
+        {
+            MatPaper.Data.OcrState.Done => "badge--ok",
+            MatPaper.Data.OcrState.Failed => "badge--off",
+            _ => "badge--muted"
+        };
+        <article class="inbox-item">
+            <div class="inbox-item__head">
+                <a class="doc-card__thumb-link" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title="Preview">
+                    @if (row.ThumbnailPath != null)
+                    {
+                        <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58"
+                             style="object-fit:cover;border-radius:4px;border:1px solid var(--color-border)" />
+                    }
+                </a>
+                <span class="inbox-item__title">@row.Title</span>
+                <span class="inbox-item__meta">
+                    <span class="badge @ocrBadge">@row.OcrState</span>
+                    @row.AddedDate.ToString("yyyy-MM-dd")
+                </span>
+            </div>
+
+            <div class="inbox-grid">
+                <div>
+                    <span class="doc-facts__key">Type</span><br />
+                    <strong>@(row.TypeName ?? "—")</strong>
+                </div>
+                <div>
+                    <span class="doc-facts__key">Correspondent</span><br />
+                    <strong>@(row.CorrespondentName ?? "—")</strong>
+                </div>
+                <div>
+                    <span class="doc-facts__key">Date</span><br />
+                    <strong>@(row.DocumentDate?.ToString("yyyy-MM-dd") ?? "—")</strong>
+                </div>
+                <div>
+                    <span class="doc-facts__key">Tags</span><br />
+                    <strong>@(row.TagNames.Count > 0 ? string.Join(", ", row.TagNames) : "—")</strong>
+                </div>
+            </div>
+
+            <div class="inbox-item__actions">
+                <form method="post" asp-page-handler="Confirm">
+                    <input type="hidden" name="id" value="@row.Id" />
+                    <button class="btn btn--primary" type="submit">Confirm</button>
+                </form>
+                <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id">Edit suggestions</a>
+            </div>
+        </article>
+    }
+}

@@ -2,22 +2,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
+using MatPaper.Services;
 
 namespace MatPaper.Pages.Documents;
 
 public class ThumbModel : PageModel
 {
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public ThumbModel(AppDbContext db)
+    public ThumbModel(AppDbContext db, CurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<IActionResult> OnGetAsync(Guid token)
     {
         var document = await _db.Documents
             .AsNoTracking()
+            .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted);
 
         if (document?.ThumbnailPath == null)

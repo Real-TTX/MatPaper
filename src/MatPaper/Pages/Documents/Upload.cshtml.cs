@@ -59,6 +59,45 @@ public class UploadModel : PageModel
         }
     }
 
+    /// <summary>
+    /// Async single-file ingest used by the drag-&-drop uploader so it can report
+    /// per-file progress. Returns JSON. The document is owned by the current user
+    /// and lands in their inbox (Pending) for review.
+    /// </summary>
+    public async Task<IActionResult> OnPostAjaxAsync(IFormFile? file, long storageLocationId, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return new JsonResult(new { status = "failed", message = "Empty file." });
+        }
+
+        var validLocation = await _db.StorageLocations
+            .AnyAsync(s => s.Id == storageLocationId && s.UpdateState != UpdateState.Deleted, ct);
+        if (!validLocation)
+        {
+            return new JsonResult(new { status = "failed", message = "Invalid storage location." });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await _ingest.IngestAsync(
+            stream,
+            file.FileName,
+            storageLocationId,
+            correspondentId: null,
+            documentTypeId: null,
+            projectId: null,
+            tagIds: Array.Empty<long>(),
+            _currentUser.UserId,
+            ct);
+
+        return new JsonResult(new
+        {
+            status = result.Status.ToString().ToLowerInvariant(),
+            id = result.DocumentId,
+            name = file.FileName
+        });
+    }
+
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         ViewData["Breadcrumb"] = "Documents / Upload";

@@ -69,9 +69,13 @@ public sealed class DocumentIngestService(
         var contentHash = await ComputeHashAsync(buffer, ct).ConfigureAwait(false);
         buffer.Position = 0;
 
+        // Dedupe within the owner's own documents (plus the common area) so two
+        // users can each hold their own copy of the same file.
         var existing = await db.Documents
             .AsNoTracking()
-            .Where(d => d.UpdateState != UpdateState.Deleted && d.ContentHash == contentHash)
+            .Where(d => d.UpdateState != UpdateState.Deleted
+                && d.ContentHash == contentHash
+                && (d.OwnerId == actingUserId || d.IsCommon))
             .Select(d => new { d.Id })
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
@@ -144,6 +148,8 @@ public sealed class DocumentIngestService(
             OriginalFileName = safeFileName,
             FileSize = fileSize,
             ContentHash = contentHash,
+            OwnerId = actingUserId,
+            ReviewState = ReviewState.Pending,
             PageCount = 0,
             OcrState = OcrState.Pending,
             UpdateState = UpdateState.Created,

@@ -142,12 +142,51 @@
         color: var(--color-text-muted);
         margin: 0;
     }
+
+    .doc-status {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+        padding: 0.6rem 0.85rem;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: var(--color-surface);
+    }
 </style>
 
 @if (TempData["TaskMessage"] is string taskMsg)
 {
     <div class="form-summary" style="color:var(--color-text)">@taskMsg</div>
 }
+
+<div class="doc-status">
+    <span class="doc-status__owner">Owner: <strong>@(Model.OwnerName ?? "—")</strong></span>
+    @if (Model.IsCommon)
+    {
+        <span class="badge badge--ok">Common area</span>
+    }
+    @if (Model.ReviewState == MatPaper.Data.ReviewState.Pending)
+    {
+        <span class="badge badge--muted">Needs review</span>
+        @if (Model.CanEdit)
+        {
+            <form method="post" asp-page-handler="ConfirmReview" style="display:inline">
+                <input type="hidden" asp-for="Id" />
+                <button class="btn btn--primary" type="submit">Confirm (mark reviewed)</button>
+            </form>
+        }
+    }
+    else
+    {
+        <span class="badge badge--ok">Reviewed</span>
+    }
+    @if (!Model.CanEdit)
+    {
+        <span class="form-help" style="margin:0">Shared with you — read only.</span>
+    }
+</div>
 
 <div class="doc-edit">
     <aside class="doc-preview">
@@ -240,17 +279,70 @@
         }
 
         <mp-button-row>
-            <mp-button variant="primary" type="submit">Save</mp-button>
+            @if (Model.CanEdit)
+            {
+                <mp-button variant="primary" type="submit">Save</mp-button>
+            }
             <mp-button variant="secondary" href="/Documents">Back</mp-button>
-            <mp-button-spacer />
-            <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm="Delete this document? The file stays on disk but the document is removed from MatPaper.">Delete</mp-button>
+            @if (Model.IsOwner)
+            {
+                <mp-button-spacer />
+                <mp-button variant="danger" type="submit" handler="Delete"
+                           confirm="Delete this document? The file stays on disk but the document is removed from MatPaper.">Delete</mp-button>
+            }
         </mp-button-row>
     </form>
 </div>
 
+@if (Model.IsOwner)
+{
 <section class="doc-shares">
-    <h2 class="doc-shares__title">Share links</h2>
+    <h2 class="doc-shares__title">Sharing</h2>
+
+    <form method="post" asp-page-handler="SetCommon">
+        <input type="hidden" asp-for="Id" />
+        <label class="doc-reanalyze__opt">
+            <input type="checkbox" name="isCommon" value="true" @(Model.IsCommon ? "checked" : "") onchange="this.form.submit()" />
+            Show in the common area (visible to everyone)
+        </label>
+    </form>
+
+    <h3 style="margin:1.25rem 0 0.35rem;font-size:1rem">Shared with users</h3>
+    @if (Model.UserShares.Count > 0)
+    {
+        <ul class="share-users">
+            @foreach (var s in Model.UserShares)
+            {
+                <li class="share-user">
+                    <span class="share-user__name">@s.UserName</span>
+                    <span class="share-user__perm">@(s.CanEdit ? "can edit" : "view only")</span>
+                    <form method="post" asp-page-handler="RevokeUserShare" style="display:inline">
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" name="shareId" value="@s.ShareId" />
+                        <button class="btn btn--danger" type="submit">Remove</button>
+                    </form>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="form-help">Not shared with any user yet.</p>
+    }
+
+    @if (Model.ShareUserOptions.Count > 0)
+    {
+        <form method="post" asp-page-handler="ShareUser" class="doc-shares__create">
+            <input type="hidden" asp-for="Id" />
+            <mp-picker asp-for="ShareUserId" label="Add user" asp-items="Model.ShareUserOptions" placeholder="Choose a user…" />
+            <label class="doc-reanalyze__opt">
+                <input type="checkbox" name="canEdit" value="true" /> may edit
+            </label>
+            <button class="btn btn--primary" type="submit">Share</button>
+        </form>
+    }
+
+    <h3 style="margin:1.5rem 0 0.35rem;font-size:1rem">Share links</h3>
     <p class="form-help">Anyone with a share link can view and download this document without signing in.</p>
 
     @if (Model.ShareLinks.Count > 0)
@@ -298,6 +390,7 @@
         <button class="btn btn--primary" type="submit" asp-page-handler="CreateShare">Create share link</button>
     </form>
 </section>
+}
 
 @functions {
     private static string FormatSize(long bytes)

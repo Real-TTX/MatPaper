@@ -70,6 +70,19 @@
                value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" />
     </div>
 
+    <mp-toolbar-select name="Scope" label="Scope" value="@Model.Scope">
+        <option value="all">All</option>
+        <option value="mine">Mine</option>
+        <option value="shared">Shared with me</option>
+        <option value="common">Common area</option>
+    </mp-toolbar-select>
+
+    <mp-toolbar-select name="Review" label="Review" value="@Model.Review">
+        <option value="all">All</option>
+        <option value="pending">Needs review</option>
+        <option value="reviewed">Reviewed</option>
+    </mp-toolbar-select>
+
     <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
         <option value="newest">Newest</option>
         <option value="oldest">Oldest</option>

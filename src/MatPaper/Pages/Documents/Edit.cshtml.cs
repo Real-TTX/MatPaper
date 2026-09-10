@@ -28,6 +28,20 @@ public class EditModel : PageModel
     public string ShareBaseUrl { get; private set; } = string.Empty;
     public string? InvoiceNumber { get; private set; }
 
+    // Ownership / sharing / review state for the current viewer.
+    public bool IsOwner { get; private set; }
+    public bool CanEdit { get; private set; }
+    public ReviewState ReviewState { get; private set; }
+    public bool IsCommon { get; private set; }
+    public string? OwnerName { get; private set; }
+    public List<UserShareView> UserShares { get; private set; } = new();
+    public List<SelectListItem> ShareUserOptions { get; private set; } = new();
+
+    /// <summary>Bound only for the "share with user" picker on the edit page.</summary>
+    public long? ShareUserId { get; set; }
+
+    public record UserShareView(long ShareId, long UserId, string UserName, bool CanEdit);
+
     [BindProperty(SupportsGet = true)]
     public long Id { get; set; }
 
@@ -78,6 +92,9 @@ public class EditModel : PageModel
         var document = await _db.Documents
             .AsNoTracking()
             .Include(d => d.DocumentTags)
+            .Include(d => d.Owner)
+            .Include(d => d.Shares).ThenInclude(s => s.User)
+            .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
 
         if (document == null)
@@ -99,23 +116,60 @@ public class EditModel : PageModel
 
         FillPreview(document);
         await BuildOptionListsAsync(SelectedTagIds);
+        await BuildAccessViewAsync(document, HttpContext.RequestAborted);
         ShareLinks = await _shareLinks.ListForDocumentAsync(Id, HttpContext.RequestAborted);
         ShareBaseUrl = $"{Request.Scheme}://{Request.Host}";
 
         return Page();
     }
 
+    /// <summary>Populates the ownership / sharing / review view-model for the current viewer.</summary>
+    private async Task BuildAccessViewAsync(Document document, CancellationToken ct)
+    {
+        IsOwner = DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin);
+        CanEdit = await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, _currentUser.IsAdmin, ct);
+        ReviewState = document.ReviewState;
+        IsCommon = document.IsCommon;
+        OwnerName = document.Owner?.DisplayName ?? document.Owner?.Username;
+
+        UserShares = document.Shares
+            .Where(s => s.UpdateState != UpdateState.Deleted)
+            .Select(s => new UserShareView(
+                s.Id,
+                s.UserId,
+                s.User != null ? (s.User.DisplayName ?? s.User.Username) : $"#{s.UserId}",
+                s.CanEdit))
+            .OrderBy(s => s.UserName)
+            .ToList();
+
+        if (IsOwner)
+        {
+            var alreadyShared = UserShares.Select(s => s.UserId).ToHashSet();
+            var users = await _db.Users
+                .AsNoTracking()
+                .Where(u => u.IsActive && u.Id != document.OwnerId)
+                .OrderBy(u => u.DisplayName)
+                .Select(u => new { u.Id, u.DisplayName, u.Username })
+                .ToListAsync(ct);
+
+            ShareUserOptions = users
+                .Where(u => !alreadyShared.Contains(u.Id))
+                .Select(u => new SelectListItem(u.DisplayName ?? u.Username, u.Id.ToString()))
+                .ToList();
+        }
+    }
+
     public async Task<IActionResult> OnPostCreateShareAsync(int expiryDays)
     {
-        if (Id == 0)
+        var document = await LoadAccessibleAsync(HttpContext.RequestAborted);
+        if (document == null)
         {
             return NotFound();
         }
 
-        var exists = await _db.Documents.AnyAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
-        if (!exists)
+        if (!DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
         {
-            return NotFound();
+            return Forbid();
         }
 
         DateTime? expiresAt = expiryDays > 0 ? DateTime.UtcNow.AddDays(expiryDays) : null;
@@ -126,14 +180,157 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostRevokeShareAsync(long shareLinkId)
     {
-        if (Id == 0)
+        var document = await LoadAccessibleAsync(HttpContext.RequestAborted);
+        if (document == null)
         {
             return NotFound();
         }
 
-        await _shareLinks.RevokeAsync(shareLinkId, HttpContext.RequestAborted);
+        if (!DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            return Forbid();
+        }
+
+        // Only revoke a link that actually belongs to this document.
+        var belongs = await _db.ShareLinks.AnyAsync(l => l.Id == shareLinkId && l.DocumentId == Id, HttpContext.RequestAborted);
+        if (belongs)
+        {
+            await _shareLinks.RevokeAsync(shareLinkId, HttpContext.RequestAborted);
+        }
 
         return RedirectToPage("Edit", new { id = Id });
+    }
+
+    public async Task<IActionResult> OnPostShareUserAsync(long shareUserId, bool canEdit)
+    {
+        var document = await LoadAccessibleAsync(HttpContext.RequestAborted);
+        if (document == null)
+        {
+            return NotFound();
+        }
+
+        if (!DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            return Forbid();
+        }
+
+        // Cannot share with the owner or a non-existent/inactive user.
+        var targetExists = await _db.Users.AnyAsync(u => u.Id == shareUserId && u.IsActive, HttpContext.RequestAborted);
+        if (!targetExists || shareUserId == document.OwnerId)
+        {
+            return RedirectToPage("Edit", new { id = Id });
+        }
+
+        var now = DateTime.UtcNow;
+        var existing = await _db.DocumentShares
+            .FirstOrDefaultAsync(s => s.DocumentId == Id && s.UserId == shareUserId, HttpContext.RequestAborted);
+
+        if (existing == null)
+        {
+            _db.DocumentShares.Add(new DocumentShare
+            {
+                DocumentId = Id,
+                UserId = shareUserId,
+                CanEdit = canEdit,
+                UpdateState = UpdateState.Created,
+                CreateDate = now,
+                UpdateDate = now,
+                CreateUserId = _currentUser.UserId,
+                UpdateUserId = _currentUser.UserId
+            });
+        }
+        else
+        {
+            existing.CanEdit = canEdit;
+            existing.UpdateState = UpdateState.Updated;
+            existing.UpdateDate = now;
+            existing.UpdateUserId = _currentUser.UserId;
+        }
+
+        await _db.SaveChangesAsync(HttpContext.RequestAborted);
+        return RedirectToPage("Edit", new { id = Id });
+    }
+
+    public async Task<IActionResult> OnPostRevokeUserShareAsync(long shareId)
+    {
+        var document = await LoadAccessibleAsync(HttpContext.RequestAborted);
+        if (document == null)
+        {
+            return NotFound();
+        }
+
+        if (!DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            return Forbid();
+        }
+
+        var share = await _db.DocumentShares
+            .FirstOrDefaultAsync(s => s.Id == shareId && s.DocumentId == Id, HttpContext.RequestAborted);
+        if (share != null)
+        {
+            share.UpdateState = UpdateState.Deleted;
+            share.UpdateDate = DateTime.UtcNow;
+            share.UpdateUserId = _currentUser.UserId;
+            await _db.SaveChangesAsync(HttpContext.RequestAborted);
+        }
+
+        return RedirectToPage("Edit", new { id = Id });
+    }
+
+    public async Task<IActionResult> OnPostSetCommonAsync(bool isCommon)
+    {
+        var document = await LoadAccessibleAsync(HttpContext.RequestAborted);
+        if (document == null)
+        {
+            return NotFound();
+        }
+
+        if (!DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            return Forbid();
+        }
+
+        document.IsCommon = isCommon;
+        document.UpdateState = UpdateState.Updated;
+        document.UpdateDate = DateTime.UtcNow;
+        document.UpdateUserId = _currentUser.UserId;
+        await _db.SaveChangesAsync(HttpContext.RequestAborted);
+
+        return RedirectToPage("Edit", new { id = Id });
+    }
+
+    public async Task<IActionResult> OnPostConfirmReviewAsync()
+    {
+        var document = await LoadAccessibleAsync(HttpContext.RequestAborted);
+        if (document == null)
+        {
+            return NotFound();
+        }
+
+        if (!await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, _currentUser.IsAdmin, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
+        document.ReviewState = ReviewState.Reviewed;
+        document.UpdateDate = DateTime.UtcNow;
+        document.UpdateUserId = _currentUser.UserId;
+        await _db.SaveChangesAsync(HttpContext.RequestAborted);
+
+        return RedirectToPage("Edit", new { id = Id });
+    }
+
+    /// <summary>Loads the document (tracked) only if the current user may access it.</summary>
+    private async Task<Document?> LoadAccessibleAsync(CancellationToken ct)
+    {
+        if (Id == 0)
+        {
+            return null;
+        }
+
+        return await _db.Documents
+            .AccessibleTo(_currentUser)
+            .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted, ct);
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -147,11 +344,17 @@ public class EditModel : PageModel
 
         var document = await _db.Documents
             .Include(d => d.DocumentTags)
+            .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Id == Id);
 
         if (document == null || document.UpdateState == UpdateState.Deleted)
         {
             return NotFound();
+        }
+
+        if (!await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, _currentUser.IsAdmin, HttpContext.RequestAborted))
+        {
+            return Forbid();
         }
 
         var title = Input.Title?.Trim() ?? string.Empty;
@@ -263,10 +466,16 @@ public class EditModel : PageModel
 
         var document = await _db.Documents
             .Include(d => d.StorageLocation)
+            .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
         if (document == null)
         {
             return NotFound();
+        }
+
+        if (!await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, _currentUser.IsAdmin, HttpContext.RequestAborted))
+        {
+            return Forbid();
         }
 
         var result = await _analysis.AnalyzeAsync(
@@ -300,10 +509,18 @@ public class EditModel : PageModel
             return NotFound();
         }
 
-        var document = await _db.Documents.FirstOrDefaultAsync(d => d.Id == Id);
+        var document = await _db.Documents
+            .AccessibleTo(_currentUser)
+            .FirstOrDefaultAsync(d => d.Id == Id);
         if (document == null)
         {
             return NotFound();
+        }
+
+        // Deleting a document is an owner-only action.
+        if (!DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            return Forbid();
         }
 
         document.UpdateState = UpdateState.Deleted;

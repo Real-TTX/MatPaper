@@ -230,7 +230,9 @@ public sealed class StorageScanService
                 {
                     var isDuplicate = await _db.Documents
                         .AsNoTracking()
-                        .AnyAsync(d => d.ContentHash == item.ContentHash && d.UpdateState != UpdateState.Deleted, ct);
+                        .AnyAsync(d => d.ContentHash == item.ContentHash
+                            && d.UpdateState != UpdateState.Deleted
+                            && (d.OwnerId == actingUserId || d.IsCommon), ct);
 
                     if (isDuplicate)
                     {
@@ -271,6 +273,8 @@ public sealed class StorageScanService
                     OriginalFileName = item.FileName,
                     FileSize = item.FileSize,
                     ContentHash = item.ContentHash,
+                    OwnerId = actingUserId,
+                    ReviewState = ReviewState.Pending,
                     PageCount = 0,
                     OcrState = OcrState.Pending,
                     UpdateState = UpdateState.Created,

@@ -9,8 +9,8 @@
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Rechnung" />
-    <mp-field asp-for="Input.MatchPattern" label="Auto-assign pattern"
-              help="Optional text or regex matched against a document's title + OCR text to auto-assign this type." />
+    <mp-field asp-for="Input.MatchPattern" label="Alternative names / keywords"
+              help="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this type — e.g. invoice, faktura." />
 
     <mp-button-row>
         <mp-button variant="primary" type="submit">Save</mp-button>

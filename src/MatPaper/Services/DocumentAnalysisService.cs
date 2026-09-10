@@ -98,19 +98,22 @@ public sealed class DocumentAnalysisService
         }
         else
         {
-            // Fallback: keyword/regex matching + date heuristic.
+            // Fallback: match correspondents by pattern OR by their name appearing in the
+            // document text, then keyword-match the type, then a date heuristic.
             if (CanSet(document.CorrespondentId, options))
             {
-                changedCorr = await MatchByPatternAsync<Correspondent>(matchText,
-                    () => _db.Correspondents.Where(c => c.UpdateState != UpdateState.Deleted && c.MatchPattern != null && c.MatchPattern != ""),
-                    c => c.MatchPattern, id => { document.CorrespondentId = id; }, ct);
+                changedCorr = await MatchInTextAsync<Correspondent>(matchText,
+                    () => _db.Correspondents.Where(c => c.UpdateState != UpdateState.Deleted),
+                    c => c.Name, c => c.MatchPattern,
+                    id => { document.CorrespondentId = id; }, ct);
             }
 
             if (CanSet(document.DocumentTypeId, options))
             {
-                changedType = await MatchByPatternAsync<DocumentType>(matchText,
-                    () => _db.DocumentTypes.Where(t => t.UpdateState != UpdateState.Deleted && t.MatchPattern != null && t.MatchPattern != ""),
-                    t => t.MatchPattern, id => { document.DocumentTypeId = id; }, ct);
+                changedType = await MatchInTextAsync<DocumentType>(matchText,
+                    () => _db.DocumentTypes.Where(t => t.UpdateState != UpdateState.Deleted),
+                    t => t.Name, t => t.MatchPattern,
+                    id => { document.DocumentTypeId = id; }, ct);
             }
 
             if (CanSet(document.DocumentDate, options))
@@ -162,10 +165,10 @@ public sealed class DocumentAnalysisService
             .Where(c => c.UpdateState != UpdateState.Deleted)
             .ToListAsync(ct);
 
-        // Exact, then contains, then MatchPattern.
+        // Exact, then contains, then alternative names / keywords.
         var match = candidates.FirstOrDefault(c => c.Name.Equals(seller, StringComparison.OrdinalIgnoreCase))
             ?? candidates.FirstOrDefault(c => sellerLower.Contains(c.Name.ToLowerInvariant()) || c.Name.ToLowerInvariant().Contains(sellerLower))
-            ?? candidates.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c.MatchPattern) && IsMatch(seller, c.MatchPattern!));
+            ?? candidates.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c.MatchPattern) && MatchesPattern(seller, c.MatchPattern!));
 
         if (match is not null)
         {
@@ -197,9 +200,10 @@ public sealed class DocumentAnalysisService
         return true;
     }
 
-    private async Task<bool> MatchByPatternAsync<T>(
+    private async Task<bool> MatchInTextAsync<T>(
         string matchText,
         Func<IQueryable<T>> query,
+        Func<T, string> name,
         Func<T, string?> pattern,
         Action<long> assign,
         CancellationToken ct) where T : BaseEntity
@@ -210,10 +214,22 @@ public sealed class DocumentAnalysisService
         }
 
         var candidates = await query().ToListAsync(ct);
+
+        // 1) Explicit alternative names / keywords / regex (most precise).
         foreach (var candidate in candidates)
         {
             var p = pattern(candidate);
-            if (!string.IsNullOrWhiteSpace(p) && IsMatch(matchText, p!))
+            if (!string.IsNullOrWhiteSpace(p) && MatchesPattern(matchText, p!))
+            {
+                assign(candidate.Id);
+                return true;
+            }
+        }
+
+        // 2) The entity's own name appears in the document text.
+        foreach (var candidate in candidates)
+        {
+            if (NameAppearsIn(matchText, name(candidate)))
             {
                 assign(candidate.Id);
                 return true;
@@ -223,16 +239,36 @@ public sealed class DocumentAnalysisService
         return false;
     }
 
-    private static bool IsMatch(string text, string pattern)
+    // Treats the stored pattern as a list of alternative names / keywords
+    // (comma / semicolon / pipe / newline separated, each a case-insensitive
+    // substring), and also as a regular expression for power users.
+    private static bool MatchesPattern(string text, string pattern)
     {
+        var parts = pattern.Split(
+            new[] { ',', ';', '|', '\n', '\r' },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var part in parts)
+        {
+            if (part.Length >= 2 && text.Contains(part, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
         try
         {
             return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
         }
         catch
         {
-            return text.Contains(pattern, StringComparison.OrdinalIgnoreCase);
+            return false;
         }
+    }
+
+    private static bool NameAppearsIn(string text, string name)
+    {
+        var n = (name ?? string.Empty).Trim();
+        return n.Length >= 3 && text.Contains(n, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool CanSet<T>(T? current, AnalysisOptions options) where T : struct

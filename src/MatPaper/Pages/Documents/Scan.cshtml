@@ -49,7 +49,7 @@ else
         <div class="form-row">
             <label for="CorrespondentId">Correspondent</label>
             <select class="form-control" id="CorrespondentId" name="CorrespondentId">
-                <option value="">— None —</option>
+                <option value="">— Auto-detect —</option>
                 @foreach (var c in Model.Correspondents)
                 {
                     <option value="@c.Id" selected="@(c.Id == Model.CorrespondentId)">@c.Name</option>
@@ -60,7 +60,7 @@ else
         <div class="form-row">
             <label for="DocumentTypeId">Document type</label>
             <select class="form-control" id="DocumentTypeId" name="DocumentTypeId">
-                <option value="">— None —</option>
+                <option value="">— Auto-detect —</option>
                 @foreach (var t in Model.DocumentTypes)
                 {
                     <option value="@t.Id" selected="@(t.Id == Model.DocumentTypeId)">@t.Name</option>

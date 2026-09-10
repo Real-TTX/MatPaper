@@ -11,8 +11,8 @@
 
     <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Finanzamt" />
 
-    <mp-field asp-for="Input.MatchPattern" label="Match pattern"
-              help="Text or regex used to auto-assign this correspondent during import" />
+    <mp-field asp-for="Input.MatchPattern" label="Alternative names / keywords"
+              help="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too." />
 
     <mp-field asp-for="Input.Notes" kind="textarea" rows="5" label="Notes" placeholder="Optional notes" />
 

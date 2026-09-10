@@ -13,17 +13,20 @@ public class EditModel : PageModel
     private readonly DocumentStorageService _storage;
     private readonly CurrentUser _currentUser;
     private readonly ShareLinkService _shareLinks;
+    private readonly DocumentAnalysisService _analysis;
 
-    public EditModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser, ShareLinkService shareLinks)
+    public EditModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser, ShareLinkService shareLinks, DocumentAnalysisService analysis)
     {
         _db = db;
         _storage = storage;
         _currentUser = currentUser;
         _shareLinks = shareLinks;
+        _analysis = analysis;
     }
 
     public List<ShareLink> ShareLinks { get; private set; } = new();
     public string ShareBaseUrl { get; private set; } = string.Empty;
+    public string? InvoiceNumber { get; private set; }
 
     [BindProperty(SupportsGet = true)]
     public long Id { get; set; }
@@ -49,6 +52,7 @@ public class EditModel : PageModel
     public List<SelectListItem> ProjectOptions { get; private set; } = new();
     public List<SelectListItem> StorageLocationOptions { get; private set; } = new();
     public List<TagOption> TagOptions { get; private set; } = new();
+    public List<SelectListItem> TagItems { get; private set; } = new();
 
     public class InputModel
     {
@@ -250,6 +254,45 @@ public class EditModel : PageModel
         return RedirectToPage("Index");
     }
 
+    public async Task<IActionResult> OnPostReanalyzeAsync(bool overwrite)
+    {
+        if (Id == 0)
+        {
+            return NotFound();
+        }
+
+        var document = await _db.Documents
+            .Include(d => d.StorageLocation)
+            .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
+        if (document == null)
+        {
+            return NotFound();
+        }
+
+        var result = await _analysis.AnalyzeAsync(
+            document,
+            new AnalysisOptions { Overwrite = overwrite, CreateMissingCorrespondents = true },
+            _currentUser.UserId,
+            HttpContext.RequestAborted);
+
+        if (result.AnythingChanged)
+        {
+            document.UpdateState = UpdateState.Updated;
+            document.UpdateDate = DateTime.UtcNow;
+            document.UpdateUserId = _currentUser.UserId;
+            await _db.SaveChangesAsync();
+            TempData["TaskMessage"] = result.UsedInvoiceData
+                ? "Re-analyzed from the structured e-invoice (XRechnung/ZUGFeRD)."
+                : "Re-analyzed from the document text.";
+        }
+        else
+        {
+            TempData["TaskMessage"] = "Analysis found nothing to change.";
+        }
+
+        return RedirectToPage("Edit", new { id = Id });
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync()
     {
         if (Id == 0)
@@ -307,6 +350,7 @@ public class EditModel : PageModel
         FileSize = document.FileSize;
         OriginalFileName = document.OriginalFileName;
         AddedDate = document.CreateDate;
+        InvoiceNumber = document.InvoiceNumber;
     }
 
     private async Task BuildOptionListsAsync(IEnumerable<long> selectedTagIds)
@@ -359,6 +403,10 @@ public class EditModel : PageModel
 
         TagOptions = tags
             .Select(t => new TagOption(t.Id, t.Name, t.Color, selected.Contains(t.Id)))
+            .ToList();
+
+        TagItems = tags
+            .Select(t => new SelectListItem(t.Name, t.Id.ToString()))
             .ToList();
     }
 

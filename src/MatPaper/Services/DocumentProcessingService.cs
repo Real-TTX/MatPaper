@@ -136,8 +136,8 @@ public sealed class DocumentProcessingService : BackgroundService
             document.ThumbnailPath = thumbnail;
             document.OcrState = OcrState.Done;
 
-            await AutoAssignCorrespondentAsync(db, document, ct);
-            ApplyDateHeuristic(document);
+            var analysis = sp.GetRequiredService<DocumentAnalysisService>();
+            await analysis.AnalyzeAsync(document, new AnalysisOptions(), actingUserId: null, ct);
 
             document.UpdateDate = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);

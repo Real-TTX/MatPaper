@@ -126,7 +126,28 @@
             position: static;
         }
     }
+    .doc-reanalyze {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-reanalyze__opt {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+        margin: 0;
+    }
 </style>
+
+@if (TempData["TaskMessage"] is string taskMsg)
+{
+    <div class="form-summary" style="color:var(--color-text)">@taskMsg</div>
+}
 
 <div class="doc-edit">
     <aside class="doc-preview">
@@ -153,6 +174,13 @@
                 <span class="doc-facts__key">Original file</span>
                 <span class="doc-facts__val">@Model.OriginalFileName</span>
             </li>
+            @if (!string.IsNullOrEmpty(Model.InvoiceNumber))
+            {
+                <li>
+                    <span class="doc-facts__key">Invoice no.</span>
+                    <span class="doc-facts__val">@Model.InvoiceNumber</span>
+                </li>
+            }
             <li>
                 <span class="doc-facts__key">Added</span>
                 <span class="doc-facts__val">@Model.AddedDate.ToString("yyyy-MM-dd HH:mm") UTC</span>
@@ -160,6 +188,17 @@
         </ul>
 
         <a class="btn btn--secondary" href="/Documents/@Model.Token/download">Download</a>
+
+        <form method="post" class="doc-reanalyze">
+            <input type="hidden" asp-for="Id" />
+            <label class="doc-reanalyze__opt">
+                <input type="checkbox" name="overwrite" value="true" /> overwrite existing
+            </label>
+            <button class="btn btn--secondary" type="submit" asp-page-handler="Reanalyze"
+                    title="Auto-assign type, correspondent and date (from XRechnung/ZUGFeRD data if present, else the text)">
+                Re-analyze
+            </button>
+        </form>
     </aside>
 
     <form class="form" method="post">
@@ -175,40 +214,30 @@
             <span class="field-error" asp-validation-for="Input.DocumentDate"></span>
         </div>
 
-        <mp-field asp-for="Input.DocumentTypeId" kind="select" label="Document type"
-                  asp-items="Model.DocumentTypeOptions" />
+        <mp-picker asp-for="Input.DocumentTypeId" label="Document type"
+                   asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
 
-        <mp-field asp-for="Input.CorrespondentId" kind="select" label="Correspondent"
-                  asp-items="Model.CorrespondentOptions" />
+        <mp-picker asp-for="Input.CorrespondentId" label="Correspondent"
+                   asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
 
-        <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
-                  asp-items="Model.ProjectOptions" />
+        <mp-picker asp-for="Input.ProjectId" label="Project"
+                   asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
 
         <mp-field asp-for="Input.StorageLocationId" kind="select" label="Storage location"
                   asp-items="Model.StorageLocationOptions"
                   help="Changing this moves the file into the selected location." />
 
-        <div class="form-row">
-            <label>Tags</label>
-            @if (Model.TagOptions.Count == 0)
-            {
+        @if (Model.TagItems.Count == 0)
+        {
+            <div class="form-row">
+                <label>Tags</label>
                 <p class="form-help">No tags defined yet.</p>
-            }
-            else
-            {
-                <div class="doc-tags">
-                    @foreach (var tag in Model.TagOptions)
-                    {
-                        var swatch = string.IsNullOrWhiteSpace(tag.Color) ? "#808080" : tag.Color;
-                        <label>
-                            <input type="checkbox" name="SelectedTagIds" value="@tag.Id"
-                                   checked="@tag.Selected" />
-                            <span class="color-swatch" style="background:@swatch"></span>@tag.Name
-                        </label>
-                    }
-                </div>
-            }
-        </div>
+            </div>
+        }
+        else
+        {
+            <mp-picker asp-for="SelectedTagIds" label="Tags" asp-items="Model.TagItems" multiple="true" placeholder="Add tags…" />
+        }
 
         <mp-button-row>
             <mp-button variant="primary" type="submit">Save</mp-button>

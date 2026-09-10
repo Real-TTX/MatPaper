@@ -15,6 +15,10 @@ public class Document : BaseEntity
     public string OriginalFileName { get; set; } = string.Empty;
     public long FileSize { get; set; }
     public string? ContentHash { get; set; }
+
+    /// <summary>Invoice number extracted from a structured e-invoice (XRechnung/ZUGFeRD), if any.</summary>
+    public string? InvoiceNumber { get; set; }
+
     public string? OcrText { get; set; }
     public string? ThumbnailPath { get; set; }
     public int PageCount { get; set; }

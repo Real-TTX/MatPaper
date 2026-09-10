@@ -133,6 +133,12 @@ else
 <div class="list-actions">
     <a class="btn btn--primary" href="/Documents/Upload">Upload</a>
     <a class="btn btn--secondary" href="/Documents/Scan">Scan</a>
+    <form method="post" style="display:inline">
+        <button class="btn btn--secondary" type="submit" asp-page-handler="ReanalyzeAll"
+                onclick="return confirm('Re-analyze all documents and auto-fill missing type / correspondent / date?')">
+            Re-analyze all
+        </button>
+    </form>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

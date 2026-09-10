@@ -30,6 +30,8 @@
     <!-- Phase 7: PDF generation (camera scan, mail body) + HTML parsing -->
     <PackageReference Include="QuestPDF" Version="2025.*" />
     <PackageReference Include="AngleSharp" Version="1.*" />
+    <!-- Phase 8: XRechnung / ZUGFeRD structured invoice parsing -->
+    <PackageReference Include="ZUGFeRD-csharp" Version="*" />
   </ItemGroup>
 
 </Project>

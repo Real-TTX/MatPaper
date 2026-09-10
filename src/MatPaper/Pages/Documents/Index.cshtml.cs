@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
+using MatPaper.Services;
 
 namespace MatPaper.Pages.Documents;
 
@@ -10,10 +11,41 @@ public class IndexModel : PageModel
     private const int PageSize = 24;
 
     private readonly AppDbContext _db;
+    private readonly DocumentAnalysisService _analysis;
+    private readonly CurrentUser _currentUser;
 
-    public IndexModel(AppDbContext db)
+    public IndexModel(AppDbContext db, DocumentAnalysisService analysis, CurrentUser currentUser)
     {
         _db = db;
+        _analysis = analysis;
+        _currentUser = currentUser;
+    }
+
+    public async Task<IActionResult> OnPostReanalyzeAllAsync(bool overwrite)
+    {
+        var documents = await _db.Documents
+            .Include(d => d.StorageLocation)
+            .Where(d => d.UpdateState != UpdateState.Deleted)
+            .ToListAsync(HttpContext.RequestAborted);
+
+        var options = new AnalysisOptions { Overwrite = overwrite, CreateMissingCorrespondents = true };
+        var changed = 0;
+
+        foreach (var document in documents)
+        {
+            var result = await _analysis.AnalyzeAsync(document, options, _currentUser.UserId, HttpContext.RequestAborted);
+            if (result.AnythingChanged)
+            {
+                document.UpdateState = UpdateState.Updated;
+                document.UpdateDate = DateTime.UtcNow;
+                document.UpdateUserId = _currentUser.UserId;
+                await _db.SaveChangesAsync(HttpContext.RequestAborted);
+                changed++;
+            }
+        }
+
+        TempData["UploadSummary"] = $"Analyzed {documents.Count} document(s); {changed} updated.";
+        return RedirectToPage("Index");
     }
 
     [BindProperty(SupportsGet = true)]

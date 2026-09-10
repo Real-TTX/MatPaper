@@ -28,6 +28,7 @@ public class EditModel : PageModel
     public class InputModel
     {
         public string Name { get; set; } = string.Empty;
+        public string? MatchPattern { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -44,7 +45,7 @@ public class EditModel : PageModel
                 return NotFound();
             }
 
-            Input = new InputModel { Name = entity.Name };
+            Input = new InputModel { Name = entity.Name, MatchPattern = entity.MatchPattern };
         }
 
         return Page();
@@ -88,6 +89,7 @@ public class EditModel : PageModel
             }
 
             entity.Name = name;
+            entity.MatchPattern = string.IsNullOrWhiteSpace(Input.MatchPattern) ? null : Input.MatchPattern.Trim();
             entity.UpdateState = UpdateState.Updated;
             entity.UpdateDate = now;
             entity.UpdateUserId = _currentUser.UserId;
@@ -97,6 +99,7 @@ public class EditModel : PageModel
             _db.DocumentTypes.Add(new DocumentType
             {
                 Name = name,
+                MatchPattern = string.IsNullOrWhiteSpace(Input.MatchPattern) ? null : Input.MatchPattern.Trim(),
                 UpdateState = UpdateState.Created,
                 CreateDate = now,
                 CreateUserId = _currentUser.UserId,

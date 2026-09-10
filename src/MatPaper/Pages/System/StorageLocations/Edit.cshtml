@@ -13,7 +13,7 @@
 
     <mp-field asp-for="Input.RootPath" label="Root path"
               placeholder="/storage"
-              help="Absolute path inside the container, e.g. a mounted NAS share like /storage" />
+              help="Absolute path inside the container. A mounted SMB/CIFS or NFS network share works here — mount it into the container (docker volume) and point this at its path, e.g. /storage or /mnt/nas." />
 
     <mp-field asp-for="Input.PathTemplate" label="Path template"
               help="Human-readable layout. Tokens: {Correspondent} {Year} {Month} {DocumentType} {Date} {Title} {Ext}" />

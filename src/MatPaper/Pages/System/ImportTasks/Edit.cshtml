@@ -46,7 +46,7 @@
         <div data-show-when-field="Input.Type" data-show-when-value="2">
             <p class="form-section__hint">Import files from a folder mounted into the container.</p>
             <mp-field asp-for="Input.SourcePath" label="Source path"
-                      help="Absolute path inside the container, e.g. a mounted watch folder" />
+                      help="Absolute path inside the container. A mounted SMB/CIFS or NFS network share works here (mount it into the container, then point this at its path, e.g. /mnt/scan)." />
             <mp-field asp-for="Input.Pattern" label="Pattern" placeholder="*" />
             <mp-field asp-for="Input.Recursive" kind="checkbox" label="Recursive" />
             <mp-field asp-for="Input.PostAction" kind="select" label="After import">

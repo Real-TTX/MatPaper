@@ -1,5 +1,6 @@
 @page "/System/ExportTasks"
 @model MatPaper.Pages.System.ExportTasks.IndexModel
+@using MatPaper.Services
 @{
     ViewData["Breadcrumb"] = "System / Export tasks";
 }
@@ -14,7 +15,7 @@
             <th>Name</th>
             <th>Type</th>
             <th>Enabled</th>
-            <th>Cron</th>
+            <th>Schedule</th>
             <th>Last run</th>
             <th class="is-actions"></th>
         </tr>
@@ -36,13 +37,11 @@
                     }
                 </td>
                 <td>
-                    @if (string.IsNullOrWhiteSpace(t.CronExpression))
+                    @{ var sched = CronSchedule.Describe(t.CronExpression); }
+                    <span class="@(sched.IsValid ? "" : "badge badge--off")">@sched.Text</span>
+                    @if (sched.NextUtc is DateTime nextUtc)
                     {
-                        <span class="badge badge--muted">Manual</span>
-                    }
-                    else
-                    {
-                        <code>@t.CronExpression</code>
+                        <br /><span class="form-help" style="margin:0">next: @nextUtc.ToString("yyyy-MM-dd HH:mm") UTC</span>
                     }
                 </td>
                 <td>

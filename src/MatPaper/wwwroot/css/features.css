@@ -117,6 +117,49 @@
 .upload-item--failed .upload-item__fill { background: var(--color-danger); }
 
 /* ==========================================================================
+   Schedule builder (mp-schedule) + task-editor sections
+   ========================================================================== */
+.mp-schedule__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mp-schedule__controls .form-control {
+    width: auto;
+}
+
+.mp-schedule__part {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.mp-schedule__mode {
+    min-width: 150px;
+}
+
+.form-section {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    padding: 1rem 1.15rem;
+    margin-bottom: 1.15rem;
+}
+
+.form-section__title {
+    margin: 0 0 0.9rem;
+    font-size: 1.05rem;
+}
+
+.form-section__hint {
+    margin: -0.5rem 0 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+/* ==========================================================================
    Multi-select pickers inside a toolbar (document filters)
    ========================================================================== */
 .toolbar .form-row {

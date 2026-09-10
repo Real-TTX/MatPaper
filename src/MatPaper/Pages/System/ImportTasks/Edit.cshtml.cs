@@ -246,6 +246,11 @@ public class EditModel : PageModel
             ModelState.AddModelError("Input.Name", "Name is required.");
         }
 
+        if (!CronSchedule.IsValid(Input.CronExpression))
+        {
+            ModelState.AddModelError("Input.CronExpression", "The schedule is not a valid cron expression.");
+        }
+
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
             if (string.IsNullOrWhiteSpace(Input.SourcePath))

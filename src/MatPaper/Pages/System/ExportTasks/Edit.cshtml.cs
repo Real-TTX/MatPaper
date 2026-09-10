@@ -99,6 +99,10 @@ public class EditModel : PageModel
         {
             ModelState.AddModelError("Input.Retention", "Retention must be at least 1.");
         }
+        if (!CronSchedule.IsValid(Input.CronExpression))
+        {
+            ModelState.AddModelError("Input.CronExpression", "The schedule is not a valid cron expression.");
+        }
 
         if (!ModelState.IsValid)
         {

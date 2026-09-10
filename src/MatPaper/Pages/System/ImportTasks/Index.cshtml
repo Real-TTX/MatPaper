@@ -1,6 +1,7 @@
 @page "/System/ImportTasks"
 @model MatPaper.Pages.System.ImportTasks.IndexModel
 @using MatPaper.Data
+@using MatPaper.Services
 @{
     ViewData["Breadcrumb"] = "System / Import tasks";
 }
@@ -15,7 +16,7 @@
             <th>Name</th>
             <th>Type</th>
             <th>Enabled</th>
-            <th>Cron</th>
+            <th>Schedule</th>
             <th>Last run</th>
             <th class="is-actions"></th>
         </tr>
@@ -36,7 +37,14 @@
                         <span class="badge badge--off">Disabled</span>
                     }
                 </td>
-                <td>@(string.IsNullOrWhiteSpace(t.CronExpression) ? "—" : t.CronExpression)</td>
+                <td>
+                    @{ var sched = CronSchedule.Describe(t.CronExpression); }
+                    <span class="@(sched.IsValid ? "" : "badge badge--off")">@sched.Text</span>
+                    @if (sched.NextUtc is DateTime nextUtc)
+                    {
+                        <br /><span class="form-help" style="margin:0">next: @nextUtc.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                    }
+                </td>
                 <td>
                     @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
                     {

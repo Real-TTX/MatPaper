@@ -1,0 +1,85 @@
+using System.Text;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Razor.TagHelpers;
+
+namespace MatPaper.Controls;
+
+/// <summary>
+/// A friendly schedule builder that edits a 5-field cron string. It renders a
+/// mode selector (Manual / Hourly / Daily / Weekly / Monthly / Custom) plus the
+/// matching inputs and posts the computed cron through a hidden input whose name
+/// matches the bound property — so PageModels keep binding a plain
+/// <c>string? CronExpression</c> with no change. Behaviour lives in
+/// <c>schedule.js</c>; times are interpreted in UTC by the scheduler.
+/// Usage: &lt;mp-schedule asp-for="Input.CronExpression" label="Schedule" /&gt;
+/// </summary>
+[HtmlTargetElement("mp-schedule", Attributes = "asp-for")]
+public sealed class ScheduleTagHelper : TagHelper
+{
+    [HtmlAttributeName("asp-for")]
+    public ModelExpression For { get; set; } = default!;
+
+    [HtmlAttributeName("label")]
+    public string Label { get; set; } = "Schedule";
+
+    [HtmlAttributeName("help")]
+    public string? Help { get; set; }
+
+    [HtmlAttributeNotBound]
+    [ViewContext]
+    public ViewContext ViewContext { get; set; } = default!;
+
+    public override void Process(TagHelperContext context, TagHelperOutput output)
+    {
+        var enc = HtmlEncoder.Default;
+        var fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
+        var current = For.Model?.ToString() ?? string.Empty;
+
+        output.TagName = "div";
+        output.TagMode = TagMode.StartTagAndEndTag;
+        output.Attributes.SetAttribute("class", "form-row mp-schedule");
+        output.Attributes.SetAttribute("data-name", fullName);
+        output.Attributes.SetAttribute("data-cron", current);
+
+        var w = new StringBuilder();
+        w.Append($"<label>{enc.Encode(Label)}</label>");
+        w.Append($"<input type=\"hidden\" class=\"mp-schedule__value\" name=\"{enc.Encode(fullName)}\" value=\"{enc.Encode(current)}\">");
+
+        w.Append("<div class=\"mp-schedule__controls\">");
+        w.Append("<select class=\"mp-schedule__mode form-control\">");
+        w.Append("<option value=\"manual\">Manual only</option>");
+        w.Append("<option value=\"hourly\">Hourly</option>");
+        w.Append("<option value=\"daily\">Daily</option>");
+        w.Append("<option value=\"weekly\">Weekly</option>");
+        w.Append("<option value=\"monthly\">Monthly</option>");
+        w.Append("<option value=\"custom\">Custom (cron)</option>");
+        w.Append("</select>");
+
+        w.Append("<span class=\"mp-schedule__part\" data-modes=\"hourly\">at minute <input type=\"number\" class=\"mp-schedule__minute form-control\" min=\"0\" max=\"59\" value=\"0\"></span>");
+        w.Append("<span class=\"mp-schedule__part\" data-modes=\"daily weekly monthly\">at <input type=\"time\" class=\"mp-schedule__time form-control\" value=\"03:00\"></span>");
+
+        w.Append("<span class=\"mp-schedule__part\" data-modes=\"weekly\"><select class=\"mp-schedule__weekday form-control\">");
+        string[] days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+        int[] vals = { 1, 2, 3, 4, 5, 6, 0 };
+        for (var i = 0; i < days.Length; i++)
+        {
+            w.Append($"<option value=\"{vals[i]}\">{days[i]}</option>");
+        }
+        w.Append("</select></span>");
+
+        w.Append("<span class=\"mp-schedule__part\" data-modes=\"monthly\">day <input type=\"number\" class=\"mp-schedule__dom form-control\" min=\"1\" max=\"31\" value=\"1\"></span>");
+        w.Append("<span class=\"mp-schedule__part\" data-modes=\"custom\"><input type=\"text\" class=\"mp-schedule__cron form-control\" placeholder=\"*/15 * * * *\"></span>");
+        w.Append("</div>");
+
+        w.Append("<p class=\"mp-schedule__summary form-help\"></p>");
+
+        if (!string.IsNullOrEmpty(Help))
+        {
+            w.Append($"<p class=\"form-help\">{enc.Encode(Help)}</p>");
+        }
+
+        output.Content.SetHtmlContent(w.ToString());
+    }
+}

@@ -14,26 +14,25 @@
 
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Nightly backup" />
+    <section class="form-section">
+        <h2 class="form-section__title">Overview</h2>
+        <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Nightly backup" />
+        <mp-field asp-for="Input.Type" kind="select" label="Type" asp-items="Model.TypeOptions" />
+        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
+        <mp-schedule asp-for="Input.CronExpression" label="Schedule"
+                     help="How often the backup runs automatically. Choose Manual to run it only on demand." />
+    </section>
 
-    <mp-field asp-for="Input.Type" kind="select" label="Type" asp-items="Model.TypeOptions" />
-
-    <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
-
-    <mp-field asp-for="Input.CronExpression" label="Cron expression"
-              placeholder="0 3 * * *"
-              help="5-field cron, e.g. 0 3 * * * for 03:00 daily; blank = manual only" />
-
-    <mp-field asp-for="Input.TargetPath" label="Target path"
-              placeholder="/backup"
-              help="Absolute path inside the container, e.g. a mounted backup folder" />
-
-    <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label="Include configuration" />
-
-    <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label="Include documents" />
-
-    <mp-field asp-for="Input.Retention" kind="number" label="Retention"
-              help="how many backups to keep" />
+    <section class="form-section">
+        <h2 class="form-section__title">Backup settings</h2>
+        <mp-field asp-for="Input.TargetPath" label="Target path"
+                  placeholder="/backup"
+                  help="Absolute path inside the container, e.g. a mounted backup folder" />
+        <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label="Include configuration" />
+        <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label="Include documents" />
+        <mp-field asp-for="Input.Retention" kind="number" label="Retention"
+                  help="how many backups to keep" />
+    </section>
 
     <mp-button-row>
         <mp-button variant="primary" type="submit">Save</mp-button>

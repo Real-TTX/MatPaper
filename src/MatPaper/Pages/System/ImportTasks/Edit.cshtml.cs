@@ -90,6 +90,9 @@ public class EditModel : PageModel
         public long? CorrespondentId { get; set; }
         public long? DocumentTypeId { get; set; }
         public long? ProjectId { get; set; }
+
+        /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
+        public bool SkipInbox { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -290,7 +293,8 @@ public class EditModel : PageModel
                 CorrespondentId = Input.CorrespondentId,
                 DocumentTypeId = Input.DocumentTypeId,
                 ProjectId = Input.ProjectId,
-                TagIds = TagIds.ToList()
+                TagIds = TagIds.ToList(),
+                SkipInbox = Input.SkipInbox
             };
             return TaskSettingsJson.Write(fs);
         }
@@ -326,7 +330,8 @@ public class EditModel : PageModel
             CorrespondentId = Input.CorrespondentId,
             DocumentTypeId = Input.DocumentTypeId,
             ProjectId = Input.ProjectId,
-            TagIds = TagIds.ToList()
+            TagIds = TagIds.ToList(),
+            SkipInbox = Input.SkipInbox
         };
     }
 
@@ -349,6 +354,7 @@ public class EditModel : PageModel
             Input.CorrespondentId = fs.CorrespondentId;
             Input.DocumentTypeId = fs.DocumentTypeId;
             Input.ProjectId = fs.ProjectId;
+            Input.SkipInbox = fs.SkipInbox;
             TagIds = fs.TagIds.ToArray();
         }
         else
@@ -372,6 +378,7 @@ public class EditModel : PageModel
             Input.CorrespondentId = mail.CorrespondentId;
             Input.DocumentTypeId = mail.DocumentTypeId;
             Input.ProjectId = mail.ProjectId;
+            Input.SkipInbox = mail.SkipInbox;
             TagIds = mail.TagIds.ToArray();
         }
     }

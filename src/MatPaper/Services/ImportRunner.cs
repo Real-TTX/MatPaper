@@ -129,7 +129,8 @@ public sealed class ImportRunner
                         settings.ProjectId,
                         settings.TagIds ?? new List<long>(),
                         actingUserId: ownerId,
-                        ct).ConfigureAwait(false);
+                        ct,
+                        reviewState: settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending).ConfigureAwait(false);
                 }
 
                 switch (result.Status)
@@ -268,6 +269,7 @@ public sealed class ImportRunner
         CancellationToken ct)
     {
         var count = 0;
+        var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
         using var client = new ImapClient();
         try
         {
@@ -294,10 +296,10 @@ public sealed class ImportRunner
                     continue;
                 }
 
-                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, log, ct).ConfigureAwait(false);
+                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
                 if (settings.ImportBodyAsPdf)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, log, ct).ConfigureAwait(false);
+                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
                 }
 
                 switch (postAction)
@@ -341,6 +343,7 @@ public sealed class ImportRunner
         CancellationToken ct)
     {
         var count = 0;
+        var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
         using var client = new Pop3Client();
         try
         {
@@ -360,10 +363,10 @@ public sealed class ImportRunner
                     continue;
                 }
 
-                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, log, ct).ConfigureAwait(false);
+                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
                 if (settings.ImportBodyAsPdf)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, log, ct).ConfigureAwait(false);
+                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
                 }
 
                 if (postAction == "delete")
@@ -387,6 +390,7 @@ public sealed class ImportRunner
         MimeMessage message,
         long locationId,
         long? ownerId,
+        ReviewState reviewState,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -402,7 +406,7 @@ public sealed class ImportRunner
 
             await using var stream = new MemoryStream(pdf);
             var result = await _ingest.IngestAsync(
-                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct).ConfigureAwait(false);
+                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct, reviewState).ConfigureAwait(false);
 
             if (result.Status == IngestStatus.Created)
             {
@@ -434,6 +438,7 @@ public sealed class ImportRunner
         IReadOnlyCollection<string> extensions,
         long locationId,
         long? ownerId,
+        ReviewState reviewState,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -482,7 +487,8 @@ public sealed class ImportRunner
                     projectId: null,
                     tagIds: new List<long>(),
                     actingUserId: ownerId,
-                    ct).ConfigureAwait(false);
+                    ct,
+                    reviewState: reviewState).ConfigureAwait(false);
 
                 switch (result.Status)
                 {

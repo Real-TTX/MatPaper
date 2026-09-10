@@ -55,7 +55,8 @@ public sealed class DocumentIngestService(
         long? projectId,
         IReadOnlyCollection<long> tagIds,
         long? actingUserId,
-        CancellationToken ct)
+        CancellationToken ct,
+        ReviewState reviewState = ReviewState.Pending)
     {
         ArgumentNullException.ThrowIfNull(content);
 
@@ -149,7 +150,7 @@ public sealed class DocumentIngestService(
             FileSize = fileSize,
             ContentHash = contentHash,
             OwnerId = actingUserId,
-            ReviewState = ReviewState.Pending,
+            ReviewState = reviewState,
             PageCount = 0,
             OcrState = OcrState.Pending,
             UpdateState = UpdateState.Created,

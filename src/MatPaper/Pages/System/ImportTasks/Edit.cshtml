@@ -95,6 +95,9 @@
         <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
                   asp-items="Model.ProjectOptions" />
 
+        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label="Skip inbox (mark imported documents as reviewed)"
+                  help="Turn on when the defaults above already classify the documents, so they go straight to the library instead of the review inbox." />
+
         @if (Model.TagOptions.Count > 0)
         {
             <div class="form-row">

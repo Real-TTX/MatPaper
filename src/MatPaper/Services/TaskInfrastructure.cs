@@ -29,6 +29,9 @@ public class FilesystemImportSettings
     public long? DocumentTypeId { get; set; }
     public long? ProjectId { get; set; }
     public List<long> TagIds { get; set; } = new();
+
+    /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
+    public bool SkipInbox { get; set; }
 }
 
 /// <summary>
@@ -57,6 +60,9 @@ public class MailImportSettings
     public long? DocumentTypeId { get; set; }
     public long? ProjectId { get; set; }
     public List<long> TagIds { get; set; } = new();
+
+    /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
+    public bool SkipInbox { get; set; }
 }
 
 /// <summary>

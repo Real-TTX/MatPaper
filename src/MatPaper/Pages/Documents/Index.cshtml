@@ -1,14 +1,9 @@
 @page "/Documents"
 @using MatPaper.Data
+@using Microsoft.AspNetCore.Mvc.Rendering
 @model MatPaper.Pages.Documents.IndexModel
 @{
     ViewData["Breadcrumb"] = "Documents";
-
-    var corrValue = Model.CorrespondentId?.ToString() ?? "";
-    var typeValue = Model.DocumentTypeId?.ToString() ?? "";
-    var tagValue = Model.TagId?.ToString() ?? "";
-    var projValue = Model.ProjectId?.ToString() ?? "";
-    var locValue = Model.StorageLocationId?.ToString() ?? "";
 }
 
 @if (TempData["UploadSummary"] is string uploadSummary)
@@ -19,45 +14,20 @@
 <mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Full-text search" />
 
-    <mp-toolbar-select name="CorrespondentId" label="Correspondent" value="@corrValue">
-        <option value="">All</option>
-        @foreach (var c in Model.Correspondents)
-        {
-            <option value="@c.Id">@c.Name</option>
-        }
-    </mp-toolbar-select>
+    <mp-picker asp-for="CorrespondentIds" label="Correspondent" multiple="true" placeholder="All"
+               asp-items="@Model.Correspondents.Select(c => new SelectListItem(c.Name, c.Id.ToString()))" />
 
-    <mp-toolbar-select name="DocumentTypeId" label="Type" value="@typeValue">
-        <option value="">All</option>
-        @foreach (var t in Model.DocumentTypes)
-        {
-            <option value="@t.Id">@t.Name</option>
-        }
-    </mp-toolbar-select>
+    <mp-picker asp-for="DocumentTypeIds" label="Type" multiple="true" placeholder="All"
+               asp-items="@Model.DocumentTypes.Select(t => new SelectListItem(t.Name, t.Id.ToString()))" />
 
-    <mp-toolbar-select name="TagId" label="Tag" value="@tagValue">
-        <option value="">All</option>
-        @foreach (var t in Model.Tags)
-        {
-            <option value="@t.Id">@t.Name</option>
-        }
-    </mp-toolbar-select>
+    <mp-picker asp-for="TagIds" label="Tag" multiple="true" placeholder="All"
+               asp-items="@Model.Tags.Select(t => new SelectListItem(t.Name, t.Id.ToString()))" />
 
-    <mp-toolbar-select name="ProjectId" label="Project" value="@projValue">
-        <option value="">All</option>
-        @foreach (var p in Model.Projects)
-        {
-            <option value="@p.Id">@p.Name</option>
-        }
-    </mp-toolbar-select>
+    <mp-picker asp-for="ProjectIds" label="Project" multiple="true" placeholder="All"
+               asp-items="@Model.Projects.Select(p => new SelectListItem(p.Name, p.Id.ToString()))" />
 
-    <mp-toolbar-select name="StorageLocationId" label="Location" value="@locValue">
-        <option value="">All</option>
-        @foreach (var s in Model.StorageLocations)
-        {
-            <option value="@s.Id">@s.Name</option>
-        }
-    </mp-toolbar-select>
+    <mp-picker asp-for="StorageLocationIds" label="Location" multiple="true" placeholder="All"
+               asp-items="@Model.StorageLocations.Select(s => new SelectListItem(s.Name, s.Id.ToString()))" />
 
     <div class="toolbar__group toolbar__filter">
         <label for="DateFrom">From</label>

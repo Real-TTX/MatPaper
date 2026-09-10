@@ -117,6 +117,25 @@
 .upload-item--failed .upload-item__fill { background: var(--color-danger); }
 
 /* ==========================================================================
+   Multi-select pickers inside a toolbar (document filters)
+   ========================================================================== */
+.toolbar .form-row {
+    margin: 0;
+    gap: 4px;
+    min-width: 170px;
+    flex: 0 1 190px;
+}
+
+.toolbar .form-row > label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.toolbar .form-row .field-error {
+    display: none;
+}
+
+/* ==========================================================================
    Sidebar upload action + inbox badge
    ========================================================================== */
 .nav-upload {

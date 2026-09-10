@@ -28,7 +28,7 @@
             <tr>
                 <td>@c.Name</td>
                 <td>@(string.IsNullOrEmpty(shortPattern) ? "—" : shortPattern)</td>
-                <td class="is-actions"><a href="/Documents?CorrespondentId=@c.Id">Documents</a><a href="/Correspondents/Edit?id=@c.Id">Edit</a></td>
+                <td class="is-actions"><a href="/Documents?CorrespondentIds=@c.Id">Documents</a><a href="/Correspondents/Edit?id=@c.Id">Edit</a></td>
             </tr>
         }
     </tbody>

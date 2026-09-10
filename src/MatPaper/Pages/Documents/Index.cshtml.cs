@@ -23,19 +23,19 @@ public class IndexModel : PageModel
     public string? Search { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public long? CorrespondentId { get; set; }
+    public long[] CorrespondentIds { get; set; } = Array.Empty<long>();
 
     [BindProperty(SupportsGet = true)]
-    public long? DocumentTypeId { get; set; }
+    public long[] DocumentTypeIds { get; set; } = Array.Empty<long>();
 
     [BindProperty(SupportsGet = true)]
-    public long? TagId { get; set; }
+    public long[] TagIds { get; set; } = Array.Empty<long>();
 
     [BindProperty(SupportsGet = true)]
-    public long? ProjectId { get; set; }
+    public long[] ProjectIds { get; set; } = Array.Empty<long>();
 
     [BindProperty(SupportsGet = true)]
-    public long? StorageLocationId { get; set; }
+    public long[] StorageLocationIds { get; set; } = Array.Empty<long>();
 
     [BindProperty(SupportsGet = true)]
     public DateTime? DateFrom { get; set; }
@@ -105,29 +105,29 @@ public class IndexModel : PageModel
                 d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term)));
         }
 
-        if (CorrespondentId.HasValue)
+        if (CorrespondentIds.Length > 0)
         {
-            query = query.Where(d => d.CorrespondentId == CorrespondentId.Value);
+            query = query.Where(d => d.CorrespondentId.HasValue && CorrespondentIds.Contains(d.CorrespondentId.Value));
         }
 
-        if (DocumentTypeId.HasValue)
+        if (DocumentTypeIds.Length > 0)
         {
-            query = query.Where(d => d.DocumentTypeId == DocumentTypeId.Value);
+            query = query.Where(d => d.DocumentTypeId.HasValue && DocumentTypeIds.Contains(d.DocumentTypeId.Value));
         }
 
-        if (ProjectId.HasValue)
+        if (ProjectIds.Length > 0)
         {
-            query = query.Where(d => d.ProjectId == ProjectId.Value);
+            query = query.Where(d => d.ProjectId.HasValue && ProjectIds.Contains(d.ProjectId.Value));
         }
 
-        if (StorageLocationId.HasValue)
+        if (StorageLocationIds.Length > 0)
         {
-            query = query.Where(d => d.StorageLocationId == StorageLocationId.Value);
+            query = query.Where(d => d.StorageLocationId.HasValue && StorageLocationIds.Contains(d.StorageLocationId.Value));
         }
 
-        if (TagId.HasValue)
+        if (TagIds.Length > 0)
         {
-            query = query.Where(d => d.DocumentTags.Any(dt => dt.TagId == TagId.Value));
+            query = query.Where(d => d.DocumentTags.Any(dt => TagIds.Contains(dt.TagId)));
         }
 
         if (DateFrom.HasValue)

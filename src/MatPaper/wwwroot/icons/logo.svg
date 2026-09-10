@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="MatPaper">
+  <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="#2f9e44" />
+  <path d="M6.5 16.8V8.2l5.5 5.4 5.5-5.4v8.6" fill="none"
+        stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="12" cy="18.4" r="1.05" fill="#ffffff" />
+</svg>

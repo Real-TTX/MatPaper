@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="~/css/picker.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/features.css" asp-append-version="true" />
     <link rel="manifest" href="~/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="~/icons/logo.svg" />
     <meta name="theme-color" content="#2f9e44" />
     <link rel="apple-touch-icon" href="~/icons/icon-192.png" />
 </head>
@@ -34,9 +35,12 @@
 
         <aside class="sidebar" id="sidebar">
             <div class="sidebar__brand">
-                <svg class="sidebar__brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                <svg class="sidebar__brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="var(--color-primary)" />
+                    <path d="M6.5 16.8V8.2l5.5 5.4 5.5-5.4v8.6" fill="none"
+                          stroke="var(--color-primary-contrast)" stroke-width="1.9"
+                          stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="18.4" r="1.05" fill="var(--color-primary-contrast)" />
                 </svg>
                 <span class="sidebar__brand-text">MatPaper</span>
             </div>

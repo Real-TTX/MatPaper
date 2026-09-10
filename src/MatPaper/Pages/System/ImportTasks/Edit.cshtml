@@ -75,9 +75,9 @@
             <mp-field asp-for="Input.AttachmentExtensions" label="Attachment extensions" />
             <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label="Also import the mail body as a PDF" />
             <mp-field asp-for="Input.MailPostAction" kind="select" label="After import">
-                <option value="markseen">Mark seen</option>
+                <option value="markseen">Mark seen (IMAP only)</option>
                 <option value="delete">Delete</option>
-                <option value="none">Do nothing</option>
+                <option value="none">Leave on server</option>
             </mp-field>
         </div>
     </section>
@@ -131,3 +131,24 @@
         }
     </mp-button-row>
 </form>
+
+@section Scripts {
+    <script>
+        // POP3 has no "seen" flag, so hide the "Mark seen" post-action for POP3.
+        (function () {
+            var type = document.querySelector('[name="Input.Type"]');
+            var post = document.querySelector('[name="Input.MailPostAction"]');
+            if (!type || !post) { return; }
+            var markseen = post.querySelector('option[value="markseen"]');
+            function sync() {
+                if (!markseen) { return; }
+                var isPop3 = type.value === "1";
+                markseen.hidden = isPop3;
+                markseen.disabled = isPop3;
+                if (isPop3 && post.value === "markseen") { post.value = "none"; }
+            }
+            type.addEventListener("change", sync);
+            sync();
+        })();
+    </script>
+}

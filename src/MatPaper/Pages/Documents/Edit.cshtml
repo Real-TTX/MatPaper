@@ -154,6 +154,19 @@
         border-radius: 8px;
         background: var(--color-surface);
     }
+
+    .doc-info {
+        margin-top: 1.25rem;
+        padding: 1rem 1.15rem;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        background: var(--color-surface);
+    }
+
+    .doc-info__title {
+        margin: 0 0 0.6rem;
+        font-size: 1rem;
+    }
 </style>
 
 @if (TempData["TaskMessage"] is string taskMsg)
@@ -196,36 +209,6 @@
         </div>
         <iframe class="doc-preview__frame" src="/Documents/@Model.Token/view" title="Document preview"></iframe>
 
-        <ul class="doc-facts">
-            <li>
-                <span class="doc-facts__key">OCR status</span>
-                <span class="doc-facts__val"><span class="badge @ocrBadge">@ocrLabel</span></span>
-            </li>
-            <li>
-                <span class="doc-facts__key">Pages</span>
-                <span class="doc-facts__val">@Model.PageCount</span>
-            </li>
-            <li>
-                <span class="doc-facts__key">File size</span>
-                <span class="doc-facts__val">@FormatSize(Model.FileSize)</span>
-            </li>
-            <li>
-                <span class="doc-facts__key">Original file</span>
-                <span class="doc-facts__val">@Model.OriginalFileName</span>
-            </li>
-            @if (!string.IsNullOrEmpty(Model.InvoiceNumber))
-            {
-                <li>
-                    <span class="doc-facts__key">Invoice no.</span>
-                    <span class="doc-facts__val">@Model.InvoiceNumber</span>
-                </li>
-            }
-            <li>
-                <span class="doc-facts__key">Added</span>
-                <span class="doc-facts__val">@Model.AddedDate.ToString("yyyy-MM-dd HH:mm") UTC</span>
-            </li>
-        </ul>
-
         <a class="btn btn--secondary" href="/Documents/@Model.Token/download">Download</a>
 
         <form method="post" class="doc-reanalyze">
@@ -240,6 +223,7 @@
         </form>
     </aside>
 
+    <div class="doc-right">
     <form class="form" method="post">
         <input type="hidden" asp-for="Id" />
 
@@ -292,6 +276,40 @@
             }
         </mp-button-row>
     </form>
+
+    <aside class="doc-info">
+        <h3 class="doc-info__title">Info</h3>
+        <ul class="doc-facts">
+            <li>
+                <span class="doc-facts__key">OCR status</span>
+                <span class="doc-facts__val"><span class="badge @ocrBadge">@ocrLabel</span></span>
+            </li>
+            <li>
+                <span class="doc-facts__key">Pages</span>
+                <span class="doc-facts__val">@Model.PageCount</span>
+            </li>
+            <li>
+                <span class="doc-facts__key">File size</span>
+                <span class="doc-facts__val">@FormatSize(Model.FileSize)</span>
+            </li>
+            <li>
+                <span class="doc-facts__key">Original file</span>
+                <span class="doc-facts__val">@Model.OriginalFileName</span>
+            </li>
+            @if (!string.IsNullOrEmpty(Model.InvoiceNumber))
+            {
+                <li>
+                    <span class="doc-facts__key">Invoice no.</span>
+                    <span class="doc-facts__val">@Model.InvoiceNumber</span>
+                </li>
+            }
+            <li>
+                <span class="doc-facts__key">Added</span>
+                <span class="doc-facts__val">@Model.AddedDate.ToString("yyyy-MM-dd HH:mm") UTC</span>
+            </li>
+        </ul>
+    </aside>
+    </div>
 </div>
 
 @if (Model.IsOwner)

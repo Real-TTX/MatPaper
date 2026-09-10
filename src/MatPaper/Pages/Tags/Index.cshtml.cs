@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
+using MatPaper.Services;
 
 namespace MatPaper.Pages.Tags;
 
@@ -28,6 +29,7 @@ public class IndexModel : PageModel
     public IReadOnlyList<Tag> Rows { get; private set; } = Array.Empty<Tag>();
     public int TotalCount { get; private set; }
     public int TotalPages { get; private set; }
+    public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
 
     public async Task OnGetAsync()
     {
@@ -63,5 +65,12 @@ public class IndexModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync();
+
+        var chips = new List<FilterChip>();
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            chips.Add(new FilterChip($"Search: {Search}", FilterUrl.Without(Request, "Search")));
+        }
+        Filters = new FilterChipBar(chips, FilterUrl.ClearAll(Request));
     }
 }

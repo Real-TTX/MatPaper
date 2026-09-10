@@ -117,6 +117,56 @@
 .upload-item--failed .upload-item__fill { background: var(--color-danger); }
 
 /* ==========================================================================
+   Active filter chips (all list/gallery toolbars)
+   ========================================================================== */
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: -4px 0 16px;
+}
+
+.filter-chips__label {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.2rem 0.2rem 0.6rem;
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 0.82rem;
+}
+
+.filter-chip__x {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    text-decoration: none;
+    color: var(--color-text-muted);
+    line-height: 1;
+}
+
+.filter-chip__x:hover {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+}
+
+.filter-chips__clear {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    text-decoration: underline;
+}
+
+/* ==========================================================================
    Dashboard
    ========================================================================== */
 .quick-actions {

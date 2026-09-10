@@ -33,6 +33,7 @@ public class IndexModel : PageModel
     public IReadOnlyList<Project> Rows { get; private set; } = Array.Empty<Project>();
     public int TotalCount { get; private set; }
     public int TotalPages { get; private set; }
+    public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
 
     public async Task OnGetAsync()
     {
@@ -70,5 +71,12 @@ public class IndexModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync();
+
+        var chips = new List<FilterChip>();
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            chips.Add(new FilterChip($"Search: {Search}", FilterUrl.Without(Request, "Search")));
+        }
+        Filters = new FilterChipBar(chips, FilterUrl.ClearAll(Request));
     }
 }

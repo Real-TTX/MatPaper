@@ -67,6 +67,8 @@ public class IndexModel : PageModel
     public IReadOnlyList<Project> Projects { get; private set; } = Array.Empty<Project>();
     public IReadOnlyList<StorageLocation> StorageLocations { get; private set; } = Array.Empty<StorageLocation>();
 
+    public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
+
     public async Task OnGetAsync()
     {
         ViewData["Breadcrumb"] = "Documents";
@@ -165,6 +167,79 @@ public class IndexModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync();
+
+        BuildActiveFilters();
+    }
+
+    private void BuildActiveFilters()
+    {
+        var req = Request;
+        var chips = new List<FilterChip>();
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            chips.Add(new FilterChip($"Search: {Search}", FilterUrl.Without(req, "Search")));
+        }
+
+        var scopeLabel = Scope switch
+        {
+            "mine" => "Mine",
+            "shared" => "Shared with me",
+            "common" => "Common area",
+            _ => null
+        };
+        if (scopeLabel != null)
+        {
+            chips.Add(new FilterChip($"Scope: {scopeLabel}", FilterUrl.Without(req, "Scope")));
+        }
+
+        var reviewLabel = Review switch
+        {
+            "pending" => "Needs review",
+            "reviewed" => "Reviewed",
+            _ => null
+        };
+        if (reviewLabel != null)
+        {
+            chips.Add(new FilterChip($"Review: {reviewLabel}", FilterUrl.Without(req, "Review")));
+        }
+
+        foreach (var id in CorrespondentIds)
+        {
+            var name = Correspondents.FirstOrDefault(c => c.Id == id)?.Name ?? id.ToString();
+            chips.Add(new FilterChip($"Correspondent: {name}", FilterUrl.WithoutValue(req, "CorrespondentIds", id.ToString())));
+        }
+        foreach (var id in DocumentTypeIds)
+        {
+            var name = DocumentTypes.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
+            chips.Add(new FilterChip($"Type: {name}", FilterUrl.WithoutValue(req, "DocumentTypeIds", id.ToString())));
+        }
+        foreach (var id in TagIds)
+        {
+            var name = Tags.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
+            chips.Add(new FilterChip($"Tag: {name}", FilterUrl.WithoutValue(req, "TagIds", id.ToString())));
+        }
+        foreach (var id in ProjectIds)
+        {
+            var name = Projects.FirstOrDefault(p => p.Id == id)?.Name ?? id.ToString();
+            chips.Add(new FilterChip($"Project: {name}", FilterUrl.WithoutValue(req, "ProjectIds", id.ToString())));
+        }
+        foreach (var id in StorageLocationIds)
+        {
+            var name = StorageLocations.FirstOrDefault(s => s.Id == id)?.Name ?? id.ToString();
+            chips.Add(new FilterChip($"Location: {name}", FilterUrl.WithoutValue(req, "StorageLocationIds", id.ToString())));
+        }
+
+        if (DateFrom.HasValue)
+        {
+            chips.Add(new FilterChip($"From: {DateFrom.Value:yyyy-MM-dd}", FilterUrl.Without(req, "DateFrom")));
+        }
+        if (DateTo.HasValue)
+        {
+            chips.Add(new FilterChip($"To: {DateTo.Value:yyyy-MM-dd}", FilterUrl.Without(req, "DateTo")));
+        }
+
+        Filters = new FilterChipBar(chips, FilterUrl.ClearAll(req));
     }
 
     private async Task LoadFilterOptionsAsync()

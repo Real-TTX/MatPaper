@@ -117,6 +117,123 @@
 .upload-item--failed .upload-item__fill { background: var(--color-danger); }
 
 /* ==========================================================================
+   Dashboard
+   ========================================================================== */
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+}
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1.15rem;
+    margin-top: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 800px) {
+    .dash-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-panel {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    padding: 1rem 1.15rem;
+    margin-top: 1.25rem;
+}
+
+.dash-grid > .dash-panel {
+    margin-top: 0;
+}
+
+.dash-panel__title {
+    margin: 0 0 0.85rem;
+    font-size: 1.05rem;
+}
+
+.dash-recent {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dash-recent__item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.4rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.dash-recent__item:hover {
+    background: var(--color-hover);
+}
+
+.dash-recent__thumb {
+    width: 34px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    flex: none;
+    background: var(--color-surface-alt);
+}
+
+.dash-recent__body {
+    min-width: 0;
+}
+
+.dash-recent__title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-recent__meta {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
+.dash-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.dash-bar__head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+}
+
+.dash-bar__track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-surface-alt);
+    overflow: hidden;
+}
+
+.dash-bar__fill {
+    display: block;
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 999px;
+}
+
+/* ==========================================================================
    Schedule builder (mp-schedule) + task-editor sections
    ========================================================================== */
 .mp-schedule__controls {

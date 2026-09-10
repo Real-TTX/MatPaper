@@ -26,8 +26,16 @@
             <tr>
                 <td>
                     <span class="color-swatch" style="display:inline-block;width:0.9em;height:0.9em;border-radius:3px;vertical-align:middle;margin-right:0.5em;background:@swatch"></span>#@project.Name
+                    @if (project.IsCommon)
+                    {
+                        <span class="badge badge--ok" style="margin-left:.5em">Common</span>
+                    }
+                    else if (project.OwnerId != Model.CurrentUserId)
+                    {
+                        <span class="badge badge--muted" style="margin-left:.5em">Shared@(project.Owner != null ? $": {project.Owner.DisplayName ?? project.Owner.Username}" : "")</span>
+                    }
                 </td>
-                <td class="is-actions"><a href="/Projects/Edit?id=@project.Id">Edit</a></td>
+                <td class="is-actions"><a href="/Documents?ProjectIds=@project.Id">Documents</a><a href="/Projects/Edit?id=@project.Id">Edit</a></td>
             </tr>
         }
     </tbody>

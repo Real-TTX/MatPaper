@@ -206,6 +206,7 @@ public class UploadModel : PageModel
 
         Projects = await _db.Projects.AsNoTracking()
             .Where(p => p.UpdateState != UpdateState.Deleted)
+            .AccessibleTo(_currentUser)
             .OrderBy(p => p.Name)
             .ToListAsync();
 

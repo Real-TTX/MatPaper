@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentTag> DocumentTags => Set<DocumentTag>();
     public DbSet<DocumentShare> DocumentShares => Set<DocumentShare>();
+    public DbSet<ProjectShare> ProjectShares => Set<ProjectShare>();
     public DbSet<ImportTask> ImportTasks => Set<ImportTask>();
     public DbSet<ExportTask> ExportTasks => Set<ExportTask>();
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
@@ -43,6 +44,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Document>().ToTable("Document");
         modelBuilder.Entity<DocumentTag>().ToTable("DocumentTag");
         modelBuilder.Entity<DocumentShare>().ToTable("DocumentShare");
+        modelBuilder.Entity<ProjectShare>().ToTable("ProjectShare");
         modelBuilder.Entity<ImportTask>().ToTable("ImportTask");
         modelBuilder.Entity<ExportTask>().ToTable("ExportTask");
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
@@ -92,6 +94,31 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<DocumentShare>()
             .HasIndex(s => new { s.DocumentId, s.UserId })
+            .IsUnique();
+
+        modelBuilder.Entity<Project>()
+            .HasIndex(p => p.OwnerId);
+
+        modelBuilder.Entity<Project>()
+            .HasOne(p => p.Owner)
+            .WithMany()
+            .HasForeignKey(p => p.OwnerId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Project>()
+            .HasMany(p => p.Shares)
+            .WithOne(s => s.Project!)
+            .HasForeignKey(s => s.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProjectShare>()
+            .HasOne(s => s.User)
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProjectShare>()
+            .HasIndex(s => new { s.ProjectId, s.UserId })
             .IsUnique();
 
         modelBuilder.Entity<InboxItem>()

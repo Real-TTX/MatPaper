@@ -591,6 +591,7 @@ public class EditModel : PageModel
         var projects = await _db.Projects
             .AsNoTracking()
             .Where(p => p.UpdateState != UpdateState.Deleted)
+            .AccessibleTo(_currentUser)
             .OrderBy(p => p.Name)
             .Select(p => new { p.Id, p.Name })
             .ToListAsync();

@@ -4,6 +4,21 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? "Projects / Edit" : "Projects / New";
 }
 
+@if (Model.IsEdit)
+{
+    <div class="doc-status" style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;padding:.6rem .85rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface)">
+        <span>Owner: <strong>@(Model.OwnerName ?? "—")</strong></span>
+        @if (Model.IsCommon)
+        {
+            <span class="badge badge--ok">Common area</span>
+        }
+        @if (!Model.CanManage)
+        {
+            <span class="form-help" style="margin:0">Shared with you — you can work on its documents, but only the owner can change the project.</span>
+        }
+    </div>
+}
+
 <form class="form" method="post">
     <input type="hidden" asp-for="Id" />
 
@@ -13,12 +28,66 @@
     <mp-field asp-for="Input.Color" kind="color" label="Colour" help="Optional. Defaults to grey when left unset." />
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Save</mp-button>
-        <mp-button variant="secondary" href="/Projects">Back</mp-button>
-        <mp-button-spacer />
-        @if (Model.IsEdit)
+        @if (Model.CanManage)
         {
+            <mp-button variant="primary" type="submit">Save</mp-button>
+        }
+        <mp-button variant="secondary" href="/Projects">Back</mp-button>
+        @if (Model.IsEdit && Model.CanManage)
+        {
+            <mp-button-spacer />
             <mp-button variant="danger" type="submit" handler="Delete" confirm="Delete this project? This cannot be undone.">Delete</mp-button>
         }
     </mp-button-row>
 </form>
+
+@if (Model.IsEdit && Model.CanManage)
+{
+    <section class="doc-shares" style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--color-border)">
+        <h2 class="doc-shares__title" style="font-size:1.1rem;margin:0 0 .25rem">Sharing</h2>
+        <p class="form-help">Sharing a project gives the selected users access to every document in it.</p>
+
+        <form method="post" asp-page-handler="SetCommon">
+            <input type="hidden" asp-for="Id" />
+            <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--color-text-muted)">
+                <input type="checkbox" name="isCommon" value="true" @(Model.IsCommon ? "checked" : "") onchange="this.form.submit()" />
+                Show in the common area (visible to everyone)
+            </label>
+        </form>
+
+        <h3 style="margin:1.25rem 0 .35rem;font-size:1rem">Shared with users</h3>
+        @if (Model.UserShares.Count > 0)
+        {
+            <ul class="share-users">
+                @foreach (var s in Model.UserShares)
+                {
+                    <li class="share-user">
+                        <span class="share-user__name">@s.UserName</span>
+                        <span class="share-user__perm">@(s.CanEdit ? "can edit documents" : "view only")</span>
+                        <form method="post" asp-page-handler="RevokeUserShare" style="display:inline">
+                            <input type="hidden" asp-for="Id" />
+                            <input type="hidden" name="shareId" value="@s.ShareId" />
+                            <button class="btn btn--danger" type="submit">Remove</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="form-help">Not shared with any user yet.</p>
+        }
+
+        @if (Model.ShareUserOptions.Count > 0)
+        {
+            <form method="post" asp-page-handler="ShareUser" class="doc-shares__create" style="display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-top:1rem">
+                <input type="hidden" asp-for="Id" />
+                <mp-picker asp-for="ShareUserId" label="Add user" asp-items="Model.ShareUserOptions" placeholder="Choose a user…" />
+                <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--color-text-muted)">
+                    <input type="checkbox" name="canEdit" value="true" /> may edit documents
+                </label>
+                <button class="btn btn--primary" type="submit">Share</button>
+            </form>
+        }
+    </section>
+}

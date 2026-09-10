@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
+using MatPaper.Services;
 
 namespace MatPaper.Pages.Projects;
 
@@ -10,11 +11,15 @@ public class IndexModel : PageModel
     private const int PageSize = 20;
 
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public IndexModel(AppDbContext db)
+    public IndexModel(AppDbContext db, CurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
+
+    public long? CurrentUserId => _currentUser.UserId;
 
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
@@ -35,7 +40,9 @@ public class IndexModel : PageModel
 
         IQueryable<Project> query = _db.Projects
             .AsNoTracking()
-            .Where(p => p.UpdateState != UpdateState.Deleted);
+            .Include(p => p.Owner)
+            .Where(p => p.UpdateState != UpdateState.Deleted)
+            .AccessibleTo(_currentUser);
 
         if (!string.IsNullOrWhiteSpace(Search))
         {

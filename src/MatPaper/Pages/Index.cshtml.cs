@@ -64,14 +64,15 @@ public class IndexModel : PageModel
                 d.ThumbnailPath))
             .ToListAsync();
 
-        TypeBreakdown = await documents
+        var typeGroups = await documents
             .AsNoTracking()
             .Where(d => d.DocumentTypeId != null)
             .GroupBy(d => d.DocumentType!.Name)
-            .Select(g => new TypeCount(g.Key, g.Count()))
-            .OrderByDescending(t => t.Count)
+            .Select(g => new { Name = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
             .Take(6)
             .ToListAsync();
+        TypeBreakdown = typeGroups.Select(x => new TypeCount(x.Name, x.Count)).ToList();
 
         if (_currentUser.IsAdmin)
         {

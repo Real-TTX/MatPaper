@@ -29,6 +29,9 @@ public class EditModel : PageModel
     {
         public string Name { get; set; } = string.Empty;
         public string? MatchPattern { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
         public string? Notes { get; set; }
     }
 
@@ -50,6 +53,9 @@ public class EditModel : PageModel
             {
                 Name = correspondent.Name,
                 MatchPattern = correspondent.MatchPattern,
+                Email = correspondent.Email,
+                Phone = correspondent.Phone,
+                Address = correspondent.Address,
                 Notes = correspondent.Notes
             };
         }
@@ -63,6 +69,9 @@ public class EditModel : PageModel
 
         var name = Input.Name?.Trim() ?? string.Empty;
         var matchPattern = string.IsNullOrWhiteSpace(Input.MatchPattern) ? null : Input.MatchPattern.Trim();
+        var email = string.IsNullOrWhiteSpace(Input.Email) ? null : Input.Email.Trim();
+        var phone = string.IsNullOrWhiteSpace(Input.Phone) ? null : Input.Phone.Trim();
+        var address = string.IsNullOrWhiteSpace(Input.Address) ? null : Input.Address.Trim();
         var notes = string.IsNullOrWhiteSpace(Input.Notes) ? null : Input.Notes.Trim();
 
         if (string.IsNullOrWhiteSpace(name))
@@ -98,6 +107,9 @@ public class EditModel : PageModel
 
             existing.Name = name;
             existing.MatchPattern = matchPattern;
+            existing.Email = email;
+            existing.Phone = phone;
+            existing.Address = address;
             existing.Notes = notes;
             existing.UpdateState = UpdateState.Updated;
             existing.UpdateDate = now;
@@ -109,6 +121,9 @@ public class EditModel : PageModel
             {
                 Name = name,
                 MatchPattern = matchPattern,
+                Email = email,
+                Phone = phone,
+                Address = address,
                 Notes = notes,
                 UpdateState = UpdateState.Created,
                 CreateDate = now,

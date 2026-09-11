@@ -11,11 +11,17 @@ public class IndexModel : PageModel
     private const int PageSize = 20;
 
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public IndexModel(AppDbContext db)
+    public IndexModel(AppDbContext db, CurrentUser currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
+
+    public sealed record Stat(DateTime? Last, int Count);
+
+    public IReadOnlyDictionary<long, Stat> Stats { get; private set; } = new Dictionary<long, Stat>();
 
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
@@ -68,6 +74,21 @@ public class IndexModel : PageModel
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync();
+
+        var pageIds = Rows.Select(c => c.Id).ToList();
+        if (pageIds.Count > 0)
+        {
+            var stats = await _db.Documents
+                .AsNoTracking()
+                .Where(d => d.UpdateState != UpdateState.Deleted
+                    && d.CorrespondentId != null
+                    && pageIds.Contains(d.CorrespondentId.Value))
+                .AccessibleTo(_currentUser)
+                .GroupBy(d => d.CorrespondentId!.Value)
+                .Select(g => new { Id = g.Key, Last = g.Max(d => (DateTime?)(d.DocumentDate ?? d.CreateDate)), Count = g.Count() })
+                .ToListAsync();
+            Stats = stats.ToDictionary(x => x.Id, x => new Stat(x.Last, x.Count));
+        }
 
         var chips = new List<FilterChip>();
         if (!string.IsNullOrWhiteSpace(Search))

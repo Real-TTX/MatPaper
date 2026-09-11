@@ -105,7 +105,8 @@ public sealed class DocumentAnalysisService
                 changedCorr = await MatchInTextAsync<Correspondent>(matchText,
                     () => _db.Correspondents.Where(c => c.UpdateState != UpdateState.Deleted),
                     c => c.Name, c => c.MatchPattern,
-                    id => { document.CorrespondentId = id; }, ct);
+                    id => { document.CorrespondentId = id; }, ct,
+                    extraTerms: c => new[] { c.Email, c.Phone });
             }
 
             if (CanSet(document.DocumentTypeId, options))
@@ -206,7 +207,8 @@ public sealed class DocumentAnalysisService
         Func<T, string> name,
         Func<T, string?> pattern,
         Action<long> assign,
-        CancellationToken ct) where T : BaseEntity
+        CancellationToken ct,
+        Func<T, IEnumerable<string?>>? extraTerms = null) where T : BaseEntity
     {
         if (string.IsNullOrWhiteSpace(matchText))
         {
@@ -226,7 +228,23 @@ public sealed class DocumentAnalysisService
             }
         }
 
-        // 2) The entity's own name appears in the document text.
+        // 2) Extra contact terms (e.g. email / phone) appearing verbatim — a strong signal.
+        if (extraTerms is not null)
+        {
+            foreach (var candidate in candidates)
+            {
+                foreach (var term in extraTerms(candidate))
+                {
+                    if (TermAppearsIn(matchText, term))
+                    {
+                        assign(candidate.Id);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // 3) The entity's own name appears in the document text.
         foreach (var candidate in candidates)
         {
             if (NameAppearsIn(matchText, name(candidate)))
@@ -237,6 +255,12 @@ public sealed class DocumentAnalysisService
         }
 
         return false;
+    }
+
+    private static bool TermAppearsIn(string text, string? term)
+    {
+        var t = (term ?? string.Empty).Trim();
+        return t.Length >= 5 && text.Contains(t, StringComparison.OrdinalIgnoreCase);
     }
 
     // Treats the stored pattern as a list of alternative names / keywords

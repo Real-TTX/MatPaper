@@ -18,18 +18,29 @@
     <thead>
         <tr>
             <th>Name</th>
-            <th>Match pattern</th>
+            <th>Email</th>
+            <th>Last document</th>
             <th class="is-actions"></th>
         </tr>
     </thead>
     <tbody>
         @foreach (var c in Model.Rows)
         {
-            var pattern = c.MatchPattern ?? "";
-            var shortPattern = pattern.Length > 60 ? pattern.Substring(0, 60) + "…" : pattern;
+            Model.Stats.TryGetValue(c.Id, out var st);
             <tr>
                 <td>@c.Name</td>
-                <td>@(string.IsNullOrEmpty(shortPattern) ? "—" : shortPattern)</td>
+                <td>@(string.IsNullOrWhiteSpace(c.Email) ? "—" : c.Email)</td>
+                <td>
+                    @if (st != null && st.Count > 0)
+                    {
+                        <span>@(st.Last?.ToString("yyyy-MM-dd") ?? "—")</span>
+                        <span class="form-help" style="margin:0">(@st.Count)</span>
+                    }
+                    else
+                    {
+                        <span>—</span>
+                    }
+                </td>
                 <td class="is-actions"><a href="/Documents?CorrespondentIds=@c.Id">Documents</a><a href="/Correspondents/Edit?id=@c.Id">Edit</a></td>
             </tr>
         }

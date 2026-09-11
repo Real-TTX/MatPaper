@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
     public DbSet<InboxItem> InboxItems => Set<InboxItem>();
+    public DbSet<Credential> Credentials => Set<Credential>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +51,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
         modelBuilder.Entity<ShareLink>().ToTable("ShareLink");
         modelBuilder.Entity<InboxItem>().ToTable("InboxItem");
+        modelBuilder.Entity<Credential>().ToTable("Credential");
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)

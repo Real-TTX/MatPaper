@@ -44,6 +44,10 @@ public class MailImportSettings
     public bool UseSsl { get; set; } = true;
     public string Username { get; set; } = "";
     public string ProtectedPassword { get; set; } = "";
+
+    /// <summary>Optional reference to a reusable Credential; overrides Username/ProtectedPassword when set.</summary>
+    public long? CredentialId { get; set; }
+
     public string Folder { get; set; } = "INBOX";
     public string? SenderRegex { get; set; }
     public string? SubjectRegex { get; set; }
@@ -77,6 +81,10 @@ public class SmbImportSettings
     public string? Domain { get; set; }
     public string Username { get; set; } = "";
     public string ProtectedPassword { get; set; } = "";
+
+    /// <summary>Optional reference to a reusable Credential; overrides Username/Domain/ProtectedPassword when set.</summary>
+    public long? CredentialId { get; set; }
+
     public string Pattern { get; set; } = "*";
     public bool Recursive { get; set; }
 

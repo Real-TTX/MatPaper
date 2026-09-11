@@ -50,6 +50,7 @@ public class EditModel : PageModel
     public List<SelectListItem> CorrespondentOptions { get; private set; } = new();
     public List<SelectListItem> DocumentTypeOptions { get; private set; } = new();
     public List<SelectListItem> ProjectOptions { get; private set; } = new();
+    public List<SelectListItem> CredentialOptions { get; private set; } = new();
     public List<TagOption> TagOptions { get; private set; } = new();
 
     public record TagOption(long Id, string Name, bool Selected);
@@ -95,6 +96,9 @@ public class EditModel : PageModel
         public string SmbPattern { get; set; } = "*";
         public bool SmbRecursive { get; set; }
         public string SmbPostAction { get; set; } = "none";
+
+        // Optional saved credential (mail + SMB); overrides the typed username/password.
+        public long? CredentialId { get; set; }
 
         // Common metadata defaults.
         public long? StorageLocationId { get; set; }
@@ -378,6 +382,7 @@ public class EditModel : PageModel
             Domain = string.IsNullOrWhiteSpace(Input.SmbDomain) ? null : Input.SmbDomain.Trim(),
             Username = Input.SmbUsername.Trim(),
             ProtectedPassword = protectedPassword,
+            CredentialId = Input.CredentialId,
             Pattern = string.IsNullOrWhiteSpace(Input.SmbPattern) ? "*" : Input.SmbPattern.Trim(),
             Recursive = Input.SmbRecursive,
             PostAction = Input.SmbPostAction,
@@ -399,6 +404,7 @@ public class EditModel : PageModel
             UseSsl = Input.UseSsl,
             Username = Input.Username.Trim(),
             ProtectedPassword = protectedPassword,
+            CredentialId = Input.CredentialId,
             Folder = string.IsNullOrWhiteSpace(Input.Folder) ? "INBOX" : Input.Folder.Trim(),
             SenderRegex = string.IsNullOrWhiteSpace(Input.SenderRegex) ? null : Input.SenderRegex.Trim(),
             SubjectRegex = string.IsNullOrWhiteSpace(Input.SubjectRegex) ? null : Input.SubjectRegex.Trim(),
@@ -447,6 +453,7 @@ public class EditModel : PageModel
             Input.SmbDomain = smb.Domain;
             Input.SmbUsername = smb.Username;
             Input.SmbPassword = null;
+            Input.CredentialId = smb.CredentialId;
             Input.SmbPattern = string.IsNullOrWhiteSpace(smb.Pattern) ? "*" : smb.Pattern;
             Input.SmbRecursive = smb.Recursive;
             Input.SmbPostAction = smb.PostAction;
@@ -466,6 +473,7 @@ public class EditModel : PageModel
             Input.Username = mail.Username;
             // Never surface the stored password.
             Input.Password = null;
+            Input.CredentialId = mail.CredentialId;
             Input.Folder = string.IsNullOrWhiteSpace(mail.Folder) ? "INBOX" : mail.Folder;
             Input.SenderRegex = mail.SenderRegex;
             Input.SubjectRegex = mail.SubjectRegex;
@@ -520,6 +528,13 @@ public class EditModel : PageModel
             .Select(t => new { t.Id, t.Name })
             .ToListAsync();
 
+        var credentials = await _db.Credentials
+            .AsNoTracking()
+            .Where(c => c.UpdateState != UpdateState.Deleted)
+            .OrderBy(c => c.Name)
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
+
         StorageLocationOptions = BuildOptions(
             storageLocations.Select(s => (s.Id, s.Name)), Input.StorageLocationId, "— default —");
         CorrespondentOptions = BuildOptions(
@@ -528,6 +543,8 @@ public class EditModel : PageModel
             documentTypes.Select(t => (t.Id, t.Name)), Input.DocumentTypeId, "— None —");
         ProjectOptions = BuildOptions(
             projects.Select(p => (p.Id, p.Name)), Input.ProjectId, "— None —");
+        CredentialOptions = BuildOptions(
+            credentials.Select(c => (c.Id, c.Name)), Input.CredentialId, "— None (use fields below) —");
 
         var selected = new HashSet<long>(TagIds);
         TagOptions = tags

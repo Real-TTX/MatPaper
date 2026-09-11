@@ -71,7 +71,17 @@ public sealed class ImportRunner
             return new RunReport(false, 0, "No storage location configured");
         }
 
+        var username = settings.Username;
         var password = _secrets.Unprotect(settings.ProtectedPassword);
+        var domain = settings.Domain;
+        var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
+        if (cred is not null)
+        {
+            username = cred.Value.User;
+            password = cred.Value.Password;
+            domain = cred.Value.Domain;
+        }
+
         var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
         var log = new StringBuilder();
         var count = 0;
@@ -79,7 +89,7 @@ public sealed class ImportRunner
         SmbSession session;
         try
         {
-            session = SmbSession.Connect(new SmbConnection(settings.Host, settings.Share, settings.Domain, settings.Username, password));
+            session = SmbSession.Connect(new SmbConnection(settings.Host, settings.Share, domain, username, password));
         }
         catch (Exception ex)
         {
@@ -144,25 +154,58 @@ public sealed class ImportRunner
         return new RunReport(true, count, log.ToString());
     }
 
-    public Task<(bool Ok, string Message)> TestSmbConnectionAsync(
+    public async Task<(bool Ok, string Message)> TestSmbConnectionAsync(
         SmbImportSettings settings, string? plaintextPasswordOverride, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
+        var username = settings.Username;
+        var domain = settings.Domain;
         var password = string.IsNullOrEmpty(plaintextPasswordOverride)
             ? _secrets.Unprotect(settings.ProtectedPassword)
             : plaintextPasswordOverride;
 
+        if (string.IsNullOrEmpty(plaintextPasswordOverride))
+        {
+            var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
+            if (cred is not null)
+            {
+                username = cred.Value.User;
+                password = cred.Value.Password;
+                domain = cred.Value.Domain;
+            }
+        }
+
         try
         {
             using var session = SmbSession.Connect(
-                new SmbConnection(settings.Host, settings.Share, settings.Domain, settings.Username, password));
-            return Task.FromResult((true, "Connected to the share."));
+                new SmbConnection(settings.Host, settings.Share, domain, username, password));
+            return (true, "Connected to the share.");
         }
         catch (Exception ex)
         {
-            return Task.FromResult((false, ex.Message));
+            return (false, ex.Message);
         }
+    }
+
+    /// <summary>Resolves a saved credential (username/password/domain) if one is referenced.</summary>
+    private async Task<(string User, string Password, string? Domain)?> ResolveCredentialAsync(long? credentialId, CancellationToken ct)
+    {
+        if (credentialId is not long id)
+        {
+            return null;
+        }
+
+        var cred = await _db.Credentials
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id && c.UpdateState != UpdateState.Deleted, ct)
+            .ConfigureAwait(false);
+        if (cred is null)
+        {
+            return null;
+        }
+
+        return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword), cred.Domain);
     }
 
     private async Task<long?> ResolveOwnerIdAsync(ImportTask task, CancellationToken ct)
@@ -341,6 +384,12 @@ public sealed class ImportRunner
         }
 
         var password = _secrets.Unprotect(settings.ProtectedPassword);
+        var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
+        if (cred is not null)
+        {
+            settings.Username = cred.Value.User;
+            password = cred.Value.Password;
+        }
         var extensions = ParseExtensions(settings.AttachmentExtensions);
         var senderRegex = CompileRegex(settings.SenderRegex);
         var subjectRegex = CompileRegex(settings.SubjectRegex);
@@ -642,6 +691,16 @@ public sealed class ImportRunner
         var password = string.IsNullOrEmpty(plaintextPasswordOverride)
             ? _secrets.Unprotect(settings.ProtectedPassword)
             : plaintextPasswordOverride;
+
+        if (string.IsNullOrEmpty(plaintextPasswordOverride))
+        {
+            var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
+            if (cred is not null)
+            {
+                settings.Username = cred.Value.User;
+                password = cred.Value.Password;
+            }
+        }
 
         if (isPop3)
         {

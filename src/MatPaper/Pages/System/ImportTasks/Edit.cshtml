@@ -60,6 +60,13 @@
                       help="Absolute path inside the container to move processed files to" />
         </div>
 
+        @* --- Saved credential (mail + SMB) --- *@
+        <div data-show-when-field="Input.Type" data-show-when-value="0,1,3">
+            <mp-field asp-for="Input.CredentialId" kind="select" label="Saved credential"
+                      asp-items="Model.CredentialOptions"
+                      help="Optional. Pick a credential from System / Credentials to reuse a stored username &amp; password instead of the fields below." />
+        </div>
+
         @* --- SMB / CIFS --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="3">
             <p class="form-section__hint">Import files directly from an SMB/CIFS network share — no host mount required.</p>

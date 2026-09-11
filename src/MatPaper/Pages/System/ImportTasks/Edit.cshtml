@@ -29,6 +29,7 @@
 
         <mp-field asp-for="Input.Type" kind="select" label="Type">
             <option value="2">Filesystem (watch folder)</option>
+            <option value="3">SMB / CIFS network share</option>
             <option value="0">IMAP mailbox</option>
             <option value="1">POP3 mailbox</option>
         </mp-field>
@@ -57,6 +58,26 @@
             <mp-field asp-for="Input.MoveToPath" label="Move to path"
                       show-when-field="Input.PostAction" show-when-value="move"
                       help="Absolute path inside the container to move processed files to" />
+        </div>
+
+        @* --- SMB / CIFS --- *@
+        <div data-show-when-field="Input.Type" data-show-when-value="3">
+            <p class="form-section__hint">Import files directly from an SMB/CIFS network share — no host mount required.</p>
+            <mp-field asp-for="Input.SmbHost" label="Host" placeholder="nas.local or 192.168.1.10" />
+            <mp-field asp-for="Input.SmbShare" label="Share" placeholder="documents" />
+            <mp-field asp-for="Input.SmbPath" label="Path in share"
+                      placeholder="inbox/scans"
+                      help="Optional — leave blank for the share root. Use / or \ as separator." />
+            <mp-field asp-for="Input.SmbDomain" label="Domain" help="Optional (Windows domain or workgroup)." />
+            <mp-field asp-for="Input.SmbUsername" label="Username" />
+            <mp-field asp-for="Input.SmbPassword" kind="password" label="Password"
+                      help="leave blank to keep the stored password" />
+            <mp-field asp-for="Input.SmbPattern" label="Pattern" placeholder="*" />
+            <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label="Recursive" />
+            <mp-field asp-for="Input.SmbPostAction" kind="select" label="After import">
+                <option value="none">Leave on share</option>
+                <option value="delete">Delete</option>
+            </mp-field>
         </div>
 
         @* --- Mail (IMAP / POP3) --- *@

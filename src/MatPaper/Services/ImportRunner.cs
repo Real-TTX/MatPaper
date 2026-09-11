@@ -48,10 +48,121 @@ public sealed class ImportRunner
         return task.Type switch
         {
             ImportTaskType.Filesystem => await RunFilesystemAsync(task, ownerId, ct).ConfigureAwait(false),
+            ImportTaskType.Smb => await RunSmbAsync(task, ownerId, ct).ConfigureAwait(false),
             ImportTaskType.Imap => await RunMailAsync(task, isPop3: false, ownerId, ct).ConfigureAwait(false),
             ImportTaskType.Pop3 => await RunMailAsync(task, isPop3: true, ownerId, ct).ConfigureAwait(false),
             _ => new RunReport(false, 0, $"Unsupported import type '{task.Type}'.")
         };
+    }
+
+    // ----- SMB / CIFS network share ----------------------------------------
+
+    private async Task<RunReport> RunSmbAsync(ImportTask task, long? ownerId, CancellationToken ct)
+    {
+        var settings = TaskSettingsJson.Read<SmbImportSettings>(task.SettingsJson);
+        if (string.IsNullOrWhiteSpace(settings.Host) || string.IsNullOrWhiteSpace(settings.Share))
+        {
+            return new RunReport(false, 0, "SMB host or share not configured");
+        }
+
+        var locationId = await ResolveStorageLocationIdAsync(settings.StorageLocationId, ct).ConfigureAwait(false);
+        if (locationId is null)
+        {
+            return new RunReport(false, 0, "No storage location configured");
+        }
+
+        var password = _secrets.Unprotect(settings.ProtectedPassword);
+        var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
+        var log = new StringBuilder();
+        var count = 0;
+
+        SmbSession session;
+        try
+        {
+            session = SmbSession.Connect(new SmbConnection(settings.Host, settings.Share, settings.Domain, settings.Username, password));
+        }
+        catch (Exception ex)
+        {
+            return new RunReport(false, 0, "SMB connection failed: " + ex.Message);
+        }
+
+        using (session)
+        {
+            List<string> files;
+            try
+            {
+                files = session.ListFiles(settings.Path, settings.Pattern, settings.Recursive).ToList();
+            }
+            catch (Exception ex)
+            {
+                return new RunReport(false, 0, "SMB listing failed: " + ex.Message);
+            }
+
+            foreach (var file in files)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var fileName = file.Contains('\\') ? file[(file.LastIndexOf('\\') + 1)..] : file;
+                try
+                {
+                    var bytes = session.ReadAllBytes(file);
+                    await using var stream = new MemoryStream(bytes);
+                    var result = await _ingest.IngestAsync(
+                        stream, fileName, locationId.Value,
+                        settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
+                        settings.TagIds ?? new List<long>(), ownerId, ct, reviewState).ConfigureAwait(false);
+
+                    switch (result.Status)
+                    {
+                        case IngestStatus.Created:
+                            count++;
+                            log.AppendLine($"Imported: {fileName}");
+                            if (settings.PostAction == "delete") { session.TryDelete(file); }
+                            break;
+                        case IngestStatus.Duplicate:
+                            log.AppendLine($"Skipped (duplicate): {fileName}");
+                            if (settings.PostAction == "delete") { session.TryDelete(file); }
+                            break;
+                        case IngestStatus.NoStorage:
+                            log.AppendLine($"Skipped (no storage): {fileName}");
+                            break;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to import SMB file '{File}'.", file);
+                    log.AppendLine($"Error ({fileName}): {ex.Message}");
+                }
+            }
+        }
+
+        log.AppendLine($"Done. {count} document(s) imported.");
+        return new RunReport(true, count, log.ToString());
+    }
+
+    public Task<(bool Ok, string Message)> TestSmbConnectionAsync(
+        SmbImportSettings settings, string? plaintextPasswordOverride, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+
+        var password = string.IsNullOrEmpty(plaintextPasswordOverride)
+            ? _secrets.Unprotect(settings.ProtectedPassword)
+            : plaintextPasswordOverride;
+
+        try
+        {
+            using var session = SmbSession.Connect(
+                new SmbConnection(settings.Host, settings.Share, settings.Domain, settings.Username, password));
+            return Task.FromResult((true, "Connected to the share."));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult((false, ex.Message));
+        }
     }
 
     private async Task<long?> ResolveOwnerIdAsync(ImportTask task, CancellationToken ct)

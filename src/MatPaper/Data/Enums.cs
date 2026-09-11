@@ -29,7 +29,8 @@ public enum ImportTaskType
 {
     Imap = 0,
     Pop3 = 1,
-    Filesystem = 2
+    Filesystem = 2,
+    Smb = 3
 }
 
 public enum ExportTaskType

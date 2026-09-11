@@ -66,6 +66,34 @@ public class MailImportSettings
 }
 
 /// <summary>
+/// Settings for an SMB/CIFS network-share import task (in-app client, no host mount).
+/// Serialized to <see cref="ImportTask.SettingsJson"/>.
+/// </summary>
+public class SmbImportSettings
+{
+    public string Host { get; set; } = "";
+    public string Share { get; set; } = "";
+    public string Path { get; set; } = "";
+    public string? Domain { get; set; }
+    public string Username { get; set; } = "";
+    public string ProtectedPassword { get; set; } = "";
+    public string Pattern { get; set; } = "*";
+    public bool Recursive { get; set; }
+
+    /// <summary>none|delete</summary>
+    public string PostAction { get; set; } = "none";
+
+    public long? StorageLocationId { get; set; }
+    public long? CorrespondentId { get; set; }
+    public long? DocumentTypeId { get; set; }
+    public long? ProjectId { get; set; }
+    public List<long> TagIds { get; set; } = new();
+
+    /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
+    public bool SkipInbox { get; set; }
+}
+
+/// <summary>
 /// Settings for a backup export task. Serialized to <see cref="ExportTask.SettingsJson"/>.
 /// </summary>
 public class BackupSettings

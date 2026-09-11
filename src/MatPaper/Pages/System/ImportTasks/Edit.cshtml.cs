@@ -85,6 +85,17 @@ public class EditModel : PageModel
         public bool ImportBodyAsPdf { get; set; }
         public string MailPostAction { get; set; } = "markseen";
 
+        // SMB / CIFS network share.
+        public string SmbHost { get; set; } = string.Empty;
+        public string SmbShare { get; set; } = string.Empty;
+        public string SmbPath { get; set; } = string.Empty;
+        public string? SmbDomain { get; set; }
+        public string SmbUsername { get; set; } = string.Empty;
+        public string? SmbPassword { get; set; }
+        public string SmbPattern { get; set; } = "*";
+        public bool SmbRecursive { get; set; }
+        public string SmbPostAction { get; set; } = "none";
+
         // Common metadata defaults.
         public long? StorageLocationId { get; set; }
         public long? CorrespondentId { get; set; }
@@ -193,6 +204,30 @@ public class EditModel : PageModel
     {
         SetBreadcrumb();
 
+        if (Input.Type == (int)ImportTaskType.Smb)
+        {
+            var storedSmbPassword = string.Empty;
+            if (IsEdit && string.IsNullOrEmpty(Input.SmbPassword))
+            {
+                var storedSmb = await _db.ImportTasks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == Id && t.UpdateState != UpdateState.Deleted, ct);
+                if (storedSmb != null && storedSmb.Type == ImportTaskType.Smb)
+                {
+                    storedSmbPassword = TaskSettingsJson.Read<SmbImportSettings>(storedSmb.SettingsJson).ProtectedPassword;
+                }
+            }
+
+            var smbSettings = BuildSmbSettings(storedSmbPassword);
+            var smbOverride = string.IsNullOrEmpty(Input.SmbPassword) ? null : Input.SmbPassword;
+            var (smbOk, smbMessage) = await _runner.TestSmbConnectionAsync(smbSettings, smbOverride, ct);
+            NoticeOk = smbOk;
+            Notice = smbMessage;
+
+            await BuildOptionListsAsync();
+            return Page();
+        }
+
         // When editing and no new password was typed, fall back to the stored (protected)
         // password so the test uses the real credential instead of an empty one.
         var protectedPassword = string.Empty;
@@ -265,6 +300,21 @@ public class EditModel : PageModel
                 ModelState.AddModelError("Input.MoveToPath", "A move target path is required for the move action.");
             }
         }
+        else if (Input.Type == (int)ImportTaskType.Smb)
+        {
+            if (string.IsNullOrWhiteSpace(Input.SmbHost))
+            {
+                ModelState.AddModelError("Input.SmbHost", "Host is required.");
+            }
+            if (string.IsNullOrWhiteSpace(Input.SmbShare))
+            {
+                ModelState.AddModelError("Input.SmbShare", "Share name is required.");
+            }
+            if (string.IsNullOrWhiteSpace(Input.SmbUsername))
+            {
+                ModelState.AddModelError("Input.SmbUsername", "Username is required.");
+            }
+        }
         else
         {
             if (string.IsNullOrWhiteSpace(Input.Host))
@@ -299,6 +349,15 @@ public class EditModel : PageModel
             return TaskSettingsJson.Write(fs);
         }
 
+        if (Input.Type == (int)ImportTaskType.Smb)
+        {
+            var existingSmb = TaskSettingsJson.Read<SmbImportSettings>(existingJson);
+            var smbPassword = string.IsNullOrEmpty(Input.SmbPassword)
+                ? existingSmb.ProtectedPassword
+                : _secrets.Protect(Input.SmbPassword);
+            return TaskSettingsJson.Write(BuildSmbSettings(smbPassword));
+        }
+
         // Mail: keep the stored password unless a new one was entered.
         var existing = TaskSettingsJson.Read<MailImportSettings>(existingJson);
         var protectedPassword = string.IsNullOrEmpty(Input.Password)
@@ -307,6 +366,28 @@ public class EditModel : PageModel
 
         var mail = BuildMailSettings(protectedPassword);
         return TaskSettingsJson.Write(mail);
+    }
+
+    private SmbImportSettings BuildSmbSettings(string protectedPassword)
+    {
+        return new SmbImportSettings
+        {
+            Host = Input.SmbHost.Trim(),
+            Share = Input.SmbShare.Trim(),
+            Path = (Input.SmbPath ?? string.Empty).Trim(),
+            Domain = string.IsNullOrWhiteSpace(Input.SmbDomain) ? null : Input.SmbDomain.Trim(),
+            Username = Input.SmbUsername.Trim(),
+            ProtectedPassword = protectedPassword,
+            Pattern = string.IsNullOrWhiteSpace(Input.SmbPattern) ? "*" : Input.SmbPattern.Trim(),
+            Recursive = Input.SmbRecursive,
+            PostAction = Input.SmbPostAction,
+            StorageLocationId = Input.StorageLocationId,
+            CorrespondentId = Input.CorrespondentId,
+            DocumentTypeId = Input.DocumentTypeId,
+            ProjectId = Input.ProjectId,
+            TagIds = TagIds.ToList(),
+            SkipInbox = Input.SkipInbox
+        };
     }
 
     private MailImportSettings BuildMailSettings(string protectedPassword)
@@ -356,6 +437,25 @@ public class EditModel : PageModel
             Input.ProjectId = fs.ProjectId;
             Input.SkipInbox = fs.SkipInbox;
             TagIds = fs.TagIds.ToArray();
+        }
+        else if (entity.Type == ImportTaskType.Smb)
+        {
+            var smb = TaskSettingsJson.Read<SmbImportSettings>(entity.SettingsJson);
+            Input.SmbHost = smb.Host;
+            Input.SmbShare = smb.Share;
+            Input.SmbPath = smb.Path;
+            Input.SmbDomain = smb.Domain;
+            Input.SmbUsername = smb.Username;
+            Input.SmbPassword = null;
+            Input.SmbPattern = string.IsNullOrWhiteSpace(smb.Pattern) ? "*" : smb.Pattern;
+            Input.SmbRecursive = smb.Recursive;
+            Input.SmbPostAction = smb.PostAction;
+            Input.StorageLocationId = smb.StorageLocationId;
+            Input.CorrespondentId = smb.CorrespondentId;
+            Input.DocumentTypeId = smb.DocumentTypeId;
+            Input.ProjectId = smb.ProjectId;
+            Input.SkipInbox = smb.SkipInbox;
+            TagIds = smb.TagIds.ToArray();
         }
         else
         {

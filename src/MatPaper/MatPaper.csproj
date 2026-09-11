@@ -32,6 +32,8 @@
     <PackageReference Include="AngleSharp" Version="1.*" />
     <!-- Phase 8: XRechnung / ZUGFeRD structured invoice parsing -->
     <PackageReference Include="ZUGFeRD-csharp" Version="*" />
+    <!-- In-app SMB/CIFS client for network-share import (no host mount needed) -->
+    <PackageReference Include="SMBLibrary" Version="1.*" />
   </ItemGroup>
 
 </Project>

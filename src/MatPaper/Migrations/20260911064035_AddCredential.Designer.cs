@@ -13,7 +13,7 @@ using NpgsqlTypes;
 namespace MatPaper.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260911063202_AddCredential")]
+    [Migration("20260911064035_AddCredential")]
     partial class AddCredential
     {
         /// <inheritdoc />
@@ -63,6 +63,49 @@ namespace MatPaper.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Correspondent", (string)null);
+                });
+
+            modelBuilder.Entity("MatPaper.Data.Credential", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Domain")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProtectedPassword")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UpdateState")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("UpdateUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Credential", (string)null);
                 });
 
             modelBuilder.Entity("MatPaper.Data.Document", b =>

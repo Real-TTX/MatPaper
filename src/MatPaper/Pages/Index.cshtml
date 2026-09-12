@@ -1,6 +1,5 @@
 @page "/"
 @model IndexModel
-@using MatPaper.Data
 @{
     ViewData["Breadcrumb"] = "Dashboard";
 }
@@ -13,32 +12,6 @@
 </div>
 
 <section class="kpi-grid">
-    <article class="kpi-card">
-        <div class="kpi-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-            </svg>
-        </div>
-        <div class="kpi-card__body">
-            <span class="kpi-card__value">@Model.DocumentCount</span>
-            <span class="kpi-card__label">Documents</span>
-        </div>
-    </article>
-
-    <article class="kpi-card">
-        <div class="kpi-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
-        </div>
-        <div class="kpi-card__body">
-            <span class="kpi-card__value">@Model.Last7DaysCount</span>
-            <span class="kpi-card__label">Last 7 days</span>
-        </div>
-    </article>
-
     <a class="kpi-card" href="/Inbox">
         <div class="kpi-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -52,119 +25,51 @@
         </div>
     </a>
 
-    <article class="kpi-card">
+    <a class="kpi-card" href="/Documents">
         <div class="kpi-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 3" />
+                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
             </svg>
         </div>
         <div class="kpi-card__body">
-            <span class="kpi-card__value">@Model.OcrQueueCount</span>
-            <span class="kpi-card__label">OCR queue</span>
+            <span class="kpi-card__value">@Model.DocumentCount</span>
+            <span class="kpi-card__label">Documents</span>
         </div>
-    </article>
-
-    <article class="kpi-card">
-        <div class="kpi-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <path d="M12 9v4M12 17h.01" />
-            </svg>
-        </div>
-        <div class="kpi-card__body">
-            <span class="kpi-card__value">@Model.FailedTaskCount</span>
-            <span class="kpi-card__label">OCR failed</span>
-        </div>
-    </article>
+    </a>
 </section>
 
-<div class="dash-grid">
-    <section class="dash-panel">
-        <h2 class="dash-panel__title">Recent documents</h2>
-        @if (Model.Recent.Count == 0)
-        {
-            <p class="form-help">No documents yet. <a href="/Documents/Upload">Upload your first document</a>.</p>
-        }
-        else
-        {
-            <div class="dash-recent">
-                @foreach (var d in Model.Recent)
-                {
-                    <a class="dash-recent__item" href="/Documents/Edit?id=@d.Id">
-                        @if (d.ThumbnailPath != null)
-                        {
-                            <img class="dash-recent__thumb" src="/Documents/@d.Token/thumb" alt="" loading="lazy" />
-                        }
-                        else
-                        {
-                            <span class="dash-recent__thumb"></span>
-                        }
-                        <span class="dash-recent__body">
-                            <span class="dash-recent__title">@d.Title</span>
-                            <span class="dash-recent__meta">
-                                @(d.CorrespondentName ?? "—") · @(d.TypeName ?? "—") · @d.Date.ToString("yyyy-MM-dd")
-                            </span>
-                        </span>
-                    </a>
-                }
-            </div>
-        }
-    </section>
-
-    <section class="dash-panel">
-        <h2 class="dash-panel__title">By type</h2>
-        @if (Model.TypeBreakdown.Count == 0)
-        {
-            <p class="form-help">Nothing classified yet.</p>
-        }
-        else
-        {
-            <div class="dash-bars">
-                @foreach (var t in Model.TypeBreakdown)
-                {
-                    var pct = (int)Math.Round(100.0 * t.Count / Model.TypeBreakdownMax);
-                    <div class="dash-bar">
-                        <div class="dash-bar__head"><span>@t.Name</span><span>@t.Count</span></div>
-                        <div class="dash-bar__track"><span class="dash-bar__fill" style="width:@(pct)%"></span></div>
-                    </div>
-                }
-            </div>
-        }
-    </section>
-</div>
-
-@if (Model.IsAdmin && Model.RecentRuns.Count > 0)
-{
-    <section class="dash-panel">
-        <h2 class="dash-panel__title">Recent task runs</h2>
-        <div class="data-table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr><th>Task</th><th>Kind</th><th>State</th><th>Items</th><th>Started</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var r in Model.RecentRuns)
+<section class="dash-panel">
+    <h2 class="dash-panel__title">Recent documents</h2>
+    @if (Model.Recent.Count == 0)
+    {
+        <p class="form-help">No documents yet. <a href="/Documents/Upload">Upload your first document</a>.</p>
+    }
+    else
+    {
+        <div class="dash-recent">
+            @foreach (var d in Model.Recent)
+            {
+                <a class="dash-recent__item" href="/Documents/Edit?id=@d.Id">
+                    @if (d.ThumbnailPath != null)
                     {
-                        var css = r.State switch
-                        {
-                            TaskRunState.Success => "badge--ok",
-                            TaskRunState.Failed => "badge--off",
-                            _ => "badge--muted"
-                        };
-                        <tr>
-                            <td>@r.TaskName</td>
-                            <td>@r.Kind</td>
-                            <td><span class="badge @css">@r.State</span></td>
-                            <td>@r.ItemsProcessed</td>
-                            <td>@r.StartedAt.ToString("yyyy-MM-dd HH:mm") UTC</td>
-                        </tr>
+                        <img class="dash-recent__thumb" src="/Documents/@d.Token/thumb" alt="" loading="lazy" />
                     }
-                </tbody>
-            </table>
+                    else
+                    {
+                        <span class="dash-recent__thumb"></span>
+                    }
+                    <span class="dash-recent__body">
+                        <span class="dash-recent__title">@d.Title</span>
+                        <span class="dash-recent__meta">
+                            @(d.CorrespondentName ?? "—") · @(d.TypeName ?? "—") · @d.Date.ToString("yyyy-MM-dd")
+                        </span>
+                    </span>
+                </a>
+            }
         </div>
-    </section>
-}
+    }
+</section>
 
 <footer class="app-footer">
     MatPaper &middot; Version @MatPaper.AppInfo.Version

@@ -19,7 +19,7 @@ public class IndexModel : PageModel
         _currentUser = currentUser;
     }
 
-    public sealed record Stat(DateTime? Last, int Count);
+    public sealed record Stat(DateTime? Last, int Count, long? LatestId, string? LatestTitle);
 
     public IReadOnlyDictionary<long, Stat> Stats { get; private set; } = new Dictionary<long, Stat>();
 
@@ -78,16 +78,28 @@ public class IndexModel : PageModel
         var pageIds = Rows.Select(c => c.Id).ToList();
         if (pageIds.Count > 0)
         {
-            var stats = await _db.Documents
+            var docs = await _db.Documents
                 .AsNoTracking()
                 .Where(d => d.UpdateState != UpdateState.Deleted
                     && d.CorrespondentId != null
                     && pageIds.Contains(d.CorrespondentId.Value))
                 .AccessibleTo(_currentUser)
-                .GroupBy(d => d.CorrespondentId!.Value)
-                .Select(g => new { Id = g.Key, Last = g.Max(d => (DateTime?)(d.DocumentDate ?? d.CreateDate)), Count = g.Count() })
+                .Select(d => new
+                {
+                    d.Id,
+                    d.Title,
+                    CorrespondentId = d.CorrespondentId!.Value,
+                    Date = d.DocumentDate ?? d.CreateDate
+                })
                 .ToListAsync();
-            Stats = stats.ToDictionary(x => x.Id, x => new Stat(x.Last, x.Count));
+
+            Stats = docs
+                .GroupBy(d => d.CorrespondentId)
+                .ToDictionary(g => g.Key, g =>
+                {
+                    var latest = g.OrderByDescending(x => x.Date).ThenByDescending(x => x.Id).First();
+                    return new Stat(latest.Date, g.Count(), latest.Id, latest.Title);
+                });
         }
 
         var chips = new List<FilterChip>();

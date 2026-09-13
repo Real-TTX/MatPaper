@@ -117,12 +117,11 @@
     overflow: hidden;
 }
 
-.mp-picker-dialog {
+/* A closed native <dialog> must stay hidden; only lay it out when open, so it
+   never renders as a stray "search bar" at the bottom of the page. */
+.mp-picker-dialog[open] {
     display: flex;
     flex-direction: column;
-}
-
-.mp-picker-dialog[open] {
     animation: mp-picker-in 0.12s ease-out;
 }
 

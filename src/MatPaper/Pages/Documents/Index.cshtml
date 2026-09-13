@@ -72,12 +72,7 @@ else
         @foreach (var d in Model.Rows)
         {
             var displayDate = (d.DocumentDate ?? d.CreateDate).ToString("yyyy-MM-dd");
-            var ocrBadge = d.OcrState switch
-            {
-                OcrState.Done => "badge--ok",
-                OcrState.Failed => "badge--off",
-                _ => "badge--muted"
-            };
+            var docTags = d.DocumentTags?.Where(t => t.Tag != null).Select(t => t.Tag!).ToList() ?? new List<MatPaper.Data.Tag>();
             <article class="doc-card">
                 <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label="Preview @d.Title">
                     @if (d.ThumbnailPath != null)
@@ -101,13 +96,32 @@ else
                         <span>@(d.Correspondent?.Name ?? "—")</span>
                         <span>@(d.DocumentType?.Name ?? "—")</span>
                         <span>@displayDate</span>
+                        @if (d.Project != null)
+                        {
+                            <span>@d.Project.Name</span>
+                        }
                     </div>
+                    @if (docTags.Count > 0)
+                    {
+                        <div class="doc-card__tags">
+                            @foreach (var t in docTags)
+                            {
+                                <span class="tag-label"><span class="tag-label__dot" style="background:@(string.IsNullOrWhiteSpace(t.Color) ? "#808080" : t.Color)"></span>@t.Name</span>
+                            }
+                        </div>
+                    }
                     <div class="doc-card__footer">
-                        <span class="badge @ocrBadge">@d.OcrState</span>
-                        <span class="doc-card__links">
-                            <a href="/Documents/Edit?id=@d.Id">Edit</a>
-                            <a href="/Documents/@d.Token/download">Download</a>
-                        </span>
+                        @if (d.ReviewState == ReviewState.Pending)
+                        {
+                            <span class="badge badge--muted">Needs review</span>
+                        }
+                        else
+                        {
+                            <span></span>
+                        }
+                        <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title="Edit" aria-label="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                        </a>
                     </div>
                 </div>
             </article>

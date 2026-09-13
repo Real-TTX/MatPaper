@@ -439,3 +439,49 @@
     gap: 0.5rem;
     margin-top: 0.75rem;
 }
+
+/* ==========================================================================
+   Misc polish: card tags, System tiles with icons, theme-switch icons
+   ========================================================================== */
+.doc-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    margin-top: 4px;
+}
+
+/* System landing: equal-height tiles with an icon badge */
+.card-grid {
+    grid-auto-rows: 1fr;
+}
+
+.link-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--color-active);
+    color: var(--color-primary);
+    margin-bottom: 6px;
+    flex: 0 0 auto;
+}
+
+.link-card__icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Theme switch: small leading icon per option */
+.theme-switch__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.theme-switch__btn svg {
+    width: 14px;
+    height: 14px;
+}

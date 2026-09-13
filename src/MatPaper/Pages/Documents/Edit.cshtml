@@ -167,6 +167,32 @@
         margin: 0 0 0.6rem;
         font-size: 1rem;
     }
+
+    .doc-advanced {
+        margin-top: 1.25rem;
+        padding: 1rem 1.15rem;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        background: var(--color-surface);
+    }
+
+    .doc-advanced > summary {
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .doc-ocr {
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 12.5px;
+        background: var(--color-surface-alt);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 10px;
+        margin: 0;
+    }
 </style>
 
 @if (TempData["TaskMessage"] is string taskMsg)
@@ -309,8 +335,26 @@
             </li>
         </ul>
     </aside>
-    </div>
-</div>
+
+    <details class="doc-advanced">
+        <summary>Advanced</summary>
+        <ul class="doc-facts">
+            <li><span class="doc-facts__key">Document ID</span><span class="doc-facts__val">@Model.Id</span></li>
+            <li><span class="doc-facts__key">Token</span><span class="doc-facts__val" style="word-break:break-all">@Model.Token</span></li>
+            <li><span class="doc-facts__key">Storage</span><span class="doc-facts__val">@(Model.StorageLocationName ?? "—")</span></li>
+            <li><span class="doc-facts__key">Path</span><span class="doc-facts__val" style="word-break:break-all">@Model.RelativePath</span></li>
+            <li><span class="doc-facts__key">Content hash</span><span class="doc-facts__val" style="word-break:break-all">@(Model.ContentHash ?? "—")</span></li>
+        </ul>
+        <h3 style="margin:1rem 0 .35rem;font-size:.95rem">Indexed text (OCR)</h3>
+        @if (string.IsNullOrWhiteSpace(Model.OcrText))
+        {
+            <p class="form-help">No text extracted yet.</p>
+        }
+        else
+        {
+            <pre class="doc-ocr">@Model.OcrText</pre>
+        }
+    </details>
 
 @if (Model.IsOwner)
 {
@@ -409,6 +453,8 @@
     </form>
 </section>
 }
+    </div>
+</div>
 
 @functions {
     private static string FormatSize(long bytes)

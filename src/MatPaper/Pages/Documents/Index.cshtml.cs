@@ -79,6 +79,8 @@ public class IndexModel : PageModel
             .AsNoTracking()
             .Include(d => d.Correspondent)
             .Include(d => d.DocumentType)
+            .Include(d => d.Project)
+            .Include(d => d.DocumentTags).ThenInclude(dt => dt.Tag)
             .Where(d => d.UpdateState != UpdateState.Deleted)
             .AccessibleTo(_currentUser);
 

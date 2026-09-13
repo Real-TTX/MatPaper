@@ -27,9 +27,18 @@
             var swatch = string.IsNullOrWhiteSpace(tag.Color) ? "#808080" : tag.Color;
             <tr>
                 <td>
-                    <span class="color-swatch" style="display:inline-block;width:0.9em;height:0.9em;border-radius:3px;vertical-align:middle;margin-right:0.5em;background:@swatch"></span>@tag.Name
+                    <span class="tag-label"><span class="tag-label__dot" style="background:@swatch"></span>@tag.Name</span>
                 </td>
-                <td class="is-actions"><a href="/Tags/Edit?id=@tag.Id">Edit</a></td>
+                <td class="is-actions">
+                    <span class="icon-actions">
+                        <a class="icon-btn" href="/Documents?TagIds=@tag.Id" title="Documents" aria-label="Documents">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
+                        </a>
+                        <a class="icon-btn" href="/Tags/Edit?id=@tag.Id" title="Edit" aria-label="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                        </a>
+                    </span>
+                </td>
             </tr>
         }
     </tbody>

@@ -60,6 +60,12 @@ public class EditModel : PageModel
     public string OriginalFileName { get; private set; } = string.Empty;
     public DateTime AddedDate { get; private set; }
 
+    // Advanced / raw facts.
+    public string? OcrText { get; private set; }
+    public string? ContentHash { get; private set; }
+    public string? RelativePath { get; private set; }
+    public string? StorageLocationName { get; private set; }
+
     // Option lists.
     public List<SelectListItem> DocumentTypeOptions { get; private set; } = new();
     public List<SelectListItem> CorrespondentOptions { get; private set; } = new();
@@ -93,6 +99,7 @@ public class EditModel : PageModel
             .AsNoTracking()
             .Include(d => d.DocumentTags)
             .Include(d => d.Owner)
+            .Include(d => d.StorageLocation)
             .Include(d => d.Shares).ThenInclude(s => s.User)
             .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
@@ -568,6 +575,10 @@ public class EditModel : PageModel
         OriginalFileName = document.OriginalFileName;
         AddedDate = document.CreateDate;
         InvoiceNumber = document.InvoiceNumber;
+        OcrText = document.OcrText;
+        ContentHash = document.ContentHash;
+        RelativePath = document.RelativePath;
+        StorageLocationName = document.StorageLocation?.Name;
     }
 
     private async Task BuildOptionListsAsync(IEnumerable<long> selectedTagIds)

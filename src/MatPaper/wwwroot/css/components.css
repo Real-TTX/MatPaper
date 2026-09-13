@@ -301,33 +301,70 @@ select.form-control {
 /* ==========================================================================
    Toolbar (filter / search bar above lists)
    ========================================================================== */
+/* Toolbar: a bordered card whose controls are uniform "label above field" cells,
+   all the same control height (including the trailing Apply button). */
 .toolbar {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-end;
+    gap: 12px 16px;
     flex-wrap: wrap;
     margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
 }
 
-.toolbar__group {
+.toolbar__group,
+.toolbar .form-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin: 0;
+    min-width: 160px;
+}
+
+.toolbar__group > label,
+.toolbar .form-row > label {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--color-text-muted);
 }
 
 .toolbar__search {
+    flex: 1 1 240px;
     min-width: 220px;
-    flex: 1 1 220px;
-    max-width: 360px;
+    max-width: 420px;
 }
 
 .toolbar__filter {
-    min-width: 150px;
+    min-width: 160px;
 }
 
 .toolbar__spacer {
     flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Uniform control height across inputs, selects, pickers and the Apply button. */
+.toolbar .form-control,
+.toolbar .mp-picker__trigger {
+    height: 40px;
+    width: 100%;
+}
+
+.toolbar .form-row .field-error {
+    display: none;
+}
+
+/* Trailing Apply button cell: shrink to the button and match the control height. */
+.toolbar > .toolbar__group:last-child {
+    min-width: 0;
+}
+
+.toolbar > .toolbar__group:last-child .btn {
+    height: 40px;
 }
 
 /* ==========================================================================

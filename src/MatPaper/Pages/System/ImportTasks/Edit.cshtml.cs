@@ -80,11 +80,15 @@ public class EditModel : PageModel
         public string Username { get; set; } = string.Empty;
         public string? Password { get; set; }
         public string Folder { get; set; } = "INBOX";
+        public string? FromFilter { get; set; }
+        public string? ToFilter { get; set; }
+        public string? SubjectFilter { get; set; }
         public string? SenderRegex { get; set; }
         public string? SubjectRegex { get; set; }
         public string AttachmentExtensions { get; set; } = DefaultAttachmentExtensions;
         public bool ImportBodyAsPdf { get; set; }
         public string MailPostAction { get; set; } = "markseen";
+        public string? MailMoveToFolder { get; set; }
 
         // SMB / CIFS network share.
         public string SmbHost { get; set; } = string.Empty;
@@ -96,6 +100,7 @@ public class EditModel : PageModel
         public string SmbPattern { get; set; } = "*";
         public bool SmbRecursive { get; set; }
         public string SmbPostAction { get; set; } = "none";
+        public string? SmbMoveToPath { get; set; }
 
         // Optional saved credential (mail + SMB); overrides the typed username/password.
         public long? CredentialId { get; set; }
@@ -386,6 +391,7 @@ public class EditModel : PageModel
             Pattern = string.IsNullOrWhiteSpace(Input.SmbPattern) ? "*" : Input.SmbPattern.Trim(),
             Recursive = Input.SmbRecursive,
             PostAction = Input.SmbPostAction,
+            MoveToPath = string.IsNullOrWhiteSpace(Input.SmbMoveToPath) ? null : Input.SmbMoveToPath.Trim(),
             StorageLocationId = Input.StorageLocationId,
             CorrespondentId = Input.CorrespondentId,
             DocumentTypeId = Input.DocumentTypeId,
@@ -406,6 +412,9 @@ public class EditModel : PageModel
             ProtectedPassword = protectedPassword,
             CredentialId = Input.CredentialId,
             Folder = string.IsNullOrWhiteSpace(Input.Folder) ? "INBOX" : Input.Folder.Trim(),
+            FromFilter = string.IsNullOrWhiteSpace(Input.FromFilter) ? null : Input.FromFilter.Trim(),
+            ToFilter = string.IsNullOrWhiteSpace(Input.ToFilter) ? null : Input.ToFilter.Trim(),
+            SubjectFilter = string.IsNullOrWhiteSpace(Input.SubjectFilter) ? null : Input.SubjectFilter.Trim(),
             SenderRegex = string.IsNullOrWhiteSpace(Input.SenderRegex) ? null : Input.SenderRegex.Trim(),
             SubjectRegex = string.IsNullOrWhiteSpace(Input.SubjectRegex) ? null : Input.SubjectRegex.Trim(),
             AttachmentExtensions = string.IsNullOrWhiteSpace(Input.AttachmentExtensions)
@@ -413,6 +422,7 @@ public class EditModel : PageModel
                 : Input.AttachmentExtensions.Trim(),
             ImportBodyAsPdf = Input.ImportBodyAsPdf,
             PostAction = Input.MailPostAction,
+            MoveToFolder = string.IsNullOrWhiteSpace(Input.MailMoveToFolder) ? null : Input.MailMoveToFolder.Trim(),
             StorageLocationId = Input.StorageLocationId,
             CorrespondentId = Input.CorrespondentId,
             DocumentTypeId = Input.DocumentTypeId,
@@ -457,6 +467,7 @@ public class EditModel : PageModel
             Input.SmbPattern = string.IsNullOrWhiteSpace(smb.Pattern) ? "*" : smb.Pattern;
             Input.SmbRecursive = smb.Recursive;
             Input.SmbPostAction = smb.PostAction;
+            Input.SmbMoveToPath = smb.MoveToPath;
             Input.StorageLocationId = smb.StorageLocationId;
             Input.CorrespondentId = smb.CorrespondentId;
             Input.DocumentTypeId = smb.DocumentTypeId;
@@ -475,6 +486,9 @@ public class EditModel : PageModel
             Input.Password = null;
             Input.CredentialId = mail.CredentialId;
             Input.Folder = string.IsNullOrWhiteSpace(mail.Folder) ? "INBOX" : mail.Folder;
+            Input.FromFilter = mail.FromFilter;
+            Input.ToFilter = mail.ToFilter;
+            Input.SubjectFilter = mail.SubjectFilter;
             Input.SenderRegex = mail.SenderRegex;
             Input.SubjectRegex = mail.SubjectRegex;
             Input.AttachmentExtensions = string.IsNullOrWhiteSpace(mail.AttachmentExtensions)
@@ -482,6 +496,7 @@ public class EditModel : PageModel
                 : mail.AttachmentExtensions;
             Input.ImportBodyAsPdf = mail.ImportBodyAsPdf;
             Input.MailPostAction = mail.PostAction;
+            Input.MailMoveToFolder = mail.MoveToFolder;
             Input.StorageLocationId = mail.StorageLocationId;
             Input.CorrespondentId = mail.CorrespondentId;
             Input.DocumentTypeId = mail.DocumentTypeId;

@@ -127,11 +127,11 @@ public sealed class ImportRunner
                         case IngestStatus.Created:
                             count++;
                             log.AppendLine($"Imported: {fileName}");
-                            if (settings.PostAction == "delete") { session.TryDelete(file); }
+                            ApplySmbPostAction(session, settings, file);
                             break;
                         case IngestStatus.Duplicate:
                             log.AppendLine($"Skipped (duplicate): {fileName}");
-                            if (settings.PostAction == "delete") { session.TryDelete(file); }
+                            ApplySmbPostAction(session, settings, file);
                             break;
                         case IngestStatus.NoStorage:
                             log.AppendLine($"Skipped (no storage): {fileName}");
@@ -152,6 +152,18 @@ public sealed class ImportRunner
 
         log.AppendLine($"Done. {count} document(s) imported.");
         return new RunReport(true, count, log.ToString());
+    }
+
+    private static void ApplySmbPostAction(SmbSession session, SmbImportSettings settings, string file)
+    {
+        if (settings.PostAction == "delete")
+        {
+            session.TryDelete(file);
+        }
+        else if (settings.PostAction == "move" && !string.IsNullOrWhiteSpace(settings.MoveToPath))
+        {
+            session.TryMove(file, settings.MoveToPath!);
+        }
     }
 
     public async Task<(bool Ok, string Message)> TestSmbConnectionAsync(
@@ -445,13 +457,14 @@ public sealed class ImportRunner
 
             var uids = await folder.SearchAsync(SearchQuery.All, ct).ConfigureAwait(false);
             var postAction = settings.PostAction?.ToLowerInvariant();
+            var moveDest = postAction == "move" ? GetOrCreateFolder(client, settings.MoveToFolder) : null;
 
             foreach (var uid in uids)
             {
                 ct.ThrowIfCancellationRequested();
 
                 var message = await folder.GetMessageAsync(uid, ct).ConfigureAwait(false);
-                if (!MessageMatches(message, senderRegex, subjectRegex))
+                if (!MessageMatches(message, settings, senderRegex, subjectRegex))
                 {
                     continue;
                 }
@@ -466,6 +479,12 @@ public sealed class ImportRunner
                 {
                     case "delete":
                         await folder.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, ct).ConfigureAwait(false);
+                        break;
+                    case "move":
+                        if (moveDest is not null)
+                        {
+                            await folder.MoveToAsync(uid, moveDest, ct).ConfigureAwait(false);
+                        }
                         break;
                     case "none":
                         break;
@@ -518,7 +537,7 @@ public sealed class ImportRunner
                 ct.ThrowIfCancellationRequested();
 
                 var message = await client.GetMessageAsync(index, ct).ConfigureAwait(false);
-                if (!MessageMatches(message, senderRegex, subjectRegex))
+                if (!MessageMatches(message, settings, senderRegex, subjectRegex))
                 {
                     continue;
                 }
@@ -789,27 +808,82 @@ public sealed class ImportRunner
             ? null
             : new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    private static bool MessageMatches(MimeMessage message, Regex? senderRegex, Regex? subjectRegex)
+    private static bool MessageMatches(MimeMessage message, MailImportSettings settings, Regex? senderRegex, Regex? subjectRegex)
     {
-        if (senderRegex is not null)
+        var from = message.From?.ToString() ?? string.Empty;
+        var to = message.To?.ToString() ?? string.Empty;
+        var subject = message.Subject ?? string.Empty;
+
+        // Friendly "contains any of" filters (comma-separated).
+        if (!ContainsAny(from, settings.FromFilter))
         {
-            var from = message.From?.ToString() ?? string.Empty;
-            if (!senderRegex.IsMatch(from))
-            {
-                return false;
-            }
+            return false;
+        }
+        if (!ContainsAny(to, settings.ToFilter))
+        {
+            return false;
+        }
+        if (!ContainsAny(subject, settings.SubjectFilter))
+        {
+            return false;
         }
 
-        if (subjectRegex is not null)
+        // Optional advanced regex filters.
+        if (senderRegex is not null && !senderRegex.IsMatch(from))
         {
-            var subject = message.Subject ?? string.Empty;
-            if (!subjectRegex.IsMatch(subject))
-            {
-                return false;
-            }
+            return false;
+        }
+        if (subjectRegex is not null && !subjectRegex.IsMatch(subject))
+        {
+            return false;
         }
 
         return true;
+    }
+
+    /// <summary>True when <paramref name="csv"/> is empty, or the text contains any comma-separated term.</summary>
+    private static bool ContainsAny(string text, string? csv)
+    {
+        if (string.IsNullOrWhiteSpace(csv))
+        {
+            return true;
+        }
+
+        foreach (var term in csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (text.Contains(term, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Resolves an IMAP folder by path, creating it under the personal namespace when missing.</summary>
+    private static IMailFolder? GetOrCreateFolder(ImapClient client, string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return client.GetFolder(path);
+        }
+        catch
+        {
+            try
+            {
+                var root = client.GetFolder(client.PersonalNamespaces[0]);
+                return root.Create(path, true);
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 
     private static IReadOnlyCollection<string> ParseExtensions(string? raw)

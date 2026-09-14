@@ -49,15 +49,26 @@ public class MailImportSettings
     public long? CredentialId { get; set; }
 
     public string Folder { get; set; } = "INBOX";
+
+    /// <summary>Friendly "contains" filters (comma-separated, any match). Empty = no filter.</summary>
+    public string? FromFilter { get; set; }
+    public string? ToFilter { get; set; }
+    public string? SubjectFilter { get; set; }
+
+    /// <summary>Optional advanced regex filters (applied in addition to the contains filters).</summary>
     public string? SenderRegex { get; set; }
     public string? SubjectRegex { get; set; }
+
     public string AttachmentExtensions { get; set; } = ".pdf,.png,.jpg,.jpeg,.tif,.tiff";
 
     /// <summary>Also render the e-mail body itself into an archival PDF and import it.</summary>
     public bool ImportBodyAsPdf { get; set; } = false;
 
-    /// <summary>markseen|delete|none</summary>
+    /// <summary>markseen|delete|none|move (move is IMAP-only, into <see cref="MoveToFolder"/>).</summary>
     public string PostAction { get; set; } = "markseen";
+
+    /// <summary>Target IMAP folder for the "move" post-action.</summary>
+    public string? MoveToFolder { get; set; }
 
     public long? StorageLocationId { get; set; }
     public long? CorrespondentId { get; set; }
@@ -88,8 +99,11 @@ public class SmbImportSettings
     public string Pattern { get; set; } = "*";
     public bool Recursive { get; set; }
 
-    /// <summary>none|delete</summary>
+    /// <summary>none|delete|move (move relocates the file into <see cref="MoveToPath"/> on the share).</summary>
     public string PostAction { get; set; } = "none";
+
+    /// <summary>Target subfolder on the share for the "move" post-action.</summary>
+    public string? MoveToPath { get; set; }
 
     public long? StorageLocationId { get; set; }
     public long? CorrespondentId { get; set; }

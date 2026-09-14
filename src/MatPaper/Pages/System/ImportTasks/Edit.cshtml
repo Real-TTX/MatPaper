@@ -84,7 +84,12 @@
             <mp-field asp-for="Input.SmbPostAction" kind="select" label="After import">
                 <option value="none">Leave on share</option>
                 <option value="delete">Delete</option>
+                <option value="move">Move to subfolder</option>
             </mp-field>
+            <mp-field asp-for="Input.SmbMoveToPath" label="Move to subfolder"
+                      show-when-field="Input.SmbPostAction" show-when-value="move"
+                      placeholder="imported"
+                      help="Subfolder on the share to move processed files into (created if missing)." />
         </div>
 
         @* --- Mail (IMAP / POP3) --- *@
@@ -98,15 +103,36 @@
                       help="leave blank to keep the stored password" />
             <mp-field asp-for="Input.Folder" label="Folder"
                       show-when-field="Input.Type" show-when-value="0" />
-            <mp-field asp-for="Input.SenderRegex" label="Sender regex" />
-            <mp-field asp-for="Input.SubjectRegex" label="Subject regex" />
+
+            <mp-field asp-for="Input.FromFilter" label="Filter: From contains"
+                      placeholder="billing@@, @@vendor.com"
+                      help="Comma-separated. Import only mail whose sender contains one of these. Blank = all." />
+            <mp-field asp-for="Input.ToFilter" label="Filter: To contains"
+                      placeholder="invoices@@yourco.com"
+                      help="Comma-separated. Filter by recipient — handy for shared mailboxes." />
+            <mp-field asp-for="Input.SubjectFilter" label="Filter: Subject contains"
+                      placeholder="invoice, rechnung, mahnung"
+                      help="Comma-separated. Import only mail whose subject contains one of these." />
+
             <mp-field asp-for="Input.AttachmentExtensions" label="Attachment extensions" />
             <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label="Also import the mail body as a PDF" />
+
             <mp-field asp-for="Input.MailPostAction" kind="select" label="After import">
                 <option value="markseen">Mark seen (IMAP only)</option>
+                <option value="move">Move to folder (IMAP only)</option>
                 <option value="delete">Delete</option>
                 <option value="none">Leave on server</option>
             </mp-field>
+            <mp-field asp-for="Input.MailMoveToFolder" label="Move to folder"
+                      show-when-field="Input.MailPostAction" show-when-value="move"
+                      placeholder="Archive/Imported"
+                      help="IMAP folder to move processed messages into (created if missing)." />
+
+            <details style="margin-top:.35rem">
+                <summary style="cursor:pointer;color:var(--color-text-muted);font-size:.85rem">Advanced regex filters (optional)</summary>
+                <mp-field asp-for="Input.SenderRegex" label="Sender regex" />
+                <mp-field asp-for="Input.SubjectRegex" label="Subject regex" />
+            </details>
         </div>
     </section>
 
@@ -167,13 +193,14 @@
             var type = document.querySelector('[name="Input.Type"]');
             var post = document.querySelector('[name="Input.MailPostAction"]');
             if (!type || !post) { return; }
-            var markseen = post.querySelector('option[value="markseen"]');
+            var imapOnly = [post.querySelector('option[value="markseen"]'), post.querySelector('option[value="move"]')];
             function sync() {
-                if (!markseen) { return; }
                 var isPop3 = type.value === "1";
-                markseen.hidden = isPop3;
-                markseen.disabled = isPop3;
-                if (isPop3 && post.value === "markseen") { post.value = "none"; }
+                imapOnly.forEach(function (o) { if (o) { o.hidden = isPop3; o.disabled = isPop3; } });
+                if (isPop3 && (post.value === "markseen" || post.value === "move")) {
+                    post.value = "none";
+                    post.dispatchEvent(new Event("change", { bubbles: true }));
+                }
             }
             type.addEventListener("change", sync);
             sync();

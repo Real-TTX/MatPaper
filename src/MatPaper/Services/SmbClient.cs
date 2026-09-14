@@ -169,6 +169,56 @@ public sealed class SmbSession : IDisposable
         }
     }
 
+    /// <summary>Moves a file into <paramref name="destFolder"/> (created if missing) on the share.</summary>
+    public void TryMove(string path, string destFolder)
+    {
+        var src = Norm(path);
+        var name = src.Contains('\\') ? src[(src.LastIndexOf('\\') + 1)..] : src;
+        var dest = Norm(destFolder);
+        EnsureDirectory(dest);
+        var target = string.IsNullOrEmpty(dest) ? name : dest + "\\" + name;
+
+        var status = _store.CreateFile(out var handle, out _, src,
+            AccessMask.GENERIC_WRITE | AccessMask.DELETE, SMBLibrary.FileAttributes.Normal, ShareAccess.None,
+            CreateDisposition.FILE_OPEN, CreateOptions.FILE_NON_DIRECTORY_FILE, null);
+        if (status != NTStatus.STATUS_SUCCESS)
+        {
+            return;
+        }
+
+        try
+        {
+            var rename = new FileRenameInformationType2 { FileName = target, ReplaceIfExists = true };
+            _store.SetFileInformation(handle, rename);
+        }
+        finally
+        {
+            _store.CloseFile(handle);
+        }
+    }
+
+    private void EnsureDirectory(string dir)
+    {
+        if (string.IsNullOrEmpty(dir))
+        {
+            return;
+        }
+
+        var current = string.Empty;
+        foreach (var part in dir.Split('\\', StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = string.IsNullOrEmpty(current) ? part : current + "\\" + part;
+            var status = _store.CreateFile(out var handle, out _, current,
+                AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
+                ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN_IF,
+                CreateOptions.FILE_DIRECTORY_FILE, null);
+            if (status == NTStatus.STATUS_SUCCESS)
+            {
+                _store.CloseFile(handle);
+            }
+        }
+    }
+
     public void Dispose()
     {
         if (_disposed)

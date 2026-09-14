@@ -22,6 +22,9 @@ public class IndexModel : PageModel
         _currentUser = currentUser;
     }
 
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
+
     public IReadOnlyList<InboxRow> Rows { get; private set; } = Array.Empty<InboxRow>();
 
     public record InboxRow(
@@ -87,9 +90,19 @@ public class IndexModel : PageModel
     {
         var uid = _currentUser.UserId;
 
-        Rows = await _db.Documents
+        IQueryable<Document> query = _db.Documents
             .AsNoTracking()
-            .Where(d => d.OwnerId == uid && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted)
+            .Where(d => d.OwnerId == uid && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            var pattern = $"%{Search.Trim()}%";
+            query = query.Where(d =>
+                EF.Functions.ILike(d.Title, pattern) ||
+                (d.Correspondent != null && EF.Functions.ILike(d.Correspondent.Name, pattern)));
+        }
+
+        Rows = await query
             .OrderByDescending(d => d.CreateDate)
             .Select(d => new InboxRow(
                 d.Id,

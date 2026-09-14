@@ -4,6 +4,10 @@
     ViewData["Breadcrumb"] = "Inbox";
 }
 
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Title or correspondent" />
+</mp-toolbar>
+
 @if (Model.Rows.Count == 0)
 {
     <div class="empty-state">Inbox empty · <a href="/Documents/Upload">Upload</a></div>

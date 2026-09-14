@@ -90,6 +90,9 @@ public class EditModel : PageModel
         public string MailPostAction { get; set; } = "markseen";
         public string? MailMoveToFolder { get; set; }
 
+        /// <summary>UI-only toggle: "all" imports everything, "filter" reveals the filter fields.</summary>
+        public string MailFilterMode { get; set; } = "all";
+
         // SMB / CIFS network share.
         public string SmbHost { get; set; } = string.Empty;
         public string SmbShare { get; set; } = string.Empty;
@@ -212,6 +215,14 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostTestAsync(CancellationToken ct)
     {
         SetBreadcrumb();
+
+        if (Input.Type == (int)ImportTaskType.Filesystem)
+        {
+            NoticeOk = false;
+            Notice = "A filesystem import has no connection to test.";
+            await BuildOptionListsAsync();
+            return Page();
+        }
 
         if (Input.Type == (int)ImportTaskType.Smb)
         {
@@ -343,7 +354,7 @@ public class EditModel : PageModel
         {
             var fs = new FilesystemImportSettings
             {
-                SourcePath = Input.SourcePath.Trim(),
+                SourcePath = (Input.SourcePath ?? string.Empty).Trim(),
                 Pattern = string.IsNullOrWhiteSpace(Input.Pattern) ? "*" : Input.Pattern.Trim(),
                 Recursive = Input.Recursive,
                 PostAction = Input.PostAction,
@@ -381,11 +392,11 @@ public class EditModel : PageModel
     {
         return new SmbImportSettings
         {
-            Host = Input.SmbHost.Trim(),
-            Share = Input.SmbShare.Trim(),
+            Host = (Input.SmbHost ?? string.Empty).Trim(),
+            Share = (Input.SmbShare ?? string.Empty).Trim(),
             Path = (Input.SmbPath ?? string.Empty).Trim(),
             Domain = string.IsNullOrWhiteSpace(Input.SmbDomain) ? null : Input.SmbDomain.Trim(),
-            Username = Input.SmbUsername.Trim(),
+            Username = (Input.SmbUsername ?? string.Empty).Trim(),
             ProtectedPassword = protectedPassword,
             CredentialId = Input.CredentialId,
             Pattern = string.IsNullOrWhiteSpace(Input.SmbPattern) ? "*" : Input.SmbPattern.Trim(),
@@ -403,20 +414,21 @@ public class EditModel : PageModel
 
     private MailImportSettings BuildMailSettings(string protectedPassword)
     {
+        var useFilters = Input.MailFilterMode == "filter";
         return new MailImportSettings
         {
-            Host = Input.Host.Trim(),
+            Host = (Input.Host ?? string.Empty).Trim(),
             Port = Input.Port,
             UseSsl = Input.UseSsl,
-            Username = Input.Username.Trim(),
+            Username = (Input.Username ?? string.Empty).Trim(),
             ProtectedPassword = protectedPassword,
             CredentialId = Input.CredentialId,
             Folder = string.IsNullOrWhiteSpace(Input.Folder) ? "INBOX" : Input.Folder.Trim(),
-            FromFilter = string.IsNullOrWhiteSpace(Input.FromFilter) ? null : Input.FromFilter.Trim(),
-            ToFilter = string.IsNullOrWhiteSpace(Input.ToFilter) ? null : Input.ToFilter.Trim(),
-            SubjectFilter = string.IsNullOrWhiteSpace(Input.SubjectFilter) ? null : Input.SubjectFilter.Trim(),
-            SenderRegex = string.IsNullOrWhiteSpace(Input.SenderRegex) ? null : Input.SenderRegex.Trim(),
-            SubjectRegex = string.IsNullOrWhiteSpace(Input.SubjectRegex) ? null : Input.SubjectRegex.Trim(),
+            FromFilter = !useFilters || string.IsNullOrWhiteSpace(Input.FromFilter) ? null : Input.FromFilter.Trim(),
+            ToFilter = !useFilters || string.IsNullOrWhiteSpace(Input.ToFilter) ? null : Input.ToFilter.Trim(),
+            SubjectFilter = !useFilters || string.IsNullOrWhiteSpace(Input.SubjectFilter) ? null : Input.SubjectFilter.Trim(),
+            SenderRegex = !useFilters || string.IsNullOrWhiteSpace(Input.SenderRegex) ? null : Input.SenderRegex.Trim(),
+            SubjectRegex = !useFilters || string.IsNullOrWhiteSpace(Input.SubjectRegex) ? null : Input.SubjectRegex.Trim(),
             AttachmentExtensions = string.IsNullOrWhiteSpace(Input.AttachmentExtensions)
                 ? DefaultAttachmentExtensions
                 : Input.AttachmentExtensions.Trim(),
@@ -491,6 +503,10 @@ public class EditModel : PageModel
             Input.SubjectFilter = mail.SubjectFilter;
             Input.SenderRegex = mail.SenderRegex;
             Input.SubjectRegex = mail.SubjectRegex;
+            Input.MailFilterMode =
+                (!string.IsNullOrWhiteSpace(mail.FromFilter) || !string.IsNullOrWhiteSpace(mail.ToFilter)
+                 || !string.IsNullOrWhiteSpace(mail.SubjectFilter) || !string.IsNullOrWhiteSpace(mail.SenderRegex)
+                 || !string.IsNullOrWhiteSpace(mail.SubjectRegex)) ? "filter" : "all";
             Input.AttachmentExtensions = string.IsNullOrWhiteSpace(mail.AttachmentExtensions)
                 ? DefaultAttachmentExtensions
                 : mail.AttachmentExtensions;

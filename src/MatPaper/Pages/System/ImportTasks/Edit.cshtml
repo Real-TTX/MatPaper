@@ -36,8 +36,7 @@
 
         <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
 
-        <mp-schedule asp-for="Input.CronExpression" label="Schedule"
-                     help="How often this import runs automatically. Choose Manual to run it only on demand." />
+        <mp-schedule asp-for="Input.CronExpression" label="Schedule" />
     </section>
 
     <section class="form-section">
@@ -45,9 +44,7 @@
 
         @* --- Filesystem --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="2">
-            <p class="form-section__hint">Import files from a folder mounted into the container.</p>
-            <mp-field asp-for="Input.SourcePath" label="Source path"
-                      help="Absolute path inside the container. A mounted SMB/CIFS or NFS network share works here (mount it into the container, then point this at its path, e.g. /mnt/scan)." />
+            <mp-field asp-for="Input.SourcePath" label="Source path" placeholder="/mnt/scan" />
             <mp-field asp-for="Input.Pattern" label="Pattern" placeholder="*" />
             <mp-field asp-for="Input.Recursive" kind="checkbox" label="Recursive" />
             <mp-field asp-for="Input.PostAction" kind="select" label="After import">
@@ -56,29 +53,23 @@
                 <option value="move">Move</option>
             </mp-field>
             <mp-field asp-for="Input.MoveToPath" label="Move to path"
-                      show-when-field="Input.PostAction" show-when-value="move"
-                      help="Absolute path inside the container to move processed files to" />
+                      show-when-field="Input.PostAction" show-when-value="move" placeholder="/mnt/scan/done" />
         </div>
 
         @* --- Saved credential (mail + SMB) --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="0,1,3">
             <mp-field asp-for="Input.CredentialId" kind="select" label="Saved credential"
-                      asp-items="Model.CredentialOptions"
-                      help="Optional. Pick a credential from System / Credentials to reuse a stored username &amp; password instead of the fields below." />
+                      asp-items="Model.CredentialOptions" />
         </div>
 
         @* --- SMB / CIFS --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <p class="form-section__hint">Import files directly from an SMB/CIFS network share — no host mount required.</p>
-            <mp-field asp-for="Input.SmbHost" label="Host" placeholder="nas.local or 192.168.1.10" />
+            <mp-field asp-for="Input.SmbHost" label="Host" placeholder="nas.local" />
             <mp-field asp-for="Input.SmbShare" label="Share" placeholder="documents" />
-            <mp-field asp-for="Input.SmbPath" label="Path in share"
-                      placeholder="inbox/scans"
-                      help="Optional — leave blank for the share root. Use / or \ as separator." />
-            <mp-field asp-for="Input.SmbDomain" label="Domain" help="Optional (Windows domain or workgroup)." />
+            <mp-field asp-for="Input.SmbPath" label="Path in share" placeholder="inbox/scans" />
+            <mp-field asp-for="Input.SmbDomain" label="Domain" />
             <mp-field asp-for="Input.SmbUsername" label="Username" />
-            <mp-field asp-for="Input.SmbPassword" kind="password" label="Password"
-                      help="leave blank to keep the stored password" />
+            <mp-field asp-for="Input.SmbPassword" kind="password" label="Password" />
             <mp-field asp-for="Input.SmbPattern" label="Pattern" placeholder="*" />
             <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label="Recursive" />
             <mp-field asp-for="Input.SmbPostAction" kind="select" label="After import">
@@ -87,32 +78,30 @@
                 <option value="move">Move to subfolder</option>
             </mp-field>
             <mp-field asp-for="Input.SmbMoveToPath" label="Move to subfolder"
-                      show-when-field="Input.SmbPostAction" show-when-value="move"
-                      placeholder="imported"
-                      help="Subfolder on the share to move processed files into (created if missing)." />
+                      show-when-field="Input.SmbPostAction" show-when-value="move" placeholder="imported" />
         </div>
 
         @* --- Mail (IMAP / POP3) --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <p class="form-section__hint">Import attachments (and optionally the body) from a mailbox.</p>
             <mp-field asp-for="Input.Host" label="Host" placeholder="mail.example.com" />
             <mp-field asp-for="Input.Port" kind="number" label="Port" />
             <mp-field asp-for="Input.UseSsl" kind="checkbox" label="Use SSL" />
             <mp-field asp-for="Input.Username" label="Username" />
-            <mp-field asp-for="Input.Password" kind="password" label="Password"
-                      help="leave blank to keep the stored password" />
+            <mp-field asp-for="Input.Password" kind="password" label="Password" />
             <mp-field asp-for="Input.Folder" label="Folder"
                       show-when-field="Input.Type" show-when-value="0" />
 
-            <mp-field asp-for="Input.FromFilter" label="Filter: From contains"
-                      placeholder="billing@@, @@vendor.com"
-                      help="Comma-separated. Import only mail whose sender contains one of these. Blank = all." />
-            <mp-field asp-for="Input.ToFilter" label="Filter: To contains"
-                      placeholder="invoices@@yourco.com"
-                      help="Comma-separated. Filter by recipient — handy for shared mailboxes." />
-            <mp-field asp-for="Input.SubjectFilter" label="Filter: Subject contains"
-                      placeholder="invoice, rechnung, mahnung"
-                      help="Comma-separated. Import only mail whose subject contains one of these." />
+            <mp-field asp-for="Input.MailFilterMode" kind="select" label="Messages">
+                <option value="all">Import all</option>
+                <option value="filter">Filter…</option>
+            </mp-field>
+            <div data-show-when-field="Input.MailFilterMode" data-show-when-value="filter">
+                <mp-field asp-for="Input.FromFilter" label="From contains" />
+                <mp-field asp-for="Input.ToFilter" label="To contains" />
+                <mp-field asp-for="Input.SubjectFilter" label="Subject contains" />
+                <mp-field asp-for="Input.SenderRegex" label="Sender regex (advanced)" />
+                <mp-field asp-for="Input.SubjectRegex" label="Subject regex (advanced)" />
+            </div>
 
             <mp-field asp-for="Input.AttachmentExtensions" label="Attachment extensions" />
             <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label="Also import the mail body as a PDF" />
@@ -124,21 +113,12 @@
                 <option value="none">Leave on server</option>
             </mp-field>
             <mp-field asp-for="Input.MailMoveToFolder" label="Move to folder"
-                      show-when-field="Input.MailPostAction" show-when-value="move"
-                      placeholder="Archive/Imported"
-                      help="IMAP folder to move processed messages into (created if missing)." />
-
-            <details style="margin-top:.35rem">
-                <summary style="cursor:pointer;color:var(--color-text-muted);font-size:.85rem">Advanced regex filters (optional)</summary>
-                <mp-field asp-for="Input.SenderRegex" label="Sender regex" />
-                <mp-field asp-for="Input.SubjectRegex" label="Subject regex" />
-            </details>
+                      show-when-field="Input.MailPostAction" show-when-value="move" placeholder="Archive/Imported" />
         </div>
     </section>
 
     <section class="form-section">
         <h2 class="form-section__title">Defaults for imported documents</h2>
-        <p class="form-section__hint">Applied to every document this task imports. Auto-analysis may still refine them.</p>
 
         <mp-field asp-for="Input.StorageLocationId" kind="select" label="Storage location"
                   asp-items="Model.StorageLocationOptions" />
@@ -149,8 +129,7 @@
         <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
                   asp-items="Model.ProjectOptions" />
 
-        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label="Skip inbox (mark imported documents as reviewed)"
-                  help="Turn on when the defaults above already classify the documents, so they go straight to the library instead of the review inbox." />
+        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label="Skip inbox (mark imported documents as reviewed)" />
 
         @if (Model.TagOptions.Count > 0)
         {
@@ -176,7 +155,9 @@
         {
             <mp-button variant="secondary" type="submit" handler="Run">Run now</mp-button>
         }
-        <mp-button variant="secondary" type="submit" handler="Test">Test connection</mp-button>
+        <span data-show-when-field="Input.Type" data-show-when-value="0,1,3">
+            <mp-button variant="secondary" type="submit" handler="Test">Test connection</mp-button>
+        </span>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {

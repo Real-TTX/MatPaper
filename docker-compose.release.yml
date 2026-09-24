@@ -6,8 +6,11 @@ services:
     volumes:
       - matpaper-data:/data
       - matpaper-storage:/storage
+      # Keep the review inbox off the container host, e.g. on the NAS:
+      #   - matpaper-inbox:/inbox        (+ MATPAPER_INBOX: /inbox below, volume defined at the bottom)
     environment:
       APP_VERSION: local
+      # MATPAPER_INBOX: /inbox
     depends_on:
       - db
     restart: unless-stopped
@@ -25,3 +28,10 @@ volumes:
   matpaper-data:
   matpaper-db:
   matpaper-storage:
+  # NAS share mounted by Docker (CIFS) — usable for /inbox or as a local storage location:
+  # matpaper-inbox:
+  #   driver: local
+  #   driver_opts:
+  #     type: cifs
+  #     o: "addr=nas.local,username=matpaper,password=secret,uid=1000,gid=1000,file_mode=0660,dir_mode=0770"
+  #     device: "//nas.local/matpaper-inbox"

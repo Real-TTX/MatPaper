@@ -6,56 +6,71 @@ using MatPaper.Services;
 
 namespace MatPaper.Pages.Documents;
 
+/// <summary>Serves a document's file as an attachment (staged, local or SMB-stored).</summary>
 public class DownloadModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly DocumentStorageService _storage;
     private readonly CurrentUser _currentUser;
+    private readonly ILogger<DownloadModel> _logger;
 
-    public DownloadModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser)
+    public DownloadModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser, ILogger<DownloadModel> logger)
     {
         _db = db;
         _storage = storage;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
-    public async Task<IActionResult> OnGetAsync(Guid token)
+    public async Task<IActionResult> OnGetAsync(Guid token, CancellationToken ct)
     {
         var document = await _db.Documents
             .AsNoTracking()
-            .Include(d => d.StorageLocation)
+            .Include(d => d.StorageLocation).ThenInclude(s => s!.Credential)
             .AccessibleTo(_currentUser)
-            .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted);
+            .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted, ct);
 
-        if (document?.StorageLocation == null)
+        if (document == null)
         {
             return NotFound();
         }
 
-        var absolutePath = _storage.GetAbsolutePath(document.StorageLocation, document.RelativePath);
+        var contentType = DocumentContentType.FromFileName(document.OriginalFileName);
 
-        if (!global::System.IO.File.Exists(absolutePath))
+        var localPath = _storage.TryGetDocumentLocalPath(document);
+        if (localPath != null)
+        {
+            if (!global::System.IO.File.Exists(localPath))
+            {
+                return NotFound();
+            }
+
+            return new PhysicalFileResult(localPath, contentType)
+            {
+                FileDownloadName = document.OriginalFileName,
+                EnableRangeProcessing = true
+            };
+        }
+
+        Stream stream;
+        try
+        {
+            stream = await _storage.OpenDocumentReadAsync(document, ct);
+        }
+        catch (FileNotFoundException)
         {
             return NotFound();
         }
-
-        var contentType = GetContentType(document.OriginalFileName);
-        return PhysicalFile(absolutePath, contentType, document.OriginalFileName);
-    }
-
-    private static string GetContentType(string fileName)
-    {
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        return extension switch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            ".pdf" => "application/pdf",
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".bmp" => "image/bmp",
-            ".webp" => "image/webp",
-            ".tif" or ".tiff" => "image/tiff",
-            _ => "application/octet-stream",
+            _logger.LogWarning(ex, "Downloading document {DocumentId} from its storage location failed.", document.Id);
+            return StatusCode(StatusCodes.Status502BadGateway, "The storage location is not reachable.");
+        }
+
+        return new FileStreamResult(stream, contentType)
+        {
+            FileDownloadName = document.OriginalFileName,
+            EnableRangeProcessing = true
         };
     }
 }

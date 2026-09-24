@@ -4,25 +4,54 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? "System / Storage locations / Edit" : "System / Storage locations / New";
 }
 
+@if (!string.IsNullOrEmpty(Model.Notice))
+{
+    <div class="form-summary">
+        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? "OK" : "Failed")</span>
+        @Model.Notice
+    </div>
+}
+
 <form class="form" method="post">
     <input type="hidden" asp-for="Id" />
 
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. NAS archive" />
+    <section class="form-section">
+        <h2 class="form-section__title">Overview</h2>
 
-    <mp-field asp-for="Input.RootPath" label="Root path"
-              placeholder="/storage"
-              help="Absolute path inside the container. A mounted SMB/CIFS or NFS network share works here — mount it into the container (docker volume) and point this at its path, e.g. /storage or /mnt/nas." />
+        <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Archive" />
 
-    <mp-field asp-for="Input.PathTemplate" label="Path template"
-              help="Human-readable layout. Tokens: {Correspondent} {Year} {Month} {DocumentType} {Date} {Title} {Ext}" />
+        <mp-field asp-for="Input.Kind" kind="select" label="Type">
+            <option value="0">Local folder</option>
+            <option value="1">SMB / CIFS network share</option>
+        </mp-field>
 
-    <mp-field asp-for="Input.IsDefault" kind="checkbox" label="Default location" />
+        <mp-field asp-for="Input.IsDefault" kind="checkbox" label="Default location" />
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section__title">Location</h2>
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="0">
+            <mp-field asp-for="Input.RootPath" label="Folder" placeholder="/storage" />
+        </div>
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="1">
+            <mp-field asp-for="Input.SmbHost" label="Host" placeholder="nas.local" />
+            <mp-field asp-for="Input.SmbShare" label="Share" placeholder="documents" />
+            <mp-field asp-for="Input.SmbPath" label="Folder in share" placeholder="archive (optional)" />
+            <mp-field asp-for="Input.CredentialId" kind="select" label="Credential" asp-items="Model.CredentialOptions" />
+        </div>
+
+        <mp-field asp-for="Input.PathTemplate" label="Path template"
+                  placeholder="{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}" />
+    </section>
 
     <mp-button-row>
         <mp-button variant="primary" type="submit">Save</mp-button>
         <mp-button variant="secondary" href="/System/StorageLocations">Back</mp-button>
+        <mp-button variant="secondary" type="submit" handler="Test">Test connection</mp-button>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {

@@ -209,12 +209,9 @@
     @if (Model.ReviewState == MatPaper.Data.ReviewState.Pending)
     {
         <span class="badge badge--muted">Needs review</span>
-        @if (Model.CanEdit)
+        @if (Model.IsStaged)
         {
-            <form method="post" asp-page-handler="ConfirmReview" style="display:inline">
-                <input type="hidden" asp-for="Id" />
-                <button class="btn btn--primary" type="submit">Confirm (mark reviewed)</button>
-            </form>
+            <span class="badge badge--muted" title="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location.">Not filed yet</span>
         }
     }
     else
@@ -252,6 +249,7 @@
     <div class="doc-right">
     <form class="form" method="post">
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ReturnUrl" />
 
         <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
@@ -272,9 +270,8 @@
         <mp-picker asp-for="Input.ProjectId" label="Project"
                    asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
 
-        <mp-field asp-for="Input.StorageLocationId" kind="select" label="Storage location"
-                  asp-items="Model.StorageLocationOptions"
-                  help="Changing this moves the file into the selected location." />
+        <mp-field asp-for="Input.StorageLocationId" kind="select" label="@(Model.IsStaged ? "File to" : "Storage location")"
+                  asp-items="Model.StorageLocationOptions" />
 
         @if (Model.TagItems.Count == 0)
         {
@@ -289,16 +286,28 @@
         }
 
         <mp-button-row>
-            @if (Model.CanEdit)
+            @if (Model.CanEdit && Model.ReviewState == MatPaper.Data.ReviewState.Pending)
+            {
+                @if (Model.OcrState == MatPaper.Data.OcrState.Pending)
+                {
+                    <button class="btn btn--primary" type="submit" disabled title="Still being processed">Save &amp; confirm</button>
+                }
+                else
+                {
+                    <mp-button variant="primary" type="submit" handler="SaveConfirm">Save &amp; confirm</mp-button>
+                }
+                <mp-button variant="secondary" type="submit">Save</mp-button>
+            }
+            else if (Model.CanEdit)
             {
                 <mp-button variant="primary" type="submit">Save</mp-button>
             }
-            <mp-button variant="secondary" href="/Documents">Back</mp-button>
+            <mp-button variant="secondary" href="@Model.BackUrl">Back</mp-button>
             @if (Model.IsOwner)
             {
                 <mp-button-spacer />
                 <mp-button variant="danger" type="submit" handler="Delete"
-                           confirm="Delete this document? The file stays on disk but the document is removed from MatPaper.">Delete</mp-button>
+                           confirm="@(Model.IsStaged ? "Delete this document? It is removed from the inbox together with its file." : "Delete this document? The file stays in its storage location but the document is removed from MatPaper.")">Delete</mp-button>
             }
         </mp-button-row>
     </form>
@@ -341,7 +350,7 @@
         <ul class="doc-facts">
             <li><span class="doc-facts__key">Document ID</span><span class="doc-facts__val">@Model.Id</span></li>
             <li><span class="doc-facts__key">Token</span><span class="doc-facts__val" style="word-break:break-all">@Model.Token</span></li>
-            <li><span class="doc-facts__key">Storage</span><span class="doc-facts__val">@(Model.StorageLocationName ?? "—")</span></li>
+            <li><span class="doc-facts__key">Storage</span><span class="doc-facts__val">@(Model.IsStaged ? "Inbox (not filed yet)" : Model.StorageLocationName ?? "—")</span></li>
             <li><span class="doc-facts__key">Path</span><span class="doc-facts__val" style="word-break:break-all">@Model.RelativePath</span></li>
             <li><span class="doc-facts__key">Content hash</span><span class="doc-facts__val" style="word-break:break-all">@(Model.ContentHash ?? "—")</span></li>
         </ul>

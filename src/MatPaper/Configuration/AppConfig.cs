@@ -14,9 +14,30 @@ public class DatabaseConfig
         $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
 }
 
+public class StorageConfig
+{
+    /// <summary>
+    /// Folder holding documents that wait in the review inbox (not filed yet). Must be a
+    /// local path inside the container (a mounted NAS share is fine). Null = "{data}/inbox".
+    /// The environment variable MATPAPER_INBOX overrides this value.
+    /// </summary>
+    public string? InboxPath { get; set; }
+}
+
 public class AppConfig
 {
     public DatabaseConfig Database { get; set; } = new();
+    public StorageConfig Storage { get; set; } = new();
+
+    /// <summary>Effective inbox staging folder: env MATPAPER_INBOX → config → {dataDir}/inbox.</summary>
+    public string ResolveInboxPath(string dataDir)
+    {
+        var fromEnv = Environment.GetEnvironmentVariable("MATPAPER_INBOX");
+        var path = !string.IsNullOrWhiteSpace(fromEnv) ? fromEnv
+            : !string.IsNullOrWhiteSpace(Storage?.InboxPath) ? Storage!.InboxPath!
+            : Path.Combine(dataDir, "inbox");
+        return Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+    }
 }
 
 public static class AppConfigLoader

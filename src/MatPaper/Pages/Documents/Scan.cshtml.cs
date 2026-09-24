@@ -6,6 +6,10 @@ using MatPaper.Services;
 
 namespace MatPaper.Pages.Documents;
 
+/// <summary>
+/// Camera scan: one or more photos become a single PDF that lands in the review inbox
+/// (staging area). The storage location is chosen when the document is confirmed.
+/// </summary>
 public class ScanModel : PageModel
 {
     private readonly AppDbContext _db;
@@ -32,32 +36,20 @@ public class ScanModel : PageModel
     public List<IFormFile> Images { get; set; } = new();
 
     [BindProperty]
-    public long StorageLocationId { get; set; }
-
-    [BindProperty]
     public long? CorrespondentId { get; set; }
 
     [BindProperty]
     public long? DocumentTypeId { get; set; }
 
-    public IReadOnlyList<StorageLocation> StorageLocations { get; private set; } = Array.Empty<StorageLocation>();
     public IReadOnlyList<Correspondent> Correspondents { get; private set; } = Array.Empty<Correspondent>();
     public IReadOnlyList<DocumentType> DocumentTypes { get; private set; } = Array.Empty<DocumentType>();
 
-    public bool HasStorage => StorageLocations.Count > 0;
     public List<string> Messages { get; } = new();
 
     public async Task OnGetAsync()
     {
         ViewData["Breadcrumb"] = "Documents / Scan";
-
         await LoadOptionsAsync();
-
-        var defaultLocation = StorageLocations.FirstOrDefault(s => s.IsDefault) ?? StorageLocations.FirstOrDefault();
-        if (defaultLocation != null)
-        {
-            StorageLocationId = defaultLocation.Id;
-        }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
@@ -65,18 +57,6 @@ public class ScanModel : PageModel
         ViewData["Breadcrumb"] = "Documents / Scan";
 
         await LoadOptionsAsync();
-
-        if (!HasStorage)
-        {
-            return Page();
-        }
-
-        var validLocation = StorageLocations.Any(s => s.Id == StorageLocationId);
-        if (!validLocation)
-        {
-            ModelState.AddModelError(nameof(StorageLocationId), "Please select a valid storage location.");
-            return Page();
-        }
 
         var images = new List<byte[]>();
         foreach (var file in Images)
@@ -116,7 +96,7 @@ public class ScanModel : PageModel
         var result = await _ingest.IngestAsync(
             pdfStream,
             fileName,
-            StorageLocationId,
+            storageLocationId: null,
             CorrespondentId,
             DocumentTypeId,
             null,
@@ -127,25 +107,18 @@ public class ScanModel : PageModel
         switch (result.Status)
         {
             case IngestStatus.Created:
-                return RedirectToPage("Edit", new { id = result.DocumentId });
+                return RedirectToPage("Edit", new { id = result.DocumentId, returnUrl = "/Inbox" });
             case IngestStatus.Duplicate:
                 Messages.Add("This scan matches an existing document; nothing new was created.");
                 return Page();
-            case IngestStatus.NoStorage:
             default:
-                Messages.Add("The scan could not be stored (no valid storage location).");
+                Messages.Add("The scan could not be stored.");
                 return Page();
         }
     }
 
     private async Task LoadOptionsAsync()
     {
-        StorageLocations = await _db.StorageLocations.AsNoTracking()
-            .Where(s => s.UpdateState != UpdateState.Deleted)
-            .OrderByDescending(s => s.IsDefault)
-            .ThenBy(s => s.Name)
-            .ToListAsync();
-
         Correspondents = await _db.Correspondents.AsNoTracking()
             .Where(c => c.UpdateState != UpdateState.Deleted)
             .OrderBy(c => c.Name)

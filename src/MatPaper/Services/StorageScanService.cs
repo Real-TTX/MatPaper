@@ -1,13 +1,12 @@
-using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 
 namespace MatPaper.Services;
 
 /// <summary>
-/// Discovers files on disk under a <see cref="StorageLocation"/> and records the unknown
-/// ones as <see cref="InboxItem"/>s, then turns selected inbox items into managed
-/// <see cref="Document"/>s (or dismisses them). File moves and path building are delegated
+/// Discovers files in a <see cref="StorageLocation"/> (local folder or SMB share) and records
+/// the unknown ones as <see cref="InboxItem"/>s, then turns selected inbox items into managed
+/// <see cref="Document"/>s (or dismisses them). Listing, hashing and file moves are delegated
 /// to <see cref="DocumentStorageService"/>; OCR/thumbnail work is triggered via
 /// <see cref="DocumentProcessingQueue"/>.
 /// </summary>
@@ -35,14 +34,15 @@ public sealed class StorageScanService
     public record ImportSummary(int Imported, int Duplicates, int Errors);
 
     /// <summary>
-    /// Walks the storage location root recursively and adds an <see cref="InboxItem"/> for
-    /// every file that is not already tracked as a non-deleted document or a known inbox item.
+    /// Walks the storage location recursively and adds an <see cref="InboxItem"/> for every
+    /// file that is not already tracked as a non-deleted document or a known inbox item.
     /// Dot-files and any path containing a dot-prefixed segment are ignored.
     /// </summary>
     public async Task<ScanResult> ScanAsync(long storageLocationId, CancellationToken ct)
     {
         var loc = await _db.StorageLocations
             .AsNoTracking()
+            .Include(s => s.Credential)
             .FirstOrDefaultAsync(s => s.Id == storageLocationId && s.UpdateState != UpdateState.Deleted, ct);
 
         if (loc is null)
@@ -50,18 +50,26 @@ public sealed class StorageScanService
             return new ScanResult(0, 0, 0, true);
         }
 
-        var root = loc.RootPath;
-        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+        IReadOnlyList<StorageEntry> entries;
+        try
         {
-            _logger.LogWarning(
-                "Storage location {LocationId} root path '{Root}' does not exist; scan skipped.",
-                storageLocationId, root);
+            entries = await _storage.ListFilesAsync(loc, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Storage location {LocationId} ('{Root}') could not be listed; scan skipped.",
+                storageLocationId, loc.DisplayRoot);
             return new ScanResult(0, 0, 0, true);
         }
 
         var docPaths = await _db.Documents
             .AsNoTracking()
-            .Where(d => d.StorageLocationId == storageLocationId && d.UpdateState != UpdateState.Deleted)
+            .Where(d => d.StorageLocationId == storageLocationId && !d.IsStaged && d.UpdateState != UpdateState.Deleted)
             .Select(d => d.RelativePath)
             .ToListAsync(ct);
 
@@ -75,80 +83,59 @@ public sealed class StorageScanService
         var inboxSet = new HashSet<string>(inboxPaths, StringComparer.Ordinal);
 
         int scanned = 0;
-        int added = 0;
         int skipped = 0;
         var now = DateTime.UtcNow;
 
-        try
+        var fresh = new List<StorageEntry>();
+        foreach (var entry in entries)
         {
-            foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            if (HasHiddenSegment(entry.RelativePath))
             {
-                ct.ThrowIfCancellationRequested();
-
-                string relativePath;
-                try
-                {
-                    relativePath = Path.GetRelativePath(root, file).Replace('\\', '/').TrimStart('/');
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not compute relative path for '{File}'.", file);
-                    continue;
-                }
-
-                if (HasHiddenSegment(relativePath))
-                {
-                    continue;
-                }
-
-                scanned++;
-
-                if (docSet.Contains(relativePath) || inboxSet.Contains(relativePath))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                try
-                {
-                    var info = new FileInfo(file);
-                    var hash = await ComputeHashAsync(file, ct);
-
-                    _db.InboxItems.Add(new InboxItem
-                    {
-                        StorageLocationId = storageLocationId,
-                        RelativePath = relativePath,
-                        FileName = Path.GetFileName(file),
-                        FileSize = info.Length,
-                        ContentHash = hash,
-                        FileModifiedUtc = info.LastWriteTimeUtc,
-                        UpdateState = UpdateState.Created,
-                        CreateDate = now,
-                        UpdateDate = now,
-                        CreateUserId = null,
-                        UpdateUserId = null
-                    });
-
-                    inboxSet.Add(relativePath);
-                    added++;
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to index file '{File}'; skipping.", file);
-                }
+                continue;
             }
+
+            scanned++;
+
+            if (docSet.Contains(entry.RelativePath) || inboxSet.Contains(entry.RelativePath))
+            {
+                skipped++;
+                continue;
+            }
+
+            fresh.Add(entry);
         }
-        catch (OperationCanceledException)
+
+        // Hash the new files in one batch so a remote location needs a single connection
+        // for the whole scan instead of one handshake per file.
+        var hashes = await _storage.ComputeHashesAsync(loc, fresh.Select(e => e.RelativePath).ToList(), ct);
+
+        int added = 0;
+        foreach (var entry in fresh)
         {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Enumeration of storage location {LocationId} failed part-way.", storageLocationId);
+            ct.ThrowIfCancellationRequested();
+
+            if (!hashes.TryGetValue(entry.RelativePath, out var hash))
+            {
+                _logger.LogWarning("Could not read '{File}' while scanning; skipping.", entry.RelativePath);
+                continue;
+            }
+
+            _db.InboxItems.Add(new InboxItem
+            {
+                StorageLocationId = storageLocationId,
+                RelativePath = entry.RelativePath,
+                FileName = Path.GetFileName(entry.RelativePath),
+                FileSize = entry.Size,
+                ContentHash = hash,
+                FileModifiedUtc = entry.ModifiedUtc,
+                UpdateState = UpdateState.Created,
+                CreateDate = now,
+                UpdateDate = now,
+                CreateUserId = null,
+                UpdateUserId = null
+            });
+
+            added++;
         }
 
         if (added > 0)
@@ -162,7 +149,9 @@ public sealed class StorageScanService
     /// <summary>
     /// Imports the given inbox items as documents applying the shared metadata. Content-hash
     /// duplicates of existing documents are dismissed instead of re-imported. Each import is
-    /// isolated; a failure counts as an error and does not abort the batch.
+    /// isolated; a failure counts as an error and does not abort the batch. The files are
+    /// already inside the location, so the documents are created as filed (not staged) but
+    /// still land in the owner's review inbox.
     /// </summary>
     public async Task<ImportSummary> ImportAsync(
         IReadOnlyCollection<long> inboxItemIds,
@@ -215,7 +204,7 @@ public sealed class StorageScanService
             try
             {
                 var item = await _db.InboxItems
-                    .Include(i => i.StorageLocation)
+                    .Include(i => i.StorageLocation).ThenInclude(s => s!.Credential)
                     .FirstOrDefaultAsync(i => i.Id == id && i.UpdateState != UpdateState.Deleted, ct);
 
                 if (item is null || item.StorageLocation is null)
@@ -253,7 +242,7 @@ public sealed class StorageScanService
                 {
                     var desired = _storage.BuildRelativePath(
                         loc, title, item.FileModifiedUtc, correspondentName, documentTypeName, item.FileName);
-                    actualRel = await _storage.MoveAsync(loc, item.RelativePath, desired);
+                    actualRel = await _storage.MoveAsync(loc, item.RelativePath, desired, ct);
                 }
                 else
                 {
@@ -269,6 +258,7 @@ public sealed class StorageScanService
                     CorrespondentId = correspondentId,
                     ProjectId = projectId,
                     StorageLocationId = item.StorageLocationId,
+                    IsStaged = false,
                     RelativePath = actualRel,
                     OriginalFileName = item.FileName,
                     FileSize = item.FileSize,
@@ -366,11 +356,4 @@ public sealed class StorageScanService
         return false;
     }
 
-    private static async Task<string> ComputeHashAsync(string path, CancellationToken ct)
-    {
-        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var sha = SHA256.Create();
-        var hash = await sha.ComputeHashAsync(stream, ct);
-        return Convert.ToHexString(hash).ToLowerInvariant();
-    }
 }

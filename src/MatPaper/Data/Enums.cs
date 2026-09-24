@@ -25,6 +25,16 @@ public enum ReviewState
     Reviewed = 1
 }
 
+/// <summary>Where a <see cref="StorageLocation"/> keeps its files.</summary>
+public enum StorageKind
+{
+    /// <summary>A folder on the local filesystem (or a mount inside the container).</summary>
+    Local = 0,
+
+    /// <summary>An SMB/CIFS network share reached directly over the network.</summary>
+    Smb = 1
+}
+
 public enum ImportTaskType
 {
     Imap = 0,

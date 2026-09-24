@@ -111,7 +111,7 @@ public sealed class DocumentProcessingService : BackgroundService
 
         try
         {
-            if (document.StorageLocation is null)
+            if (!document.IsStaged && document.StorageLocation is null)
             {
                 _logger.LogWarning("Document {DocumentId} has no storage location; marking failed", documentId);
                 document.OcrState = OcrState.Failed;
@@ -120,7 +120,10 @@ public sealed class DocumentProcessingService : BackgroundService
                 return;
             }
 
-            var absolutePath = storage.GetAbsolutePath(document.StorageLocation, document.RelativePath);
+            // Staged and local files are processed in place; SMB files are pulled into a
+            // temporary copy that is removed when we're done.
+            using var local = await storage.GetLocalCopyAsync(document, ct);
+            var absolutePath = local.FilePath;
             var extension = Path.GetExtension(document.OriginalFileName);
 
             var extraction = await extractor.ExtractAsync(absolutePath, extension, ct);

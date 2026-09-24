@@ -17,9 +17,13 @@ Directory.CreateDirectory(dataDir);
 Directory.CreateDirectory(Path.Combine(dataDir, "config"));
 Directory.CreateDirectory(Path.Combine(dataDir, "keys"));
 Directory.CreateDirectory(Path.Combine(dataDir, "thumbnails"));
+Directory.CreateDirectory(Path.Combine(dataDir, "tmp"));     // temporary local copies of remote (SMB) files
 
 // Load application configuration (creates defaults on first run).
 var appConfig = AppConfigLoader.Load(dataDir);
+
+// Staging area for documents waiting in the review inbox (env MATPAPER_INBOX / config overrides).
+Directory.CreateDirectory(appConfig.ResolveInboxPath(dataDir));
 
 // App version for the footer.
 AppInfo.Version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "local";
@@ -49,6 +53,7 @@ builder.Services.AddSingleton<TesseractOcrRunner>();
 builder.Services.AddSingleton<DocumentTextExtractor>();
 builder.Services.AddSingleton<ThumbnailService>();
 builder.Services.AddScoped<DocumentIngestService>();
+builder.Services.AddScoped<DocumentFilingService>();
 builder.Services.AddScoped<StorageScanService>();
 builder.Services.AddSingleton<InvoiceDataExtractor>();
 builder.Services.AddScoped<DocumentAnalysisService>();

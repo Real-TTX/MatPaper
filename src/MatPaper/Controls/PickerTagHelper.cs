@@ -56,6 +56,18 @@ public sealed class PickerTagHelper : TagHelper
     [HtmlAttributeName("help")]
     public string? Help { get; set; }
 
+    /// <summary>
+    /// Explicit selected value(s) — comma-separated for multiple — overriding the model
+    /// value. Together with <c>id-suffix</c> this lets the same field appear once per row
+    /// (each row in its own form), e.g. in the review inbox.
+    /// </summary>
+    [HtmlAttributeName("value")]
+    public string? Value { get; set; }
+
+    /// <summary>Suffix appended to the widget id so repeated pickers keep unique ids.</summary>
+    [HtmlAttributeName("id-suffix")]
+    public string? IdSuffix { get; set; }
+
     [HtmlAttributeNotBound]
     [ViewContext]
     public ViewContext ViewContext { get; set; } = default!;
@@ -66,11 +78,13 @@ public sealed class PickerTagHelper : TagHelper
 
         string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
         string fieldId = TagBuilder.CreateSanitizedId(fullName, "_");
-        string widgetId = $"{fieldId}__picker";
+        string widgetId = string.IsNullOrEmpty(IdSuffix) ? $"{fieldId}__picker" : $"{fieldId}_{IdSuffix}__picker";
         string placeholder = Placeholder ?? (Multiple ? "Add…" : "— None —");
 
         IReadOnlyList<SelectListItem> items = Items as IReadOnlyList<SelectListItem> ?? Items.ToList();
-        HashSet<string> selected = ResolveSelectedValues();
+        HashSet<string> selected = Value is not null
+            ? new HashSet<string>(Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.Ordinal)
+            : ResolveSelectedValues();
 
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;

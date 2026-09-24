@@ -111,6 +111,7 @@
                         var chip = btn.closest(".mp-picker__chip");
                         if (chip) {
                             chip.parentNode.removeChild(chip);
+                            notifyChanged(widget);
                         }
                     }
                 });
@@ -255,6 +256,22 @@
 
     // --- Apply -------------------------------------------------------------
 
+    // The picker writes its hidden input(s) programmatically, which does not fire the
+    // usual events. Emit a bubbling "change" from the widget so pages can react to a
+    // pick like they would to any other form control.
+    function notifyChanged(widget) {
+        if (!widget) {
+            return;
+        }
+        try {
+            widget.dispatchEvent(new Event("change", { bubbles: true }));
+        } catch (e) {
+            var ev = document.createEvent("Event");
+            ev.initEvent("change", true, false);
+            widget.dispatchEvent(ev);
+        }
+    }
+
     function commitSingle(dialog, opt) {
         var active = dialog._mp.active;
         if (!active) {
@@ -280,6 +297,7 @@
             }
         }
         dialog._mp.active = null;
+        notifyChanged(widget);
     }
 
     function applyMultiple(dialog) {
@@ -308,6 +326,7 @@
             chips.appendChild(buildChip(name, order[k]));
         }
         dialog._mp.active = null;
+        notifyChanged(widget);
     }
 
     function buildChip(name, opt) {

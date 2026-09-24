@@ -14,15 +14,32 @@ public class EditModel : PageModel
     private readonly CurrentUser _currentUser;
     private readonly ShareLinkService _shareLinks;
     private readonly DocumentAnalysisService _analysis;
+    private readonly DocumentFilingService _filing;
 
-    public EditModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser, ShareLinkService shareLinks, DocumentAnalysisService analysis)
+    public EditModel(
+        AppDbContext db,
+        DocumentStorageService storage,
+        CurrentUser currentUser,
+        ShareLinkService shareLinks,
+        DocumentAnalysisService analysis,
+        DocumentFilingService filing)
     {
         _db = db;
         _storage = storage;
         _currentUser = currentUser;
         _shareLinks = shareLinks;
         _analysis = analysis;
+        _filing = filing;
     }
+
+    /// <summary>Where "Back" and post-save redirects go (local URLs only); e.g. /Inbox.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
+    public string BackUrl => !string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : "/Documents";
+
+    /// <summary>True while the file still sits in the inbox staging area (not filed yet).</summary>
+    public bool IsStaged { get; private set; }
 
     public List<ShareLink> ShareLinks { get; private set; } = new();
     public string ShareBaseUrl { get; private set; } = string.Empty;
@@ -101,6 +118,7 @@ public class EditModel : PageModel
             .Include(d => d.Owner)
             .Include(d => d.StorageLocation)
             .Include(d => d.Shares).ThenInclude(s => s.User)
+            .AsSplitQuery()
             .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
 
@@ -121,13 +139,30 @@ public class EditModel : PageModel
 
         SelectedTagIds = document.DocumentTags.Select(dt => dt.TagId).ToArray();
 
+        // Staged documents preselect the default location as their filing target.
+        if (document.IsStaged && Input.StorageLocationId is null)
+        {
+            Input.StorageLocationId = await _db.StorageLocations
+                .Where(s => s.UpdateState != UpdateState.Deleted)
+                .OrderByDescending(s => s.IsDefault)
+                .ThenBy(s => s.Id)
+                .Select(s => (long?)s.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        await RenderAsync(document);
+        return Page();
+    }
+
+    /// <summary>Fills everything the view needs (preview facts, option lists, access/sharing state).</summary>
+    private async Task RenderAsync(Document document)
+    {
+        IsStaged = document.IsStaged;
         FillPreview(document);
         await BuildOptionListsAsync(SelectedTagIds);
         await BuildAccessViewAsync(document, HttpContext.RequestAborted);
         ShareLinks = await _shareLinks.ListForDocumentAsync(Id, HttpContext.RequestAborted);
         ShareBaseUrl = $"{Request.Scheme}://{Request.Host}";
-
-        return Page();
     }
 
     /// <summary>Populates the ownership / sharing / review view-model for the current viewer.</summary>
@@ -319,12 +354,16 @@ public class EditModel : PageModel
             return Forbid();
         }
 
-        document.ReviewState = ReviewState.Reviewed;
-        document.UpdateDate = DateTime.UtcNow;
-        document.UpdateUserId = _currentUser.UserId;
-        await _db.SaveChangesAsync(HttpContext.RequestAborted);
+        if (document.OcrState == OcrState.Pending)
+        {
+            TempData["TaskMessage"] = "The document is still being processed — try confirming again in a moment.";
+            return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+        }
 
-        return RedirectToPage("Edit", new { id = Id });
+        var result = await _filing.FileAsync(document, null, _currentUser.UserId, HttpContext.RequestAborted);
+        TempData["TaskMessage"] = result.Success ? "Filed and marked as reviewed." : result.Error;
+
+        return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
     }
 
     /// <summary>Loads the document (tracked) only if the current user may access it.</summary>
@@ -340,7 +379,13 @@ public class EditModel : PageModel
             .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted, ct);
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    /// <summary>Save metadata. Staged documents stay in the inbox; filed ones are re-filed per template.</summary>
+    public Task<IActionResult> OnPostAsync() => SaveAsync(confirm: false);
+
+    /// <summary>Save metadata, then file the document into the selected location and mark it reviewed.</summary>
+    public Task<IActionResult> OnPostSaveConfirmAsync() => SaveAsync(confirm: true);
+
+    private async Task<IActionResult> SaveAsync(bool confirm)
     {
         ViewData["Breadcrumb"] = "Documents / Edit";
 
@@ -351,6 +396,10 @@ public class EditModel : PageModel
 
         var document = await _db.Documents
             .Include(d => d.DocumentTags)
+            .Include(d => d.Owner)
+            .Include(d => d.StorageLocation)
+            .Include(d => d.Shares).ThenInclude(s => s.User)
+            .AsSplitQuery()
             .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Id == Id);
 
@@ -370,21 +419,24 @@ public class EditModel : PageModel
             ModelState.AddModelError("Input.Title", "Title is required.");
         }
 
-        if (Input.StorageLocationId is null)
+        // Filed documents always need a location; staged ones only remember a target
+        // (filing falls back to the default location when none is chosen).
+        if (!document.IsStaged && Input.StorageLocationId is null)
         {
             ModelState.AddModelError("Input.StorageLocationId", "A storage location is required.");
         }
 
         if (!ModelState.IsValid)
         {
-            FillPreview(document);
-            await BuildOptionListsAsync(SelectedTagIds);
+            await RenderAsync(document);
             return Page();
         }
 
         var now = DateTime.UtcNow;
 
-        // Resolve names used to build the human-readable file path.
+        // Resolve names used to build the human-readable file path. The posted ids come
+        // from plain hidden inputs, so an unknown/deleted id is dropped instead of being
+        // written through (a forged project id would even widen access via the cascade).
         string? correspondentName = null;
         if (Input.CorrespondentId is long cid)
         {
@@ -392,6 +444,11 @@ public class EditModel : PageModel
                 .Where(c => c.Id == cid && c.UpdateState != UpdateState.Deleted)
                 .Select(c => c.Name)
                 .FirstOrDefaultAsync();
+
+            if (correspondentName is null)
+            {
+                Input.CorrespondentId = null;
+            }
         }
 
         string? documentTypeName = null;
@@ -401,45 +458,74 @@ public class EditModel : PageModel
                 .Where(t => t.Id == dtid && t.UpdateState != UpdateState.Deleted)
                 .Select(t => t.Name)
                 .FirstOrDefaultAsync();
+
+            if (documentTypeName is null)
+            {
+                Input.DocumentTypeId = null;
+            }
+        }
+
+        if (Input.ProjectId is long pid)
+        {
+            var projectAllowed = await _db.Projects
+                .Where(p => p.UpdateState != UpdateState.Deleted)
+                .AccessibleTo(_currentUser)
+                .AnyAsync(p => p.Id == pid, HttpContext.RequestAborted);
+
+            if (!projectAllowed)
+            {
+                Input.ProjectId = null;
+            }
         }
 
         // The NEW location must be active; the OLD one is loaded even if it was
         // soft-deleted, because the file physically still lives under its root and
         // must be moved from there.
-        var newLoc = await _db.StorageLocations
-            .FirstOrDefaultAsync(s => s.Id == Input.StorageLocationId!.Value && s.UpdateState != UpdateState.Deleted);
-        if (newLoc == null)
+        StorageLocation? newLoc = null;
+        if (Input.StorageLocationId is long newLocId)
         {
-            ModelState.AddModelError("Input.StorageLocationId", "Please select a valid storage location.");
-            FillPreview(document);
-            await BuildOptionListsAsync(SelectedTagIds);
-            return Page();
+            newLoc = await _db.StorageLocations
+                .Include(s => s.Credential)
+                .FirstOrDefaultAsync(s => s.Id == newLocId && s.UpdateState != UpdateState.Deleted);
+            if (newLoc == null)
+            {
+                ModelState.AddModelError("Input.StorageLocationId", "Please select a valid storage location.");
+                await RenderAsync(document);
+                return Page();
+            }
         }
 
-        var oldLoc = document.StorageLocationId is long oldId
-            ? await _db.StorageLocations.FirstOrDefaultAsync(s => s.Id == oldId)
-            : null;
-
-        // Move / relocate the physical file to match the new metadata. A missing or
+        // Move / relocate the physical file of a FILED document to match the new
+        // metadata. Staged files stay in the inbox area until confirmed. A missing or
         // locked source file must not surface as a 500 — fail the save cleanly.
-        if (!string.IsNullOrEmpty(document.RelativePath) && oldLoc != null)
+        if (!document.IsStaged && newLoc != null && !string.IsNullOrEmpty(document.RelativePath))
         {
-            var effectiveDate = Input.DocumentDate ?? document.CreateDate;
-            var desiredRelativePath = _storage.BuildRelativePath(
-                newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName);
+            var oldLoc = document.StorageLocationId is long oldId
+                ? await _db.StorageLocations.Include(s => s.Credential).FirstOrDefaultAsync(s => s.Id == oldId)
+                : null;
 
-            try
+            if (oldLoc != null)
             {
-                document.RelativePath = oldLoc.Id != newLoc.Id
-                    ? await _storage.RelocateAsync(oldLoc, document.RelativePath, newLoc, desiredRelativePath)
-                    : await _storage.MoveAsync(oldLoc, document.RelativePath, desiredRelativePath);
-            }
-            catch (Exception)
-            {
-                ModelState.AddModelError(string.Empty, "The document file could not be moved on disk; no changes were saved.");
-                FillPreview(document);
-                await BuildOptionListsAsync(SelectedTagIds);
-                return Page();
+                var effectiveDate = Input.DocumentDate ?? document.CreateDate;
+                var desiredRelativePath = _storage.BuildRelativePath(
+                    newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName);
+
+                try
+                {
+                    document.RelativePath = oldLoc.Id != newLoc.Id
+                        ? await _storage.RelocateAsync(oldLoc, document.RelativePath, newLoc, desiredRelativePath, HttpContext.RequestAborted)
+                        : await _storage.MoveAsync(oldLoc, document.RelativePath, desiredRelativePath, HttpContext.RequestAborted);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError(string.Empty, $"The document file could not be moved: {ex.Message} No changes were saved.");
+                    await RenderAsync(document);
+                    return Page();
+                }
             }
         }
 
@@ -461,7 +547,27 @@ public class EditModel : PageModel
 
         await _db.SaveChangesAsync();
 
-        return RedirectToPage("Index");
+        if (confirm)
+        {
+            // Filing moves the staged file out from under the still-running OCR worker.
+            if (document.OcrState == OcrState.Pending)
+            {
+                TempData["TaskMessage"] = "The document is still being processed — try confirming again in a moment.";
+                return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+            }
+
+            var result = await _filing.FileAsync(document, Input.StorageLocationId, _currentUser.UserId, HttpContext.RequestAborted);
+            if (!result.Success)
+            {
+                TempData["TaskMessage"] = result.Error;
+                return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+            }
+
+            TempData["InboxMessage"] = $"\"{document.Title}\" filed.";
+            return LocalRedirect(!string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : "/Inbox");
+        }
+
+        return LocalRedirect(BackUrl);
     }
 
     public async Task<IActionResult> OnPostReanalyzeAsync(bool overwrite)
@@ -530,13 +636,22 @@ public class EditModel : PageModel
             return Forbid();
         }
 
+        // Filed documents keep their file in the storage location (soft delete); a staged
+        // one never reached a location, so its inbox file is removed as well.
+        if (document.IsStaged)
+        {
+            _storage.TryDeleteStaged(document.RelativePath);
+            document.IsStaged = false;
+            document.RelativePath = string.Empty;
+        }
+
         document.UpdateState = UpdateState.Deleted;
         document.UpdateDate = DateTime.UtcNow;
         document.UpdateUserId = _currentUser.UserId;
 
         await _db.SaveChangesAsync();
 
-        return RedirectToPage("Index");
+        return LocalRedirect(BackUrl);
     }
 
     private void SyncTags(Document document, DateTime now)

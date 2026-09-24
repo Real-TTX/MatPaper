@@ -10,7 +10,19 @@ public class Document : BaseEntity
     public long? DocumentTypeId { get; set; }
     public long? CorrespondentId { get; set; }
     public long? ProjectId { get; set; }
+    /// <summary>
+    /// The location the file is filed in — or, while <see cref="IsStaged"/> is true, the
+    /// location it WILL be filed to on confirmation (null = the default location).
+    /// </summary>
     public long? StorageLocationId { get; set; }
+
+    /// <summary>
+    /// True while the file still sits in the local inbox staging area (not yet filed
+    /// into a storage location). <see cref="RelativePath"/> is then relative to the
+    /// staging root instead of the location root.
+    /// </summary>
+    public bool IsStaged { get; set; }
+
     public string RelativePath { get; set; } = string.Empty;
     public string OriginalFileName { get; set; } = string.Empty;
     public long FileSize { get; set; }

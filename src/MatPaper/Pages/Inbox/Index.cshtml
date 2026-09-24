@@ -1,4 +1,5 @@
 @page "/Inbox"
+@using MatPaper.Data
 @model MatPaper.Pages.Inbox.IndexModel
 @{
     ViewData["Breadcrumb"] = "Inbox";
@@ -8,17 +9,41 @@
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Title or correspondent" />
 </mp-toolbar>
 
-@if (Model.Rows.Count == 0)
+@if (TempData["InboxMessage"] is string inboxMessage && !string.IsNullOrEmpty(inboxMessage))
+{
+    <div class="form-summary" style="color:var(--color-text)">@inboxMessage</div>
+}
+@if (TempData["InboxError"] is string inboxError && !string.IsNullOrEmpty(inboxError))
+{
+    <div class="form-summary">@inboxError</div>
+}
+@if (!Model.HasStorage && Model.TotalCount > 0)
+{
+    <div class="form-summary">
+        No storage location configured — documents can't be filed yet.
+        @if (Model.IsAdmin)
+        {
+            <a href="/System/StorageLocations/Edit">Create one</a>
+        }
+    </div>
+}
+<div id="inbox-refresh" class="form-summary" style="color:var(--color-text)" hidden>
+    Processing finished — <a href="">reload</a> to see the suggestions.
+</div>
+
+@if (Model.TotalCount == 0)
 {
     <div class="empty-state">Inbox empty · <a href="/Documents/Upload">Upload</a></div>
 }
 else
 {
-    <div class="list-actions" style="margin-bottom:1rem;display:flex;gap:.75rem;align-items:center">
-        <span class="form-help" style="margin:0">@Model.Rows.Count document(s) to review</span>
+    <div class="list-header">
+        <span class="form-help" style="margin:0">
+            @Model.TotalCount to review@(Model.ProcessingCount > 0 ? $" · {Model.ProcessingCount} processing" : string.Empty)
+        </span>
         <form method="post" asp-page-handler="ConfirmAll" style="margin-left:auto">
-            <button class="btn btn--secondary" type="submit"
-                    onclick="return confirm('Accept the suggestions for all documents in your inbox?')">
+            <button class="btn btn--secondary" type="submit" disabled="@(!Model.HasStorage)"
+                    onclick="return confirm('File all processed documents with their current suggestions?')">
                 Confirm all
             </button>
         </form>
@@ -26,54 +51,121 @@ else
 
     @foreach (var row in Model.Rows)
     {
-        var ocrBadge = row.OcrState switch
-        {
-            MatPaper.Data.OcrState.Done => "badge--ok",
-            MatPaper.Data.OcrState.Failed => "badge--off",
-            _ => "badge--muted"
-        };
-        <article class="inbox-item">
-            <div class="inbox-item__head">
-                <a class="doc-card__thumb-link" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title="Preview">
-                    @if (row.ThumbnailPath != null)
-                    {
-                        <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58"
-                             style="object-fit:cover;border-radius:4px;border:1px solid var(--color-border)" />
-                    }
-                </a>
-                <span class="inbox-item__title">@row.Title</span>
-                <span class="inbox-item__meta">
-                    <span class="badge @ocrBadge">@row.OcrState</span>
-                    @row.AddedDate.ToString("yyyy-MM-dd")
-                </span>
-            </div>
+        var processing = row.OcrState == OcrState.Pending;
+        var failed = row.OcrState == OcrState.Failed;
+        var suffix = row.Id.ToString();
+        var selectedLocation = row.StorageLocationId ?? Model.DefaultLocationId;
 
-            <div class="inbox-grid">
-                <div>
-                    <span class="doc-facts__key">Type</span><br />
-                    <strong>@(row.TypeName ?? "—")</strong>
-                </div>
-                <div>
-                    <span class="doc-facts__key">Correspondent</span><br />
-                    <strong>@(row.CorrespondentName ?? "—")</strong>
-                </div>
-                <div>
-                    <span class="doc-facts__key">Date</span><br />
-                    <strong>@(row.DocumentDate?.ToString("yyyy-MM-dd") ?? "—")</strong>
-                </div>
-                <div>
-                    <span class="doc-facts__key">Tags</span><br />
-                    <strong>@(row.TagNames.Count > 0 ? string.Join(", ", row.TagNames) : "—")</strong>
-                </div>
-            </div>
+        <article class="inbox-item @(processing ? "is-processing" : string.Empty)"
+                 data-doc-id="@row.Id" data-ocr="@row.OcrState.ToString().ToLowerInvariant()">
+            <form method="post" asp-page-handler="Confirm" asp-route-Search="@Model.Search" asp-route-PageNumber="@Model.PageNumber">
+                <input type="hidden" name="id" value="@row.Id" />
 
-            <div class="inbox-item__actions">
-                <form method="post" asp-page-handler="Confirm">
-                    <input type="hidden" name="id" value="@row.Id" />
-                    <button class="btn btn--primary" type="submit">Confirm</button>
-                </form>
-                <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id">Edit suggestions</a>
-            </div>
+                <div class="inbox-item__head">
+                    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title="Preview">
+                        @if (row.ThumbnailPath != null)
+                        {
+                            <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
+                        }
+                        else
+                        {
+                            <span class="inbox-item__thumb-empty" aria-hidden="true"></span>
+                        }
+                    </a>
+                    <input class="form-control inbox-item__title" type="text" name="title" value="@row.Title" aria-label="Title" />
+                    <span class="inbox-item__meta">
+                        @if (processing)
+                        {
+                            <span class="badge badge--muted">Processing…</span>
+                        }
+                        else if (failed)
+                        {
+                            <span class="badge badge--off">OCR failed</span>
+                        }
+                        <span title="@row.OriginalFileName">@row.AddedDate.ToString("yyyy-MM-dd")</span>
+                    </span>
+                </div>
+
+                <div class="inbox-grid">
+                    <mp-picker asp-for="CorrespondentId" label="Correspondent" asp-items="Model.CorrespondentOptions"
+                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder="— None —" />
+                    <mp-picker asp-for="DocumentTypeId" label="Type" asp-items="Model.DocumentTypeOptions"
+                               value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder="— None —" />
+                    <div class="form-row">
+                        <label for="documentDate_@suffix">Date</label>
+                        <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
+                               value="@(row.DocumentDate?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <mp-picker asp-for="ProjectId" label="Project" asp-items="Model.ProjectOptions"
+                               value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder="— None —" />
+                    <mp-picker asp-for="TagIds" label="Tags" asp-items="Model.TagItems" multiple="true"
+                               value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder="Add tags…" />
+                    <div class="form-row">
+                        <label for="storageLocationId_@suffix">File to</label>
+                        <select class="form-control" id="storageLocationId_@suffix" name="storageLocationId">
+                            @foreach (var loc in Model.StorageLocations)
+                            {
+                                <option value="@loc.Id" selected="@(loc.Id == selectedLocation)">@loc.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="inbox-item__actions">
+                    <button class="btn btn--primary" type="submit" disabled="@(processing || !Model.HasStorage)"
+                            title="@(processing ? "Still processing" : "Apply the values above, file the document and mark it reviewed")">
+                        Confirm &amp; file
+                    </button>
+                    <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">Open</a>
+                    <span class="icon-actions inbox-item__tools">
+                        <button class="icon-btn icon-btn--danger" type="submit" form="inbox-delete-@row.Id" title="Delete"
+                                onclick="return confirm('Delete this document?')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
+                            </svg>
+                        </button>
+                    </span>
+                </div>
+            </form>
+            <form method="post" id="inbox-delete-@row.Id" asp-page-handler="Delete"
+                  asp-route-Search="@Model.Search" asp-route-PageNumber="@Model.PageNumber">
+                <input type="hidden" name="id" value="@row.Id" />
+            </form>
         </article>
     }
+
+    <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+}
+
+@section Scripts {
+    <script>
+        // While documents are still being processed (OCR), poll their state and reload
+        // once suggestions are available — unless the user has started editing a row.
+        (function () {
+            var pending = Array.prototype.map.call(
+                document.querySelectorAll('.inbox-item[data-ocr="pending"]'),
+                function (el) { return el.getAttribute("data-doc-id"); });
+            if (!pending.length) { return; }
+
+            var dirty = false;
+            document.addEventListener("input", function () { dirty = true; }, true);
+            document.addEventListener("change", function () { dirty = true; }, true);
+
+            function tick() {
+                var qs = pending.map(function (id) { return "ids=" + encodeURIComponent(id); }).join("&");
+                fetch("/Inbox?handler=Status&" + qs, { credentials: "same-origin", headers: { "Accept": "application/json" } })
+                    .then(function (r) { return r.ok ? r.json() : []; })
+                    .then(function (rows) {
+                        var done = rows.some(function (r) { return r.state !== "pending"; });
+                        if (!done) { setTimeout(tick, 3000); return; }
+                        if (!dirty) { location.reload(); return; }
+                        var note = document.getElementById("inbox-refresh");
+                        if (note) { note.hidden = false; }
+                    })
+                    .catch(function () { setTimeout(tick, 5000); });
+            }
+
+            setTimeout(tick, 3000);
+        })();
+    </script>
 }

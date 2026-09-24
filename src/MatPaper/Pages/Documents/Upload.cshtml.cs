@@ -1,20 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using MatPaper.Data;
 using MatPaper.Services;
 
 namespace MatPaper.Pages.Documents;
 
+/// <summary>
+/// Upload page. Files go straight into the review inbox (local staging area); the
+/// storage location is chosen when the document is confirmed there.
+/// </summary>
 public class UploadModel : PageModel
 {
-    private readonly AppDbContext _db;
     private readonly DocumentIngestService _ingest;
     private readonly CurrentUser _currentUser;
 
-    public UploadModel(AppDbContext db, DocumentIngestService ingest, CurrentUser currentUser)
+    public UploadModel(DocumentIngestService ingest, CurrentUser currentUser)
     {
-        _db = db;
         _ingest = ingest;
         _currentUser = currentUser;
     }
@@ -22,41 +22,11 @@ public class UploadModel : PageModel
     [BindProperty]
     public List<IFormFile> Files { get; set; } = new();
 
-    [BindProperty]
-    public long StorageLocationId { get; set; }
-
-    [BindProperty]
-    public long? CorrespondentId { get; set; }
-
-    [BindProperty]
-    public long? DocumentTypeId { get; set; }
-
-    [BindProperty]
-    public long? ProjectId { get; set; }
-
-    [BindProperty]
-    public long[] TagIds { get; set; } = Array.Empty<long>();
-
-    public IReadOnlyList<StorageLocation> StorageLocations { get; private set; } = Array.Empty<StorageLocation>();
-    public IReadOnlyList<Correspondent> Correspondents { get; private set; } = Array.Empty<Correspondent>();
-    public IReadOnlyList<DocumentType> DocumentTypes { get; private set; } = Array.Empty<DocumentType>();
-    public IReadOnlyList<Project> Projects { get; private set; } = Array.Empty<Project>();
-    public IReadOnlyList<Tag> Tags { get; private set; } = Array.Empty<Tag>();
-
-    public bool HasStorage => StorageLocations.Count > 0;
     public List<string> Messages { get; } = new();
 
-    public async Task OnGetAsync()
+    public void OnGet()
     {
         ViewData["Breadcrumb"] = "Documents / Upload";
-
-        await LoadOptionsAsync();
-
-        var defaultLocation = StorageLocations.FirstOrDefault(s => s.IsDefault) ?? StorageLocations.FirstOrDefault();
-        if (defaultLocation != null)
-        {
-            StorageLocationId = defaultLocation.Id;
-        }
     }
 
     /// <summary>
@@ -64,25 +34,18 @@ public class UploadModel : PageModel
     /// per-file progress. Returns JSON. The document is owned by the current user
     /// and lands in their inbox (Pending) for review.
     /// </summary>
-    public async Task<IActionResult> OnPostAjaxAsync(IFormFile? file, long storageLocationId, CancellationToken ct)
+    public async Task<IActionResult> OnPostAjaxAsync(IFormFile? file, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
         {
             return new JsonResult(new { status = "failed", message = "Empty file." });
         }
 
-        var validLocation = await _db.StorageLocations
-            .AnyAsync(s => s.Id == storageLocationId && s.UpdateState != UpdateState.Deleted, ct);
-        if (!validLocation)
-        {
-            return new JsonResult(new { status = "failed", message = "Invalid storage location." });
-        }
-
         await using var stream = file.OpenReadStream();
         var result = await _ingest.IngestAsync(
             stream,
             file.FileName,
-            storageLocationId,
+            storageLocationId: null,
             correspondentId: null,
             documentTypeId: null,
             projectId: null,
@@ -102,23 +65,9 @@ public class UploadModel : PageModel
     {
         ViewData["Breadcrumb"] = "Documents / Upload";
 
-        await LoadOptionsAsync();
-
-        if (!HasStorage)
-        {
-            return Page();
-        }
-
         if (Files.Count == 0)
         {
             ModelState.AddModelError(nameof(Files), "Please choose at least one file to upload.");
-            return Page();
-        }
-
-        var validLocation = StorageLocations.Any(s => s.Id == StorageLocationId);
-        if (!validLocation)
-        {
-            ModelState.AddModelError(nameof(StorageLocationId), "Please select a valid storage location.");
             return Page();
         }
 
@@ -137,11 +86,11 @@ public class UploadModel : PageModel
             var result = await _ingest.IngestAsync(
                 stream,
                 file.FileName,
-                StorageLocationId,
-                CorrespondentId,
-                DocumentTypeId,
-                ProjectId,
-                TagIds,
+                storageLocationId: null,
+                correspondentId: null,
+                documentTypeId: null,
+                projectId: null,
+                tagIds: Array.Empty<long>(),
                 _currentUser.UserId,
                 ct);
 
@@ -154,17 +103,16 @@ public class UploadModel : PageModel
                     duplicate++;
                     Messages.Add($"\"{file.FileName}\" was skipped as a duplicate of an existing document.");
                     break;
-                case IngestStatus.NoStorage:
                 default:
                     failed++;
-                    Messages.Add($"\"{file.FileName}\" could not be stored (no valid storage location).");
+                    Messages.Add($"\"{file.FileName}\" could not be stored.");
                     break;
             }
         }
 
         if (created > 0)
         {
-            var parts = new List<string> { $"{created} document(s) uploaded" };
+            var parts = new List<string> { $"{created} document(s) added to your inbox" };
             if (duplicate > 0)
             {
                 parts.Add($"{duplicate} duplicate(s) skipped");
@@ -174,8 +122,8 @@ public class UploadModel : PageModel
                 parts.Add($"{failed} failed");
             }
 
-            TempData["UploadSummary"] = string.Join(", ", parts) + ".";
-            return RedirectToPage("Index");
+            TempData["InboxMessage"] = string.Join(", ", parts) + ".";
+            return RedirectToPage("/Inbox/Index");
         }
 
         if (Messages.Count == 0)
@@ -184,35 +132,5 @@ public class UploadModel : PageModel
         }
 
         return Page();
-    }
-
-    private async Task LoadOptionsAsync()
-    {
-        StorageLocations = await _db.StorageLocations.AsNoTracking()
-            .Where(s => s.UpdateState != UpdateState.Deleted)
-            .OrderByDescending(s => s.IsDefault)
-            .ThenBy(s => s.Name)
-            .ToListAsync();
-
-        Correspondents = await _db.Correspondents.AsNoTracking()
-            .Where(c => c.UpdateState != UpdateState.Deleted)
-            .OrderBy(c => c.Name)
-            .ToListAsync();
-
-        DocumentTypes = await _db.DocumentTypes.AsNoTracking()
-            .Where(t => t.UpdateState != UpdateState.Deleted)
-            .OrderBy(t => t.Name)
-            .ToListAsync();
-
-        Projects = await _db.Projects.AsNoTracking()
-            .Where(p => p.UpdateState != UpdateState.Deleted)
-            .AccessibleTo(_currentUser)
-            .OrderBy(p => p.Name)
-            .ToListAsync();
-
-        Tags = await _db.Tags.AsNoTracking()
-            .Where(t => t.UpdateState != UpdateState.Deleted)
-            .OrderBy(t => t.Name)
-            .ToListAsync();
     }
 }

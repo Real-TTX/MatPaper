@@ -37,9 +37,11 @@ public sealed class IngestResult
 }
 
 /// <summary>
-/// Accepts an uploaded/imported file: dedupes by content hash, writes it into
-/// the target storage location, persists the <see cref="Document"/> row and
-/// enqueues it for OCR / thumbnail processing.
+/// Accepts an uploaded/imported file: dedupes by content hash, persists the
+/// <see cref="Document"/> row and enqueues it for OCR / thumbnail processing.
+/// Documents headed for the review inbox (<see cref="ReviewState.Pending"/>) are
+/// kept in the local staging area and only remember their target location;
+/// documents that skip the inbox are filed into a storage location right away.
 /// </summary>
 public sealed class DocumentIngestService(
     AppDbContext db,
@@ -49,7 +51,7 @@ public sealed class DocumentIngestService(
     public async Task<IngestResult> IngestAsync(
         Stream content,
         string originalFileName,
-        long storageLocationId,
+        long? storageLocationId,
         long? correspondentId,
         long? documentTypeId,
         long? projectId,
@@ -86,13 +88,34 @@ public sealed class DocumentIngestService(
             return IngestResult.Duplicate(existing.Id);
         }
 
-        var location = await db.StorageLocations
-            .FirstOrDefaultAsync(s => s.Id == storageLocationId && s.UpdateState != UpdateState.Deleted, ct)
-            .ConfigureAwait(false);
+        // Inbox documents are staged locally; the location (if any) is just the target
+        // that will be preselected when the user confirms. Skip-inbox documents need a
+        // real location now: the requested one, else the default, else nothing works.
+        var stage = reviewState == ReviewState.Pending;
 
-        if (location is null)
+        StorageLocation? location = null;
+        if (storageLocationId is long requestedId)
         {
-            return IngestResult.NoStorage();
+            location = await db.StorageLocations
+                .Include(s => s.Credential)
+                .FirstOrDefaultAsync(s => s.Id == requestedId && s.UpdateState != UpdateState.Deleted, ct)
+                .ConfigureAwait(false);
+        }
+
+        if (location is null && !stage)
+        {
+            location = await db.StorageLocations
+                .Include(s => s.Credential)
+                .Where(s => s.UpdateState != UpdateState.Deleted)
+                .OrderByDescending(s => s.IsDefault)
+                .ThenBy(s => s.Id)
+                .FirstOrDefaultAsync(ct)
+                .ConfigureAwait(false);
+
+            if (location is null)
+            {
+                return IngestResult.NoStorage();
+            }
         }
 
         var safeFileName = string.IsNullOrWhiteSpace(originalFileName) ? "document" : originalFileName;
@@ -123,28 +146,40 @@ public sealed class DocumentIngestService(
         }
 
         var now = DateTime.UtcNow;
+        var token = Guid.NewGuid();
 
-        var desiredRelativePath = storage.BuildRelativePath(
-            location,
-            title,
-            now,
-            correspondentName,
-            documentTypeName,
-            safeFileName);
+        string actualRelativePath;
+        if (stage)
+        {
+            actualRelativePath = await storage
+                .StageNewAsync(token, safeFileName, buffer, ct)
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            var desiredRelativePath = storage.BuildRelativePath(
+                location!,
+                title,
+                now,
+                correspondentName,
+                documentTypeName,
+                safeFileName);
 
-        var actualRelativePath = await storage
-            .SaveNewAsync(location, desiredRelativePath, buffer)
-            .ConfigureAwait(false);
+            actualRelativePath = await storage
+                .SaveNewAsync(location!, desiredRelativePath, buffer, ct)
+                .ConfigureAwait(false);
+        }
 
         var document = new Document
         {
-            Token = Guid.NewGuid(),
+            Token = token,
             Title = title,
             DocumentDate = null,
             DocumentTypeId = documentTypeId,
             CorrespondentId = correspondentId,
             ProjectId = projectId,
-            StorageLocationId = location.Id,
+            StorageLocationId = location?.Id,
+            IsStaged = stage,
             RelativePath = actualRelativePath,
             OriginalFileName = safeFileName,
             FileSize = fileSize,

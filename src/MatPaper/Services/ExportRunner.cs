@@ -153,14 +153,24 @@ public sealed class ExportRunner
 
         if (settings.IncludeDocuments)
         {
+            // Documents still in the review inbox live in the local staging area.
+            await AddDirectoryAsync(tar, _config.ResolveInboxPath(DataDir), "documents/_inbox", ct);
+
             var locations = await _db.StorageLocations
                 .AsNoTracking()
                 .Where(s => s.UpdateState != UpdateState.Deleted)
-                .Select(s => new { s.Name, s.RootPath })
+                .Select(s => new { s.Name, s.RootPath, s.Kind })
                 .ToListAsync(ct);
 
             foreach (var loc in locations)
             {
+                if (loc.Kind == StorageKind.Smb)
+                {
+                    _logger.LogInformation(
+                        "Backup: SMB storage location '{Name}' is not included; back it up on the file server.", loc.Name);
+                    continue;
+                }
+
                 if (string.IsNullOrWhiteSpace(loc.RootPath) || !Directory.Exists(loc.RootPath))
                 {
                     continue;

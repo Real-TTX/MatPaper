@@ -1,4 +1,6 @@
 @page "/System/StorageLocations"
+@using MatPaper.Data
+@inject MatPaper.Services.DocumentStorageService Storage
 @model MatPaper.Pages.System.StorageLocations.IndexModel
 @{
     ViewData["Breadcrumb"] = "System / Storage locations";
@@ -16,7 +18,8 @@
     <thead>
         <tr>
             <th>Name</th>
-            <th>Root path</th>
+            <th>Type</th>
+            <th>Location</th>
             <th>Default</th>
             <th class="is-actions"></th>
         </tr>
@@ -26,7 +29,12 @@
         {
             <tr>
                 <td>@s.Name</td>
-                <td>@s.RootPath</td>
+                <td>
+                    <span class="badge @(s.Kind == StorageKind.Smb ? "badge--admin" : "badge--muted")">
+                        @(s.Kind == StorageKind.Smb ? "SMB" : "Local")
+                    </span>
+                </td>
+                <td><code>@s.DisplayRoot</code></td>
                 <td>
                     @if (s.IsDefault)
                     {
@@ -34,9 +42,19 @@
                     }
                 </td>
                 <td class="is-actions">
-                    <a href="/System/Inbox?location=@s.Id">Scan</a>
-                    &nbsp;&nbsp;
-                    <a href="/System/StorageLocations/Edit?id=@s.Id">Edit</a>
+                    <span class="icon-actions">
+                        <a class="icon-btn" href="/System/Inbox?location=@s.Id" title="Scan for files">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v3" /><path d="M3 7v10a2 2 0 0 0 2 2h6" />
+                                <circle cx="17" cy="17" r="3" /><path d="M21 21l-1.8-1.8" />
+                            </svg>
+                        </a>
+                        <a class="icon-btn" href="/System/StorageLocations/Edit?id=@s.Id" title="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                        </a>
+                    </span>
                 </td>
             </tr>
         }
@@ -45,6 +63,9 @@
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/System/StorageLocations/Edit">New storage location</a>
+    <span class="form-help" style="margin:0 0 0 auto" title="Documents wait here until they are confirmed in the inbox (env MATPAPER_INBOX)">
+        Inbox staging: <code>@Storage.StagingRoot</code>
+    </span>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

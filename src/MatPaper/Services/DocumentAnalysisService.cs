@@ -55,7 +55,7 @@ public sealed class DocumentAnalysisService
     public async Task<AnalysisResult> AnalyzeAsync(
         Document document, AnalysisOptions options, long? actingUserId, CancellationToken ct)
     {
-        var invoice = TryExtractInvoice(document);
+        var invoice = await TryExtractInvoiceAsync(document, ct);
         var matchText = ((document.Title ?? string.Empty) + "\n" + (document.OcrText ?? string.Empty)).Trim();
 
         bool changedType = false, changedCorr = false, changedDate = false, changedInvoiceNo = false;
@@ -131,23 +131,22 @@ public sealed class DocumentAnalysisService
         return new AnalysisResult(invoice is not null, changedType, changedCorr, changedDate, changedInvoiceNo);
     }
 
-    private InvoiceData? TryExtractInvoice(Document document)
+    private async Task<InvoiceData?> TryExtractInvoiceAsync(Document document, CancellationToken ct)
     {
-        if (document.StorageLocation is null || string.IsNullOrEmpty(document.RelativePath))
+        if (string.IsNullOrEmpty(document.RelativePath) || (!document.IsStaged && document.StorageLocation is null))
         {
             return null;
         }
 
         try
         {
-            var absolute = _storage.GetAbsolutePath(document.StorageLocation, document.RelativePath);
-            if (!File.Exists(absolute))
-            {
-                return null;
-            }
-
+            using var local = await _storage.GetLocalCopyAsync(document, ct);
             var ext = Path.GetExtension(document.OriginalFileName);
-            return _invoices.TryExtract(absolute, ext);
+            return _invoices.TryExtract(local.FilePath, ext);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

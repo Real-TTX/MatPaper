@@ -127,6 +127,12 @@ public class AppDbContext : DbContext
             .HasIndex(i => new { i.StorageLocationId, i.RelativePath })
             .IsUnique();
 
+        modelBuilder.Entity<StorageLocation>()
+            .HasOne(s => s.Credential)
+            .WithMany()
+            .HasForeignKey(s => s.CredentialId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<Document>(entity =>
         {
             entity.HasGeneratedTsVectorColumn(

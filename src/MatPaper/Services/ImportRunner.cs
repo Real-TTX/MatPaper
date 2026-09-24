@@ -66,9 +66,9 @@ public sealed class ImportRunner
         }
 
         var locationId = await ResolveStorageLocationIdAsync(settings.StorageLocationId, ct).ConfigureAwait(false);
-        if (locationId is null)
+        if (locationId is null && settings.SkipInbox)
         {
-            return new RunReport(false, 0, "No storage location configured");
+            return new RunReport(false, 0, "No storage location configured (required when skipping the inbox)");
         }
 
         var username = settings.Username;
@@ -118,7 +118,7 @@ public sealed class ImportRunner
                     var bytes = session.ReadAllBytes(file);
                     await using var stream = new MemoryStream(bytes);
                     var result = await _ingest.IngestAsync(
-                        stream, fileName, locationId.Value,
+                        stream, fileName, locationId,
                         settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
                         settings.TagIds ?? new List<long>(), ownerId, ct, reviewState).ConfigureAwait(false);
 
@@ -127,11 +127,11 @@ public sealed class ImportRunner
                         case IngestStatus.Created:
                             count++;
                             log.AppendLine($"Imported: {fileName}");
-                            ApplySmbPostAction(session, settings, file);
+                            ApplySmbPostAction(session, settings, file, log);
                             break;
                         case IngestStatus.Duplicate:
                             log.AppendLine($"Skipped (duplicate): {fileName}");
-                            ApplySmbPostAction(session, settings, file);
+                            ApplySmbPostAction(session, settings, file, log);
                             break;
                         case IngestStatus.NoStorage:
                             log.AppendLine($"Skipped (no storage): {fileName}");
@@ -154,15 +154,23 @@ public sealed class ImportRunner
         return new RunReport(true, count, log.ToString());
     }
 
-    private static void ApplySmbPostAction(SmbSession session, SmbImportSettings settings, string file)
+    private static void ApplySmbPostAction(SmbSession session, SmbImportSettings settings, string file, StringBuilder log)
     {
         if (settings.PostAction == "delete")
         {
-            session.TryDelete(file);
+            if (!session.TryDelete(file))
+            {
+                log.AppendLine($"Could not delete on the share: {file}");
+            }
         }
         else if (settings.PostAction == "move" && !string.IsNullOrWhiteSpace(settings.MoveToPath))
         {
-            session.TryMove(file, settings.MoveToPath!);
+            // A file left behind would be picked up (and skipped as a duplicate) on every
+            // following run, so report it instead of failing silently.
+            if (!session.TryMove(file, settings.MoveToPath!, out var error))
+            {
+                log.AppendLine($"Could not move on the share: {file} ({error})");
+            }
         }
     }
 
@@ -255,9 +263,9 @@ public sealed class ImportRunner
         }
 
         var locationId = await ResolveStorageLocationIdAsync(settings.StorageLocationId, ct).ConfigureAwait(false);
-        if (locationId is null)
+        if (locationId is null && settings.SkipInbox)
         {
-            return new RunReport(false, 0, "No storage location configured");
+            return new RunReport(false, 0, "No storage location configured (required when skipping the inbox)");
         }
 
         var log = new StringBuilder();
@@ -289,7 +297,7 @@ public sealed class ImportRunner
                     result = await _ingest.IngestAsync(
                         stream,
                         fileName,
-                        locationId.Value,
+                        locationId,
                         settings.CorrespondentId,
                         settings.DocumentTypeId,
                         settings.ProjectId,
@@ -390,9 +398,9 @@ public sealed class ImportRunner
         var settings = TaskSettingsJson.Read<MailImportSettings>(task.SettingsJson);
 
         var locationId = await ResolveStorageLocationIdAsync(settings.StorageLocationId, ct).ConfigureAwait(false);
-        if (locationId is null)
+        if (locationId is null && settings.SkipInbox)
         {
-            return new RunReport(false, 0, "No storage location configured");
+            return new RunReport(false, 0, "No storage location configured (required when skipping the inbox)");
         }
 
         var password = _secrets.Unprotect(settings.ProtectedPassword);
@@ -412,8 +420,8 @@ public sealed class ImportRunner
         try
         {
             count = isPop3
-                ? await RunPop3Async(settings, password, extensions, senderRegex, subjectRegex, locationId.Value, ownerId, log, ct).ConfigureAwait(false)
-                : await RunImapAsync(settings, password, extensions, senderRegex, subjectRegex, locationId.Value, ownerId, log, ct).ConfigureAwait(false);
+                ? await RunPop3Async(settings, password, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false)
+                : await RunImapAsync(settings, password, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -435,7 +443,7 @@ public sealed class ImportRunner
         IReadOnlyCollection<string> extensions,
         Regex? senderRegex,
         Regex? subjectRegex,
-        long locationId,
+        long? locationId,
         long? ownerId,
         StringBuilder log,
         CancellationToken ct)
@@ -516,7 +524,7 @@ public sealed class ImportRunner
         IReadOnlyCollection<string> extensions,
         Regex? senderRegex,
         Regex? subjectRegex,
-        long locationId,
+        long? locationId,
         long? ownerId,
         StringBuilder log,
         CancellationToken ct)
@@ -567,7 +575,7 @@ public sealed class ImportRunner
 
     private async Task<int> ImportBodyAsPdfAsync(
         MimeMessage message,
-        long locationId,
+        long? locationId,
         long? ownerId,
         ReviewState reviewState,
         StringBuilder log,
@@ -615,7 +623,7 @@ public sealed class ImportRunner
     private async Task<int> ImportAttachmentsAsync(
         MimeMessage message,
         IReadOnlyCollection<string> extensions,
-        long locationId,
+        long? locationId,
         long? ownerId,
         ReviewState reviewState,
         StringBuilder log,

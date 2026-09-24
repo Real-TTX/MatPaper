@@ -7,52 +7,65 @@ using MatPaper.Services;
 namespace MatPaper.Pages.Documents;
 
 // Serves a document's file INLINE (no download disposition) so the browser renders it
-// inside an <iframe>/<img> for preview. Auth-protected (under /Documents).
+// inside an <iframe>/<img> for preview. Auth-protected (under /Documents). Works for
+// staged (inbox), local and SMB-stored files; SMB files are streamed on demand.
 public class ViewModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly DocumentStorageService _storage;
     private readonly CurrentUser _currentUser;
+    private readonly ILogger<ViewModel> _logger;
 
-    public ViewModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser)
+    public ViewModel(AppDbContext db, DocumentStorageService storage, CurrentUser currentUser, ILogger<ViewModel> logger)
     {
         _db = db;
         _storage = storage;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
-    public async Task<IActionResult> OnGetAsync(Guid token)
+    public async Task<IActionResult> OnGetAsync(Guid token, CancellationToken ct)
     {
         var document = await _db.Documents
             .AsNoTracking()
-            .Include(d => d.StorageLocation)
+            .Include(d => d.StorageLocation).ThenInclude(s => s!.Credential)
             .AccessibleTo(_currentUser)
-            .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted);
+            .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted, ct);
 
-        if (document?.StorageLocation == null)
+        if (document == null)
         {
             return NotFound();
         }
 
-        var absolutePath = _storage.GetAbsolutePath(document.StorageLocation, document.RelativePath);
-        if (!global::System.IO.File.Exists(absolutePath))
+        var contentType = DocumentContentType.FromFileName(document.OriginalFileName);
+
+        var localPath = _storage.TryGetDocumentLocalPath(document);
+        if (localPath != null)
+        {
+            if (!global::System.IO.File.Exists(localPath))
+            {
+                return NotFound();
+            }
+
+            // No download name => Content-Disposition: inline => browser renders it.
+            return new PhysicalFileResult(localPath, contentType) { EnableRangeProcessing = true };
+        }
+
+        Stream stream;
+        try
+        {
+            stream = await _storage.OpenDocumentReadAsync(document, ct);
+        }
+        catch (FileNotFoundException)
         {
             return NotFound();
         }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Serving document {DocumentId} from its storage location failed.", document.Id);
+            return StatusCode(StatusCodes.Status502BadGateway, "The storage location is not reachable.");
+        }
 
-        // No download name => Content-Disposition: inline => browser renders it.
-        return PhysicalFile(absolutePath, GetContentType(document.OriginalFileName));
+        return new FileStreamResult(stream, contentType) { EnableRangeProcessing = true };
     }
-
-    private static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
-    {
-        ".pdf" => "application/pdf",
-        ".png" => "image/png",
-        ".jpg" or ".jpeg" => "image/jpeg",
-        ".gif" => "image/gif",
-        ".bmp" => "image/bmp",
-        ".webp" => "image/webp",
-        ".tif" or ".tiff" => "image/tiff",
-        _ => "application/octet-stream",
-    };
 }

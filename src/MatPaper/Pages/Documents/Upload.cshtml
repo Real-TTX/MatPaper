@@ -16,60 +16,38 @@
     </div>
 }
 
-@if (!Model.HasStorage)
-{
-    <div class="empty-state">
-        No storage locations are configured yet. Please
-        <a href="/System/StorageLocations/Edit">create a storage location</a>
-        before uploading documents.
-    </div>
-}
-else
-{
-    <form class="form" id="upload-form" method="post" enctype="multipart/form-data"
-          data-ajax-url="/Documents/Upload?handler=Ajax" data-inbox-url="/Inbox">
-        @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+<form class="form" id="upload-form" method="post" enctype="multipart/form-data"
+      data-ajax-url="/Documents/Upload?handler=Ajax" data-inbox-url="/Inbox">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-        <div class="form-row">
-            <label for="StorageLocationId">Storage location</label>
-            <select class="form-control" id="StorageLocationId" name="StorageLocationId">
-                @foreach (var s in Model.StorageLocations)
-                {
-                    <option value="@s.Id" selected="@(s.Id == Model.StorageLocationId)">@s.Name</option>
-                }
-            </select>
-            <span class="field-error" asp-validation-for="StorageLocationId"></span>
-        </div>
-
-        <div class="form-row">
-            <label for="Files">Files</label>
-            <div class="uploader" id="uploader">
-                <div class="uploader__dropzone" id="uploader-dropzone">
-                    <svg class="uploader__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <path d="M7 9l5-5 5 5" />
-                        <path d="M12 4v12" />
-                    </svg>
-                    <p class="uploader__hint">
-                        <strong>Drag &amp; drop</strong> files here, or
-                        <button type="button" class="uploader__browse" id="uploader-browse">choose files</button>
-                    </p>
-                    <p class="form-help">PDF or image files. Suggestions (type, correspondent, date) appear afterwards in your inbox.</p>
-                </div>
-                <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple />
+    <div class="form-row">
+        <label for="Files">Files</label>
+        <div class="uploader" id="uploader">
+            <div class="uploader__dropzone" id="uploader-dropzone">
+                <svg class="uploader__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <path d="M7 9l5-5 5 5" />
+                    <path d="M12 4v12" />
+                </svg>
+                <p class="uploader__hint">
+                    <strong>Drag &amp; drop</strong> files here, or
+                    <button type="button" class="uploader__browse" id="uploader-browse">choose files</button>
+                </p>
+                <p class="form-help">PDF or images. Files wait in your inbox until you confirm and file them.</p>
             </div>
-            <span class="field-error" asp-validation-for="Files"></span>
+            <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,image/*" />
         </div>
+        <span class="field-error" asp-validation-for="Files"></span>
+    </div>
 
-        <ul class="upload-list" id="upload-list" hidden></ul>
+    <ul class="upload-list" id="upload-list" hidden></ul>
 
-        <mp-button-row>
-            <mp-button variant="primary" type="submit" id="upload-submit">Upload</mp-button>
-            <mp-button variant="secondary" href="/Documents">Back</mp-button>
-        </mp-button-row>
-    </form>
-}
+    <mp-button-row>
+        <mp-button variant="primary" type="submit" id="upload-submit">Upload</mp-button>
+        <mp-button variant="secondary" href="/Documents">Back</mp-button>
+    </mp-button-row>
+</form>
 
 @section Scripts {
     <script src="~/js/upload.js" asp-append-version="true"></script>

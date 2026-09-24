@@ -401,6 +401,13 @@
 /* ==========================================================================
    Inbox (review queue)
    ========================================================================== */
+.list-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
 .inbox-item {
     border: 1px solid var(--color-border);
     border-radius: 10px;
@@ -409,22 +416,49 @@
     margin-bottom: 0.85rem;
 }
 
+.inbox-item.is-processing {
+    opacity: 0.75;
+}
+
 .inbox-item__head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.inbox-item__thumb {
+    flex: 0 0 auto;
+    display: block;
+    line-height: 0;
+}
+
+.inbox-item__thumb img,
+.inbox-item__thumb-empty {
+    display: block;
+    width: 44px;
+    height: 58px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-alt);
 }
 
 .inbox-item__title {
+    flex: 1 1 auto;
+    min-width: 0;
     font-weight: 600;
     font-size: 1.02rem;
 }
 
 .inbox-item__meta {
-    margin-left: auto;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     color: var(--color-text-muted);
     font-size: 0.82rem;
+    white-space: nowrap;
 }
 
 .inbox-grid {
@@ -434,10 +468,19 @@
     align-items: end;
 }
 
+.inbox-grid .form-row {
+    margin: 0;
+}
+
 .inbox-item__actions {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
-    margin-top: 0.75rem;
+    margin-top: 0.85rem;
+}
+
+.inbox-item__tools {
+    margin-left: auto;
 }
 
 /* ==========================================================================

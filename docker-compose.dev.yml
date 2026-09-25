@@ -31,7 +31,8 @@ services:
     ports:
       - "4995:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@matpaper.local
+      # pgAdmin rejects .local addresses, so use a resolvable-looking domain.
+      PGADMIN_DEFAULT_EMAIL: admin@matpaper.example.com
       PGADMIN_DEFAULT_PASSWORD: matpaper
     depends_on:
       - db

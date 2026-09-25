@@ -31,7 +31,7 @@ docker compose -f docker-compose.dev.yml up -d --build
 Then open:
 
 - **App:** http://localhost:4994
-- **pgAdmin:** http://localhost:4995 (login `admin@matpaper.local` / `matpaper`)
+- **pgAdmin:** http://localhost:4995 (login `admin@matpaper.example.com` / `matpaper`)
 
 ## Running (release)
 

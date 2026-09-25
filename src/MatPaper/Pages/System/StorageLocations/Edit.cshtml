@@ -1,13 +1,13 @@
 @page "/System/StorageLocations/Edit"
 @model MatPaper.Pages.System.StorageLocations.EditModel
 @{
-    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Storage locations / Edit" : "System / Storage locations / New";
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Storage locations / Edit"].Value : L["System / Storage locations / New"].Value;
 }
 
 @if (!string.IsNullOrEmpty(Model.Notice))
 {
     <div class="form-summary">
-        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? "OK" : "Failed")</span>
+        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? L["OK"].Value : L["Failed"].Value)</span>
         @Model.Notice
     </div>
 }
@@ -18,45 +18,45 @@
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <section class="form-section">
-        <h2 class="form-section__title">Overview</h2>
+        <h2 class="form-section__title">@L["Overview"]</h2>
 
-        <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Archive" />
+        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Archive"]' />
 
-        <mp-field asp-for="Input.Kind" kind="select" label="Type">
-            <option value="0">Local folder</option>
-            <option value="1">SMB / CIFS network share</option>
+        <mp-field asp-for="Input.Kind" kind="select" label='@L["Type"]'>
+            <option value="0">@L["Local folder"]</option>
+            <option value="1">@L["SMB / CIFS network share"]</option>
         </mp-field>
 
-        <mp-field asp-for="Input.IsDefault" kind="checkbox" label="Default location" />
+        <mp-field asp-for="Input.IsDefault" kind="checkbox" label='@L["Default location"]' />
     </section>
 
     <section class="form-section">
-        <h2 class="form-section__title">Location</h2>
+        <h2 class="form-section__title">@L["Location"]</h2>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="0">
-            <mp-field asp-for="Input.RootPath" label="Folder" placeholder="/storage" />
+            <mp-field asp-for="Input.RootPath" label='@L["Folder"]' placeholder="/storage" />
         </div>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="1">
-            <mp-field asp-for="Input.SmbHost" label="Host" placeholder="nas.local" />
-            <mp-field asp-for="Input.SmbShare" label="Share" placeholder="documents" />
-            <mp-field asp-for="Input.SmbPath" label="Folder in share" placeholder="archive (optional)" />
-            <mp-field asp-for="Input.CredentialId" kind="select" label="Credential" asp-items="Model.CredentialOptions" />
+            <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
+            <mp-field asp-for="Input.SmbShare" label='@L["Share"]' placeholder="documents" />
+            <mp-field asp-for="Input.SmbPath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]' />
+            <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Credential"]' asp-items="Model.CredentialOptions" />
         </div>
 
-        <mp-field asp-for="Input.PathTemplate" label="Path template"
+        <mp-field asp-for="Input.PathTemplate" label='@L["Path template"]'
                   placeholder="{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}" />
     </section>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Save</mp-button>
-        <mp-button variant="secondary" href="/System/StorageLocations">Back</mp-button>
-        <mp-button variant="secondary" type="submit" handler="Test">Test connection</mp-button>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/StorageLocations">@L["Back"]</mp-button>
+        <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {
             <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm="Delete this storage location? This cannot be undone.">Delete</mp-button>
+                       confirm='@L["Delete this storage location? This cannot be undone."]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

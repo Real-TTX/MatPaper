@@ -3,24 +3,24 @@
 @inject MatPaper.Services.DocumentStorageService Storage
 @model MatPaper.Pages.System.StorageLocations.IndexModel
 @{
-    ViewData["Breadcrumb"] = "System / Storage locations";
+    ViewData["Breadcrumb"] = L["System / Storage locations"].Value;
 }
 
 <mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name or path" />
-    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
-        <option value="name_asc">Name (A–Z)</option>
-        <option value="name_desc">Name (Z–A)</option>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or path"]' />
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="name_asc">@L["Name (A–Z)"]</option>
+        <option value="name_desc">@L["Name (Z–A)"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text="No storage locations match your criteria.">
+<mp-table item-count="Model.Rows.Count" empty-text='@L["No storage locations match your criteria."]'>
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Location</th>
-            <th>Default</th>
+            <th>@L["Name"]</th>
+            <th>@L["Type"]</th>
+            <th>@L["Location"]</th>
+            <th>@L["Default"]</th>
             <th class="is-actions"></th>
         </tr>
     </thead>
@@ -31,25 +31,25 @@
                 <td>@s.Name</td>
                 <td>
                     <span class="badge @(s.Kind == StorageKind.Smb ? "badge--admin" : "badge--muted")">
-                        @(s.Kind == StorageKind.Smb ? "SMB" : "Local")
+                        @(s.Kind == StorageKind.Smb ? "SMB" : L["Local"].Value)
                     </span>
                 </td>
                 <td><code>@s.DisplayRoot</code></td>
                 <td>
                     @if (s.IsDefault)
                     {
-                        <span class="badge badge--ok">Default</span>
+                        <span class="badge badge--ok">@L["Default"]</span>
                     }
                 </td>
                 <td class="is-actions">
                     <span class="icon-actions">
-                        <a class="icon-btn" href="/System/Inbox?location=@s.Id" title="Scan for files">
+                        <a class="icon-btn" href="/System/Inbox?location=@s.Id" title='@L["Scan for files"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v3" /><path d="M3 7v10a2 2 0 0 0 2 2h6" />
                                 <circle cx="17" cy="17" r="3" /><path d="M21 21l-1.8-1.8" />
                             </svg>
                         </a>
-                        <a class="icon-btn" href="/System/StorageLocations/Edit?id=@s.Id" title="Edit">
+                        <a class="icon-btn" href="/System/StorageLocations/Edit?id=@s.Id" title='@L["Edit"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                             </svg>
@@ -62,9 +62,9 @@
 </mp-table>
 
 <div class="list-actions">
-    <a class="btn btn--primary" href="/System/StorageLocations/Edit">New storage location</a>
-    <span class="form-help" style="margin:0 0 0 auto" title="Documents wait here until they are confirmed in the inbox (env MATPAPER_INBOX)">
-        Inbox staging: <code>@Storage.StagingRoot</code>
+    <a class="btn btn--primary" href="/System/StorageLocations/Edit">@L["New storage location"]</a>
+    <span class="form-help" style="margin:0 0 0 auto" title='@L["Documents wait here until they are confirmed in the inbox (env MATPAPER_INBOX)"]'>
+        @L["Inbox staging:"] <code>@Storage.StagingRoot</code>
     </span>
 </div>
 

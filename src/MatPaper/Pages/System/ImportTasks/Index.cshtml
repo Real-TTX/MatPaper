@@ -3,21 +3,21 @@
 @using MatPaper.Data
 @using MatPaper.Services
 @{
-    ViewData["Breadcrumb"] = "System / Import tasks";
+    ViewData["Breadcrumb"] = L["System / Import tasks"].Value;
 }
 
 <mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name" />
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
 </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text="No import tasks match your criteria.">
+<mp-table item-count="Model.Rows.Count" empty-text='@L["No import tasks match your criteria."]'>
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Enabled</th>
-            <th>Schedule</th>
-            <th>Last run</th>
+            <th>@L["Name"]</th>
+            <th>@L["Type"]</th>
+            <th>@L["Enabled"]</th>
+            <th>@L["Schedule"]</th>
+            <th>@L["Last run"]</th>
             <th class="is-actions"></th>
         </tr>
     </thead>
@@ -30,11 +30,11 @@
                 <td>
                     @if (t.IsEnabled)
                     {
-                        <span class="badge badge--ok">Enabled</span>
+                        <span class="badge badge--ok">@L["Enabled"]</span>
                     }
                     else
                     {
-                        <span class="badge badge--off">Disabled</span>
+                        <span class="badge badge--off">@L["Disabled"]</span>
                     }
                 </td>
                 <td>
@@ -42,7 +42,7 @@
                     <span class="@(sched.IsValid ? "" : "badge badge--off")">@sched.Text</span>
                     @if (sched.NextUtc is DateTime nextUtc)
                     {
-                        <br /><span class="form-help" style="margin:0">next: @Fmt.DateTime(nextUtc)</span>
+                        <br /><span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
                     }
                 </td>
                 <td>
@@ -63,7 +63,7 @@
                     }
                 </td>
                 <td class="is-actions">
-                    <a href="/System/ImportTasks/Edit?id=@t.Id">Edit</a>
+                    <a href="/System/ImportTasks/Edit?id=@t.Id">@L["Edit"]</a>
                 </td>
             </tr>
         }
@@ -71,7 +71,7 @@
 </mp-table>
 
 <div class="list-actions">
-    <a class="btn btn--primary" href="/System/ImportTasks/Edit">New import task</a>
+    <a class="btn btn--primary" href="/System/ImportTasks/Edit">@L["New import task"]</a>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

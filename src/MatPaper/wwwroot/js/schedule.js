@@ -3,7 +3,6 @@
 (function () {
     "use strict";
 
-    var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     function pad(n) { return (n < 10 ? "0" : "") + n; }
     function isNum(s) { return /^\d+$/.test(s); }
@@ -70,17 +69,25 @@
             return "";
         }
 
+        // Sentence templates are translated server-side and travel as data attributes;
+        // {0}/{1} are the values. Times are wall-clock in the app time zone.
+        function t(name, fallback) { return root.getAttribute("data-t-" + name) || fallback; }
+        function fill(template, a, b) {
+            return template.replace("{0}", a).replace("{1}", b);
+        }
+
         function describe(expr) {
-            if (mode.value === "manual" || !expr) { return "Runs only when started manually."; }
-            // Times are wall-clock in the app time zone; name it once so nobody guesses.
+            if (mode.value === "manual" || !expr) { return t("manual", "Runs only when started manually."); }
             var zone = root.getAttribute("data-zone");
             var suffix = zone ? " (" + zone + ")" : "";
-            var t = timeParts();
+            var parts = timeParts();
+            var clock = pad(parts.h) + ":" + pad(parts.m);
+            var dayName = weekday.options[weekday.selectedIndex] ? weekday.options[weekday.selectedIndex].text : "";
             switch (mode.value) {
-                case "hourly": return "Every hour at minute " + (parseInt(minute.value, 10) || 0) + ".";
-                case "daily": return "Every day at " + pad(t.h) + ":" + pad(t.m) + suffix + ".";
-                case "weekly": return "Every " + DAYS[(parseInt(weekday.value, 10) || 0) % 7] + " at " + pad(t.h) + ":" + pad(t.m) + suffix + ".";
-                case "monthly": return "On day " + (parseInt(dom.value, 10) || 1) + " of each month at " + pad(t.h) + ":" + pad(t.m) + suffix + ".";
+                case "hourly": return fill(t("hourly", "Every hour at minute {0}."), parseInt(minute.value, 10) || 0);
+                case "daily": return fill(t("daily", "Every day at {0}"), clock) + suffix + ".";
+                case "weekly": return fill(t("weekly", "Every {0} at {1}"), dayName, clock) + suffix + ".";
+                case "monthly": return fill(t("monthly", "On day {0} of each month at {1}"), parseInt(dom.value, 10) || 1, clock) + suffix + ".";
                 case "custom": return "Cron: " + expr;
             }
             return "";

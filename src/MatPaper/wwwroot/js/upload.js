@@ -10,6 +10,9 @@
 
     var ajaxUrl = form.getAttribute("data-ajax-url");
     var inboxUrl = form.getAttribute("data-inbox-url") || "/Inbox";
+    // Status labels are translated server-side (see Upload.cshtml).
+    function t(name, fallback) { return form.getAttribute("data-t-" + name) || fallback; }
+    function fill(template, value) { return template.replace("{0}", value); }
     var input = document.getElementById("Files");
     var dropzone = document.getElementById("uploader-dropzone");
     var browse = document.getElementById("uploader-browse");
@@ -89,7 +92,7 @@
             var xhr = new XMLHttpRequest();
             xhr.open("POST", ajaxUrl, true);
             xhr.setRequestHeader("RequestVerificationToken", token());
-            setStatus(item, "uploading", "Uploading…");
+            setStatus(item, "uploading", t("uploading", "Uploading…"));
 
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
@@ -102,19 +105,19 @@
                 try { res = JSON.parse(xhr.responseText); } catch (err) { res = null; }
                 if (xhr.status >= 200 && xhr.status < 300 && res) {
                     if (res.status === "created") {
-                        setStatus(item, "created", "Added");
+                        setStatus(item, "created", t("added", "Added"));
                     } else if (res.status === "duplicate") {
-                        setStatus(item, "duplicate", "Duplicate — skipped");
+                        setStatus(item, "duplicate", t("duplicate", "Duplicate — skipped"));
                     } else {
-                        setStatus(item, "failed", res.message || "Failed");
+                        setStatus(item, "failed", res.message || t("failed", "Failed"));
                     }
                 } else {
-                    setStatus(item, "failed", "Failed (" + xhr.status + ")");
+                    setStatus(item, "failed", t("failed", "Failed") + " (" + xhr.status + ")");
                 }
                 resolve();
             };
             xhr.onerror = function () {
-                setStatus(item, "failed", "Network error");
+                setStatus(item, "failed", t("network-error", "Network error"));
                 resolve();
             };
             xhr.send(data);
@@ -134,11 +137,13 @@
             list.parentNode.insertBefore(summary, list.nextSibling);
         }
         var parts = [];
-        if (created > 0) { parts.push(created + " added"); }
-        if (dupes > 0) { parts.push(dupes + " duplicate(s) skipped"); }
-        if (failed > 0) { parts.push(failed + " failed"); }
+        if (created > 0) { parts.push(fill(t("summary-added", "{0} added"), created)); }
+        if (dupes > 0) { parts.push(fill(t("summary-duplicates", "{0} duplicate(s) skipped"), dupes)); }
+        if (failed > 0) { parts.push(fill(t("summary-failed", "{0} failed"), failed)); }
         summary.innerHTML = parts.join(", ") +
-            (created > 0 ? '. <a href="' + inboxUrl + '">Review them in your inbox →</a>' : ".");
+            (created > 0
+                ? '. <a href="' + inboxUrl + '">' + t("review-link", "Review them in your inbox →") + '</a>'
+                : ".");
     }
 
     async function runUploads() {

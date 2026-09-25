@@ -315,6 +315,41 @@ button.account__logout {
     box-shadow: var(--shadow-sm);
 }
 
+/* Language switch: same segmented look as the theme switch. */
+.lang-switch {
+    display: flex;
+    gap: 4px;
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 6px;
+}
+
+.lang-switch__btn {
+    flex: 1 1 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 6px 4px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.lang-switch__btn:hover {
+    color: var(--color-text);
+}
+
+.lang-switch__btn.is-active {
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-sm);
+}
+
 /* ---- Main column ------------------------------------------------------- */
 .app-main {
     display: flex;

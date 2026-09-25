@@ -1,4 +1,7 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
@@ -104,11 +107,31 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
+// Localization: resource keys are the English source strings, so untranslated text still
+// renders in English. The visible default culture comes from the config (German).
+builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
+
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AllowAnonymousToFolder("/Account");
     options.Conventions.AllowAnonymousToFolder("/Share");
     options.Conventions.AuthorizeFolder("/System", "AdminOnly");
+})
+    .AddViewLocalization()
+    .AddDataAnnotationsLocalization();
+
+builder.Services.Configure<RequestLocalizationOptions>(o =>
+{
+    var supported = new[] { new CultureInfo("de-DE"), new CultureInfo("en-US") };
+    var configured = supported.FirstOrDefault(c =>
+        string.Equals(c.Name, appConfig.Display?.Culture, StringComparison.OrdinalIgnoreCase)) ?? supported[0];
+
+    o.DefaultRequestCulture = new RequestCulture(configured);
+    o.SupportedCultures = supported;
+    o.SupportedUICultures = supported;
+
+    // A cookie set by the language switch wins over the browser's Accept-Language.
+    o.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider());
 });
 
 var app = builder.Build();
@@ -138,6 +161,7 @@ for (var attempt = 1; attempt <= maxAttempts; attempt++)
     }
 }
 
+app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();

@@ -45,7 +45,10 @@
         var search = document.createElement("input");
         search.type = "text";
         search.className = "mp-picker-dialog__search";
-        search.setAttribute("placeholder", "Search…");
+        // Labels come from the first widget on the page (server-side translated).
+        var labelSource = document.querySelector(".mp-picker");
+        search.setAttribute("placeholder",
+            (labelSource && labelSource.getAttribute("data-search-label")) || "Search…");
         search.setAttribute("autocomplete", "off");
         header.appendChild(search);
 
@@ -57,7 +60,7 @@
         var done = document.createElement("button");
         done.type = "button";
         done.className = "btn btn--primary mp-picker-dialog__done";
-        done.textContent = "Done";
+        done.textContent = (labelSource && labelSource.getAttribute("data-done-label")) || "Done";
         footer.appendChild(done);
 
         dialog.appendChild(header);
@@ -151,6 +154,12 @@
     // --- Open / render -----------------------------------------------------
 
     function openFor(widget, dialog) {
+        // Dialog labels follow the widget (each carries the server-side translation).
+        var searchLabel = widget.getAttribute("data-search-label");
+        if (searchLabel) { dialog._mp.search.setAttribute("placeholder", searchLabel); }
+        var doneLabel = widget.getAttribute("data-done-label");
+        if (doneLabel) { dialog._mp.done.textContent = doneLabel; }
+
         var mp = dialog._mp;
         mp.active = {
             widget: widget,

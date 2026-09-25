@@ -1,7 +1,7 @@
 @page
 @model MatPaper.Pages.System.IndexModel
 @{
-    ViewData["Breadcrumb"] = "System";
+    ViewData["Breadcrumb"] = L["System"].Value;
 }
 
 @{
@@ -14,55 +14,55 @@
 <section class="card-grid">
     <a class="link-card" href="/System/Users">
         @{ Icon("<path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'/>"); }
-        <span class="link-card__title">Users</span>
-        <span class="link-card__desc">Manage local accounts and roles</span>
+        <span class="link-card__title">@L["Users"]</span>
+        <span class="link-card__desc">@L["Manage local accounts and roles"]</span>
     </a>
 
     <a class="link-card" href="/System/StorageLocations">
         @{ Icon("<ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/><path d='M3 12c0 1.66 4 3 9 3s9-1.34 9-3'/>"); }
-        <span class="link-card__title">Storage locations</span>
-        <span class="link-card__desc">Manage native, human-readable storage locations</span>
+        <span class="link-card__title">@L["Storage locations"]</span>
+        <span class="link-card__desc">@L["Manage native, human-readable storage locations"]</span>
     </a>
 
     <a class="link-card" href="/System/DocumentTypes">
         @{ Icon("<path d='M12 2 2 7l10 5 10-5-10-5z'/><path d='M2 17l10 5 10-5M2 12l10 5 10-5'/>"); }
-        <span class="link-card__title">Document types</span>
-        <span class="link-card__desc">Manage the document type vocabulary</span>
+        <span class="link-card__title">@L["Document types"]</span>
+        <span class="link-card__desc">@L["Manage the document type vocabulary"]</span>
     </a>
 
     <a class="link-card" href="/System/Inbox">
         @{ Icon("<path d='M22 12h-6l-2 3h-4l-2-3H2'/><path d='M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'/>"); }
-        <span class="link-card__title">Import inbox</span>
-        <span class="link-card__desc">Scan storage locations and import discovered files</span>
+        <span class="link-card__title">@L["Import inbox"]</span>
+        <span class="link-card__desc">@L["Scan storage locations and import discovered files"]</span>
     </a>
 
     <a class="link-card" href="/System/Credentials">
         @{ Icon("<path d='M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3'/>"); }
-        <span class="link-card__title">Credentials</span>
-        <span class="link-card__desc">Reusable logins for mailbox and SMB imports</span>
+        <span class="link-card__title">@L["Credentials"]</span>
+        <span class="link-card__desc">@L["Reusable logins for mailbox and SMB imports"]</span>
     </a>
 
     <a class="link-card" href="/System/ImportTasks">
         @{ Icon("<path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><path d='M7 10l5 5 5-5'/><path d='M12 15V3'/>"); }
-        <span class="link-card__title">Import tasks</span>
-        <span class="link-card__desc">Scheduled imports from folders and mailboxes</span>
+        <span class="link-card__title">@L["Import tasks"]</span>
+        <span class="link-card__desc">@L["Scheduled imports from folders and mailboxes"]</span>
     </a>
 
     <a class="link-card" href="/System/ExportTasks">
         @{ Icon("<path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><path d='M17 8l-5-5-5 5'/><path d='M12 3v12'/>"); }
-        <span class="link-card__title">Export tasks</span>
-        <span class="link-card__desc">Scheduled database and document backups</span>
+        <span class="link-card__title">@L["Export tasks"]</span>
+        <span class="link-card__desc">@L["Scheduled database and document backups"]</span>
     </a>
 
     <a class="link-card" href="/System/TaskRuns">
         @{ Icon("<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 3'/>"); }
-        <span class="link-card__title">Task history</span>
-        <span class="link-card__desc">Results and logs of import/export runs</span>
+        <span class="link-card__title">@L["Task history"]</span>
+        <span class="link-card__desc">@L["Results and logs of import/export runs"]</span>
     </a>
 
     <div class="link-card is-disabled" aria-disabled="true">
         @{ Icon("<circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/>"); }
-        <span class="link-card__title">Settings</span>
-        <span class="link-card__desc">Coming soon</span>
+        <span class="link-card__title">@L["Settings"]</span>
+        <span class="link-card__desc">@L["Coming soon"]</span>
     </div>
 </section>

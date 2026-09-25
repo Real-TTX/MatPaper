@@ -2,8 +2,8 @@
 @model MatPaper.Pages.Share.ViewModel
 @{
     var title = Model.Document?.Title;
-    ViewData["Title"] = string.IsNullOrWhiteSpace(title) ? "Shared document" : title;
-    ViewData["Breadcrumb"] = string.IsNullOrWhiteSpace(title) ? "Shared document" : title;
+    ViewData["Title"] = string.IsNullOrWhiteSpace(title) ? L["Shared document"].Value : title;
+    ViewData["Breadcrumb"] = string.IsNullOrWhiteSpace(title) ? L["Shared document"].Value : title;
 }
 
 <style>
@@ -68,8 +68,8 @@
 {
     <div class="share-empty">
         <div class="share-empty__icon" aria-hidden="true">🔗</div>
-        <h1 class="share-view__title">Link unavailable</h1>
-        <p class="empty-state">This share link is invalid or has expired.</p>
+        <h1 class="share-view__title">@L["Link unavailable"]</h1>
+        <p class="empty-state">@L["This share link is invalid or has expired."]</p>
     </div>
 }
 else
@@ -77,7 +77,7 @@ else
     <div class="share-view">
         <div class="share-view__header">
             <h1 class="share-view__title">@Model.Document.Title</h1>
-            <a class="btn btn--primary" href="/Share/@Model.Token/file?download=true">Download</a>
+            <a class="btn btn--primary" href="/Share/@Model.Token/file?download=true">@L["Download"]</a>
         </div>
 
         <div class="share-view__frame">

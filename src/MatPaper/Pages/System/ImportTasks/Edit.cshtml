@@ -1,7 +1,7 @@
 @page "/System/ImportTasks/Edit"
 @model MatPaper.Pages.System.ImportTasks.EditModel
 @{
-    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Import tasks / Edit" : "System / Import tasks / New";
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Edit"].Value : L["System / Import tasks / New"].Value;
 }
 
 @if (TempData["TaskMessage"] is string queued && !string.IsNullOrEmpty(queued))
@@ -12,7 +12,7 @@
 @if (!string.IsNullOrEmpty(Model.Notice))
 {
     <div class="form-summary">
-        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? "OK" : "Failed")</span>
+        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? L["OK"].Value : L["Failed"].Value)</span>
         @Model.Notice
     </div>
 }
@@ -23,123 +23,123 @@
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <section class="form-section">
-        <h2 class="form-section__title">Overview</h2>
+        <h2 class="form-section__title">@L["Overview"]</h2>
 
-        <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Scanner watch folder" />
+        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Scanner watch folder"]' />
 
-        <mp-field asp-for="Input.Type" kind="select" label="Type">
-            <option value="2">Filesystem (watch folder)</option>
-            <option value="3">SMB / CIFS network share</option>
-            <option value="0">IMAP mailbox</option>
-            <option value="1">POP3 mailbox</option>
+        <mp-field asp-for="Input.Type" kind="select" label='@L["Type"]'>
+            <option value="2">@L["Filesystem (watch folder)"]</option>
+            <option value="3">@L["SMB / CIFS network share"]</option>
+            <option value="0">@L["IMAP mailbox"]</option>
+            <option value="1">@L["POP3 mailbox"]</option>
         </mp-field>
 
-        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
+        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
 
-        <mp-schedule asp-for="Input.CronExpression" label="Schedule" />
+        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
     <section class="form-section">
-        <h2 class="form-section__title">Source</h2>
+        <h2 class="form-section__title">@L["Source"]</h2>
 
         @* --- Filesystem --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="2">
-            <mp-field asp-for="Input.SourcePath" label="Source path" placeholder="/mnt/scan" />
-            <mp-field asp-for="Input.Pattern" label="Pattern" placeholder="*" />
-            <mp-field asp-for="Input.Recursive" kind="checkbox" label="Recursive" />
-            <mp-field asp-for="Input.PostAction" kind="select" label="After import">
-                <option value="none">Do nothing</option>
-                <option value="delete">Delete</option>
-                <option value="move">Move</option>
+            <mp-field asp-for="Input.SourcePath" label='@L["Source path"]' placeholder="/mnt/scan" />
+            <mp-field asp-for="Input.Pattern" label='@L["Pattern"]' placeholder="*" />
+            <mp-field asp-for="Input.Recursive" kind="checkbox" label='@L["Recursive"]' />
+            <mp-field asp-for="Input.PostAction" kind="select" label='@L["After import"]'>
+                <option value="none">@L["Do nothing"]</option>
+                <option value="delete">@L["Delete"]</option>
+                <option value="move">@L["Move"]</option>
             </mp-field>
-            <mp-field asp-for="Input.MoveToPath" label="Move to path"
+            <mp-field asp-for="Input.MoveToPath" label='@L["Move to path"]'
                       show-when-field="Input.PostAction" show-when-value="move" placeholder="/mnt/scan/done" />
         </div>
 
         @* --- Saved credential (mail + SMB) --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="0,1,3">
-            <mp-field asp-for="Input.CredentialId" kind="select" label="Saved credential"
+            <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Saved credential"]'
                       asp-items="Model.CredentialOptions" />
         </div>
 
         @* --- SMB / CIFS --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <mp-field asp-for="Input.SmbHost" label="Host" placeholder="nas.local" />
-            <mp-field asp-for="Input.SmbShare" label="Share" placeholder="documents" />
-            <mp-field asp-for="Input.SmbPath" label="Path in share" placeholder="inbox/scans" />
-            <mp-field asp-for="Input.SmbDomain" label="Domain" />
-            <mp-field asp-for="Input.SmbUsername" label="Username" />
-            <mp-field asp-for="Input.SmbPassword" kind="password" label="Password" />
-            <mp-field asp-for="Input.SmbPattern" label="Pattern" placeholder="*" />
-            <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label="Recursive" />
-            <mp-field asp-for="Input.SmbPostAction" kind="select" label="After import">
-                <option value="none">Leave on share</option>
-                <option value="delete">Delete</option>
-                <option value="move">Move to subfolder</option>
+            <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
+            <mp-field asp-for="Input.SmbShare" label='@L["Share"]' placeholder="documents" />
+            <mp-field asp-for="Input.SmbPath" label='@L["Path in share"]' placeholder="inbox/scans" />
+            <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' />
+            <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
+            <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]' />
+            <mp-field asp-for="Input.SmbPattern" label='@L["Pattern"]' placeholder="*" />
+            <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label='@L["Recursive"]' />
+            <mp-field asp-for="Input.SmbPostAction" kind="select" label='@L["After import"]'>
+                <option value="none">@L["Leave on share"]</option>
+                <option value="delete">@L["Delete"]</option>
+                <option value="move">@L["Move to subfolder"]</option>
             </mp-field>
-            <mp-field asp-for="Input.SmbMoveToPath" label="Move to subfolder"
+            <mp-field asp-for="Input.SmbMoveToPath" label='@L["Move to subfolder"]'
                       show-when-field="Input.SmbPostAction" show-when-value="move" placeholder="imported" />
         </div>
 
         @* --- Mail (IMAP / POP3) --- *@
         <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <mp-field asp-for="Input.Host" label="Host" placeholder="mail.example.com" />
-            <mp-field asp-for="Input.Port" kind="number" label="Port" />
-            <mp-field asp-for="Input.UseSsl" kind="checkbox" label="Use SSL" />
-            <mp-field asp-for="Input.Username" label="Username" />
-            <mp-field asp-for="Input.Password" kind="password" label="Password" />
-            <mp-field asp-for="Input.Folder" label="Folder"
+            <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" />
+            <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
+            <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL"]' />
+            <mp-field asp-for="Input.Username" label='@L["Username"]' />
+            <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' />
+            <mp-field asp-for="Input.Folder" label='@L["Folder"]'
                       show-when-field="Input.Type" show-when-value="0" />
 
-            <mp-field asp-for="Input.MailFilterMode" kind="select" label="Messages">
-                <option value="all">Import all</option>
-                <option value="filter">Filter…</option>
+            <mp-field asp-for="Input.MailFilterMode" kind="select" label='@L["Messages"]'>
+                <option value="all">@L["Import all"]</option>
+                <option value="filter">@L["Filter…"]</option>
             </mp-field>
             <div data-show-when-field="Input.MailFilterMode" data-show-when-value="filter">
-                <mp-field asp-for="Input.FromFilter" label="From contains" />
-                <mp-field asp-for="Input.ToFilter" label="To contains" />
-                <mp-field asp-for="Input.SubjectFilter" label="Subject contains" />
-                <mp-field asp-for="Input.SenderRegex" label="Sender regex (advanced)" />
-                <mp-field asp-for="Input.SubjectRegex" label="Subject regex (advanced)" />
+                <mp-field asp-for="Input.FromFilter" label='@L["From contains"]' />
+                <mp-field asp-for="Input.ToFilter" label='@L["To contains"]' />
+                <mp-field asp-for="Input.SubjectFilter" label='@L["Subject contains"]' />
+                <mp-field asp-for="Input.SenderRegex" label='@L["Sender regex (advanced)"]' />
+                <mp-field asp-for="Input.SubjectRegex" label='@L["Subject regex (advanced)"]' />
             </div>
 
-            <mp-field asp-for="Input.AttachmentExtensions" label="Attachment extensions" />
-            <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label="Also import the mail body as a PDF" />
+            <mp-field asp-for="Input.AttachmentExtensions" label='@L["Attachment extensions"]' />
+            <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label='@L["Also import the mail body as a PDF"]' />
 
-            <mp-field asp-for="Input.MailPostAction" kind="select" label="After import">
-                <option value="markseen">Mark seen (IMAP only)</option>
-                <option value="move">Move to folder (IMAP only)</option>
-                <option value="delete">Delete</option>
-                <option value="none">Leave on server</option>
+            <mp-field asp-for="Input.MailPostAction" kind="select" label='@L["After import"]'>
+                <option value="markseen">@L["Mark seen (IMAP only)"]</option>
+                <option value="move">@L["Move to folder (IMAP only)"]</option>
+                <option value="delete">@L["Delete"]</option>
+                <option value="none">@L["Leave on server"]</option>
             </mp-field>
-            <mp-field asp-for="Input.MailMoveToFolder" label="Move to folder"
+            <mp-field asp-for="Input.MailMoveToFolder" label='@L["Move to folder"]'
                       show-when-field="Input.MailPostAction" show-when-value="move" placeholder="Archive/Imported" />
         </div>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section__title">Defaults for imported documents</h2>
+        <h2 class="form-section__title">@L["Defaults for imported documents"]</h2>
 
-        <mp-field asp-for="Input.StorageLocationId" kind="select" label="Storage location"
+        <mp-field asp-for="Input.StorageLocationId" kind="select" label='@L["Storage location"]'
                   asp-items="Model.StorageLocationOptions" />
-        <mp-field asp-for="Input.CorrespondentId" kind="select" label="Correspondent"
+        <mp-field asp-for="Input.CorrespondentId" kind="select" label='@L["Correspondent"]'
                   asp-items="Model.CorrespondentOptions" />
-        <mp-field asp-for="Input.DocumentTypeId" kind="select" label="Document type"
+        <mp-field asp-for="Input.DocumentTypeId" kind="select" label='@L["Document type"]'
                   asp-items="Model.DocumentTypeOptions" />
-        <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
+        <mp-field asp-for="Input.ProjectId" kind="select" label='@L["Project"]'
                   asp-items="Model.ProjectOptions" />
 
-        <mp-field asp-for="Input.OwnerUserId" kind="select" label="Inbox of"
+        <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]'
                   asp-items="Model.UserOptions" />
 
-        <mp-field asp-for="Input.IsCommon" kind="checkbox" label="Common area (visible to everyone)" />
+        <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
 
-        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label="Skip inbox (mark imported documents as reviewed)" />
+        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
 
         @if (Model.TagOptions.Count > 0)
         {
             <div class="form-row">
-                <label>Tags</label>
+                <label>@L["Tags"]</label>
                 <div class="checkbox-group">
                     @foreach (var tag in Model.TagOptions)
                     {
@@ -154,20 +154,20 @@
     </section>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Save</mp-button>
-        <mp-button variant="secondary" href="/System/ImportTasks">Back</mp-button>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/ImportTasks">@L["Back"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="secondary" type="submit" handler="Run">Run now</mp-button>
+            <mp-button variant="secondary" type="submit" handler="Run">@L["Run now"]</mp-button>
         }
         <span data-show-when-field="Input.Type" data-show-when-value="0,1,3">
-            <mp-button variant="secondary" type="submit" handler="Test">Test connection</mp-button>
+            <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
         </span>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {
             <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm="Delete this import task? This cannot be undone.">Delete</mp-button>
+                       confirm='@L["Delete this import task? This cannot be undone."]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

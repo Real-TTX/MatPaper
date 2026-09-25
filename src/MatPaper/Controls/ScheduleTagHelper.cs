@@ -19,8 +19,13 @@ namespace MatPaper.Controls;
 public sealed class ScheduleTagHelper : TagHelper
 {
     private readonly Services.Fmt _fmt;
+    private readonly Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> _l;
 
-    public ScheduleTagHelper(Services.Fmt fmt) => _fmt = fmt;
+    public ScheduleTagHelper(Services.Fmt fmt, Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l)
+    {
+        _fmt = fmt;
+        _l = l;
+    }
 
     [HtmlAttributeName("asp-for")]
     public ModelExpression For { get; set; } = default!;
@@ -47,6 +52,12 @@ public sealed class ScheduleTagHelper : TagHelper
         output.Attributes.SetAttribute("data-name", fullName);
         output.Attributes.SetAttribute("data-cron", current);
         output.Attributes.SetAttribute("data-zone", _fmt.ZoneName);
+        // Sentence templates for the live summary rendered by schedule.js.
+        output.Attributes.SetAttribute("data-t-manual", _l["Runs only when started manually."].Value);
+        output.Attributes.SetAttribute("data-t-hourly", _l["Every hour at minute {0}."].Value);
+        output.Attributes.SetAttribute("data-t-daily", _l["Every day at {0}"].Value);
+        output.Attributes.SetAttribute("data-t-weekly", _l["Every {0} at {1}"].Value);
+        output.Attributes.SetAttribute("data-t-monthly", _l["On day {0} of each month at {1}"].Value);
 
         var w = new StringBuilder();
         w.Append($"<label>{enc.Encode(Label)}</label>");
@@ -54,19 +65,23 @@ public sealed class ScheduleTagHelper : TagHelper
 
         w.Append("<div class=\"mp-schedule__controls\">");
         w.Append("<select class=\"mp-schedule__mode form-control\">");
-        w.Append("<option value=\"manual\">Manual only</option>");
-        w.Append("<option value=\"hourly\">Hourly</option>");
-        w.Append("<option value=\"daily\">Daily</option>");
-        w.Append("<option value=\"weekly\">Weekly</option>");
-        w.Append("<option value=\"monthly\">Monthly</option>");
-        w.Append("<option value=\"custom\">Custom (cron)</option>");
+        w.Append($"<option value=\"manual\">{enc.Encode(_l["Manual only"].Value)}</option>");
+        w.Append($"<option value=\"hourly\">{enc.Encode(_l["Hourly"].Value)}</option>");
+        w.Append($"<option value=\"daily\">{enc.Encode(_l["Daily"].Value)}</option>");
+        w.Append($"<option value=\"weekly\">{enc.Encode(_l["Weekly"].Value)}</option>");
+        w.Append($"<option value=\"monthly\">{enc.Encode(_l["Monthly"].Value)}</option>");
+        w.Append($"<option value=\"custom\">{enc.Encode(_l["Custom (cron)"].Value)}</option>");
         w.Append("</select>");
 
-        w.Append("<span class=\"mp-schedule__part\" data-modes=\"hourly\">at minute <input type=\"number\" class=\"mp-schedule__minute form-control\" min=\"0\" max=\"59\" value=\"0\"></span>");
-        w.Append("<span class=\"mp-schedule__part\" data-modes=\"daily weekly monthly\">at <input type=\"time\" class=\"mp-schedule__time form-control\" value=\"03:00\"></span>");
+        w.Append($"<span class=\"mp-schedule__part\" data-modes=\"hourly\">{enc.Encode(_l["at minute"].Value)} <input type=\"number\" class=\"mp-schedule__minute form-control\" min=\"0\" max=\"59\" value=\"0\"></span>");
+        w.Append($"<span class=\"mp-schedule__part\" data-modes=\"daily weekly monthly\">{enc.Encode(_l["at"].Value)} <input type=\"time\" class=\"mp-schedule__time form-control\" value=\"03:00\"></span>");
 
         w.Append("<span class=\"mp-schedule__part\" data-modes=\"weekly\"><select class=\"mp-schedule__weekday form-control\">");
-        string[] days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+        string[] days =
+        {
+            _l["Monday"].Value, _l["Tuesday"].Value, _l["Wednesday"].Value, _l["Thursday"].Value,
+            _l["Friday"].Value, _l["Saturday"].Value, _l["Sunday"].Value
+        };
         int[] vals = { 1, 2, 3, 4, 5, 6, 0 };
         for (var i = 0; i < days.Length; i++)
         {
@@ -74,7 +89,7 @@ public sealed class ScheduleTagHelper : TagHelper
         }
         w.Append("</select></span>");
 
-        w.Append("<span class=\"mp-schedule__part\" data-modes=\"monthly\">day <input type=\"number\" class=\"mp-schedule__dom form-control\" min=\"1\" max=\"31\" value=\"1\"></span>");
+        w.Append($"<span class=\"mp-schedule__part\" data-modes=\"monthly\">{enc.Encode(_l["day"].Value)} <input type=\"number\" class=\"mp-schedule__dom form-control\" min=\"1\" max=\"31\" value=\"1\"></span>");
         w.Append("<span class=\"mp-schedule__part\" data-modes=\"custom\"><input type=\"text\" class=\"mp-schedule__cron form-control\" placeholder=\"*/15 * * * *\"></span>");
         w.Append("</div>");
 

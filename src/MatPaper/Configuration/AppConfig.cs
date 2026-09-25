@@ -34,6 +34,12 @@ public class DisplayConfig
     /// system does not know the id. The environment variable MATPAPER_TZ overrides it.
     /// </summary>
     public string TimeZone { get; set; } = "Europe/Berlin";
+
+    /// <summary>
+    /// UI language used when the visitor has not picked one: "de-DE" or "en-US".
+    /// Untranslated strings always fall back to their English original.
+    /// </summary>
+    public string Culture { get; set; } = "de-DE";
 }
 
 public class AppConfig

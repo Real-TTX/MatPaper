@@ -1,7 +1,7 @@
 @page "/Documents/Upload"
 @model MatPaper.Pages.Documents.UploadModel
 @{
-    ViewData["Breadcrumb"] = "Documents / Add";
+    ViewData["Breadcrumb"] = L["Documents / Add"].Value;
     ViewData["AddTab"] = "files";
 }
 
@@ -20,12 +20,17 @@
 }
 
 <form class="form" id="upload-form" method="post" enctype="multipart/form-data"
-      data-ajax-url="/Documents/Upload?handler=Ajax" data-inbox-url="/Inbox">
+      data-ajax-url="/Documents/Upload?handler=Ajax" data-inbox-url="/Inbox"
+      data-t-uploading='@L["Uploading…"]' data-t-added='@L["Added"]'
+      data-t-duplicate='@L["Duplicate — skipped"]' data-t-failed='@L["Failed"]'
+      data-t-network-error='@L["Network error"]'
+      data-t-summary-added='@L["{0} added"]' data-t-summary-duplicates='@L["{0} duplicate(s) skipped"]'
+      data-t-summary-failed='@L["{0} failed"]' data-t-review-link='@L["Review them in your inbox →"]'>
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <div class="form-row">
-        <label for="Files">Files</label>
+        <label for="Files">@L["Files"]</label>
         <div class="uploader" id="uploader">
             <div class="uploader__dropzone" id="uploader-dropzone">
                 <svg class="uploader__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -34,10 +39,10 @@
                     <path d="M12 4v12" />
                 </svg>
                 <p class="uploader__hint">
-                    <strong>Drag &amp; drop</strong> files here, or
-                    <button type="button" class="uploader__browse" id="uploader-browse">choose files</button>
+                    <strong>@L["Drag & drop"]</strong> @L["files here, or"]
+                    <button type="button" class="uploader__browse" id="uploader-browse">@L["choose files"]</button>
                 </p>
-                <p class="form-help">PDF or images. Files wait in your inbox until you confirm and file them.</p>
+                <p class="form-help">@L["PDF or images. Files wait in your inbox until you confirm and file them."]</p>
             </div>
             <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,image/*" />
         </div>
@@ -47,8 +52,8 @@
     <ul class="upload-list" id="upload-list" hidden></ul>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit" id="upload-submit">Upload</mp-button>
-        <mp-button variant="secondary" href="/Documents">Back</mp-button>
+        <mp-button variant="primary" type="submit" id="upload-submit">@L["Upload"]</mp-button>
+        <mp-button variant="secondary" href="/Documents">@L["Back"]</mp-button>
     </mp-button-row>
 </form>
 

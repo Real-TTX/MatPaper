@@ -1,7 +1,7 @@
 @page "/System/ExportTasks/Edit"
 @model MatPaper.Pages.System.ExportTasks.EditModel
 @{
-    ViewData["Breadcrumb"] = Model.IsEdit ? "System / Export tasks / Edit" : "System / Export tasks / New";
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Export tasks / Edit"].Value : L["System / Export tasks / New"].Value;
 }
 
 @if (TempData["ExportTaskMessage"] is string message && !string.IsNullOrEmpty(message))
@@ -15,37 +15,37 @@
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <section class="form-section">
-        <h2 class="form-section__title">Overview</h2>
-        <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Nightly backup" />
-        <mp-field asp-for="Input.Type" kind="select" label="Type" asp-items="Model.TypeOptions" />
-        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label="Enabled" />
-        <mp-schedule asp-for="Input.CronExpression" label="Schedule"
-                     help="How often the backup runs automatically. Choose Manual to run it only on demand." />
+        <h2 class="form-section__title">@L["Overview"]</h2>
+        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Nightly backup"]' />
+        <mp-field asp-for="Input.Type" kind="select" label='@L["Type"]' asp-items="Model.TypeOptions" />
+        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
+        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]'
+                     help='@L["How often the backup runs automatically. Choose Manual to run it only on demand."]' />
     </section>
 
     <section class="form-section">
-        <h2 class="form-section__title">Backup settings</h2>
-        <mp-field asp-for="Input.TargetPath" label="Target path"
+        <h2 class="form-section__title">@L["Backup settings"]</h2>
+        <mp-field asp-for="Input.TargetPath" label='@L["Target path"]'
                   placeholder="/backup"
-                  help="Absolute path inside the container, e.g. a mounted backup folder" />
-        <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label="Include configuration" />
-        <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label="Include documents" />
-        <mp-field asp-for="Input.Retention" kind="number" label="Retention"
-                  help="how many backups to keep" />
+                  help='@L["Absolute path inside the container, e.g. a mounted backup folder"]' />
+        <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label='@L["Include configuration"]' />
+        <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label='@L["Include documents"]' />
+        <mp-field asp-for="Input.Retention" kind="number" label='@L["Retention"]'
+                  help='@L["how many backups to keep"]' />
     </section>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Save</mp-button>
-        <mp-button variant="secondary" href="/System/ExportTasks">Back</mp-button>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/ExportTasks">@L["Back"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="secondary" type="submit" handler="Run">Run now</mp-button>
+            <mp-button variant="secondary" type="submit" handler="Run">@L["Run now"]</mp-button>
         }
         <mp-button-spacer />
         @if (Model.IsEdit)
         {
             <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm="Delete this export task? This cannot be undone.">Delete</mp-button>
+                       confirm='@L["Delete this export task? This cannot be undone."]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

@@ -1,25 +1,25 @@
 @page "/Correspondents"
 @model MatPaper.Pages.Correspondents.IndexModel
 @{
-    ViewData["Breadcrumb"] = "Correspondents";
+    ViewData["Breadcrumb"] = L["Correspondents"].Value;
 }
 
 <mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Name, pattern or notes" />
-    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
-        <option value="name_asc">Name (A–Z)</option>
-        <option value="name_desc">Name (Z–A)</option>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name, pattern or notes"]' />
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="name_asc">@L["Name (A–Z)"]</option>
+        <option value="name_desc">@L["Name (Z–A)"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
 <partial name="_FilterChips" model="Model.Filters" />
 
-<mp-table item-count="Model.Rows.Count" empty-text="No correspondents match your criteria.">
+<mp-table item-count="Model.Rows.Count" empty-text='@L["No correspondents match your criteria."]'>
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Last document</th>
+            <th>@L["Name"]</th>
+            <th>@L["Email"]</th>
+            <th>@L["Last document"]</th>
             <th class="is-actions"></th>
         </tr>
     </thead>
@@ -28,13 +28,13 @@
         {
             Model.Stats.TryGetValue(c.Id, out var st);
             <tr>
-                <td><a href="/Documents?CorrespondentIds=@c.Id" title="Show documents">@c.Name</a></td>
+                <td><a href="/Documents?CorrespondentIds=@c.Id" title='@L["Show documents"]'>@c.Name</a></td>
                 <td>@(string.IsNullOrWhiteSpace(c.Email) ? "—" : c.Email)</td>
                 <td>
                     @if (st != null && st.LatestId != null)
                     {
                         <a href="/Documents/Edit?id=@st.LatestId" title="@st.LatestTitle">@st.LatestTitle</a>
-                        <div class="form-help" style="margin:0">@Fmt.Date(st.Last) · @st.Count doc(s)</div>
+                        <div class="form-help" style="margin:0">@Fmt.Date(st.Last) · @st.Count @L["doc(s)"]</div>
                     }
                     else
                     {
@@ -43,10 +43,10 @@
                 </td>
                 <td class="is-actions">
                     <span class="icon-actions">
-                        <a class="icon-btn" href="/Documents?CorrespondentIds=@c.Id" title="Documents" aria-label="Documents">
+                        <a class="icon-btn" href="/Documents?CorrespondentIds=@c.Id" title='@L["Documents"]' aria-label='@L["Documents"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
                         </a>
-                        <a class="icon-btn" href="/Correspondents/Edit?id=@c.Id" title="Edit" aria-label="Edit">
+                        <a class="icon-btn" href="/Correspondents/Edit?id=@c.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
                         </a>
                     </span>
@@ -57,7 +57,7 @@
 </mp-table>
 
 <div class="list-actions">
-    <a class="btn btn--primary" href="/Correspondents/Edit">New correspondent</a>
+    <a class="btn btn--primary" href="/Correspondents/Edit">@L["New correspondent"]</a>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

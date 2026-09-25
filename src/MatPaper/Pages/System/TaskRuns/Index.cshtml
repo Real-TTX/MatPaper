@@ -1,26 +1,26 @@
 @page "/System/TaskRuns"
 @model MatPaper.Pages.System.TaskRuns.IndexModel
 @{
-    ViewData["Breadcrumb"] = "System / Task history";
+    ViewData["Breadcrumb"] = L["System / Task history"].Value;
 }
 
 <mp-toolbar>
-    <mp-toolbar-select name="Kind" label="Kind" value="@Model.Kind">
-        <option value="all">All</option>
-        <option value="import">Import</option>
-        <option value="export">Export</option>
+    <mp-toolbar-select name="Kind" label='@L["Kind"]' value="@Model.Kind">
+        <option value="all">@L["All"]</option>
+        <option value="import">@L["Import"]</option>
+        <option value="export">@L["Export"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text="No task runs recorded yet.">
+<mp-table item-count="Model.Rows.Count" empty-text='@L["No task runs recorded yet."]'>
     <thead>
         <tr>
-            <th>Started</th>
-            <th>Kind</th>
-            <th>Task</th>
-            <th>State</th>
-            <th>Items</th>
-            <th>Duration</th>
+            <th>@L["Started"]</th>
+            <th>@L["Kind"]</th>
+            <th>@L["Task"]</th>
+            <th>@L["State"]</th>
+            <th>@L["Items"]</th>
+            <th>@L["Duration"]</th>
         </tr>
     </thead>
     <tbody>
@@ -34,13 +34,13 @@
                     @switch (r.State)
                     {
                         case MatPaper.Data.TaskRunState.Success:
-                            <span class="badge badge--ok">Success</span>
+                            <span class="badge badge--ok">@L["Success"]</span>
                             break;
                         case MatPaper.Data.TaskRunState.Failed:
-                            <span class="badge badge--off">Failed</span>
+                            <span class="badge badge--off">@L["Failed"]</span>
                             break;
                         default:
-                            <span class="badge badge--muted">Running</span>
+                            <span class="badge badge--muted">@L["Running"]</span>
                             break;
                     }
                 </td>

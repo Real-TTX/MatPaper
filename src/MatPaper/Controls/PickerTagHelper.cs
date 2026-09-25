@@ -6,6 +6,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.Extensions.Localization;
+using MatPaper.Services;
 
 namespace MatPaper.Controls;
 
@@ -29,6 +31,10 @@ namespace MatPaper.Controls;
 [HtmlTargetElement("mp-picker", Attributes = ForAttributeName + "," + ItemsAttributeName)]
 public sealed class PickerTagHelper : TagHelper
 {
+    private readonly IStringLocalizer<SharedResource> _l;
+
+    public PickerTagHelper(IStringLocalizer<SharedResource> l) => _l = l;
+
     private const string ForAttributeName = "asp-for";
     private const string ItemsAttributeName = "asp-items";
 
@@ -79,7 +85,7 @@ public sealed class PickerTagHelper : TagHelper
         string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
         string fieldId = TagBuilder.CreateSanitizedId(fullName, "_");
         string widgetId = string.IsNullOrEmpty(IdSuffix) ? $"{fieldId}__picker" : $"{fieldId}_{IdSuffix}__picker";
-        string placeholder = Placeholder ?? (Multiple ? "Add…" : "— None —");
+        string placeholder = Placeholder ?? (Multiple ? _l["Add…"].Value : _l["— None —"].Value);
 
         IReadOnlyList<SelectListItem> items = Items as IReadOnlyList<SelectListItem> ?? Items.ToList();
         HashSet<string> selected = Value is not null
@@ -105,7 +111,10 @@ public sealed class PickerTagHelper : TagHelper
         widget.Append($" data-multiple=\"{(Multiple ? "true" : "false")}\"");
         widget.Append($" data-name=\"{enc.Encode(fullName)}\"");
         widget.Append($" data-selected=\"{selectedAttr}\"");
-        widget.Append($" data-placeholder=\"{enc.Encode(placeholder)}\">");
+        widget.Append($" data-placeholder=\"{enc.Encode(placeholder)}\"");
+        // The dialog is built in picker.js, so its labels travel as data attributes.
+        widget.Append($" data-search-label=\"{enc.Encode(_l["Search…"].Value)}\"");
+        widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\">");
 
         widget.Append($"<script type=\"application/json\" class=\"mp-picker__data\">{optionsJson}</script>");
 

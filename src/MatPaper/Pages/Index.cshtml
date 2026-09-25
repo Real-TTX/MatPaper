@@ -1,14 +1,14 @@
 @page "/"
 @model IndexModel
 @{
-    ViewData["Breadcrumb"] = "Dashboard";
+    ViewData["Breadcrumb"] = L["Dashboard"].Value;
 }
 
 <div class="quick-actions">
-    <a class="btn btn--primary" href="/Documents/Upload">+ Upload</a>
-    <a class="btn btn--secondary" href="/Documents/Scan">Scan</a>
-    <a class="btn btn--secondary" href="/Inbox">Inbox@(Model.PendingReviewCount > 0 ? $" ({Model.PendingReviewCount})" : "")</a>
-    <a class="btn btn--secondary" href="/Documents">All documents</a>
+    <a class="btn btn--primary" href="/Documents/Upload">+ @L["Upload"]</a>
+    <a class="btn btn--secondary" href="/Documents/Scan">@L["Scan"]</a>
+    <a class="btn btn--secondary" href="/Inbox">@L["Inbox"]@(Model.PendingReviewCount > 0 ? $" ({Model.PendingReviewCount})" : "")</a>
+    <a class="btn btn--secondary" href="/Documents">@L["All documents"]</a>
 </div>
 
 <section class="kpi-grid">
@@ -21,7 +21,7 @@
         </div>
         <div class="kpi-card__body">
             <span class="kpi-card__value">@Model.PendingReviewCount</span>
-            <span class="kpi-card__label">Needs review</span>
+            <span class="kpi-card__label">@L["Needs review"]</span>
         </div>
     </a>
 
@@ -34,16 +34,16 @@
         </div>
         <div class="kpi-card__body">
             <span class="kpi-card__value">@Model.DocumentCount</span>
-            <span class="kpi-card__label">Documents</span>
+            <span class="kpi-card__label">@L["Documents"]</span>
         </div>
     </a>
 </section>
 
 <section class="dash-panel">
-    <h2 class="dash-panel__title">Recent documents</h2>
+    <h2 class="dash-panel__title">@L["Recent documents"]</h2>
     @if (Model.Recent.Count == 0)
     {
-        <p class="form-help">No documents yet. <a href="/Documents/Upload">Upload your first document</a>.</p>
+        <p class="form-help">@L["No documents yet."] <a href="/Documents/Upload">@L["Upload your first document"]</a>.</p>
     }
     else
     {
@@ -72,5 +72,5 @@
 </section>
 
 <footer class="app-footer">
-    MatPaper &middot; Version @MatPaper.AppInfo.Version
+    MatPaper &middot; @L["Version"] @MatPaper.AppInfo.Version
 </footer>

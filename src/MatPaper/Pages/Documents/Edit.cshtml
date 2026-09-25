@@ -1,13 +1,13 @@
 @page "/Documents/Edit"
 @model MatPaper.Pages.Documents.EditModel
 @{
-    ViewData["Breadcrumb"] = "Documents / Edit";
+    ViewData["Breadcrumb"] = L["Documents / Edit"].Value;
 
     var (ocrLabel, ocrBadge) = Model.OcrState switch
     {
-        MatPaper.Data.OcrState.Done => ("Processed", "badge--ok"),
-        MatPaper.Data.OcrState.Failed => ("Failed", "badge--off"),
-        _ => ("Pending", "badge--muted")
+        MatPaper.Data.OcrState.Done => (L["Processed"].Value, "badge--ok"),
+        MatPaper.Data.OcrState.Failed => (L["Failed"].Value, "badge--off"),
+        _ => (L["Pending"].Value, "badge--muted")
     };
 }
 
@@ -201,47 +201,47 @@
 }
 
 <div class="doc-status">
-    <span class="doc-status__owner">Owner: <strong>@(Model.OwnerName ?? "—")</strong></span>
+    <span class="doc-status__owner">@L["Owner"]: <strong>@(Model.OwnerName ?? "—")</strong></span>
     @if (Model.IsCommon)
     {
-        <span class="badge badge--ok">Common area</span>
+        <span class="badge badge--ok">@L["Common area"]</span>
     }
     @if (Model.ReviewState == MatPaper.Data.ReviewState.Pending)
     {
-        <span class="badge badge--muted">Needs review</span>
+        <span class="badge badge--muted">@L["Needs review"]</span>
         @if (Model.IsStaged)
         {
-            <span class="badge badge--muted" title="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location.">Not filed yet</span>
+            <span class="badge badge--muted" title='@L["The file waits in the inbox area until you confirm; then it is filed into the chosen storage location."]'>@L["Not filed yet"]</span>
         }
     }
     else
     {
-        <span class="badge badge--ok">Reviewed</span>
+        <span class="badge badge--ok">@L["Reviewed"]</span>
     }
     @if (!Model.CanEdit)
     {
-        <span class="form-help" style="margin:0">Shared with you — read only.</span>
+        <span class="form-help" style="margin:0">@L["Shared with you — read only."]</span>
     }
 </div>
 
 <div class="doc-edit">
     <aside class="doc-preview">
         <div class="doc-preview__head">
-            <strong>Preview</strong>
-            <a class="btn btn--secondary" href="/Documents/@Model.Token/view" target="_blank" rel="noopener">Open in tab</a>
+            <strong>@L["Preview"]</strong>
+            <a class="btn btn--secondary" href="/Documents/@Model.Token/view" target="_blank" rel="noopener">@L["Open in tab"]</a>
         </div>
-        <iframe class="doc-preview__frame" src="/Documents/@Model.Token/view" title="Document preview"></iframe>
+        <iframe class="doc-preview__frame" src="/Documents/@Model.Token/view" title='@L["Document preview"]'></iframe>
 
-        <a class="btn btn--secondary" href="/Documents/@Model.Token/download">Download</a>
+        <a class="btn btn--secondary" href="/Documents/@Model.Token/download">@L["Download"]</a>
 
         <form method="post" class="doc-reanalyze">
             <input type="hidden" asp-for="Id" />
             <label class="doc-reanalyze__opt">
-                <input type="checkbox" name="overwrite" value="true" /> overwrite existing
+                <input type="checkbox" name="overwrite" value="true" /> @L["overwrite existing"]
             </label>
             <button class="btn btn--secondary" type="submit" asp-page-handler="Reanalyze"
-                    title="Auto-assign type, correspondent and date (from XRechnung/ZUGFeRD data if present, else the text)">
-                Re-analyze
+                    title='@L["Auto-assign type, correspondent and date (from XRechnung/ZUGFeRD data if present, else the text)"]'>
+                @L["Re-analyze"]
             </button>
         </form>
     </aside>
@@ -253,36 +253,36 @@
 
         <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-        <mp-field asp-for="Input.Title" label="Title" placeholder="Document title" />
+        <mp-field asp-for="Input.Title" label='@L["Title"]' placeholder='@L["Document title"]' />
 
         <div class="form-row">
-            <label asp-for="Input.DocumentDate">Document date</label>
+            <label asp-for="Input.DocumentDate">@L["Document date"]</label>
             <input class="form-control" type="date" asp-for="Input.DocumentDate" />
             <span class="field-error" asp-validation-for="Input.DocumentDate"></span>
         </div>
 
-        <mp-picker asp-for="Input.DocumentTypeId" label="Document type"
-                   asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
+        <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]'
+                   asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
 
-        <mp-picker asp-for="Input.CorrespondentId" label="Correspondent"
-                   asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
+        <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
+                   asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
 
-        <mp-picker asp-for="Input.ProjectId" label="Project"
-                   asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder="— None —" />
+        <mp-picker asp-for="Input.ProjectId" label='@L["Project"]'
+                   asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
 
-        <mp-field asp-for="Input.StorageLocationId" kind="select" label="@(Model.IsStaged ? "File to" : "Storage location")"
+        <mp-field asp-for="Input.StorageLocationId" kind="select" label='@(Model.IsStaged ? L["File to"].Value : L["Storage location"].Value)'
                   asp-items="Model.StorageLocationOptions" />
 
         @if (Model.TagItems.Count == 0)
         {
             <div class="form-row">
-                <label>Tags</label>
-                <p class="form-help">No tags defined yet.</p>
+                <label>@L["Tags"]</label>
+                <p class="form-help">@L["No tags defined yet."]</p>
             </div>
         }
         else
         {
-            <mp-picker asp-for="SelectedTagIds" label="Tags" asp-items="Model.TagItems" multiple="true" placeholder="Add tags…" />
+            <mp-picker asp-for="SelectedTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true" placeholder='@L["Add tags…"]' />
         }
 
         <mp-button-row>
@@ -290,74 +290,74 @@
             {
                 @if (Model.OcrState == MatPaper.Data.OcrState.Pending)
                 {
-                    <button class="btn btn--primary" type="submit" disabled title="Still being processed">Save &amp; confirm</button>
+                    <button class="btn btn--primary" type="submit" disabled title='@L["Still being processed"]'>@L["Save & confirm"]</button>
                 }
                 else
                 {
-                    <mp-button variant="primary" type="submit" handler="SaveConfirm">Save &amp; confirm</mp-button>
+                    <mp-button variant="primary" type="submit" handler="SaveConfirm">@L["Save & confirm"]</mp-button>
                 }
-                <mp-button variant="secondary" type="submit">Save</mp-button>
+                <mp-button variant="secondary" type="submit">@L["Save"]</mp-button>
             }
             else if (Model.CanEdit)
             {
-                <mp-button variant="primary" type="submit">Save</mp-button>
+                <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
             }
-            <mp-button variant="secondary" href="@Model.BackUrl">Back</mp-button>
+            <mp-button variant="secondary" href="@Model.BackUrl">@L["Back"]</mp-button>
             @if (Model.IsOwner)
             {
                 <mp-button-spacer />
                 <mp-button variant="danger" type="submit" handler="Delete"
-                           confirm="@(Model.IsStaged ? "Delete this document? It is removed from the inbox together with its file." : "Delete this document? The file stays in its storage location but the document is removed from MatPaper.")">Delete</mp-button>
+                           confirm='@(Model.IsStaged ? L["Delete this document? It is removed from the inbox together with its file."].Value : L["Delete this document? The file stays in its storage location but the document is removed from MatPaper."].Value)'>@L["Delete"]</mp-button>
             }
         </mp-button-row>
     </form>
 
     <aside class="doc-info">
-        <h3 class="doc-info__title">Info</h3>
+        <h3 class="doc-info__title">@L["Info"]</h3>
         <ul class="doc-facts">
             <li>
-                <span class="doc-facts__key">OCR status</span>
+                <span class="doc-facts__key">@L["OCR status"]</span>
                 <span class="doc-facts__val"><span class="badge @ocrBadge">@ocrLabel</span></span>
             </li>
             <li>
-                <span class="doc-facts__key">Pages</span>
+                <span class="doc-facts__key">@L["Pages"]</span>
                 <span class="doc-facts__val">@Model.PageCount</span>
             </li>
             <li>
-                <span class="doc-facts__key">File size</span>
+                <span class="doc-facts__key">@L["File size"]</span>
                 <span class="doc-facts__val">@Fmt.Size(Model.FileSize)</span>
             </li>
             <li>
-                <span class="doc-facts__key">Original file</span>
+                <span class="doc-facts__key">@L["Original file"]</span>
                 <span class="doc-facts__val">@Model.OriginalFileName</span>
             </li>
             @if (!string.IsNullOrEmpty(Model.InvoiceNumber))
             {
                 <li>
-                    <span class="doc-facts__key">Invoice no.</span>
+                    <span class="doc-facts__key">@L["Invoice no."]</span>
                     <span class="doc-facts__val">@Model.InvoiceNumber</span>
                 </li>
             }
             <li>
-                <span class="doc-facts__key">Added</span>
+                <span class="doc-facts__key">@L["Added"]</span>
                 <span class="doc-facts__val">@Fmt.DateTime(Model.AddedDate)</span>
             </li>
         </ul>
     </aside>
 
     <details class="doc-advanced">
-        <summary>Advanced</summary>
+        <summary>@L["Advanced"]</summary>
         <ul class="doc-facts">
-            <li><span class="doc-facts__key">Document ID</span><span class="doc-facts__val">@Model.Id</span></li>
-            <li><span class="doc-facts__key">Token</span><span class="doc-facts__val" style="word-break:break-all">@Model.Token</span></li>
-            <li><span class="doc-facts__key">Storage</span><span class="doc-facts__val">@(Model.IsStaged ? "Inbox (not filed yet)" : Model.StorageLocationName ?? "—")</span></li>
-            <li><span class="doc-facts__key">Path</span><span class="doc-facts__val" style="word-break:break-all">@Model.RelativePath</span></li>
-            <li><span class="doc-facts__key">Content hash</span><span class="doc-facts__val" style="word-break:break-all">@(Model.ContentHash ?? "—")</span></li>
+            <li><span class="doc-facts__key">@L["Document ID"]</span><span class="doc-facts__val">@Model.Id</span></li>
+            <li><span class="doc-facts__key">@L["Token"]</span><span class="doc-facts__val" style="word-break:break-all">@Model.Token</span></li>
+            <li><span class="doc-facts__key">@L["Storage"]</span><span class="doc-facts__val">@(Model.IsStaged ? L["Inbox (not filed yet)"].Value : Model.StorageLocationName ?? "—")</span></li>
+            <li><span class="doc-facts__key">@L["Path"]</span><span class="doc-facts__val" style="word-break:break-all">@Model.RelativePath</span></li>
+            <li><span class="doc-facts__key">@L["Content hash"]</span><span class="doc-facts__val" style="word-break:break-all">@(Model.ContentHash ?? "—")</span></li>
         </ul>
-        <h3 style="margin:1rem 0 .35rem;font-size:.95rem">Indexed text (OCR)</h3>
+        <h3 style="margin:1rem 0 .35rem;font-size:.95rem">@L["Indexed text (OCR)"]</h3>
         @if (string.IsNullOrWhiteSpace(Model.OcrText))
         {
-            <p class="form-help">No text extracted yet.</p>
+            <p class="form-help">@L["No text extracted yet."]</p>
         }
         else
         {
@@ -368,17 +368,17 @@
 @if (Model.IsOwner)
 {
 <section class="doc-shares">
-    <h2 class="doc-shares__title">Sharing</h2>
+    <h2 class="doc-shares__title">@L["Sharing"]</h2>
 
     <form method="post" asp-page-handler="SetCommon">
         <input type="hidden" asp-for="Id" />
         <label class="doc-reanalyze__opt">
             <input type="checkbox" name="isCommon" value="true" @(Model.IsCommon ? "checked" : "") onchange="this.form.submit()" />
-            Show in the common area (visible to everyone)
+            @L["Show in the common area (visible to everyone)"]
         </label>
     </form>
 
-    <h3 style="margin:1.25rem 0 0.35rem;font-size:1rem">Shared with users</h3>
+    <h3 style="margin:1.25rem 0 0.35rem;font-size:1rem">@L["Shared with users"]</h3>
     @if (Model.UserShares.Count > 0)
     {
         <ul class="share-users">
@@ -386,11 +386,11 @@
             {
                 <li class="share-user">
                     <span class="share-user__name">@s.UserName</span>
-                    <span class="share-user__perm">@(s.CanEdit ? "can edit" : "view only")</span>
+                    <span class="share-user__perm">@(s.CanEdit ? L["can edit"].Value : L["view only"].Value)</span>
                     <form method="post" asp-page-handler="RevokeUserShare" style="display:inline">
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" name="shareId" value="@s.ShareId" />
-                        <button class="btn btn--danger" type="submit">Remove</button>
+                        <button class="btn btn--danger" type="submit">@L["Remove"]</button>
                     </form>
                 </li>
             }
@@ -398,30 +398,30 @@
     }
     else
     {
-        <p class="form-help">Not shared with any user yet.</p>
+        <p class="form-help">@L["Not shared with any user yet."]</p>
     }
 
     @if (Model.ShareUserOptions.Count > 0)
     {
         <form method="post" asp-page-handler="ShareUser" class="doc-shares__create">
             <input type="hidden" asp-for="Id" />
-            <mp-picker asp-for="ShareUserId" label="Add user" asp-items="Model.ShareUserOptions" placeholder="Choose a user…" />
+            <mp-picker asp-for="ShareUserId" label='@L["Add user"]' asp-items="Model.ShareUserOptions" placeholder='@L["Choose a user…"]' />
             <label class="doc-reanalyze__opt">
-                <input type="checkbox" name="canEdit" value="true" /> may edit
+                <input type="checkbox" name="canEdit" value="true" /> @L["may edit"]
             </label>
-            <button class="btn btn--primary" type="submit">Share</button>
+            <button class="btn btn--primary" type="submit">@L["Share"]</button>
         </form>
     }
 
-    <h3 style="margin:1.5rem 0 0.35rem;font-size:1rem">Share links</h3>
-    <p class="form-help">Anyone with a share link can view and download this document without signing in.</p>
+    <h3 style="margin:1.5rem 0 0.35rem;font-size:1rem">@L["Share links"]</h3>
+    <p class="form-help">@L["Anyone with a share link can view and download this document without signing in."]</p>
 
     @if (Model.ShareLinks.Count > 0)
     {
         <div class="data-table-wrap">
             <table class="data-table">
                 <thead>
-                    <tr><th>Link</th><th>Expires</th><th class="is-actions"></th></tr>
+                    <tr><th>@L["Link"]</th><th>@L["Expires"]</th><th class="is-actions"></th></tr>
                 </thead>
                 <tbody>
                     @foreach (var link in Model.ShareLinks)
@@ -429,13 +429,13 @@
                         var url = $"{Model.ShareBaseUrl}/Share/{link.Token}";
                         <tr>
                             <td><a href="/Share/@link.Token" target="_blank" rel="noopener">@url</a></td>
-                            <td>@(link.ExpiresAt.HasValue ? Fmt.Date(link.ExpiresAt) : "Never")</td>
+                            <td>@(link.ExpiresAt.HasValue ? Fmt.Date(link.ExpiresAt) : L["Never"].Value)</td>
                             <td class="is-actions">
                                 <form method="post" style="display:inline">
                                     <input type="hidden" name="Id" value="@Model.Id" />
                                     <input type="hidden" name="shareLinkId" value="@link.Id" />
                                     <button class="btn btn--danger" type="submit" asp-page-handler="RevokeShare"
-                                            onclick="return confirm('Revoke this share link?')">Revoke</button>
+                                            onclick='return confirm("@L["Revoke this share link?"]")'>@L["Revoke"]</button>
                                 </form>
                             </td>
                         </tr>
@@ -446,19 +446,19 @@
     }
     else
     {
-        <p class="form-help">No share links yet.</p>
+        <p class="form-help">@L["No share links yet."]</p>
     }
 
     <form method="post" class="doc-shares__create">
         <input type="hidden" name="Id" value="@Model.Id" />
-        <label for="expiryDays">Expires in</label>
+        <label for="expiryDays">@L["Expires in"]</label>
         <select id="expiryDays" name="expiryDays" class="form-control">
-            <option value="0">Never</option>
-            <option value="7">7 days</option>
-            <option value="30">30 days</option>
-            <option value="90">90 days</option>
+            <option value="0">@L["Never"]</option>
+            <option value="7">@L["7 days"]</option>
+            <option value="30">@L["30 days"]</option>
+            <option value="90">@L["90 days"]</option>
         </select>
-        <button class="btn btn--primary" type="submit" asp-page-handler="CreateShare">Create share link</button>
+        <button class="btn btn--primary" type="submit" asp-page-handler="CreateShare">@L["Create share link"]</button>
     </form>
 </section>
 }

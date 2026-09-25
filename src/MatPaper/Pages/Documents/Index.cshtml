@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @model MatPaper.Pages.Documents.IndexModel
 @{
-    ViewData["Breadcrumb"] = "Documents";
+    ViewData["Breadcrumb"] = L["Documents"].Value;
 }
 
 @if (TempData["UploadSummary"] is string uploadSummary)
@@ -12,52 +12,52 @@
 }
 
 <mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Full-text search" />
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Full-text search"]' />
 
-    <mp-picker asp-for="CorrespondentIds" label="Correspondent" multiple="true" placeholder="All"
+    <mp-picker asp-for="CorrespondentIds" label='@L["Correspondent"]' multiple="true" placeholder='@L["All"]'
                asp-items="@Model.Correspondents.Select(c => new SelectListItem(c.Name, c.Id.ToString()))" />
 
-    <mp-picker asp-for="DocumentTypeIds" label="Type" multiple="true" placeholder="All"
+    <mp-picker asp-for="DocumentTypeIds" label='@L["Type"]' multiple="true" placeholder='@L["All"]'
                asp-items="@Model.DocumentTypes.Select(t => new SelectListItem(t.Name, t.Id.ToString()))" />
 
-    <mp-picker asp-for="TagIds" label="Tag" multiple="true" placeholder="All"
+    <mp-picker asp-for="TagIds" label='@L["Tag"]' multiple="true" placeholder='@L["All"]'
                asp-items="@Model.Tags.Select(t => new SelectListItem(t.Name, t.Id.ToString()))" />
 
-    <mp-picker asp-for="ProjectIds" label="Project" multiple="true" placeholder="All"
+    <mp-picker asp-for="ProjectIds" label='@L["Project"]' multiple="true" placeholder='@L["All"]'
                asp-items="@Model.Projects.Select(p => new SelectListItem(p.Name, p.Id.ToString()))" />
 
-    <mp-picker asp-for="StorageLocationIds" label="Location" multiple="true" placeholder="All"
+    <mp-picker asp-for="StorageLocationIds" label='@L["Location"]' multiple="true" placeholder='@L["All"]'
                asp-items="@Model.StorageLocations.Select(s => new SelectListItem(s.Name, s.Id.ToString()))" />
 
     <div class="toolbar__group toolbar__filter">
-        <label for="DateFrom">From</label>
+        <label for="DateFrom">@L["From"]</label>
         <input class="form-control" type="date" id="DateFrom" name="DateFrom"
                value="@Fmt.InputDate(Model.DateFrom)" />
     </div>
     <div class="toolbar__group toolbar__filter">
-        <label for="DateTo">To</label>
+        <label for="DateTo">@L["To"]</label>
         <input class="form-control" type="date" id="DateTo" name="DateTo"
                value="@Fmt.InputDate(Model.DateTo)" />
     </div>
 
-    <mp-toolbar-select name="Scope" label="Scope" value="@Model.Scope">
-        <option value="all">All</option>
-        <option value="mine">Mine</option>
-        <option value="shared">Shared with me</option>
-        <option value="common">Common area</option>
+    <mp-toolbar-select name="Scope" label='@L["Scope"]' value="@Model.Scope">
+        <option value="all">@L["All"]</option>
+        <option value="mine">@L["Mine"]</option>
+        <option value="shared">@L["Shared with me"]</option>
+        <option value="common">@L["Common area"]</option>
     </mp-toolbar-select>
 
-    <mp-toolbar-select name="Review" label="Review" value="@Model.Review">
-        <option value="all">All</option>
-        <option value="pending">Needs review</option>
-        <option value="reviewed">Reviewed</option>
+    <mp-toolbar-select name="Review" label='@L["Review"]' value="@Model.Review">
+        <option value="all">@L["All"]</option>
+        <option value="pending">@L["Needs review"]</option>
+        <option value="reviewed">@L["Reviewed"]</option>
     </mp-toolbar-select>
 
-    <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
-        <option value="added">Recently added</option>
-        <option value="newest">Document date</option>
-        <option value="oldest">Oldest first</option>
-        <option value="title">Title</option>
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="added">@L["Recently added"]</option>
+        <option value="newest">@L["Document date"]</option>
+        <option value="oldest">@L["Oldest first"]</option>
+        <option value="title">@L["Title"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
@@ -65,7 +65,7 @@
 
 @if (Model.Rows.Count == 0)
 {
-    <div class="empty-state">No documents match your criteria.</div>
+    <div class="empty-state">@L["No documents match your criteria."]</div>
 }
 else
 {
@@ -75,7 +75,7 @@ else
             var displayDate = Fmt.Date(d.DocumentDate ?? d.CreateDate);
             var docTags = d.DocumentTags?.Where(t => t.Tag != null).Select(t => t.Tag!).ToList() ?? new List<MatPaper.Data.Tag>();
             <article class="doc-card">
-                <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label="Preview @d.Title">
+                <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
                     @if (d.ThumbnailPath != null)
                     {
                         <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
@@ -114,13 +114,13 @@ else
                     <div class="doc-card__footer">
                         @if (d.ReviewState == ReviewState.Pending)
                         {
-                            <span class="badge badge--muted">Needs review</span>
+                            <span class="badge badge--muted">@L["Needs review"]</span>
                         }
                         else
                         {
                             <span></span>
                         }
-                        <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title="Edit" aria-label="Edit">
+                        <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
                         </a>
                     </div>
@@ -131,18 +131,18 @@ else
 }
 
 <div class="list-actions">
-    <a class="btn btn--primary" href="/Documents/Upload">Add documents</a>
+    <a class="btn btn--primary" href="/Documents/Upload">@L["Add documents"]</a>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
-<dialog id="doc-preview" class="preview-dialog" aria-label="Document preview">
+<dialog id="doc-preview" class="preview-dialog" aria-label='@L["Document preview"]'>
     <div class="preview-dialog__head">
         <span class="preview-dialog__title" id="doc-preview-title"></span>
-        <a class="btn btn--secondary" id="doc-preview-open" target="_blank" rel="noopener">Open in tab</a>
-        <button type="button" class="btn btn--secondary" id="doc-preview-close">Close</button>
+        <a class="btn btn--secondary" id="doc-preview-open" target="_blank" rel="noopener">@L["Open in tab"]</a>
+        <button type="button" class="btn btn--secondary" id="doc-preview-close">@L["Close"]</button>
     </div>
-    <iframe class="preview-dialog__frame" id="doc-preview-frame" title="Document preview" src="about:blank"></iframe>
+    <iframe class="preview-dialog__frame" id="doc-preview-frame" title='@L["Document preview"]' src="about:blank"></iframe>
 </dialog>
 
 @section Scripts {

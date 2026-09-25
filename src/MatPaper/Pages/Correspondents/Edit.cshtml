@@ -1,7 +1,8 @@
 @page "/Correspondents/Edit"
 @model MatPaper.Pages.Correspondents.EditModel
 @{
-    ViewData["Breadcrumb"] = Model.IsEdit ? "Correspondents / Edit" : "Correspondents / New";
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["Correspondents / Edit"].Value : L["Correspondents / New"].Value;
+    var matchPatternHelp = L["Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too."].Value;
 }
 
 <form class="form" method="post">
@@ -9,28 +10,28 @@
 
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Finanzamt" />
+    <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Finanzamt"]' />
 
-    <mp-field asp-for="Input.MatchPattern" label="Alternative names / keywords"
-              help="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too." />
+    <mp-field asp-for="Input.MatchPattern" label='@L["Alternative names / keywords"]'
+              help="@matchPatternHelp" />
 
-    <mp-field asp-for="Input.Email" kind="email" label="Email"
-              help="Also used for auto-matching: a document mentioning this address is assigned to this correspondent." />
+    <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]'
+              help='@L["Also used for auto-matching: a document mentioning this address is assigned to this correspondent."]' />
 
-    <mp-field asp-for="Input.Phone" label="Phone"
-              help="Also used for auto-matching when it appears in the document text." />
+    <mp-field asp-for="Input.Phone" label='@L["Phone"]'
+              help='@L["Also used for auto-matching when it appears in the document text."]' />
 
-    <mp-field asp-for="Input.Address" kind="textarea" rows="3" label="Address" placeholder="Street, ZIP, city" />
+    <mp-field asp-for="Input.Address" kind="textarea" rows="3" label='@L["Address"]' placeholder='@L["Street, ZIP, city"]' />
 
-    <mp-field asp-for="Input.Notes" kind="textarea" rows="5" label="Notes" placeholder="Optional notes" />
+    <mp-field asp-for="Input.Notes" kind="textarea" rows="5" label='@L["Notes"]' placeholder='@L["Optional notes"]' />
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Save</mp-button>
-        <mp-button variant="secondary" href="/Correspondents">Back</mp-button>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/Correspondents">@L["Back"]</mp-button>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete" confirm="Delete this correspondent? This cannot be undone.">Delete</mp-button>
+            <mp-button variant="danger" type="submit" handler="Delete" confirm='@L["Delete this correspondent? This cannot be undone."]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

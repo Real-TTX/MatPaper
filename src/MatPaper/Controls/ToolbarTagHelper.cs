@@ -1,5 +1,7 @@
 using System.Text.Encodings.Web;
+using MatPaper.Services;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Controls;
 
@@ -13,13 +15,17 @@ namespace MatPaper.Controls;
 [HtmlTargetElement("mp-toolbar")]
 public sealed class ToolbarTagHelper : TagHelper
 {
+    private readonly IStringLocalizer<SharedResource> _l;
+
+    public ToolbarTagHelper(IStringLocalizer<SharedResource> l) => _l = l;
+
     /// <summary>Form method. Default "get".</summary>
     [HtmlAttributeName("method")]
     public string Method { get; set; } = "get";
 
     /// <summary>Label of the trailing submit button. Default "Apply". Set empty to omit it.</summary>
     [HtmlAttributeName("apply-text")]
-    public string ApplyText { get; set; } = "Apply";
+    public string? ApplyText { get; set; }
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
@@ -31,9 +37,10 @@ public sealed class ToolbarTagHelper : TagHelper
         TagHelperContent children = await output.GetChildContentAsync();
         output.Content.SetHtmlContent(children);
 
-        if (!string.IsNullOrEmpty(ApplyText))
+        var applyText = ApplyText ?? _l["Apply"].Value;
+        if (!string.IsNullOrEmpty(applyText))
         {
-            string label = HtmlEncoder.Default.Encode(ApplyText);
+            string label = HtmlEncoder.Default.Encode(applyText);
             output.Content.AppendHtml(
                 $"<div class=\"toolbar__group\"><button class=\"btn btn--secondary\" type=\"submit\">{label}</button></div>");
         }
@@ -48,6 +55,10 @@ public sealed class ToolbarTagHelper : TagHelper
 [HtmlTargetElement("mp-toolbar-search", TagStructure = TagStructure.WithoutEndTag)]
 public sealed class ToolbarSearchTagHelper : TagHelper
 {
+    private readonly IStringLocalizer<SharedResource> _l;
+
+    public ToolbarSearchTagHelper(IStringLocalizer<SharedResource> l) => _l = l;
+
     /// <summary>Query-string parameter name. Also used as the element id. Required.</summary>
     [HtmlAttributeName("name")]
     public string Name { get; set; } = default!;
@@ -56,7 +67,7 @@ public sealed class ToolbarSearchTagHelper : TagHelper
     public string? Value { get; set; }
 
     [HtmlAttributeName("label")]
-    public string Label { get; set; } = "Search";
+    public string? Label { get; set; }
 
     [HtmlAttributeName("placeholder")]
     public string? Placeholder { get; set; }
@@ -68,7 +79,7 @@ public sealed class ToolbarSearchTagHelper : TagHelper
         output.Attributes.SetAttribute("class", "toolbar__group toolbar__search");
 
         string id = HtmlEncoder.Default.Encode(Name);
-        string label = HtmlEncoder.Default.Encode(Label);
+        string label = HtmlEncoder.Default.Encode(Label ?? _l["Search"].Value);
         string value = HtmlEncoder.Default.Encode(Value ?? string.Empty);
         string placeholder = Placeholder is null
             ? string.Empty

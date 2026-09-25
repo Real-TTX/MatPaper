@@ -2,11 +2,11 @@
 @using MatPaper.Data
 @model MatPaper.Pages.Inbox.IndexModel
 @{
-    ViewData["Breadcrumb"] = "Inbox";
+    ViewData["Breadcrumb"] = L["Inbox"].Value;
 }
 
 <mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder="Title or correspondent" />
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title or correspondent"]' />
 </mp-toolbar>
 
 @if (TempData["InboxMessage"] is string inboxMessage && !string.IsNullOrEmpty(inboxMessage))
@@ -20,31 +20,31 @@
 @if (!Model.HasStorage && Model.TotalCount > 0)
 {
     <div class="form-summary">
-        No storage location configured — documents can't be filed yet.
+        @L["No storage location configured — documents can't be filed yet."]
         @if (Model.IsAdmin)
         {
-            <a href="/System/StorageLocations/Edit">Create one</a>
+            <a href="/System/StorageLocations/Edit">@L["Create one"]</a>
         }
     </div>
 }
 <div id="inbox-refresh" class="form-summary" style="color:var(--color-text)" hidden>
-    Processing finished — <a href="">reload</a> to see the suggestions.
+    @L["Processing finished"] — <a href="">@L["reload to see the suggestions."]</a>
 </div>
 
 @if (Model.TotalCount == 0)
 {
-    <div class="empty-state">Inbox empty · <a href="/Documents/Upload">Upload</a></div>
+    <div class="empty-state">@L["Inbox empty"] · <a href="/Documents/Upload">@L["Upload"]</a></div>
 }
 else
 {
     <div class="list-header">
         <span class="form-help" style="margin:0">
-            @Model.TotalCount to review@(Model.ProcessingCount > 0 ? $" · {Model.ProcessingCount} processing" : string.Empty)
+            @Model.TotalCount @L["to review"]@(Model.ProcessingCount > 0 ? " · " + Model.ProcessingCount + " " + L["processing"].Value : string.Empty)
         </span>
         <form method="post" asp-page-handler="ConfirmAll" style="margin-left:auto">
             <button class="btn btn--secondary" type="submit" disabled="@(!Model.HasStorage)"
-                    onclick="return confirm('File all processed documents with their current suggestions?')">
-                Confirm all
+                    onclick='return confirm("@L["File all processed documents with their current suggestions?"]")'>
+                @L["Confirm all"]
             </button>
         </form>
     </div>
@@ -62,7 +62,7 @@ else
                 <input type="hidden" name="id" value="@row.Id" />
 
                 <div class="inbox-item__head">
-                    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title="Preview">
+                    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'>
                         @if (row.ThumbnailPath != null)
                         {
                             <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
@@ -72,36 +72,36 @@ else
                             <span class="inbox-item__thumb-empty" aria-hidden="true"></span>
                         }
                     </a>
-                    <input class="form-control inbox-item__title" type="text" name="title" value="@row.Title" aria-label="Title" />
+                    <input class="form-control inbox-item__title" type="text" name="title" value="@row.Title" aria-label='@L["Title"]' />
                     <span class="inbox-item__meta">
                         @if (processing)
                         {
-                            <span class="badge badge--muted">Processing…</span>
+                            <span class="badge badge--muted">@L["Processing…"]</span>
                         }
                         else if (failed)
                         {
-                            <span class="badge badge--off">OCR failed</span>
+                            <span class="badge badge--off">@L["OCR failed"]</span>
                         }
                         <span title="@row.OriginalFileName">@Fmt.Date(row.AddedDate)</span>
                     </span>
                 </div>
 
                 <div class="inbox-grid">
-                    <mp-picker asp-for="CorrespondentId" label="Correspondent" asp-items="Model.CorrespondentOptions"
-                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder="— None —" />
-                    <mp-picker asp-for="DocumentTypeId" label="Type" asp-items="Model.DocumentTypeOptions"
-                               value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder="— None —" />
+                    <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
+                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
+                    <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions"
+                               value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
                     <div class="form-row">
-                        <label for="documentDate_@suffix">Date</label>
+                        <label for="documentDate_@suffix">@L["Date"]</label>
                         <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
                                value="@Fmt.InputDate(row.DocumentDate)" />
                     </div>
-                    <mp-picker asp-for="ProjectId" label="Project" asp-items="Model.ProjectOptions"
-                               value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder="— None —" />
-                    <mp-picker asp-for="TagIds" label="Tags" asp-items="Model.TagItems" multiple="true"
-                               value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder="Add tags…" />
+                    <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions"
+                               value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
+                    <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true"
+                               value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder='@L["Add tags…"]' />
                     <div class="form-row">
-                        <label for="storageLocationId_@suffix">File to</label>
+                        <label for="storageLocationId_@suffix">@L["File to"]</label>
                         <select class="form-control" id="storageLocationId_@suffix" name="storageLocationId">
                             @foreach (var loc in Model.StorageLocations)
                             {
@@ -113,13 +113,13 @@ else
 
                 <div class="inbox-item__actions">
                     <button class="btn btn--primary" type="submit" disabled="@(processing || !Model.HasStorage)"
-                            title="@(processing ? "Still processing" : "Apply the values above, file the document and mark it reviewed")">
-                        Confirm &amp; file
+                            title='@(processing ? L["Still processing"].Value : L["Apply the values above, file the document and mark it reviewed"].Value)'>
+                        @L["Confirm & file"]
                     </button>
-                    <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">Open</a>
+                    <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">@L["Open"]</a>
                     <span class="icon-actions inbox-item__tools">
-                        <button class="icon-btn icon-btn--danger" type="submit" form="inbox-delete-@row.Id" title="Delete"
-                                onclick="return confirm('Delete this document?')">
+                        <button class="icon-btn icon-btn--danger" type="submit" form="inbox-delete-@row.Id" title='@L["Delete"]'
+                                onclick='return confirm("@L["Delete this document?"]")'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
                             </svg>

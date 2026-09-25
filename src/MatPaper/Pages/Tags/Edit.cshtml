@@ -1,7 +1,7 @@
 @page "/Tags/Edit"
 @model MatPaper.Pages.Tags.EditModel
 @{
-    ViewData["Breadcrumb"] = Model.IsEdit ? "Tags / Edit" : "Tags / New";
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["Tags / Edit"].Value : L["Tags / New"].Value;
 }
 
 <form class="form" method="post">
@@ -9,16 +9,16 @@
 
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <mp-field asp-for="Input.Name" label="Name" placeholder="e.g. Invoice" />
-    <mp-field asp-for="Input.Color" kind="color" label="Colour" help="Optional. Defaults to grey when left unset." />
+    <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoice"]' />
+    <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' help='@L["Optional. Defaults to grey when left unset."]' />
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Save</mp-button>
-        <mp-button variant="secondary" href="/Tags">Back</mp-button>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/Tags">@L["Back"]</mp-button>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete" confirm="Delete this tag? This cannot be undone.">Delete</mp-button>
+            <mp-button variant="danger" type="submit" handler="Delete" confirm='@L["Delete this tag? This cannot be undone."]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

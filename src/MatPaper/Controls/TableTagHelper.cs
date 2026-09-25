@@ -1,4 +1,6 @@
 using System.Text.Encodings.Web;
+using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace MatPaper.Controls;
@@ -13,13 +15,17 @@ namespace MatPaper.Controls;
 [HtmlTargetElement("mp-table")]
 public sealed class TableTagHelper : TagHelper
 {
+    private readonly IStringLocalizer<SharedResource> _l;
+
+    public TableTagHelper(IStringLocalizer<SharedResource> l) => _l = l;
+
     /// <summary>Number of rows about to be rendered. 0 switches to the empty state.</summary>
     [HtmlAttributeName("item-count")]
     public int ItemCount { get; set; }
 
     /// <summary>Message shown in the empty state when <c>item-count</c> is 0.</summary>
     [HtmlAttributeName("empty-text")]
-    public string EmptyText { get; set; } = "No records found.";
+    public string? EmptyText { get; set; }
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
@@ -29,7 +35,7 @@ public sealed class TableTagHelper : TagHelper
         if (ItemCount <= 0)
         {
             output.Attributes.SetAttribute("class", "empty-state");
-            output.Content.SetContent(EmptyText);
+            output.Content.SetContent((EmptyText ?? _l["No records found."].Value));
             return;
         }
 

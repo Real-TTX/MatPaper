@@ -1,7 +1,7 @@
 @page "/Documents/Scan"
 @model MatPaper.Pages.Documents.ScanModel
 @{
-    ViewData["Breadcrumb"] = "Documents / Add";
+    ViewData["Breadcrumb"] = L["Documents / Add"].Value;
     ViewData["AddTab"] = "camera";
 }
 
@@ -23,14 +23,14 @@
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <div class="form-row">
-        <label for="Title">Title</label>
-        <input class="form-control" type="text" id="Title" name="Title" value="@Model.Title" placeholder="Optional" />
+        <label for="Title">@L["Title"]</label>
+        <input class="form-control" type="text" id="Title" name="Title" value="@Model.Title" placeholder='@L["Optional"]' />
     </div>
 
     <div class="form-row">
-        <label for="CorrespondentId">Correspondent</label>
+        <label for="CorrespondentId">@L["Correspondent"]</label>
         <select class="form-control" id="CorrespondentId" name="CorrespondentId">
-            <option value="">— Auto-detect —</option>
+            <option value="">@L["— Auto-detect —"]</option>
             @foreach (var c in Model.Correspondents)
             {
                 <option value="@c.Id" selected="@(c.Id == Model.CorrespondentId)">@c.Name</option>
@@ -39,9 +39,9 @@
     </div>
 
     <div class="form-row">
-        <label for="DocumentTypeId">Document type</label>
+        <label for="DocumentTypeId">@L["Document type"]</label>
         <select class="form-control" id="DocumentTypeId" name="DocumentTypeId">
-            <option value="">— Auto-detect —</option>
+            <option value="">@L["— Auto-detect —"]</option>
             @foreach (var t in Model.DocumentTypes)
             {
                 <option value="@t.Id" selected="@(t.Id == Model.DocumentTypeId)">@t.Name</option>
@@ -50,14 +50,14 @@
     </div>
 
     <div class="form-row">
-        <label for="Images">Photos</label>
+        <label for="Images">@L["Photos"]</label>
         <input class="form-control" type="file" id="Images" name="Images"
                accept="image/*" capture="environment" multiple />
         <span class="field-error" asp-validation-for="Images"></span>
     </div>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">Create PDF</mp-button>
-        <mp-button variant="secondary" href="/Documents">Back</mp-button>
+        <mp-button variant="primary" type="submit">@L["Create PDF"]</mp-button>
+        <mp-button variant="secondary" href="/Documents">@L["Back"]</mp-button>
     </mp-button-row>
 </form>

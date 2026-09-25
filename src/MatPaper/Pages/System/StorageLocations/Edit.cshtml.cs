@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.System.StorageLocations;
 
@@ -15,13 +16,15 @@ public class EditModel : PageModel
     private readonly CurrentUser _currentUser;
     private readonly DocumentStorageService _storage;
     private readonly ILogger<EditModel> _logger;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public EditModel(AppDbContext db, CurrentUser currentUser, DocumentStorageService storage, ILogger<EditModel> logger)
+    public EditModel(AppDbContext db, CurrentUser currentUser, DocumentStorageService storage, ILogger<EditModel> logger, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
         _storage = storage;
         _logger = logger;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -108,7 +111,7 @@ public class EditModel : PageModel
                 && s.Name.ToLower() == draft.Name.ToLower());
         if (nameTaken)
         {
-            ModelState.AddModelError("Input.Name", "A storage location with that name already exists.");
+            ModelState.AddModelError("Input.Name", _l["A storage location with that name already exists."]);
             return Page();
         }
 
@@ -201,8 +204,8 @@ public class EditModel : PageModel
             await _storage.TestAsync(draft, HttpContext.RequestAborted);
             NoticeOk = true;
             Notice = draft.Kind == StorageKind.Smb
-                ? $"Connected to {draft.DisplayRoot}."
-                : $"Folder {draft.RootPath} is available.";
+                ? _l["Connected to {0}.", draft.DisplayRoot].Value
+                : _l["Folder {0} is available.", draft.RootPath].Value;
         }
         catch (OperationCanceledException)
         {
@@ -264,35 +267,35 @@ public class EditModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(draft.Name))
         {
-            ModelState.AddModelError("Input.Name", "Name is required.");
+            ModelState.AddModelError("Input.Name", _l["Name is required."]);
         }
 
         if (draft.Kind == StorageKind.Local)
         {
             if (string.IsNullOrWhiteSpace(draft.RootPath))
             {
-                ModelState.AddModelError("Input.RootPath", "Root path is required.");
+                ModelState.AddModelError("Input.RootPath", _l["Root path is required."]);
             }
         }
         else
         {
             if (string.IsNullOrWhiteSpace(draft.SmbHost))
             {
-                ModelState.AddModelError("Input.SmbHost", "Host is required.");
+                ModelState.AddModelError("Input.SmbHost", _l["Host is required."]);
             }
             if (string.IsNullOrWhiteSpace(draft.SmbShare))
             {
-                ModelState.AddModelError("Input.SmbShare", "Share is required.");
+                ModelState.AddModelError("Input.SmbShare", _l["Share is required."]);
             }
             if (draft.CredentialId is null)
             {
-                ModelState.AddModelError("Input.CredentialId", "Choose a saved credential.");
+                ModelState.AddModelError("Input.CredentialId", _l["Choose a saved credential."]);
             }
         }
 
         if (string.IsNullOrWhiteSpace(draft.PathTemplate))
         {
-            ModelState.AddModelError("Input.PathTemplate", "Path template is required.");
+            ModelState.AddModelError("Input.PathTemplate", _l["Path template is required."]);
         }
 
         return ModelState.IsValid;

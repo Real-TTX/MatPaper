@@ -38,10 +38,16 @@
         return el ? el.value : "";
     }
 
+    // Matches the server-side Fmt.Size formatting, including the decimal separator.
     function formatSize(bytes) {
         if (bytes < 1024) { return bytes + " B"; }
-        if (bytes < 1024 * 1024) { return (bytes / 1024).toFixed(0) + " KB"; }
-        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        if (bytes < 1024 * 1024) { return num(bytes / 1024, 0) + " KB"; }
+        return num(bytes / (1024 * 1024), 1) + " MB";
+    }
+
+    function num(value, digits) {
+        try { return value.toLocaleString(document.documentElement.lang || undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits }); }
+        catch (e) { return value.toFixed(digits); }
     }
 
     function addFiles(fileList) {
@@ -65,9 +71,10 @@
             '<span class="upload-item__size"></span>' +
             '</div>' +
             '<div class="upload-item__bar"><span class="upload-item__fill"></span></div>' +
-            '<div class="upload-item__status">Queued</div>';
+            '<div class="upload-item__status"></div>';
         row.querySelector(".upload-item__name").textContent = item.file.name;
         row.querySelector(".upload-item__size").textContent = formatSize(item.file.size);
+        row.querySelector(".upload-item__status").textContent = t("queued", "Queued");
         list.appendChild(row);
         item.row = row;
     }

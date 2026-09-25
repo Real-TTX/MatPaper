@@ -4,6 +4,8 @@
     var title = Model.Document?.Title;
     ViewData["Title"] = string.IsNullOrWhiteSpace(title) ? L["Shared document"].Value : title;
     ViewData["Breadcrumb"] = string.IsNullOrWhiteSpace(title) ? L["Shared document"].Value : title;
+    // A document title is not a translatable path — keep it verbatim in the header.
+    ViewData["BreadcrumbLiteral"] = true;
 }
 
 <style>

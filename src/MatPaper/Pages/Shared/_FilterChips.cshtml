@@ -2,14 +2,14 @@
 @if (Model != null && Model.Any)
 {
     <div class="filter-chips">
-        <span class="filter-chips__label">Active filters:</span>
+        <span class="filter-chips__label">@L["Active filters:"]</span>
         @foreach (var chip in Model.Chips)
         {
             <span class="filter-chip">
                 @chip.Label
-                <a class="filter-chip__x" href="@chip.RemoveUrl" aria-label="Remove filter" title="Remove">✕</a>
+                <a class="filter-chip__x" href="@chip.RemoveUrl" aria-label='@L["Remove filter"]' title='@L["Remove"]'>✕</a>
             </span>
         }
-        <a class="filter-chips__clear" href="@Model.ClearAllUrl">Clear all</a>
+        <a class="filter-chips__clear" href="@Model.ClearAllUrl">@L["Clear all"]</a>
     </div>
 }

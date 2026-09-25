@@ -2,7 +2,7 @@
     var breadcrumb = ViewData["Breadcrumb"] as string ?? "";
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,6 +21,18 @@
         </div>
 
         @RenderBody()
+
+        @{
+            var authUiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        }
+        <form class="lang-switch lang-switch--auth" method="post" action="/Account/Language" role="group" aria-label='@L["Language"]'>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+            <button type="submit" name="culture" value="de-DE"
+                    class="lang-switch__btn@(authUiCulture == "de" ? " is-active" : "")">DE</button>
+            <button type="submit" name="culture" value="en-US"
+                    class="lang-switch__btn@(authUiCulture == "en" ? " is-active" : "")">EN</button>
+        </form>
     </main>
 
     <script src="~/js/app.js" asp-append-version="true"></script>

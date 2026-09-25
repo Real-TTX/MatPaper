@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.System.Inbox;
 
@@ -13,12 +14,14 @@ public class IndexModel : PageModel
     private readonly StorageScanService _scan;
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public IndexModel(StorageScanService scan, AppDbContext db, CurrentUser currentUser)
+    public IndexModel(StorageScanService scan, AppDbContext db, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
     {
         _scan = scan;
         _db = db;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -97,8 +100,8 @@ public class IndexModel : PageModel
         var result = await _scan.ScanAsync(ScanLocationId, ct);
 
         TempData["InboxMessage"] = result.LocationMissing
-            ? "Storage location not found."
-            : $"Scanned {result.Scanned}, added {result.Added} new, {result.Skipped} already known.";
+            ? _l["Storage location not found."].Value
+            : _l["Scanned {0}, added {1} new, {2} already known.", result.Scanned, result.Added, result.Skipped].Value;
 
         return RedirectToPage(new { location = ScanLocationId });
     }
@@ -114,7 +117,7 @@ public class IndexModel : PageModel
     {
         if (SelectedIds is null || SelectedIds.Length == 0)
         {
-            TempData["InboxMessage"] = "Select at least one inbox item to import.";
+            TempData["InboxMessage"] = _l["Select at least one inbox item to import."].Value;
             return RedirectToPage();
         }
 
@@ -129,7 +132,7 @@ public class IndexModel : PageModel
             ct);
 
         TempData["InboxMessage"] =
-            $"Imported {summary.Imported}, {summary.Duplicates} duplicate(s) dismissed, {summary.Errors} error(s).";
+            _l["Imported {0}, {1} duplicate(s) dismissed, {2} error(s).", summary.Imported, summary.Duplicates, summary.Errors].Value;
 
         return RedirectToPage();
     }
@@ -138,12 +141,12 @@ public class IndexModel : PageModel
     {
         if (SelectedIds is null || SelectedIds.Length == 0)
         {
-            TempData["InboxMessage"] = "Select at least one inbox item to dismiss.";
+            TempData["InboxMessage"] = _l["Select at least one inbox item to dismiss."].Value;
             return RedirectToPage();
         }
 
         var dismissed = await _scan.DismissAsync(SelectedIds, _currentUser.UserId, ct);
-        TempData["InboxMessage"] = $"Dismissed {dismissed} item(s).";
+        TempData["InboxMessage"] = _l["Dismissed {0} item(s).", dismissed].Value;
         return RedirectToPage();
     }
 

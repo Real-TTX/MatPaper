@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Documents;
 
@@ -16,17 +17,20 @@ public class ScanModel : PageModel
     private readonly ImageToPdfService _imageToPdf;
     private readonly DocumentIngestService _ingest;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
     public ScanModel(
         AppDbContext db,
         ImageToPdfService imageToPdf,
         DocumentIngestService ingest,
-        CurrentUser currentUser)
+        CurrentUser currentUser,
+        IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _imageToPdf = imageToPdf;
         _ingest = ingest;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty]
@@ -74,7 +78,7 @@ public class ScanModel : PageModel
 
         if (images.Count == 0)
         {
-            ModelState.AddModelError(nameof(Images), "Please take or choose at least one photo.");
+            ModelState.AddModelError(nameof(Images), _l["Please take or choose at least one photo."]);
             return Page();
         }
 
@@ -85,7 +89,7 @@ public class ScanModel : PageModel
         }
         catch (Exception)
         {
-            Messages.Add("The photos could not be converted into a PDF. Please try again with different images.");
+            Messages.Add(_l["The photos could not be converted into a PDF. Please try again with different images."].Value);
             return Page();
         }
 
@@ -109,10 +113,10 @@ public class ScanModel : PageModel
             case IngestStatus.Created:
                 return RedirectToPage("Edit", new { id = result.DocumentId, returnUrl = "/Inbox" });
             case IngestStatus.Duplicate:
-                Messages.Add("This scan matches an existing document; nothing new was created.");
+                Messages.Add(_l["This scan matches an existing document; nothing new was created."].Value);
                 return Page();
             default:
-                Messages.Add("The scan could not be stored.");
+                Messages.Add(_l["The scan could not be stored."].Value);
                 return Page();
         }
     }

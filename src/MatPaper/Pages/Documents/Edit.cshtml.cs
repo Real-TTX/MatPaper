@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Documents;
 
@@ -15,6 +16,7 @@ public class EditModel : PageModel
     private readonly ShareLinkService _shareLinks;
     private readonly DocumentAnalysisService _analysis;
     private readonly DocumentFilingService _filing;
+    private readonly IStringLocalizer<SharedResource> _l;
 
     public EditModel(
         AppDbContext db,
@@ -22,7 +24,8 @@ public class EditModel : PageModel
         CurrentUser currentUser,
         ShareLinkService shareLinks,
         DocumentAnalysisService analysis,
-        DocumentFilingService filing)
+        DocumentFilingService filing,
+        IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _storage = storage;
@@ -30,6 +33,7 @@ public class EditModel : PageModel
         _shareLinks = shareLinks;
         _analysis = analysis;
         _filing = filing;
+        _l = l;
     }
 
     /// <summary>Where "Back" and post-save redirects go (local URLs only); e.g. /Inbox.</summary>
@@ -356,12 +360,12 @@ public class EditModel : PageModel
 
         if (document.OcrState == OcrState.Pending)
         {
-            TempData["TaskMessage"] = "The document is still being processed — try confirming again in a moment.";
+            TempData["TaskMessage"] = _l["The document is still being processed — try confirming again in a moment."].Value;
             return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
         }
 
         var result = await _filing.FileAsync(document, null, _currentUser.UserId, HttpContext.RequestAborted);
-        TempData["TaskMessage"] = result.Success ? "Filed and marked as reviewed." : result.Error;
+        TempData["TaskMessage"] = result.Success ? _l["Filed and marked as reviewed."].Value : result.Error;
 
         return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
     }
@@ -416,14 +420,14 @@ public class EditModel : PageModel
         var title = Input.Title?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(title))
         {
-            ModelState.AddModelError("Input.Title", "Title is required.");
+            ModelState.AddModelError("Input.Title", _l["Title is required."]);
         }
 
         // Filed documents always need a location; staged ones only remember a target
         // (filing falls back to the default location when none is chosen).
         if (!document.IsStaged && Input.StorageLocationId is null)
         {
-            ModelState.AddModelError("Input.StorageLocationId", "A storage location is required.");
+            ModelState.AddModelError("Input.StorageLocationId", _l["A storage location is required."]);
         }
 
         if (!ModelState.IsValid)
@@ -489,7 +493,7 @@ public class EditModel : PageModel
                 .FirstOrDefaultAsync(s => s.Id == newLocId && s.UpdateState != UpdateState.Deleted);
             if (newLoc == null)
             {
-                ModelState.AddModelError("Input.StorageLocationId", "Please select a valid storage location.");
+                ModelState.AddModelError("Input.StorageLocationId", _l["Please select a valid storage location."]);
                 await RenderAsync(document);
                 return Page();
             }
@@ -522,7 +526,7 @@ public class EditModel : PageModel
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError(string.Empty, $"The document file could not be moved: {ex.Message} No changes were saved.");
+                    ModelState.AddModelError(string.Empty, _l["The document file could not be moved: {0} No changes were saved.", ex.Message]);
                     await RenderAsync(document);
                     return Page();
                 }
@@ -552,7 +556,7 @@ public class EditModel : PageModel
             // Filing moves the staged file out from under the still-running OCR worker.
             if (document.OcrState == OcrState.Pending)
             {
-                TempData["TaskMessage"] = "The document is still being processed — try confirming again in a moment.";
+                TempData["TaskMessage"] = _l["The document is still being processed — try confirming again in a moment."].Value;
                 return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
             }
 
@@ -563,7 +567,7 @@ public class EditModel : PageModel
                 return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
             }
 
-            TempData["InboxMessage"] = $"\"{document.Title}\" filed.";
+            TempData["InboxMessage"] = _l["\"{0}\" filed.", document.Title].Value;
             return LocalRedirect(!string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : "/Inbox");
         }
 
@@ -604,12 +608,12 @@ public class EditModel : PageModel
             document.UpdateUserId = _currentUser.UserId;
             await _db.SaveChangesAsync();
             TempData["TaskMessage"] = result.UsedInvoiceData
-                ? "Re-analyzed from the structured e-invoice (XRechnung/ZUGFeRD)."
-                : "Re-analyzed from the document text.";
+                ? _l["Re-analyzed from the structured e-invoice (XRechnung/ZUGFeRD)."].Value
+                : _l["Re-analyzed from the document text."].Value;
         }
         else
         {
-            TempData["TaskMessage"] = "Analysis found nothing to change.";
+            TempData["TaskMessage"] = _l["Analysis found nothing to change."].Value;
         }
 
         return RedirectToPage("Edit", new { id = Id });

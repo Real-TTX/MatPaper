@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Inbox;
 
@@ -22,13 +23,15 @@ public class IndexModel : PageModel
     private readonly CurrentUser _currentUser;
     private readonly DocumentFilingService _filing;
     private readonly DocumentStorageService _storage;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public IndexModel(AppDbContext db, CurrentUser currentUser, DocumentFilingService filing, DocumentStorageService storage)
+    public IndexModel(AppDbContext db, CurrentUser currentUser, DocumentFilingService filing, DocumentStorageService storage, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
         _filing = filing;
         _storage = storage;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -122,7 +125,7 @@ public class IndexModel : PageModel
 
         if (document.OcrState == OcrState.Pending)
         {
-            TempData["InboxError"] = $"\"{document.Title}\" is still being processed — try again in a moment.";
+            TempData["InboxError"] = _l["\"{0}\" is still being processed — try again in a moment.", document.Title].Value;
             return RedirectBack();
         }
 
@@ -204,14 +207,14 @@ public class IndexModel : PageModel
         }
 
         var failed = pending.Count - filed - skipped;
-        var parts = new List<string> { $"{filed} filed" };
+        var parts = new List<string> { _l["{0} filed", filed].Value };
         if (skipped > 0)
         {
-            parts.Add($"{skipped} still processing");
+            parts.Add(_l["{0} still processing", skipped].Value);
         }
         if (failed > 0)
         {
-            parts.Add($"{failed} failed");
+            parts.Add(_l["{0} failed", failed].Value);
         }
 
         TempData[failed > 0 ? "InboxError" : "InboxMessage"] =

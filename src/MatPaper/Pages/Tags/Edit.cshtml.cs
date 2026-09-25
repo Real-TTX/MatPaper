@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Tags;
 
@@ -12,11 +13,13 @@ public class EditModel : PageModel
 
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public EditModel(AppDbContext db, CurrentUser currentUser)
+    public EditModel(AppDbContext db, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -70,7 +73,7 @@ public class EditModel : PageModel
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            ModelState.AddModelError("Input.Name", "Name is required.");
+            ModelState.AddModelError("Input.Name", _l["Name is required."]);
         }
         else
         {
@@ -80,7 +83,7 @@ public class EditModel : PageModel
                     && t.Name.ToLower() == name.ToLower());
             if (nameTaken)
             {
-                ModelState.AddModelError("Input.Name", "A tag with that name already exists.");
+                ModelState.AddModelError("Input.Name", _l["A tag with that name already exists."]);
             }
         }
 

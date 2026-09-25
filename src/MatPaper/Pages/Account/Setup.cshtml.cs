@@ -67,25 +67,25 @@ public class SetupModel : PageModel
 
     public class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "The {0} field is required.")]
         [Display(Name = "Username")]
         public string Username { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "The {0} field is required.")]
         [Display(Name = "Display name")]
         public string DisplayName { get; set; } = string.Empty;
 
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "The {0} field is not a valid e-mail address.")]
         [Display(Name = "Email")]
         public string? Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "The {0} field is required.")]
         [MinLength(8, ErrorMessage = "The password must be at least 8 characters long.")]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "The {0} field is required.")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare(nameof(Password), ErrorMessage = "The passwords do not match.")]

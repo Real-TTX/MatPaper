@@ -350,6 +350,12 @@ button.account__logout {
     box-shadow: var(--shadow-sm);
 }
 
+/* On the sign-in screen the switch is a small centred control under the card. */
+.lang-switch--auth {
+    width: 120px;
+    margin: 16px auto 0;
+}
+
 /* ---- Main column ------------------------------------------------------- */
 .app-main {
     display: flex;

@@ -2,16 +2,19 @@ using System.ComponentModel.DataAnnotations;
 using MatPaper.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Account;
 
 public class LoginModel : PageModel
 {
     private readonly SignInService _signInService;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public LoginModel(SignInService signInService)
+    public LoginModel(SignInService signInService, IStringLocalizer<SharedResource> l)
     {
         _signInService = signInService;
+        _l = l;
     }
 
     [BindProperty]
@@ -36,7 +39,7 @@ public class LoginModel : PageModel
         var user = await _signInService.ValidateCredentialsAsync(Input.Username, Input.Password);
         if (user is null)
         {
-            ModelState.AddModelError(string.Empty, "Invalid username or password.");
+            ModelState.AddModelError(string.Empty, _l["Invalid username or password."]);
             return Page();
         }
 
@@ -52,11 +55,11 @@ public class LoginModel : PageModel
 
     public class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "The {0} field is required.")]
         [Display(Name = "Username")]
         public string Username { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "The {0} field is required.")]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; } = string.Empty;

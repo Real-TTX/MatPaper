@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.System.Credentials;
 
@@ -11,12 +12,14 @@ public class EditModel : PageModel
     private readonly AppDbContext _db;
     private readonly SecretProtector _secrets;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public EditModel(AppDbContext db, SecretProtector secrets, CurrentUser currentUser)
+    public EditModel(AppDbContext db, SecretProtector secrets, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _secrets = secrets;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -70,11 +73,11 @@ public class EditModel : PageModel
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            ModelState.AddModelError("Input.Name", "Name is required.");
+            ModelState.AddModelError("Input.Name", _l["Name is required."]);
         }
         if (string.IsNullOrWhiteSpace(username))
         {
-            ModelState.AddModelError("Input.Username", "Username is required.");
+            ModelState.AddModelError("Input.Username", _l["Username is required."]);
         }
         else
         {
@@ -82,13 +85,13 @@ public class EditModel : PageModel
                 .AnyAsync(c => c.Id != Id && c.UpdateState != UpdateState.Deleted && c.Name.ToLower() == name.ToLower());
             if (nameTaken)
             {
-                ModelState.AddModelError("Input.Name", "A credential with that name already exists.");
+                ModelState.AddModelError("Input.Name", _l["A credential with that name already exists."]);
             }
         }
 
         if (!IsEdit && string.IsNullOrEmpty(Input.Password))
         {
-            ModelState.AddModelError("Input.Password", "A password is required for a new credential.");
+            ModelState.AddModelError("Input.Password", _l["A password is required for a new credential."]);
         }
 
         if (!ModelState.IsValid)

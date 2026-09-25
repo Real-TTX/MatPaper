@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Documents;
 
@@ -12,11 +13,15 @@ public class IndexModel : PageModel
 
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
+    private readonly Fmt _fmt;
 
-    public IndexModel(AppDbContext db, CurrentUser currentUser)
+    public IndexModel(AppDbContext db, CurrentUser currentUser, IStringLocalizer<SharedResource> l, Fmt fmt)
     {
         _db = db;
         _currentUser = currentUser;
+        _l = l;
+        _fmt = fmt;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -183,7 +188,7 @@ public class IndexModel : PageModel
 
         if (!string.IsNullOrWhiteSpace(Search))
         {
-            chips.Add(new FilterChip($"Search: {Search}", FilterUrl.Without(req, "Search")));
+            chips.Add(new FilterChip($"{_l["Search"]}: {Search}", FilterUrl.Without(req, "Search")));
         }
 
         var scopeLabel = Scope switch
@@ -195,7 +200,7 @@ public class IndexModel : PageModel
         };
         if (scopeLabel != null)
         {
-            chips.Add(new FilterChip($"Scope: {scopeLabel}", FilterUrl.Without(req, "Scope")));
+            chips.Add(new FilterChip($"{_l["Scope"]}: {scopeLabel}", FilterUrl.Without(req, "Scope")));
         }
 
         var reviewLabel = Review switch
@@ -206,42 +211,42 @@ public class IndexModel : PageModel
         };
         if (reviewLabel != null)
         {
-            chips.Add(new FilterChip($"Review: {reviewLabel}", FilterUrl.Without(req, "Review")));
+            chips.Add(new FilterChip($"{_l["Review"]}: {reviewLabel}", FilterUrl.Without(req, "Review")));
         }
 
         foreach (var id in CorrespondentIds)
         {
             var name = Correspondents.FirstOrDefault(c => c.Id == id)?.Name ?? id.ToString();
-            chips.Add(new FilterChip($"Correspondent: {name}", FilterUrl.WithoutValue(req, "CorrespondentIds", id.ToString())));
+            chips.Add(new FilterChip($"{_l["Correspondent"]}: {name}", FilterUrl.WithoutValue(req, "CorrespondentIds", id.ToString())));
         }
         foreach (var id in DocumentTypeIds)
         {
             var name = DocumentTypes.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
-            chips.Add(new FilterChip($"Type: {name}", FilterUrl.WithoutValue(req, "DocumentTypeIds", id.ToString())));
+            chips.Add(new FilterChip($"{_l["Type"]}: {name}", FilterUrl.WithoutValue(req, "DocumentTypeIds", id.ToString())));
         }
         foreach (var id in TagIds)
         {
             var name = Tags.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
-            chips.Add(new FilterChip($"Tag: {name}", FilterUrl.WithoutValue(req, "TagIds", id.ToString())));
+            chips.Add(new FilterChip($"{_l["Tag"]}: {name}", FilterUrl.WithoutValue(req, "TagIds", id.ToString())));
         }
         foreach (var id in ProjectIds)
         {
             var name = Projects.FirstOrDefault(p => p.Id == id)?.Name ?? id.ToString();
-            chips.Add(new FilterChip($"Project: {name}", FilterUrl.WithoutValue(req, "ProjectIds", id.ToString())));
+            chips.Add(new FilterChip($"{_l["Project"]}: {name}", FilterUrl.WithoutValue(req, "ProjectIds", id.ToString())));
         }
         foreach (var id in StorageLocationIds)
         {
             var name = StorageLocations.FirstOrDefault(s => s.Id == id)?.Name ?? id.ToString();
-            chips.Add(new FilterChip($"Location: {name}", FilterUrl.WithoutValue(req, "StorageLocationIds", id.ToString())));
+            chips.Add(new FilterChip($"{_l["Location"]}: {name}", FilterUrl.WithoutValue(req, "StorageLocationIds", id.ToString())));
         }
 
         if (DateFrom.HasValue)
         {
-            chips.Add(new FilterChip($"From: {DateFrom.Value:yyyy-MM-dd}", FilterUrl.Without(req, "DateFrom")));
+            chips.Add(new FilterChip($"{_l["From"]}: {_fmt.Date(DateFrom)}", FilterUrl.Without(req, "DateFrom")));
         }
         if (DateTo.HasValue)
         {
-            chips.Add(new FilterChip($"To: {DateTo.Value:yyyy-MM-dd}", FilterUrl.Without(req, "DateTo")));
+            chips.Add(new FilterChip($"{_l["To"]}: {_fmt.Date(DateTo)}", FilterUrl.Without(req, "DateTo")));
         }
 
         Filters = new FilterChipBar(chips, FilterUrl.ClearAll(req));

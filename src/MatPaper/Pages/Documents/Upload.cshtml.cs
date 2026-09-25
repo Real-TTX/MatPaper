@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Documents;
 
@@ -12,11 +13,13 @@ public class UploadModel : PageModel
 {
     private readonly DocumentIngestService _ingest;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public UploadModel(DocumentIngestService ingest, CurrentUser currentUser)
+    public UploadModel(DocumentIngestService ingest, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
     {
         _ingest = ingest;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty]
@@ -38,7 +41,7 @@ public class UploadModel : PageModel
     {
         if (file is null || file.Length == 0)
         {
-            return new JsonResult(new { status = "failed", message = "Empty file." });
+            return new JsonResult(new { status = "failed", message = _l["Empty file."].Value });
         }
 
         await using var stream = file.OpenReadStream();
@@ -67,7 +70,7 @@ public class UploadModel : PageModel
 
         if (Files.Count == 0)
         {
-            ModelState.AddModelError(nameof(Files), "Please choose at least one file to upload.");
+            ModelState.AddModelError(nameof(Files), _l["Please choose at least one file to upload."]);
             return Page();
         }
 
@@ -101,25 +104,25 @@ public class UploadModel : PageModel
                     break;
                 case IngestStatus.Duplicate:
                     duplicate++;
-                    Messages.Add($"\"{file.FileName}\" was skipped as a duplicate of an existing document.");
+                    Messages.Add(_l["\"{0}\" was skipped as a duplicate of an existing document.", file.FileName].Value);
                     break;
                 default:
                     failed++;
-                    Messages.Add($"\"{file.FileName}\" could not be stored.");
+                    Messages.Add(_l["\"{0}\" could not be stored.", file.FileName].Value);
                     break;
             }
         }
 
         if (created > 0)
         {
-            var parts = new List<string> { $"{created} document(s) added to your inbox" };
+            var parts = new List<string> { _l["{0} document(s) added to your inbox", created].Value };
             if (duplicate > 0)
             {
-                parts.Add($"{duplicate} duplicate(s) skipped");
+                parts.Add(_l["{0} duplicate(s) skipped", duplicate].Value);
             }
             if (failed > 0)
             {
-                parts.Add($"{failed} failed");
+                parts.Add(_l["{0} failed", failed].Value);
             }
 
             TempData["InboxMessage"] = string.Join(", ", parts) + ".";
@@ -128,7 +131,7 @@ public class UploadModel : PageModel
 
         if (Messages.Count == 0)
         {
-            Messages.Add("No documents were uploaded.");
+            Messages.Add(_l["No documents were uploaded."].Value);
         }
 
         return Page();

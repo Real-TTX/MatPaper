@@ -7,8 +7,9 @@
     // models. Translating segment by segment localizes both without touching every model;
     // an unknown segment (e.g. a document title) simply passes through.
     var breadcrumbRaw = ViewData["Breadcrumb"] as string ?? "";
-    var breadcrumb = string.IsNullOrEmpty(breadcrumbRaw)
-        ? ""
+    var breadcrumbLiteral = ViewData["BreadcrumbLiteral"] is true;
+    var breadcrumb = string.IsNullOrEmpty(breadcrumbRaw) || breadcrumbLiteral
+        ? breadcrumbRaw
         : string.Join(" / ", breadcrumbRaw.Split('/', StringSplitOptions.RemoveEmptyEntries).Select(s => L[s.Trim()].Value));
     var accountName = CurrentUser.DisplayName ?? CurrentUser.Username ?? "Account";
     var avatarLetter = string.IsNullOrEmpty(accountName) ? "?" : accountName.Substring(0, 1).ToUpperInvariant();
@@ -21,7 +22,7 @@
     }
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -51,7 +52,7 @@
                 <span class="sidebar__brand-text">MatPaper</span>
             </div>
 
-            <nav class="sidebar__nav" aria-label="Main navigation">
+            <nav class="sidebar__nav" aria-label='@L["Main navigation"]'>
                 <a class="nav-upload" href="/Documents/Upload">
                     <svg class="nav-upload__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 5v14M5 12h14" />
@@ -140,7 +141,7 @@
                         <span>@L["Sign out"]</span>
                     </button>
                 </form>
-                <form class="lang-switch" method="post" action="/Account/Language" role="group" aria-label="Language">
+                <form class="lang-switch" method="post" action="/Account/Language" role="group" aria-label='@L["Language"]'>
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
                     @{
@@ -152,18 +153,18 @@
                     <button type="submit" name="culture" value="en-US"
                             class="lang-switch__btn@(uiCulture == "en" ? " is-active" : "")">EN</button>
                 </form>
-                <div class="theme-switch" role="group" aria-label="Theme">
+                <div class="theme-switch" role="group" aria-label='@L["Theme"]'>
                     <button type="button" class="theme-switch__btn" data-theme-value="system">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
-                        System
+                        @L["System"]
                     </button>
                     <button type="button" class="theme-switch__btn" data-theme-value="dark">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-                        Dark
+                        @L["Dark"]
                     </button>
                     <button type="button" class="theme-switch__btn" data-theme-value="bright">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
-                        Bright
+                        @L["Light"]
                     </button>
                 </div>
             </div>
@@ -171,12 +172,12 @@
 
         <div class="app-main">
             <header class="app-header">
-                <button type="button" class="hamburger" id="sidebar-toggle" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false">
+                <button type="button" class="hamburger" id="sidebar-toggle" aria-label='@L["Toggle navigation"]' aria-controls="sidebar" aria-expanded="false">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M3 12h18M3 6h18M3 18h18" />
                     </svg>
                 </button>
-                <nav class="breadcrumb" aria-label="Breadcrumb">
+                <nav class="breadcrumb" aria-label='@L["Breadcrumb"]'>
                     <span class="breadcrumb__current">@breadcrumb</span>
                 </nav>
             </header>

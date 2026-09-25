@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -118,7 +119,13 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/System", "AdminOnly");
 })
     .AddViewLocalization()
-    .AddDataAnnotationsLocalization();
+    .AddDataAnnotationsLocalization(o =>
+        o.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(SharedResource)));
+
+// ASP.NET adds an implicit [Required] for non-nullable reference types whose message is
+// framework-supplied and therefore never reaches our resource file. The PageModels do
+// their own (localized) required checks, so turn the implicit one off.
+builder.Services.Configure<MvcOptions>(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
 builder.Services.Configure<RequestLocalizationOptions>(o =>
 {

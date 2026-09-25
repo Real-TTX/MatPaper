@@ -332,13 +332,13 @@
 
         chips.innerHTML = "";
         for (var k = 0; k < order.length; k++) {
-            chips.appendChild(buildChip(name, order[k]));
+            chips.appendChild(buildChip(name, order[k], widget));
         }
         dialog._mp.active = null;
         notifyChanged(widget);
     }
 
-    function buildChip(name, opt) {
+    function buildChip(name, opt, widget) {
         var chip = document.createElement("span");
         chip.className = "mp-picker__chip";
         chip.setAttribute("data-value", opt.v);
@@ -355,7 +355,8 @@
         var remove = document.createElement("button");
         remove.type = "button";
         remove.className = "mp-picker__chip-remove";
-        remove.setAttribute("aria-label", "Remove");
+        remove.setAttribute("aria-label",
+            (widget && widget.getAttribute("data-remove-label")) || "Remove");
         remove.setAttribute("tabindex", "-1");
         remove.textContent = "✕";
 

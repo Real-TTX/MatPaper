@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Correspondents;
 
@@ -12,11 +13,13 @@ public class IndexModel : PageModel
 
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public IndexModel(AppDbContext db, CurrentUser currentUser)
+    public IndexModel(AppDbContext db, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
+        _l = l;
     }
 
     public sealed record Stat(DateTime? Last, int Count, long? LatestId, string? LatestTitle);
@@ -105,7 +108,7 @@ public class IndexModel : PageModel
         var chips = new List<FilterChip>();
         if (!string.IsNullOrWhiteSpace(Search))
         {
-            chips.Add(new FilterChip($"Search: {Search}", FilterUrl.Without(Request, "Search")));
+            chips.Add(new FilterChip($"{_l["Search"]}: {Search}", FilterUrl.Without(Request, "Search")));
         }
         Filters = new FilterChipBar(chips, FilterUrl.ClearAll(Request));
     }

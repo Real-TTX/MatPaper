@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.System.Users;
 
@@ -16,13 +17,20 @@ public class EditModel : PageModel
     private readonly SignInService _signIn;
     private readonly CurrentUser _currentUser;
     private readonly PasswordHasher<User> _hasher;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public EditModel(AppDbContext db, SignInService signIn, CurrentUser currentUser, PasswordHasher<User> hasher)
+    public EditModel(
+        AppDbContext db,
+        SignInService signIn,
+        CurrentUser currentUser,
+        PasswordHasher<User> hasher,
+        IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _signIn = signIn;
         _currentUser = currentUser;
         _hasher = hasher;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -90,24 +98,24 @@ public class EditModel : PageModel
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            ModelState.AddModelError("Input.Username", "Username is required.");
+            ModelState.AddModelError("Input.Username", _l["Username is required."]);
         }
         if (string.IsNullOrWhiteSpace(displayName))
         {
-            ModelState.AddModelError("Input.DisplayName", "Display name is required.");
+            ModelState.AddModelError("Input.DisplayName", _l["Display name is required."]);
         }
 
         var selectedRole = await _db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == Input.RoleId);
         if (selectedRole == null)
         {
-            ModelState.AddModelError("Input.RoleId", "A valid role is required.");
+            ModelState.AddModelError("Input.RoleId", _l["A valid role is required."]);
         }
 
         var usernameTaken = await _db.Users
             .AnyAsync(u => u.Id != Id && u.Username.ToLower() == username.ToLower());
         if (usernameTaken)
         {
-            ModelState.AddModelError("Input.Username", "That username is already in use.");
+            ModelState.AddModelError("Input.Username", _l["That username is already in use."]);
         }
 
         var passwordProvided = !string.IsNullOrEmpty(Input.Password);
@@ -115,17 +123,17 @@ public class EditModel : PageModel
         {
             if (!IsEdit && !passwordProvided)
             {
-                ModelState.AddModelError("Input.Password", "A password is required.");
+                ModelState.AddModelError("Input.Password", _l["A password is required."]);
             }
             else if (passwordProvided)
             {
                 if (Input.Password!.Length < MinPasswordLength)
                 {
-                    ModelState.AddModelError("Input.Password", $"Password must be at least {MinPasswordLength} characters.");
+                    ModelState.AddModelError("Input.Password", _l["Password must be at least {0} characters.", MinPasswordLength]);
                 }
                 if (Input.Password != Input.ConfirmPassword)
                 {
-                    ModelState.AddModelError("Input.ConfirmPassword", "Passwords do not match.");
+                    ModelState.AddModelError("Input.ConfirmPassword", _l["Passwords do not match."]);
                 }
             }
         }
@@ -143,11 +151,11 @@ public class EditModel : PageModel
             {
                 if (existing.Id == _currentUser.UserId)
                 {
-                    ModelState.AddModelError(string.Empty, "You cannot deactivate your own account.");
+                    ModelState.AddModelError(string.Empty, _l["You cannot deactivate your own account."]);
                 }
                 else if (existing.IsActive && await IsLastActiveAdminAsync(existing))
                 {
-                    ModelState.AddModelError(string.Empty, "You cannot deactivate the last active administrator.");
+                    ModelState.AddModelError(string.Empty, _l["You cannot deactivate the last active administrator."]);
                 }
             }
 
@@ -161,7 +169,7 @@ public class EditModel : PageModel
                     && Input.RoleId != adminRole.Id
                     && await IsLastActiveAdminAsync(existing))
                 {
-                    ModelState.AddModelError("Input.RoleId", "You cannot change the role of the last active administrator.");
+                    ModelState.AddModelError("Input.RoleId", _l["You cannot change the role of the last active administrator."]);
                 }
             }
         }
@@ -229,7 +237,7 @@ public class EditModel : PageModel
             SetBreadcrumb();
             await LoadRoleOptionsAsync();
             PopulateInputFrom(user);
-            ModelState.AddModelError(string.Empty, "You cannot delete your own account.");
+            ModelState.AddModelError(string.Empty, _l["You cannot delete your own account."]);
             return Page();
         }
 
@@ -238,7 +246,7 @@ public class EditModel : PageModel
             SetBreadcrumb();
             await LoadRoleOptionsAsync();
             PopulateInputFrom(user);
-            ModelState.AddModelError(string.Empty, "You cannot delete the last active administrator.");
+            ModelState.AddModelError(string.Empty, _l["You cannot delete the last active administrator."]);
             return Page();
         }
 

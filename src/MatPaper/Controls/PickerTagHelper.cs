@@ -114,13 +114,14 @@ public sealed class PickerTagHelper : TagHelper
         widget.Append($" data-placeholder=\"{enc.Encode(placeholder)}\"");
         // The dialog is built in picker.js, so its labels travel as data attributes.
         widget.Append($" data-search-label=\"{enc.Encode(_l["Search…"].Value)}\"");
-        widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\">");
+        widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\"");
+        widget.Append($" data-remove-label=\"{enc.Encode(_l["Remove"].Value)}\">");
 
         widget.Append($"<script type=\"application/json\" class=\"mp-picker__data\">{optionsJson}</script>");
 
         if (Multiple)
         {
-            AppendMultiple(widget, items, selected, fullName, placeholder, enc);
+            AppendMultiple(widget, items, selected, fullName, placeholder, _l["Remove"].Value, enc);
         }
         else
         {
@@ -169,7 +170,7 @@ public sealed class PickerTagHelper : TagHelper
 
     private static void AppendMultiple(
         StringBuilder w, IReadOnlyList<SelectListItem> items, HashSet<string> selected,
-        string fullName, string placeholder, HtmlEncoder enc)
+        string fullName, string placeholder, string removeLabel, HtmlEncoder enc)
     {
         w.Append("<div class=\"mp-picker__chips\">");
         foreach (SelectListItem item in items)
@@ -182,7 +183,7 @@ public sealed class PickerTagHelper : TagHelper
             w.Append($"<span class=\"mp-picker__chip\" data-value=\"{enc.Encode(item.Value)}\">");
             w.Append($"<input type=\"hidden\" name=\"{enc.Encode(fullName)}\" value=\"{enc.Encode(item.Value)}\">");
             w.Append($"<span class=\"mp-picker__chip-text\">{enc.Encode(item.Text)}</span>");
-            w.Append("<button type=\"button\" class=\"mp-picker__chip-remove\" aria-label=\"Remove\" tabindex=\"-1\">✕</button>");
+            w.Append($"<button type=\"button\" class=\"mp-picker__chip-remove\" aria-label=\"{enc.Encode(removeLabel)}\" tabindex=\"-1\">✕</button>");
             w.Append("</span>");
         }
 

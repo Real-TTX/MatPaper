@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.System.ExportTasks;
 
@@ -12,12 +13,14 @@ public class EditModel : PageModel
     private readonly AppDbContext _db;
     private readonly TaskTriggerQueue _triggers;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
-    public EditModel(AppDbContext db, TaskTriggerQueue triggers, CurrentUser currentUser)
+    public EditModel(AppDbContext db, TaskTriggerQueue triggers, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _triggers = triggers;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -89,19 +92,19 @@ public class EditModel : PageModel
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            ModelState.AddModelError("Input.Name", "Name is required.");
+            ModelState.AddModelError("Input.Name", _l["Name is required."]);
         }
         if (string.IsNullOrWhiteSpace(targetPath))
         {
-            ModelState.AddModelError("Input.TargetPath", "Target path is required.");
+            ModelState.AddModelError("Input.TargetPath", _l["Target path is required."]);
         }
         if (Input.Retention < 1)
         {
-            ModelState.AddModelError("Input.Retention", "Retention must be at least 1.");
+            ModelState.AddModelError("Input.Retention", _l["Retention must be at least 1."]);
         }
         if (!CronSchedule.IsValid(Input.CronExpression))
         {
-            ModelState.AddModelError("Input.CronExpression", "The schedule is not a valid cron expression.");
+            ModelState.AddModelError("Input.CronExpression", _l["The schedule is not a valid cron expression."]);
         }
 
         if (!ModelState.IsValid)
@@ -177,7 +180,7 @@ public class EditModel : PageModel
         }
 
         _triggers.Enqueue(TaskRunKind.Export, Id);
-        TempData["ExportTaskMessage"] = $"Export task \"{entity.Name}\" queued to run now.";
+        TempData["ExportTaskMessage"] = _l["Export task \"{0}\" queued to run now.", entity.Name].Value;
 
         return RedirectToPage("Edit", new { id = Id });
     }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.System.ImportTasks;
 
@@ -16,19 +17,22 @@ public class EditModel : PageModel
     private readonly TaskTriggerQueue _queue;
     private readonly ImportRunner _runner;
     private readonly CurrentUser _currentUser;
+    private readonly IStringLocalizer<SharedResource> _l;
 
     public EditModel(
         AppDbContext db,
         SecretProtector secrets,
         TaskTriggerQueue queue,
         ImportRunner runner,
-        CurrentUser currentUser)
+        CurrentUser currentUser,
+        IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _secrets = secrets;
         _queue = queue;
         _runner = runner;
         _currentUser = currentUser;
+        _l = l;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -201,7 +205,7 @@ public class EditModel : PageModel
 
         if (!IsEdit)
         {
-            ModelState.AddModelError(string.Empty, "Save the task before running it.");
+            ModelState.AddModelError(string.Empty, _l["Save the task before running it."]);
             await BuildOptionListsAsync();
             return Page();
         }
@@ -214,7 +218,7 @@ public class EditModel : PageModel
         }
 
         _queue.Enqueue(TaskRunKind.Import, Id);
-        TempData["TaskMessage"] = "Task queued";
+        TempData["TaskMessage"] = _l["Task queued"].Value;
 
         return RedirectToPage("Edit", new { id = Id });
     }
@@ -226,7 +230,7 @@ public class EditModel : PageModel
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
             NoticeOk = false;
-            Notice = "A filesystem import has no connection to test.";
+            Notice = _l["A filesystem import has no connection to test."].Value;
             await BuildOptionListsAsync();
             return Page();
         }
@@ -308,49 +312,49 @@ public class EditModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(Input.Name))
         {
-            ModelState.AddModelError("Input.Name", "Name is required.");
+            ModelState.AddModelError("Input.Name", _l["Name is required."]);
         }
 
         if (!CronSchedule.IsValid(Input.CronExpression))
         {
-            ModelState.AddModelError("Input.CronExpression", "The schedule is not a valid cron expression.");
+            ModelState.AddModelError("Input.CronExpression", _l["The schedule is not a valid cron expression."]);
         }
 
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
             if (string.IsNullOrWhiteSpace(Input.SourcePath))
             {
-                ModelState.AddModelError("Input.SourcePath", "Source path is required.");
+                ModelState.AddModelError("Input.SourcePath", _l["Source path is required."]);
             }
             if (Input.PostAction == "move" && string.IsNullOrWhiteSpace(Input.MoveToPath))
             {
-                ModelState.AddModelError("Input.MoveToPath", "A move target path is required for the move action.");
+                ModelState.AddModelError("Input.MoveToPath", _l["A move target path is required for the move action."]);
             }
         }
         else if (Input.Type == (int)ImportTaskType.Smb)
         {
             if (string.IsNullOrWhiteSpace(Input.SmbHost))
             {
-                ModelState.AddModelError("Input.SmbHost", "Host is required.");
+                ModelState.AddModelError("Input.SmbHost", _l["Host is required."]);
             }
             if (string.IsNullOrWhiteSpace(Input.SmbShare))
             {
-                ModelState.AddModelError("Input.SmbShare", "Share name is required.");
+                ModelState.AddModelError("Input.SmbShare", _l["Share name is required."]);
             }
             if (string.IsNullOrWhiteSpace(Input.SmbUsername))
             {
-                ModelState.AddModelError("Input.SmbUsername", "Username is required.");
+                ModelState.AddModelError("Input.SmbUsername", _l["Username is required."]);
             }
         }
         else
         {
             if (string.IsNullOrWhiteSpace(Input.Host))
             {
-                ModelState.AddModelError("Input.Host", "Host is required.");
+                ModelState.AddModelError("Input.Host", _l["Host is required."]);
             }
             if (string.IsNullOrWhiteSpace(Input.Username))
             {
-                ModelState.AddModelError("Input.Username", "Username is required.");
+                ModelState.AddModelError("Input.Username", _l["Username is required."]);
             }
         }
     }

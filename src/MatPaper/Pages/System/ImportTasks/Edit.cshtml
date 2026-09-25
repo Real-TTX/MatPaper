@@ -129,6 +129,11 @@
         <mp-field asp-for="Input.ProjectId" kind="select" label="Project"
                   asp-items="Model.ProjectOptions" />
 
+        <mp-field asp-for="Input.OwnerUserId" kind="select" label="Inbox of"
+                  asp-items="Model.UserOptions" />
+
+        <mp-field asp-for="Input.IsCommon" kind="checkbox" label="Common area (visible to everyone)" />
+
         <mp-field asp-for="Input.SkipInbox" kind="checkbox" label="Skip inbox (mark imported documents as reviewed)" />
 
         @if (Model.TagOptions.Count > 0)

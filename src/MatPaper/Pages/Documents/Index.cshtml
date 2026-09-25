@@ -54,8 +54,9 @@
     </mp-toolbar-select>
 
     <mp-toolbar-select name="Sort" label="Sort" value="@Model.Sort">
-        <option value="newest">Newest</option>
-        <option value="oldest">Oldest</option>
+        <option value="added">Recently added</option>
+        <option value="newest">Document date</option>
+        <option value="oldest">Oldest first</option>
         <option value="title">Title</option>
     </mp-toolbar-select>
 </mp-toolbar>
@@ -130,8 +131,7 @@ else
 }
 
 <div class="list-actions">
-    <a class="btn btn--primary" href="/Documents/Upload">Upload</a>
-    <a class="btn btn--secondary" href="/Documents/Scan">Scan</a>
+    <a class="btn btn--primary" href="/Documents/Upload">Add documents</a>
 </div>
 
 <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

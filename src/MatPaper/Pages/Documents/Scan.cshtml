@@ -1,8 +1,11 @@
 @page "/Documents/Scan"
 @model MatPaper.Pages.Documents.ScanModel
 @{
-    ViewData["Breadcrumb"] = "Documents / Scan";
+    ViewData["Breadcrumb"] = "Documents / Add";
+    ViewData["AddTab"] = "camera";
 }
+
+<partial name="_AddDocumentTabs" />
 
 @if (Model.Messages.Count > 0)
 {

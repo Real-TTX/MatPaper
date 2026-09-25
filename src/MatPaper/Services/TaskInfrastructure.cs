@@ -32,6 +32,12 @@ public class FilesystemImportSettings
 
     /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
     public bool SkipInbox { get; set; }
+
+    /// <summary>Whose review inbox the documents land in. Null = the task creator.</summary>
+    public long? OwnerUserId { get; set; }
+
+    /// <summary>Put imported documents into the common area (visible to everyone).</summary>
+    public bool IsCommon { get; set; }
 }
 
 /// <summary>
@@ -78,6 +84,12 @@ public class MailImportSettings
 
     /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
     public bool SkipInbox { get; set; }
+
+    /// <summary>Whose review inbox the documents land in. Null = the task creator.</summary>
+    public long? OwnerUserId { get; set; }
+
+    /// <summary>Put imported documents into the common area (visible to everyone).</summary>
+    public bool IsCommon { get; set; }
 }
 
 /// <summary>
@@ -112,6 +124,23 @@ public class SmbImportSettings
     public List<long> TagIds { get; set; } = new();
 
     /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
+    public bool SkipInbox { get; set; }
+
+    /// <summary>Whose review inbox the documents land in. Null = the task creator.</summary>
+    public long? OwnerUserId { get; set; }
+
+    /// <summary>Put imported documents into the common area (visible to everyone).</summary>
+    public bool IsCommon { get; set; }
+}
+
+/// <summary>
+/// The fields every import settings type shares. Lets the runner read ownership out of
+/// <see cref="ImportTask.SettingsJson"/> without knowing the concrete settings type.
+/// </summary>
+public class CommonImportSettings
+{
+    public long? OwnerUserId { get; set; }
+    public bool IsCommon { get; set; }
     public bool SkipInbox { get; set; }
 }
 

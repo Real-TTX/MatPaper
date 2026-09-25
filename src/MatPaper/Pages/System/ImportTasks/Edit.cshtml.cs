@@ -51,6 +51,7 @@ public class EditModel : PageModel
     public List<SelectListItem> DocumentTypeOptions { get; private set; } = new();
     public List<SelectListItem> ProjectOptions { get; private set; } = new();
     public List<SelectListItem> CredentialOptions { get; private set; } = new();
+    public List<SelectListItem> UserOptions { get; private set; } = new();
     public List<TagOption> TagOptions { get; private set; } = new();
 
     public record TagOption(long Id, string Name, bool Selected);
@@ -116,6 +117,12 @@ public class EditModel : PageModel
 
         /// <summary>Skip the review inbox: mark imported documents as reviewed immediately.</summary>
         public bool SkipInbox { get; set; }
+
+        /// <summary>Whose review inbox imported documents land in. Null = the task creator.</summary>
+        public long? OwnerUserId { get; set; }
+
+        /// <summary>Put imported documents into the common area.</summary>
+        public bool IsCommon { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -364,7 +371,9 @@ public class EditModel : PageModel
                 DocumentTypeId = Input.DocumentTypeId,
                 ProjectId = Input.ProjectId,
                 TagIds = TagIds.ToList(),
-                SkipInbox = Input.SkipInbox
+                SkipInbox = Input.SkipInbox,
+                OwnerUserId = Input.OwnerUserId,
+                IsCommon = Input.IsCommon
             };
             return TaskSettingsJson.Write(fs);
         }
@@ -408,7 +417,9 @@ public class EditModel : PageModel
             DocumentTypeId = Input.DocumentTypeId,
             ProjectId = Input.ProjectId,
             TagIds = TagIds.ToList(),
-            SkipInbox = Input.SkipInbox
+            SkipInbox = Input.SkipInbox,
+            OwnerUserId = Input.OwnerUserId,
+            IsCommon = Input.IsCommon
         };
     }
 
@@ -440,7 +451,9 @@ public class EditModel : PageModel
             DocumentTypeId = Input.DocumentTypeId,
             ProjectId = Input.ProjectId,
             TagIds = TagIds.ToList(),
-            SkipInbox = Input.SkipInbox
+            SkipInbox = Input.SkipInbox,
+            OwnerUserId = Input.OwnerUserId,
+            IsCommon = Input.IsCommon
         };
     }
 
@@ -464,6 +477,8 @@ public class EditModel : PageModel
             Input.DocumentTypeId = fs.DocumentTypeId;
             Input.ProjectId = fs.ProjectId;
             Input.SkipInbox = fs.SkipInbox;
+            Input.OwnerUserId = fs.OwnerUserId;
+            Input.IsCommon = fs.IsCommon;
             TagIds = fs.TagIds.ToArray();
         }
         else if (entity.Type == ImportTaskType.Smb)
@@ -485,6 +500,8 @@ public class EditModel : PageModel
             Input.DocumentTypeId = smb.DocumentTypeId;
             Input.ProjectId = smb.ProjectId;
             Input.SkipInbox = smb.SkipInbox;
+            Input.OwnerUserId = smb.OwnerUserId;
+            Input.IsCommon = smb.IsCommon;
             TagIds = smb.TagIds.ToArray();
         }
         else
@@ -518,6 +535,8 @@ public class EditModel : PageModel
             Input.DocumentTypeId = mail.DocumentTypeId;
             Input.ProjectId = mail.ProjectId;
             Input.SkipInbox = mail.SkipInbox;
+            Input.OwnerUserId = mail.OwnerUserId;
+            Input.IsCommon = mail.IsCommon;
             TagIds = mail.TagIds.ToArray();
         }
     }
@@ -559,6 +578,13 @@ public class EditModel : PageModel
             .Select(t => new { t.Id, t.Name })
             .ToListAsync();
 
+        var users = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.DisplayName ?? u.Username)
+            .Select(u => new { u.Id, Name = u.DisplayName ?? u.Username })
+            .ToListAsync();
+
         var credentials = await _db.Credentials
             .AsNoTracking()
             .Where(c => c.UpdateState != UpdateState.Deleted)
@@ -576,6 +602,8 @@ public class EditModel : PageModel
             projects.Select(p => (p.Id, p.Name)), Input.ProjectId, "— None —");
         CredentialOptions = BuildOptions(
             credentials.Select(c => (c.Id, c.Name)), Input.CredentialId, "— None (use fields below) —");
+        UserOptions = BuildOptions(
+            users.Select(u => (u.Id, u.Name)), Input.OwnerUserId, "— Task creator —");
 
         var selected = new HashSet<long>(TagIds);
         TagOptions = tags

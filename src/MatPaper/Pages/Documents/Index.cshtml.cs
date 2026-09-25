@@ -44,7 +44,7 @@ public class IndexModel : PageModel
     public DateTime? DateTo { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string Sort { get; set; } = "newest";
+    public string Sort { get; set; } = "added";
 
     /// <summary>Ownership scope: all | mine | shared | common.</summary>
     [BindProperty(SupportsGet = true)]
@@ -148,9 +148,12 @@ public class IndexModel : PageModel
 
         query = Sort switch
         {
+            // "added" (the default) keeps freshly imported documents on top even when
+            // their document date is years old.
+            "newest" => query.OrderByDescending(d => d.DocumentDate ?? d.CreateDate).ThenByDescending(d => d.Id),
             "oldest" => query.OrderBy(d => d.DocumentDate ?? d.CreateDate).ThenBy(d => d.Id),
             "title" => query.OrderBy(d => d.Title).ThenBy(d => d.Id),
-            _ => query.OrderByDescending(d => d.DocumentDate ?? d.CreateDate).ThenByDescending(d => d.Id),
+            _ => query.OrderByDescending(d => d.CreateDate).ThenByDescending(d => d.Id),
         };
 
         TotalCount = await query.CountAsync();

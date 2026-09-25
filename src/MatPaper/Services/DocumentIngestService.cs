@@ -58,7 +58,8 @@ public sealed class DocumentIngestService(
         IReadOnlyCollection<long> tagIds,
         long? actingUserId,
         CancellationToken ct,
-        ReviewState reviewState = ReviewState.Pending)
+        ReviewState reviewState = ReviewState.Pending,
+        bool isCommon = false)
     {
         ArgumentNullException.ThrowIfNull(content);
 
@@ -185,6 +186,7 @@ public sealed class DocumentIngestService(
             FileSize = fileSize,
             ContentHash = contentHash,
             OwnerId = actingUserId,
+            IsCommon = isCommon,
             ReviewState = reviewState,
             PageCount = 0,
             OcrState = OcrState.Pending,

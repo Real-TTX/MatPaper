@@ -41,9 +41,11 @@ public sealed class ImportRunner
     {
         ArgumentNullException.ThrowIfNull(task);
 
-        // Imported documents are owned by whoever created the import task, falling
-        // back to the first active administrator so they never end up ownerless.
-        var ownerId = await ResolveOwnerIdAsync(task, ct).ConfigureAwait(false);
+        // Imported documents are owned by the user picked on the task, else by whoever
+        // created it, falling back to the first active administrator so they never end
+        // up ownerless.
+        var shared = TaskSettingsJson.Read<CommonImportSettings>(task.SettingsJson);
+        var ownerId = await ResolveOwnerIdAsync(task, shared.OwnerUserId, ct).ConfigureAwait(false);
 
         return task.Type switch
         {
@@ -120,7 +122,7 @@ public sealed class ImportRunner
                     var result = await _ingest.IngestAsync(
                         stream, fileName, locationId,
                         settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
-                        settings.TagIds ?? new List<long>(), ownerId, ct, reviewState).ConfigureAwait(false);
+                        settings.TagIds ?? new List<long>(), ownerId, ct, reviewState, settings.IsCommon).ConfigureAwait(false);
 
                     switch (result.Status)
                     {
@@ -228,8 +230,20 @@ public sealed class ImportRunner
         return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword), cred.Domain);
     }
 
-    private async Task<long?> ResolveOwnerIdAsync(ImportTask task, CancellationToken ct)
+    private async Task<long?> ResolveOwnerIdAsync(ImportTask task, long? preferredUserId, CancellationToken ct)
     {
+        if (preferredUserId is { } preferred)
+        {
+            var preferredActive = await _db.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == preferred && u.IsActive, ct)
+                .ConfigureAwait(false);
+            if (preferredActive)
+            {
+                return preferred;
+            }
+        }
+
         if (task.CreateUserId is { } creator)
         {
             var stillActive = await _db.Users
@@ -304,7 +318,8 @@ public sealed class ImportRunner
                         settings.TagIds ?? new List<long>(),
                         actingUserId: ownerId,
                         ct,
-                        reviewState: settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending).ConfigureAwait(false);
+                        reviewState: settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending,
+                        isCommon: settings.IsCommon).ConfigureAwait(false);
                 }
 
                 switch (result.Status)
@@ -477,10 +492,10 @@ public sealed class ImportRunner
                     continue;
                 }
 
-                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
+                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
                 if (settings.ImportBodyAsPdf)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
+                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
                 }
 
                 switch (postAction)
@@ -550,10 +565,10 @@ public sealed class ImportRunner
                     continue;
                 }
 
-                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
+                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
                 if (settings.ImportBodyAsPdf)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, log, ct).ConfigureAwait(false);
+                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
                 }
 
                 if (postAction == "delete")
@@ -578,6 +593,7 @@ public sealed class ImportRunner
         long? locationId,
         long? ownerId,
         ReviewState reviewState,
+        bool isCommon,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -593,7 +609,7 @@ public sealed class ImportRunner
 
             await using var stream = new MemoryStream(pdf);
             var result = await _ingest.IngestAsync(
-                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct, reviewState).ConfigureAwait(false);
+                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct, reviewState, isCommon).ConfigureAwait(false);
 
             if (result.Status == IngestStatus.Created)
             {
@@ -626,6 +642,7 @@ public sealed class ImportRunner
         long? locationId,
         long? ownerId,
         ReviewState reviewState,
+        bool isCommon,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -675,7 +692,8 @@ public sealed class ImportRunner
                     tagIds: new List<long>(),
                     actingUserId: ownerId,
                     ct,
-                    reviewState: reviewState).ConfigureAwait(false);
+                    reviewState: reviewState,
+                    isCommon: isCommon).ConfigureAwait(false);
 
                 switch (result.Status)
                 {

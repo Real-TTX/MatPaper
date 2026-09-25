@@ -1,8 +1,11 @@
 @page "/Documents/Upload"
 @model MatPaper.Pages.Documents.UploadModel
 @{
-    ViewData["Breadcrumb"] = "Documents / Upload";
+    ViewData["Breadcrumb"] = "Documents / Add";
+    ViewData["AddTab"] = "files";
 }
+
+<partial name="_AddDocumentTabs" />
 
 @if (Model.Messages.Count > 0)
 {

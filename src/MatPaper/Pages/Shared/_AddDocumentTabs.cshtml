@@ -1,0 +1,12 @@
+@*
+    Switcher shared by the two ways of adding a document. Pass the active tab via
+    ViewData["AddTab"] = "files" | "camera".
+*@
+@{
+    var activeTab = ViewData["AddTab"] as string ?? "files";
+}
+
+<mp-tabbar>
+    <mp-tab title="Files" href="/Documents/Upload" active="@(activeTab == "files")" />
+    <mp-tab title="Camera" href="/Documents/Scan" active="@(activeTab == "camera")" />
+</mp-tabbar>

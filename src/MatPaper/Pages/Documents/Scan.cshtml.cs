@@ -48,13 +48,13 @@ public class ScanModel : PageModel
 
     public async Task OnGetAsync()
     {
-        ViewData["Breadcrumb"] = "Documents / Scan";
+        ViewData["Breadcrumb"] = "Documents / Add";
         await LoadOptionsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
-        ViewData["Breadcrumb"] = "Documents / Scan";
+        ViewData["Breadcrumb"] = "Documents / Add";
 
         await LoadOptionsAsync();
 

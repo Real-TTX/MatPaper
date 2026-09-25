@@ -26,7 +26,7 @@ public class UploadModel : PageModel
 
     public void OnGet()
     {
-        ViewData["Breadcrumb"] = "Documents / Upload";
+        ViewData["Breadcrumb"] = "Documents / Add";
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public class UploadModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
-        ViewData["Breadcrumb"] = "Documents / Upload";
+        ViewData["Breadcrumb"] = "Documents / Add";
 
         if (Files.Count == 0)
         {

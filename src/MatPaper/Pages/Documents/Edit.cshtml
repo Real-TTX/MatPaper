@@ -325,7 +325,7 @@
             </li>
             <li>
                 <span class="doc-facts__key">File size</span>
-                <span class="doc-facts__val">@FormatSize(Model.FileSize)</span>
+                <span class="doc-facts__val">@Fmt.Size(Model.FileSize)</span>
             </li>
             <li>
                 <span class="doc-facts__key">Original file</span>
@@ -340,7 +340,7 @@
             }
             <li>
                 <span class="doc-facts__key">Added</span>
-                <span class="doc-facts__val">@Model.AddedDate.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                <span class="doc-facts__val">@Fmt.DateTime(Model.AddedDate)</span>
             </li>
         </ul>
     </aside>
@@ -429,7 +429,7 @@
                         var url = $"{Model.ShareBaseUrl}/Share/{link.Token}";
                         <tr>
                             <td><a href="/Share/@link.Token" target="_blank" rel="noopener">@url</a></td>
-                            <td>@(link.ExpiresAt.HasValue ? link.ExpiresAt.Value.ToString("yyyy-MM-dd") : "Never")</td>
+                            <td>@(link.ExpiresAt.HasValue ? Fmt.Date(link.ExpiresAt) : "Never")</td>
                             <td class="is-actions">
                                 <form method="post" style="display:inline">
                                     <input type="hidden" name="Id" value="@Model.Id" />
@@ -465,18 +465,3 @@
     </div>
 </div>
 
-@functions {
-    private static string FormatSize(long bytes)
-    {
-        string[] units = { "B", "KB", "MB", "GB", "TB" };
-        double size = bytes;
-        int unit = 0;
-        while (size >= 1024 && unit < units.Length - 1)
-        {
-            size /= 1024;
-            unit++;
-        }
-
-        return unit == 0 ? $"{bytes} {units[unit]}" : $"{size:0.#} {units[unit]}";
-    }
-}

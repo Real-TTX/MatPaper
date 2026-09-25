@@ -6,9 +6,10 @@ namespace MatPaper.Services;
 public sealed record CronInfo(bool IsValid, string Text, DateTime? NextUtc);
 
 /// <summary>
-/// Turns the 5-field cron expressions stored on import/export tasks into a
-/// readable description plus the next run time, and validates them. The
-/// scheduler evaluates cron in UTC, so described times are UTC.
+/// Turns the 5-field cron expressions stored on import/export tasks into a readable
+/// description plus the next run time, and validates them. Times are interpreted in the
+/// configured display time zone — the same zone <c>TaskSchedulerService</c> evaluates in —
+/// so "daily at 08:00" means 08:00 wall-clock time, not 08:00 UTC.
 /// </summary>
 public static class CronSchedule
 {
@@ -31,8 +32,10 @@ public static class CronSchedule
         }
     }
 
-    public static CronInfo Describe(string? cron)
+    public static CronInfo Describe(string? cron, TimeZoneInfo zone)
     {
+        ArgumentNullException.ThrowIfNull(zone);
+
         if (string.IsNullOrWhiteSpace(cron))
         {
             return new CronInfo(true, "Manual only", null);
@@ -49,7 +52,7 @@ public static class CronSchedule
             return new CronInfo(false, "Invalid schedule", null);
         }
 
-        var next = expr.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Utc);
+        var next = expr.GetNextOccurrence(DateTime.UtcNow, zone);
         return new CronInfo(true, Humanize(trimmed), next);
     }
 
@@ -74,19 +77,19 @@ public static class CronSchedule
 
         if (mOk && hour == "*" && dom == "*" && dow == "*")
         {
-            return $"Hourly at minute {m} (UTC)";
+            return $"Hourly at minute {m}";
         }
         if (mOk && hOk && dom == "*" && dow == "*")
         {
-            return $"Daily at {h:00}:{m:00} (UTC)";
+            return $"Daily at {h:00}:{m:00}";
         }
         if (mOk && hOk && dom == "*" && dowOk)
         {
-            return $"Weekly on {DayName(d)} at {h:00}:{m:00} (UTC)";
+            return $"Weekly on {DayName(d)} at {h:00}:{m:00}";
         }
         if (mOk && hOk && domOk && dow == "*")
         {
-            return $"Monthly on day {dm} at {h:00}:{m:00} (UTC)";
+            return $"Monthly on day {dm} at {h:00}:{m:00}";
         }
 
         return $"Cron: {cron}";

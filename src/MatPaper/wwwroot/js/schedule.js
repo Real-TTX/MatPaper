@@ -1,5 +1,5 @@
 // Friendly schedule builder for the task editors. Reads/writes a 5-field cron
-// string in a hidden input; the scheduler interprets times as UTC.
+// string in a hidden input; times are wall-clock in the app time zone.
 (function () {
     "use strict";
 
@@ -72,12 +72,15 @@
 
         function describe(expr) {
             if (mode.value === "manual" || !expr) { return "Runs only when started manually."; }
+            // Times are wall-clock in the app time zone; name it once so nobody guesses.
+            var zone = root.getAttribute("data-zone");
+            var suffix = zone ? " (" + zone + ")" : "";
             var t = timeParts();
             switch (mode.value) {
-                case "hourly": return "Every hour at minute " + (parseInt(minute.value, 10) || 0) + " (UTC).";
-                case "daily": return "Every day at " + pad(t.h) + ":" + pad(t.m) + " (UTC).";
-                case "weekly": return "Every " + DAYS[(parseInt(weekday.value, 10) || 0) % 7] + " at " + pad(t.h) + ":" + pad(t.m) + " (UTC).";
-                case "monthly": return "On day " + (parseInt(dom.value, 10) || 1) + " of each month at " + pad(t.h) + ":" + pad(t.m) + " (UTC).";
+                case "hourly": return "Every hour at minute " + (parseInt(minute.value, 10) || 0) + ".";
+                case "daily": return "Every day at " + pad(t.h) + ":" + pad(t.m) + suffix + ".";
+                case "weekly": return "Every " + DAYS[(parseInt(weekday.value, 10) || 0) % 7] + " at " + pad(t.h) + ":" + pad(t.m) + suffix + ".";
+                case "monthly": return "On day " + (parseInt(dom.value, 10) || 1) + " of each month at " + pad(t.h) + ":" + pad(t.m) + suffix + ".";
                 case "custom": return "Cron: " + expr;
             }
             return "";

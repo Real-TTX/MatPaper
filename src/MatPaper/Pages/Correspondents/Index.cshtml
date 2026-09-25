@@ -34,7 +34,7 @@
                     @if (st != null && st.LatestId != null)
                     {
                         <a href="/Documents/Edit?id=@st.LatestId" title="@st.LatestTitle">@st.LatestTitle</a>
-                        <div class="form-help" style="margin:0">@(st.Last?.ToString("yyyy-MM-dd")) · @st.Count doc(s)</div>
+                        <div class="form-help" style="margin:0">@Fmt.Date(st.Last) · @st.Count doc(s)</div>
                     }
                     else
                     {

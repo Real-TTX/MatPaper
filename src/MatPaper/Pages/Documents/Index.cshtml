@@ -32,12 +32,12 @@
     <div class="toolbar__group toolbar__filter">
         <label for="DateFrom">From</label>
         <input class="form-control" type="date" id="DateFrom" name="DateFrom"
-               value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" />
+               value="@Fmt.InputDate(Model.DateFrom)" />
     </div>
     <div class="toolbar__group toolbar__filter">
         <label for="DateTo">To</label>
         <input class="form-control" type="date" id="DateTo" name="DateTo"
-               value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" />
+               value="@Fmt.InputDate(Model.DateTo)" />
     </div>
 
     <mp-toolbar-select name="Scope" label="Scope" value="@Model.Scope">
@@ -72,7 +72,7 @@ else
     <div class="doc-grid">
         @foreach (var d in Model.Rows)
         {
-            var displayDate = (d.DocumentDate ?? d.CreateDate).ToString("yyyy-MM-dd");
+            var displayDate = Fmt.Date(d.DocumentDate ?? d.CreateDate);
             var docTags = d.DocumentTags?.Where(t => t.Tag != null).Select(t => t.Tag!).ToList() ?? new List<MatPaper.Data.Tag>();
             <article class="doc-card">
                 <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label="Preview @d.Title">

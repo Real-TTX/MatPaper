@@ -12,12 +12,16 @@ namespace MatPaper.Controls;
 /// matching inputs and posts the computed cron through a hidden input whose name
 /// matches the bound property — so PageModels keep binding a plain
 /// <c>string? CronExpression</c> with no change. Behaviour lives in
-/// <c>schedule.js</c>; times are interpreted in UTC by the scheduler.
+/// <c>schedule.js</c>; times are wall-clock times in the configured app time zone.
 /// Usage: &lt;mp-schedule asp-for="Input.CronExpression" label="Schedule" /&gt;
 /// </summary>
 [HtmlTargetElement("mp-schedule", Attributes = "asp-for")]
 public sealed class ScheduleTagHelper : TagHelper
 {
+    private readonly Services.Fmt _fmt;
+
+    public ScheduleTagHelper(Services.Fmt fmt) => _fmt = fmt;
+
     [HtmlAttributeName("asp-for")]
     public ModelExpression For { get; set; } = default!;
 
@@ -42,6 +46,7 @@ public sealed class ScheduleTagHelper : TagHelper
         output.Attributes.SetAttribute("class", "form-row mp-schedule");
         output.Attributes.SetAttribute("data-name", fullName);
         output.Attributes.SetAttribute("data-cron", current);
+        output.Attributes.SetAttribute("data-zone", _fmt.ZoneName);
 
         var w = new StringBuilder();
         w.Append($"<label>{enc.Encode(Label)}</label>");

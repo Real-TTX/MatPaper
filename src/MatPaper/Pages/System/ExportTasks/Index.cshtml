@@ -37,11 +37,11 @@
                     }
                 </td>
                 <td>
-                    @{ var sched = CronSchedule.Describe(t.CronExpression); }
+                    @{ var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone); }
                     <span class="@(sched.IsValid ? "" : "badge badge--off")">@sched.Text</span>
                     @if (sched.NextUtc is DateTime nextUtc)
                     {
-                        <br /><span class="form-help" style="margin:0">next: @nextUtc.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                        <br /><span class="form-help" style="margin:0">next: @Fmt.DateTime(nextUtc)</span>
                     }
                 </td>
                 <td>
@@ -63,7 +63,7 @@
                                 <span class="badge badge--muted">Running</span>
                                 break;
                         }
-                        <span>&nbsp;@t.LastRunStartedAt?.ToString("yyyy-MM-dd HH:mm")</span>
+                        <span>&nbsp;@Fmt.DateTime(t.LastRunStartedAt)</span>
                     }
                 </td>
                 <td class="is-actions">

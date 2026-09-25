@@ -82,7 +82,7 @@ else
                         {
                             <span class="badge badge--off">OCR failed</span>
                         }
-                        <span title="@row.OriginalFileName">@row.AddedDate.ToString("yyyy-MM-dd")</span>
+                        <span title="@row.OriginalFileName">@Fmt.Date(row.AddedDate)</span>
                     </span>
                 </div>
 
@@ -94,7 +94,7 @@ else
                     <div class="form-row">
                         <label for="documentDate_@suffix">Date</label>
                         <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
-                               value="@(row.DocumentDate?.ToString("yyyy-MM-dd"))" />
+                               value="@Fmt.InputDate(row.DocumentDate)" />
                     </div>
                     <mp-picker asp-for="ProjectId" label="Project" asp-items="Model.ProjectOptions"
                                value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder="— None —" />

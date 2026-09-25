@@ -62,7 +62,7 @@
                     <span class="dash-recent__body">
                         <span class="dash-recent__title">@d.Title</span>
                         <span class="dash-recent__meta">
-                            @(d.CorrespondentName ?? "—") · @(d.TypeName ?? "—") · @d.Date.ToString("yyyy-MM-dd")
+                            @(d.CorrespondentName ?? "—") · @(d.TypeName ?? "—") · @Fmt.Date(d.Date)
                         </span>
                     </span>
                 </a>

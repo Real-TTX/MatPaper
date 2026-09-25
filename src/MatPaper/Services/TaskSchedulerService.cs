@@ -26,13 +26,17 @@ public class TaskSchedulerService : BackgroundService
     private readonly TaskTriggerQueue _queue;
     private readonly ILogger<TaskSchedulerService> _logger;
 
+    private readonly Fmt _fmt;
+
     public TaskSchedulerService(
         IServiceScopeFactory scopeFactory,
         TaskTriggerQueue queue,
+        Fmt fmt,
         ILogger<TaskSchedulerService> logger)
     {
         _scopeFactory = scopeFactory;
         _queue = queue;
+        _fmt = fmt;
         _logger = logger;
     }
 
@@ -245,7 +249,9 @@ public class TaskSchedulerService : BackgroundService
 
         var lastRunUtc = DateTime.SpecifyKind(lastStarted ?? createDateUtc, DateTimeKind.Utc);
 
-        var next = expression.GetNextOccurrence(lastRunUtc, TimeZoneInfo.Utc);
+        // Schedules are wall-clock times in the configured zone ("daily at 08:00" is
+        // 08:00 local, not UTC), so DST shifts are handled by Cronos.
+        var next = expression.GetNextOccurrence(lastRunUtc, _fmt.TimeZone);
         if (next is not null && next.Value <= nowUtc)
         {
             // Skip if a run for this task is still in progress, so a task whose runtime

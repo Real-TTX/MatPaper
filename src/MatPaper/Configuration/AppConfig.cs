@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MatPaper.Configuration;
 
@@ -10,6 +11,7 @@ public class DatabaseConfig
     public string Username { get; set; } = "postgres";
     public string Password { get; set; } = "matpaper";
 
+    [JsonIgnore]
     public string ConnectionString =>
         $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
 }
@@ -24,10 +26,21 @@ public class StorageConfig
     public string? InboxPath { get; set; }
 }
 
+public class DisplayConfig
+{
+    /// <summary>
+    /// IANA time zone used for every date/time shown in the UI and for evaluating task
+    /// schedules ("daily at 08:00" means 08:00 in this zone). Falls back to UTC when the
+    /// system does not know the id. The environment variable MATPAPER_TZ overrides it.
+    /// </summary>
+    public string TimeZone { get; set; } = "Europe/Berlin";
+}
+
 public class AppConfig
 {
     public DatabaseConfig Database { get; set; } = new();
     public StorageConfig Storage { get; set; } = new();
+    public DisplayConfig Display { get; set; } = new();
 
     /// <summary>Effective inbox staging folder: env MATPAPER_INBOX → config → {dataDir}/inbox.</summary>
     public string ResolveInboxPath(string dataDir)
@@ -63,6 +76,23 @@ public static class AppConfigLoader
         }
 
         var existing = File.ReadAllText(configPath);
-        return JsonSerializer.Deserialize<AppConfig>(existing) ?? new AppConfig();
+        var config = JsonSerializer.Deserialize<AppConfig>(existing) ?? new AppConfig();
+
+        // Write the file back so sections added by a newer version show up with their
+        // defaults and can be edited instead of staying invisible.
+        var normalized = JsonSerializer.Serialize(config, SerializerOptions);
+        if (!string.Equals(normalized, existing.Trim(), StringComparison.Ordinal))
+        {
+            try
+            {
+                File.WriteAllText(configPath, normalized);
+            }
+            catch (IOException)
+            {
+                // read-only config mount: keep running with the values we loaded
+            }
+        }
+
+        return config;
     }
 }

@@ -32,14 +32,14 @@
     </div>
     <div>
         <strong>Started</strong>
-        <div>@Model.Run.StartedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
+        <div>@Fmt.DateTimeSeconds(Model.Run.StartedAt)</div>
     </div>
     <div>
         <strong>Finished</strong>
         <div>
             @if (Model.Run.FinishedAt is { } finished)
             {
-                @($"{finished:yyyy-MM-dd HH:mm:ss} UTC")
+                @Fmt.DateTimeSeconds(finished)
             }
             else
             {

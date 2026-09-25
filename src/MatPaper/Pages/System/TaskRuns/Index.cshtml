@@ -27,7 +27,7 @@
         @foreach (var r in Model.Rows)
         {
             <tr>
-                <td><a href="/System/TaskRuns/Details?id=@r.Id">@r.StartedAt.ToString("yyyy-MM-dd HH:mm")</a></td>
+                <td><a href="/System/TaskRuns/Details?id=@r.Id">@Fmt.DateTime(r.StartedAt)</a></td>
                 <td>@r.Kind</td>
                 <td>@r.TaskName</td>
                 <td>

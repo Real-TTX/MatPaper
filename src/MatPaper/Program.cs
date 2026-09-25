@@ -62,6 +62,7 @@ builder.Services.AddHostedService<DocumentProcessingService>();
 // Import/export task scheduling + runners.
 builder.Services.AddSingleton(appConfig);
 builder.Services.AddSingleton<SecretProtector>();
+builder.Services.AddSingleton<Fmt>();
 builder.Services.AddSingleton<TaskTriggerQueue>();
 builder.Services.AddScoped<ImportRunner>();
 builder.Services.AddScoped<ExportRunner>();

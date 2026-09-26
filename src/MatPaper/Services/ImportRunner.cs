@@ -826,20 +826,29 @@ public sealed class ImportRunner
             .ConfigureAwait(false);
     }
 
-    private static SecureSocketOptions SecureOption(bool useSsl)
+    internal static SecureSocketOptions SecureOption(bool useSsl)
         => useSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable;
 
-    private static Regex? CompileRegex(string? pattern)
+    internal static Regex? CompileRegex(string? pattern)
         => string.IsNullOrWhiteSpace(pattern)
             ? null
             : new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    private static bool MessageMatches(MimeMessage message, MailImportSettings settings, Regex? senderRegex, Regex? subjectRegex)
-    {
-        var from = message.From?.ToString() ?? string.Empty;
-        var to = message.To?.ToString() ?? string.Empty;
-        var subject = message.Subject ?? string.Empty;
+    internal static bool MessageMatches(MimeMessage message, MailImportSettings settings, Regex? senderRegex, Regex? subjectRegex)
+        => HeadersMatch(
+            message.From?.ToString() ?? string.Empty,
+            message.To?.ToString() ?? string.Empty,
+            message.Subject ?? string.Empty,
+            settings, senderRegex, subjectRegex);
 
+    /// <summary>
+    /// The filter rules on their own, so the wizard preview can judge an IMAP summary
+    /// (envelope only, no body download) exactly like the runner judges a full message.
+    /// </summary>
+    internal static bool HeadersMatch(
+        string from, string to, string subject,
+        MailImportSettings settings, Regex? senderRegex, Regex? subjectRegex)
+    {
         // Friendly "contains any of" filters (comma-separated).
         if (!ContainsAny(from, settings.FromFilter))
         {
@@ -912,7 +921,7 @@ public sealed class ImportRunner
         }
     }
 
-    private static IReadOnlyCollection<string> ParseExtensions(string? raw)
+    internal static IReadOnlyCollection<string> ParseExtensions(string? raw)
     {
         var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (string.IsNullOrWhiteSpace(raw))

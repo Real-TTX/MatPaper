@@ -17,36 +17,178 @@
     </div>
 }
 
-<form class="form" method="post">
+@* The wizard walks through type → connection → credentials → source → rules →
+   preview → filing. Steps that do not apply to the chosen type hide themselves
+   (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
+<form class="form wizard" id="import-wizard" method="post"
+      data-browse-url="/System/ImportTasks/Edit?handler=Browse"
+      data-preview-url="/System/ImportTasks/Edit?handler=Preview"
+      data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'
+      data-t-no-match='@L["No items match the current rules."]'
+      data-t-matches='@L["{0} match(es)"]' data-t-scanned='@L["{0} scanned"]'
+      data-t-folders='@L["Folders"]' data-t-shares='@L["Shares"]'>
+    @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Overview"]</h2>
+    <ol class="wizard__steps" id="wizard-steps">
+        <li class="wizard__step" data-goto="1"><span class="wizard__num"></span><span class="wizard__label">@L["Type"]</span></li>
+        <li class="wizard__step" data-goto="2"><span class="wizard__num"></span><span class="wizard__label">@L["Connection"]</span></li>
+        <li class="wizard__step" data-goto="3"><span class="wizard__num"></span><span class="wizard__label">@L["Credentials"]</span></li>
+        <li class="wizard__step" data-goto="4"><span class="wizard__num"></span><span class="wizard__label">@L["Source"]</span></li>
+        <li class="wizard__step" data-goto="5"><span class="wizard__num"></span><span class="wizard__label">@L["Rules"]</span></li>
+        <li class="wizard__step" data-goto="6"><span class="wizard__num"></span><span class="wizard__label">@L["Preview"]</span></li>
+        <li class="wizard__step" data-goto="7"><span class="wizard__num"></span><span class="wizard__label">@L["Filing"]</span></li>
+    </ol>
+
+    @* ---------- 1 Type ---------- *@
+    <section class="wizard__panel" data-step="1">
+        <h2 class="wizard__title">@L["What should be imported?"]</h2>
+
+        <div class="type-tiles">
+            <label class="type-tile">
+                <input type="radio" asp-for="Input.Type" value="2" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                </svg>
+                <span class="type-tile__name">@L["Watch folder"]</span>
+                <span class="type-tile__hint">@L["A folder inside the container, e.g. a scanner drop."]</span>
+            </label>
+            <label class="type-tile">
+                <input type="radio" asp-for="Input.Type" value="3" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2" y="4" width="20" height="7" rx="2" /><rect x="2" y="13" width="20" height="7" rx="2" />
+                    <path d="M6 7.5h.01M6 16.5h.01" />
+                </svg>
+                <span class="type-tile__name">@L["Network share (SMB)"]</span>
+                <span class="type-tile__hint">@L["A NAS share, reached directly over the network."]</span>
+            </label>
+            <label class="type-tile">
+                <input type="radio" asp-for="Input.Type" value="0" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+                </svg>
+                <span class="type-tile__name">@L["IMAP mailbox"]</span>
+                <span class="type-tile__hint">@L["Attachments from a mailbox; folders stay on the server."]</span>
+            </label>
+            <label class="type-tile">
+                <input type="radio" asp-for="Input.Type" value="1" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 10h10M7 14h6" />
+                </svg>
+                <span class="type-tile__name">@L["POP3 mailbox"]</span>
+                <span class="type-tile__hint">@L["Simple mailbox without folders."]</span>
+            </label>
+        </div>
 
         <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Scanner watch folder"]' />
-
-        <mp-field asp-for="Input.Type" kind="select" label='@L["Type"]'>
-            <option value="2">@L["Filesystem (watch folder)"]</option>
-            <option value="3">@L["SMB / CIFS network share"]</option>
-            <option value="0">@L["IMAP mailbox"]</option>
-            <option value="1">@L["POP3 mailbox"]</option>
-        </mp-field>
-
-        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
-
-        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Source"]</h2>
+    @* ---------- 2 Connection ---------- *@
+    <section class="wizard__panel" data-step="2" data-for-type="0,1,3">
+        <h2 class="wizard__title">@L["Where does it connect to?"]</h2>
 
-        @* --- Filesystem --- *@
+        <div data-show-when-field="Input.Type" data-show-when-value="3">
+            <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
+            <div class="form-row">
+                <label asp-for="Input.SmbShare">@L["SMB share"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.SmbShare" placeholder="documents" />
+                    <button class="btn btn--secondary" type="button" data-browse="smb-shares">@L["List shares"]</button>
+                </div>
+                <span class="field-error" asp-validation-for="Input.SmbShare"></span>
+            </div>
+        </div>
+
+        <div data-show-when-field="Input.Type" data-show-when-value="0,1">
+            <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" />
+            <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL"]' />
+            <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
+        </div>
+    </section>
+
+    @* ---------- 3 Credentials ---------- *@
+    <section class="wizard__panel" data-step="3" data-for-type="0,1,3">
+        <h2 class="wizard__title">@L["How does it sign in?"]</h2>
+
+        <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Saved credential"]'
+                  asp-items="Model.CredentialOptions" />
+
+        <div data-show-when-field="Input.CredentialId" data-show-when-value="">
+            <div data-show-when-field="Input.Type" data-show-when-value="3">
+                <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
+                <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
+                <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]'
+                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+            </div>
+            <div data-show-when-field="Input.Type" data-show-when-value="0,1">
+                <mp-field asp-for="Input.Username" label='@L["Username"]' />
+                <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]'
+                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+            </div>
+        </div>
+
+        <mp-button-row>
+            <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
+        </mp-button-row>
+    </section>
+
+    @* ---------- 4 Source ---------- *@
+    <section class="wizard__panel" data-step="4">
+        <h2 class="wizard__title">@L["Which folder should be watched?"]</h2>
+
+        @* Filesystem *@
         <div data-show-when-field="Input.Type" data-show-when-value="2">
-            <mp-field asp-for="Input.SourcePath" label='@L["Source path"]' placeholder="/mnt/scan" />
-            <mp-field asp-for="Input.Pattern" label='@L["Pattern"]' placeholder="*" />
-            <mp-field asp-for="Input.Recursive" kind="checkbox" label='@L["Recursive"]' />
+            <div class="form-row">
+                <label asp-for="Input.SourcePath">@L["Folder"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.SourcePath" placeholder="/mnt/scan" />
+                    <button class="btn btn--secondary" type="button" data-browse="local-folders">@L["Browse…"]</button>
+                </div>
+                <span class="field-error" asp-validation-for="Input.SourcePath"></span>
+            </div>
+            <mp-field asp-for="Input.Recursive" kind="checkbox" label='@L["Include subfolders"]' />
+        </div>
+
+        @* SMB *@
+        <div data-show-when-field="Input.Type" data-show-when-value="3">
+            <div class="form-row">
+                <label asp-for="Input.SmbPath">@L["Folder in share"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.SmbPath" placeholder="inbox/scans" />
+                    <button class="btn btn--secondary" type="button" data-browse="smb-folders">@L["Browse…"]</button>
+                </div>
+                <span class="field-error" asp-validation-for="Input.SmbPath"></span>
+            </div>
+            <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label='@L["Include subfolders"]' />
+        </div>
+
+        @* IMAP *@
+        <div data-show-when-field="Input.Type" data-show-when-value="0">
+            <div class="form-row">
+                <label asp-for="Input.Folder">@L["Mailbox folder"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.Folder" placeholder="INBOX" />
+                    <button class="btn btn--secondary" type="button" data-browse="mail-folders">@L["Show folders…"]</button>
+                </div>
+                <span class="field-error" asp-validation-for="Input.Folder"></span>
+            </div>
+        </div>
+
+        @* POP3 *@
+        <div data-show-when-field="Input.Type" data-show-when-value="1">
+            <p class="form-help">@L["POP3 has no folders — the whole mailbox is checked."]</p>
+        </div>
+    </section>
+
+    @* ---------- 5 Rules ---------- *@
+    <section class="wizard__panel" data-step="5">
+        <h2 class="wizard__title">@L["What should be picked up?"]</h2>
+
+        @* Files *@
+        <div data-show-when-field="Input.Type" data-show-when-value="2">
+            <mp-field asp-for="Input.Pattern" label='@L["File pattern"]' placeholder="*" />
             <mp-field asp-for="Input.PostAction" kind="select" label='@L["After import"]'>
                 <option value="none">@L["Do nothing"]</option>
                 <option value="delete">@L["Delete"]</option>
@@ -56,22 +198,9 @@
                       show-when-field="Input.PostAction" show-when-value="move" placeholder="/mnt/scan/done" />
         </div>
 
-        @* --- Saved credential (mail + SMB) --- *@
-        <div data-show-when-field="Input.Type" data-show-when-value="0,1,3">
-            <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Saved credential"]'
-                      asp-items="Model.CredentialOptions" />
-        </div>
-
-        @* --- SMB / CIFS --- *@
+        @* SMB *@
         <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
-            <mp-field asp-for="Input.SmbShare" label='@L["SMB share"]' placeholder="documents" />
-            <mp-field asp-for="Input.SmbPath" label='@L["Path in share"]' placeholder="inbox/scans" />
-            <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' />
-            <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
-            <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]' />
-            <mp-field asp-for="Input.SmbPattern" label='@L["Pattern"]' placeholder="*" />
-            <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label='@L["Recursive"]' />
+            <mp-field asp-for="Input.SmbPattern" label='@L["File pattern"]' placeholder="*" />
             <mp-field asp-for="Input.SmbPostAction" kind="select" label='@L["After import"]'>
                 <option value="none">@L["Leave on share"]</option>
                 <option value="delete">@L["Delete"]</option>
@@ -81,16 +210,8 @@
                       show-when-field="Input.SmbPostAction" show-when-value="move" placeholder="imported" />
         </div>
 
-        @* --- Mail (IMAP / POP3) --- *@
+        @* Mail *@
         <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" />
-            <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
-            <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL"]' />
-            <mp-field asp-for="Input.Username" label='@L["Username"]' />
-            <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' />
-            <mp-field asp-for="Input.Folder" label='@L["Folder"]'
-                      show-when-field="Input.Type" show-when-value="0" />
-
             <mp-field asp-for="Input.MailFilterMode" kind="select" label='@L["Messages"]'>
                 <option value="all">@L["Import all"]</option>
                 <option value="filter">@L["Filter…"]</option>
@@ -112,29 +233,47 @@
                 <option value="delete">@L["Delete"]</option>
                 <option value="none">@L["Leave on server"]</option>
             </mp-field>
-            <mp-field asp-for="Input.MailMoveToFolder" label='@L["Move to folder"]'
-                      show-when-field="Input.MailPostAction" show-when-value="move" placeholder="Archive/Imported" />
+            <div class="form-row" data-show-when-field="Input.MailPostAction" data-show-when-value="move">
+                <label asp-for="Input.MailMoveToFolder">@L["Move to folder"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.MailMoveToFolder" placeholder="Archive/Imported" />
+                    <button class="btn btn--secondary" type="button" data-browse="mail-folders"
+                            data-browse-target="Input_MailMoveToFolder">@L["Show folders…"]</button>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Defaults for imported documents"]</h2>
+    @* ---------- 6 Preview ---------- *@
+    <section class="wizard__panel" data-step="6">
+        <h2 class="wizard__title">@L["What would be imported right now?"]</h2>
+        <p class="form-help">@L["A dry run: nothing is imported, moved, deleted or marked as read."]</p>
+
+        <mp-button-row>
+            <mp-button variant="secondary" type="button" id="preview-run">@L["Run preview"]</mp-button>
+        </mp-button-row>
+
+        <div class="preview" id="preview-result" hidden></div>
+    </section>
+
+    @* ---------- 7 Filing ---------- *@
+    <section class="wizard__panel" data-step="7">
+        <h2 class="wizard__title">@L["Where do the documents go?"]</h2>
 
         <mp-field asp-for="Input.StorageLocationId" kind="select" label='@L["Storage location"]'
                   asp-items="Model.StorageLocationOptions" />
+        <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]'
+                  asp-items="Model.UserOptions" />
+        <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
+        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
+
+        <h3 class="wizard__subtitle">@L["Preset metadata"]</h3>
         <mp-field asp-for="Input.CorrespondentId" kind="select" label='@L["Correspondent"]'
                   asp-items="Model.CorrespondentOptions" />
         <mp-field asp-for="Input.DocumentTypeId" kind="select" label='@L["Document type"]'
                   asp-items="Model.DocumentTypeOptions" />
         <mp-field asp-for="Input.ProjectId" kind="select" label='@L["Project"]'
                   asp-items="Model.ProjectOptions" />
-
-        <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]'
-                  asp-items="Model.UserOptions" />
-
-        <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
-
-        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
 
         @if (Model.TagOptions.Count > 0)
         {
@@ -151,45 +290,40 @@
                 </div>
             </div>
         }
+
+        <h3 class="wizard__subtitle">@L["When does it run?"]</h3>
+        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
+        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
     </section>
 
-    <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/System/ImportTasks">@L["Back"]</mp-button>
+    <div class="wizard__nav">
+        <button class="btn btn--secondary" type="button" id="wizard-back">@L["Back"]</button>
+        <button class="btn btn--primary" type="button" id="wizard-next">@L["Next"]</button>
+        <span class="wizard__nav-spacer"></span>
+        <button class="btn btn--primary" type="submit">@L["Save"]</button>
+        <a class="btn btn--secondary" href="/System/ImportTasks">@L["Cancel"]</a>
         @if (Model.IsEdit)
         {
             <mp-button variant="secondary" type="submit" handler="Run">@L["Run now"]</mp-button>
-        }
-        <span data-show-when-field="Input.Type" data-show-when-value="0,1,3">
-            <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
-        </span>
-        <mp-button-spacer />
-        @if (Model.IsEdit)
-        {
             <mp-button variant="danger" type="submit" handler="Delete"
                        confirm='@L["Delete this import task? This cannot be undone."]'>@L["Delete"]</mp-button>
         }
-    </mp-button-row>
+    </div>
 </form>
 
+@* Source picker, filled from the Browse handler. *@
+<dialog class="browse-dialog" id="browse-dialog">
+    <div class="browse-dialog__header">
+        <strong class="browse-dialog__title"></strong>
+        <button type="button" class="icon-btn browse-dialog__close" aria-label='@L["Close"]'>✕</button>
+    </div>
+    <div class="browse-dialog__path"></div>
+    <ul class="browse-dialog__list"></ul>
+    <div class="browse-dialog__footer">
+        <button type="button" class="btn btn--primary browse-dialog__use">@L["Use this folder"]</button>
+    </div>
+</dialog>
+
 @section Scripts {
-    <script>
-        // POP3 has no "seen" flag, so hide the "Mark seen" post-action for POP3.
-        (function () {
-            var type = document.querySelector('[name="Input.Type"]');
-            var post = document.querySelector('[name="Input.MailPostAction"]');
-            if (!type || !post) { return; }
-            var imapOnly = [post.querySelector('option[value="markseen"]'), post.querySelector('option[value="move"]')];
-            function sync() {
-                var isPop3 = type.value === "1";
-                imapOnly.forEach(function (o) { if (o) { o.hidden = isPop3; o.disabled = isPop3; } });
-                if (isPop3 && (post.value === "markseen" || post.value === "move")) {
-                    post.value = "none";
-                    post.dispatchEvent(new Event("change", { bubbles: true }));
-                }
-            }
-            type.addEventListener("change", sync);
-            sync();
-        })();
-    </script>
+    <script src="~/js/import-wizard.js" asp-append-version="true"></script>
 }

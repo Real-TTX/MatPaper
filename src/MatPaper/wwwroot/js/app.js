@@ -130,14 +130,23 @@
     // data-show-when-value is shown only while the referenced input's current
     // value matches (comma-separated list allowed; checkboxes report
     // "true"/"false"). Used by the mp-field control for conditional inputs.
-    function controllerValue(el) {
-        if (!el) {
+    function controllerValue(controls) {
+        if (!controls || !controls.length) {
             return "";
         }
-        if (el.type === "checkbox") {
-            return el.checked ? "true" : "false";
+        // A radio group reports the checked option, a checkbox "true"/"false".
+        if (controls[0].type === "radio") {
+            for (var i = 0; i < controls.length; i++) {
+                if (controls[i].checked) {
+                    return controls[i].value;
+                }
+            }
+            return "";
         }
-        return el.value;
+        if (controls[0].type === "checkbox") {
+            return controls[0].checked ? "true" : "false";
+        }
+        return controls[0].value;
     }
 
     function wireDependentFields() {
@@ -147,16 +156,22 @@
                 var form = row.closest ? row.closest("form") : null;
                 var scope = form || document;
                 var name = row.getAttribute("data-show-when-field");
-                var ctrl = scope.querySelector('[name="' + name + '"]') || document.getElementById(name);
-                if (!ctrl) {
-                    return;
+                var controls = scope.querySelectorAll('[name="' + name + '"]');
+                if (!controls.length) {
+                    var byId = document.getElementById(name);
+                    if (!byId) {
+                        return;
+                    }
+                    controls = [byId];
                 }
                 var wanted = (row.getAttribute("data-show-when-value") || "").split(",");
                 function evaluate() {
-                    row.style.display = wanted.indexOf(controllerValue(ctrl)) !== -1 ? "" : "none";
+                    row.style.display = wanted.indexOf(controllerValue(controls)) !== -1 ? "" : "none";
                 }
-                ctrl.addEventListener("change", evaluate);
-                ctrl.addEventListener("input", evaluate);
+                for (var c = 0; c < controls.length; c++) {
+                    controls[c].addEventListener("change", evaluate);
+                    controls[c].addEventListener("input", evaluate);
+                }
                 evaluate();
             })(rows[i]);
         }

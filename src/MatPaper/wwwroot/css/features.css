@@ -528,3 +528,259 @@
     width: 14px;
     height: 14px;
 }
+
+/* ==========================================================================
+   Import wizard (System / Import tasks)
+   ========================================================================== */
+.wizard__steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+}
+
+.wizard__step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.wizard__step:hover {
+    color: var(--color-text);
+}
+
+.wizard__step.is-active {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.wizard__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--color-surface-alt);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wizard__step.is-active .wizard__num {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.wizard__step.is-done .wizard__num {
+    background: var(--color-primary-soft, var(--color-surface-alt));
+    color: var(--color-primary);
+}
+
+.wizard__panel {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    padding: 1.25rem 1.35rem;
+}
+
+.wizard__title {
+    margin: 0 0 1.1rem;
+    font-size: 1.05rem;
+}
+
+.wizard__subtitle {
+    margin: 1.6rem 0 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.95rem;
+}
+
+.wizard__nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.wizard__nav-spacer {
+    margin-left: auto;
+}
+
+/* Type picker: one tile per import source. */
+.type-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.type-tile {
+    position: relative;
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    cursor: pointer;
+}
+
+.type-tile:hover {
+    border-color: var(--color-primary);
+}
+
+.type-tile input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.type-tile svg {
+    grid-row: 1 / span 2;
+    width: 26px;
+    height: 26px;
+    color: var(--color-text-muted);
+}
+
+.type-tile__name {
+    font-weight: 600;
+}
+
+.type-tile__hint {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
+.type-tile:has(input:checked) {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.type-tile:has(input:checked) svg {
+    color: var(--color-primary);
+}
+
+/* Text field with a trailing action button (Browse…, List shares). */
+.input-with-action {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-with-action .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.input-with-action .btn {
+    flex: 0 0 auto;
+}
+
+/* Source picker dialog. */
+.browse-dialog {
+    margin: auto;
+    width: min(560px, 92vw);
+    max-height: 80vh;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.browse-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.browse-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.browse-dialog__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.browse-dialog__path {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    word-break: break-all;
+}
+
+.browse-dialog__list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0.35rem 0;
+}
+
+.browse-dialog__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.6rem;
+}
+
+.browse-dialog__pick {
+    flex: 1 1 auto;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 0.5rem 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.browse-dialog__pick:hover {
+    background: var(--color-surface-alt);
+}
+
+.browse-dialog__empty,
+.browse-dialog__error {
+    padding: 0.9rem 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+}
+
+.browse-dialog__error {
+    color: var(--color-danger, #c0392b);
+}
+
+.browse-dialog__footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--color-border);
+    text-align: right;
+}
+
+/* Dry-run preview. */
+.preview {
+    margin-top: 1rem;
+}
+
+.preview__summary {
+    margin: 0 0 0.6rem;
+    font-size: 0.9rem;
+}

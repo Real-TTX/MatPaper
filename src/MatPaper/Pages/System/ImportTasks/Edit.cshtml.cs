@@ -16,23 +16,29 @@ public class EditModel : PageModel
     private readonly SecretProtector _secrets;
     private readonly TaskTriggerQueue _queue;
     private readonly ImportRunner _runner;
+    private readonly ImportBrowser _browser;
     private readonly CurrentUser _currentUser;
     private readonly IStringLocalizer<SharedResource> _l;
+    private readonly Fmt _fmt;
 
     public EditModel(
         AppDbContext db,
         SecretProtector secrets,
         TaskTriggerQueue queue,
         ImportRunner runner,
+        ImportBrowser browser,
         CurrentUser currentUser,
-        IStringLocalizer<SharedResource> l)
+        IStringLocalizer<SharedResource> l,
+        Fmt fmt)
     {
         _db = db;
         _secrets = secrets;
         _queue = queue;
         _runner = runner;
+        _browser = browser;
         _currentUser = currentUser;
         _l = l;
+        _fmt = fmt;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -223,6 +229,110 @@ public class EditModel : PageModel
         return RedirectToPage("Edit", new { id = Id });
     }
 
+    /// <summary>
+    /// Lists what the chosen source offers (mail folders, SMB shares/folders, local
+    /// subfolders) so the wizard can show a picker instead of a blank text box.
+    /// Returns JSON; reads only, never changes the source.
+    /// </summary>
+    public async Task<IActionResult> OnPostBrowseAsync(string scope, string? path, CancellationToken ct)
+    {
+        try
+        {
+            IReadOnlyList<BrowseEntry> entries = scope switch
+            {
+                "mail-folders" => await _browser.ListMailFoldersAsync(
+                    BuildMailSettings(await StoredMailPasswordAsync(ct)), PlaintextOrNull(Input.Password), ct),
+                "smb-shares" => await _browser.ListSmbSharesAsync(
+                    BuildSmbSettings(await StoredSmbPasswordAsync(ct)), PlaintextOrNull(Input.SmbPassword), ct),
+                "smb-folders" => await _browser.ListSmbFoldersAsync(
+                    BuildSmbSettings(await StoredSmbPasswordAsync(ct)), PlaintextOrNull(Input.SmbPassword), path, ct),
+                "local-folders" => await _browser.ListLocalFoldersAsync(path, Input.Pattern, ct),
+                _ => Array.Empty<BrowseEntry>()
+            };
+
+            return new JsonResult(new
+            {
+                ok = true,
+                entries = entries.Select(e => new { path = e.Path, name = e.Name, count = e.ItemCount, hasChildren = e.HasChildren })
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { ok = false, error = ex.Message });
+        }
+    }
+
+    /// <summary>Shows which items the import would pick up right now (read-only dry run).</summary>
+    public async Task<IActionResult> OnPostPreviewAsync(CancellationToken ct)
+    {
+        PreviewResult result = Input.Type switch
+        {
+            (int)ImportTaskType.Filesystem => await _browser.PreviewLocalAsync(BuildFilesystemSettings(), ct),
+            (int)ImportTaskType.Smb => await _browser.PreviewSmbAsync(
+                BuildSmbSettings(await StoredSmbPasswordAsync(ct)), PlaintextOrNull(Input.SmbPassword), ct),
+            _ => await _browser.PreviewMailAsync(
+                BuildMailSettings(await StoredMailPasswordAsync(ct)),
+                Input.Type == (int)ImportTaskType.Pop3,
+                PlaintextOrNull(Input.Password),
+                ct)
+        };
+
+        return new JsonResult(new
+        {
+            ok = result.Ok,
+            error = result.Error,
+            total = result.TotalMatches,
+            scanned = result.Scanned,
+            items = result.Items.Select(i => new
+            {
+                title = i.Title,
+                detail = i.Detail,
+                date = i.Date.HasValue ? _fmt.DateTime(i.Date) : null,
+                extra = i.Extra
+            })
+        });
+    }
+
+    private static string? PlaintextOrNull(string? typed) => string.IsNullOrEmpty(typed) ? null : typed;
+
+    /// <summary>The stored (protected) mail password, so a test/browse works without retyping it.</summary>
+    private async Task<string> StoredMailPasswordAsync(CancellationToken ct)
+    {
+        if (!IsEdit || !string.IsNullOrEmpty(Input.Password))
+        {
+            return string.Empty;
+        }
+
+        var stored = await _db.ImportTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == Id && t.UpdateState != UpdateState.Deleted, ct);
+
+        return stored != null && stored.Type != ImportTaskType.Filesystem && stored.Type != ImportTaskType.Smb
+            ? TaskSettingsJson.Read<MailImportSettings>(stored.SettingsJson).ProtectedPassword
+            : string.Empty;
+    }
+
+    /// <summary>The stored (protected) SMB password, so a test/browse works without retyping it.</summary>
+    private async Task<string> StoredSmbPasswordAsync(CancellationToken ct)
+    {
+        if (!IsEdit || !string.IsNullOrEmpty(Input.SmbPassword))
+        {
+            return string.Empty;
+        }
+
+        var stored = await _db.ImportTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == Id && t.UpdateState != UpdateState.Deleted, ct);
+
+        return stored != null && stored.Type == ImportTaskType.Smb
+            ? TaskSettingsJson.Read<SmbImportSettings>(stored.SettingsJson).ProtectedPassword
+            : string.Empty;
+    }
+
     public async Task<IActionResult> OnPostTestAsync(CancellationToken ct)
     {
         SetBreadcrumb();
@@ -363,23 +473,7 @@ public class EditModel : PageModel
     {
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
-            var fs = new FilesystemImportSettings
-            {
-                SourcePath = (Input.SourcePath ?? string.Empty).Trim(),
-                Pattern = string.IsNullOrWhiteSpace(Input.Pattern) ? "*" : Input.Pattern.Trim(),
-                Recursive = Input.Recursive,
-                PostAction = Input.PostAction,
-                MoveToPath = string.IsNullOrWhiteSpace(Input.MoveToPath) ? null : Input.MoveToPath.Trim(),
-                StorageLocationId = Input.StorageLocationId,
-                CorrespondentId = Input.CorrespondentId,
-                DocumentTypeId = Input.DocumentTypeId,
-                ProjectId = Input.ProjectId,
-                TagIds = TagIds.ToList(),
-                SkipInbox = Input.SkipInbox,
-                OwnerUserId = Input.OwnerUserId,
-                IsCommon = Input.IsCommon
-            };
-            return TaskSettingsJson.Write(fs);
+            return TaskSettingsJson.Write(BuildFilesystemSettings());
         }
 
         if (Input.Type == (int)ImportTaskType.Smb)
@@ -399,6 +493,26 @@ public class EditModel : PageModel
 
         var mail = BuildMailSettings(protectedPassword);
         return TaskSettingsJson.Write(mail);
+    }
+
+    private FilesystemImportSettings BuildFilesystemSettings()
+    {
+        return new FilesystemImportSettings
+        {
+            SourcePath = (Input.SourcePath ?? string.Empty).Trim(),
+            Pattern = string.IsNullOrWhiteSpace(Input.Pattern) ? "*" : Input.Pattern.Trim(),
+            Recursive = Input.Recursive,
+            PostAction = Input.PostAction,
+            MoveToPath = string.IsNullOrWhiteSpace(Input.MoveToPath) ? null : Input.MoveToPath.Trim(),
+            StorageLocationId = Input.StorageLocationId,
+            CorrespondentId = Input.CorrespondentId,
+            DocumentTypeId = Input.DocumentTypeId,
+            ProjectId = Input.ProjectId,
+            TagIds = TagIds.ToList(),
+            SkipInbox = Input.SkipInbox,
+            OwnerUserId = Input.OwnerUserId,
+            IsCommon = Input.IsCommon
+        };
     }
 
     private SmbImportSettings BuildSmbSettings(string protectedPassword)

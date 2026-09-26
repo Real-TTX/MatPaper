@@ -75,6 +75,136 @@ public sealed class SmbSession : IDisposable
     public static string Norm(string? path)
         => (path ?? string.Empty).Trim().Replace('/', '\\').Trim('\\');
 
+    /// <summary>
+    /// Lists the shares a server offers (for the import wizard's share picker). Needs a
+    /// login but no tree connect, so it works before a share has been chosen.
+    /// </summary>
+    public static IReadOnlyList<string> ListShares(string host, string? domain, string username, string password)
+    {
+        var client = new SMB2Client();
+        try
+        {
+            bool connected;
+            try
+            {
+                connected = client.Connect(host, SMBTransportType.DirectTCPTransport);
+            }
+            catch (Exception ex)
+            {
+                throw new IOException($"Cannot reach SMB host '{host}': {ex.Message}", ex);
+            }
+
+            if (!connected)
+            {
+                throw new IOException($"Cannot reach SMB host '{host}'.");
+            }
+
+            var login = client.Login(domain ?? string.Empty, username, password);
+            if (login != NTStatus.STATUS_SUCCESS)
+            {
+                throw new IOException($"SMB login failed ({login}).");
+            }
+
+            var shares = client.ListShares(out var status);
+            if (status != NTStatus.STATUS_SUCCESS || shares is null)
+            {
+                throw new IOException($"The server did not return its share list ({status}).");
+            }
+
+            // Hide the administrative shares; they are never an import source.
+            return shares
+                .Where(s => !s.EndsWith('$'))
+                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        finally
+        {
+            try { client.Logoff(); } catch { /* best effort */ }
+            try { client.Disconnect(); } catch { /* best effort */ }
+        }
+    }
+
+    /// <summary>Immediate subfolder names of <paramref name="path"/> (one level, for the folder picker).</summary>
+    public IReadOnlyList<string> ListDirectories(string? path)
+    {
+        var dir = Norm(path);
+        var results = new List<string>();
+
+        var status = _store.CreateFile(out var handle, out _, dir,
+            AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
+            ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN,
+            CreateOptions.FILE_DIRECTORY_FILE, null);
+        if (status != NTStatus.STATUS_SUCCESS)
+        {
+            throw new DirectoryNotFoundException($"SMB folder '{dir}' does not exist on the share.");
+        }
+
+        try
+        {
+            _store.QueryDirectory(out var list, handle, "*", FileInformationClass.FileDirectoryInformation);
+            foreach (var info in list)
+            {
+                var entry = (FileDirectoryInformation)info;
+                if (entry.FileName is "." or ".." )
+                {
+                    continue;
+                }
+
+                if ((entry.FileAttributes & SMBLibrary.FileAttributes.Directory) != 0)
+                {
+                    results.Add(entry.FileName);
+                }
+            }
+        }
+        finally
+        {
+            _store.CloseFile(handle);
+        }
+
+        results.Sort(StringComparer.OrdinalIgnoreCase);
+        return results;
+    }
+
+    /// <summary>Number of files directly in <paramref name="path"/> that match the pattern (for the picker).</summary>
+    public int CountFiles(string? path, string? pattern)
+    {
+        var dir = Norm(path);
+        var count = 0;
+
+        var status = _store.CreateFile(out var handle, out _, dir,
+            AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
+            ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN,
+            CreateOptions.FILE_DIRECTORY_FILE, null);
+        if (status != NTStatus.STATUS_SUCCESS)
+        {
+            return 0;
+        }
+
+        try
+        {
+            _store.QueryDirectory(out var list, handle, "*", FileInformationClass.FileDirectoryInformation);
+            foreach (var info in list)
+            {
+                var entry = (FileDirectoryInformation)info;
+                if (entry.FileName is "." or ".." )
+                {
+                    continue;
+                }
+
+                if ((entry.FileAttributes & SMBLibrary.FileAttributes.Directory) == 0 && MatchPattern(entry.FileName, pattern))
+                {
+                    count++;
+                }
+            }
+        }
+        finally
+        {
+            _store.CloseFile(handle);
+        }
+
+        return count;
+    }
+
     // ----- Listing ----------------------------------------------------------
 
     public IReadOnlyList<string> ListFiles(string startPath, string? pattern, bool recursive)

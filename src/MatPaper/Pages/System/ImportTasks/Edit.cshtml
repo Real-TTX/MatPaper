@@ -4,19 +4,6 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Edit"].Value : L["System / Import tasks / New"].Value;
 }
 
-@if (TempData["TaskMessage"] is string queued && !string.IsNullOrEmpty(queued))
-{
-    <div class="form-summary">@queued</div>
-}
-
-@if (!string.IsNullOrEmpty(Model.Notice))
-{
-    <div class="form-summary">
-        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? L["OK"].Value : L["Failed"].Value)</span>
-        @Model.Notice
-    </div>
-}
-
 @* The wizard walks through type → connection → credentials → source → rules →
    preview → filing. Steps that do not apply to the chosen type hide themselves
    (see import-wizard.js); everything stays one form, so Save works from anywhere. *@

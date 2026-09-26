@@ -914,3 +914,69 @@ input[type="color"].form-control {
     border: 0;
     background: var(--color-surface-alt);
 }
+
+/* ==========================================================================
+   Notice — the page-level result message (see Pages/Shared/_Notice.cshtml).
+   .form-summary stays reserved for validation errors.
+   ========================================================================== */
+.notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 1rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-text-muted);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-size: 0.9rem;
+}
+
+.notice__icon {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    color: var(--color-text-muted);
+}
+
+.notice__text {
+    min-width: 0;
+    word-break: break-word;
+}
+
+.notice--ok {
+    border-left-color: var(--color-ok, #2f9e44);
+    background: var(--color-ok-soft, var(--color-surface));
+}
+
+.notice--ok .notice__icon {
+    color: var(--color-ok, #2f9e44);
+}
+
+.notice--info {
+    border-left-color: var(--color-primary);
+    background: var(--color-hover);
+}
+
+.notice--info .notice__icon {
+    color: var(--color-primary);
+}
+
+.notice--warn {
+    border-left-color: var(--color-warn, #e8a33d);
+    background: var(--color-warn-soft, var(--color-surface));
+}
+
+.notice--warn .notice__icon {
+    color: var(--color-warn, #e8a33d);
+}
+
+.notice--danger {
+    border-left-color: var(--color-danger, #c0392b);
+    background: var(--color-danger-soft, var(--color-surface));
+}
+
+.notice--danger .notice__icon {
+    color: var(--color-danger, #c0392b);
+}

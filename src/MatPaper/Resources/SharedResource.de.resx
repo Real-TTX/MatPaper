@@ -65,13 +65,20 @@
 
   <data name="— Auto-detect —" xml:space="preserve"><value>— Automatisch erkennen —</value></data>
   <data name="— None —" xml:space="preserve"><value>— Keine —</value></data>
+  <data name="&quot;{0}&quot; could not be stored." xml:space="preserve"><value>„{0}“ konnte nicht gespeichert werden.</value></data>
+  <data name="&quot;{0}&quot; filed." xml:space="preserve"><value>„{0}“ abgelegt.</value></data>
+  <data name="&quot;{0}&quot; is still being processed — try again in a moment." xml:space="preserve"><value>„{0}“ wird noch verarbeitet — bitte gleich erneut versuchen.</value></data>
+  <data name="&quot;{0}&quot; was skipped as a duplicate of an existing document." xml:space="preserve"><value>„{0}“ wurde als Duplikat eines vorhandenen Dokuments übersprungen.</value></data>
   <data name="(no log)" xml:space="preserve"><value>(kein Protokoll)</value></data>
   <data name="(optional)" xml:space="preserve"><value>(optional)</value></data>
   <data name="{0} added" xml:space="preserve"><value>{0} hinzugefügt</value></data>
+  <data name="{0} document(s) added to your inbox" xml:space="preserve"><value>{0} Dokument(e) zum Posteingang hinzugefügt</value></data>
   <data name="{0} duplicate(s) skipped" xml:space="preserve"><value>{0} Duplikat(e) übersprungen</value></data>
   <data name="{0} failed" xml:space="preserve"><value>{0} fehlgeschlagen</value></data>
+  <data name="{0} filed" xml:space="preserve"><value>{0} abgelegt</value></data>
   <data name="{0} match(es)" xml:space="preserve"><value>{0} Treffer</value></data>
   <data name="{0} scanned" xml:space="preserve"><value>{0} geprüft</value></data>
+  <data name="{0} still processing" xml:space="preserve"><value>{0} noch in Verarbeitung</value></data>
   <data name="30 days" xml:space="preserve"><value>30 Tage</value></data>
   <data name="7 days" xml:space="preserve"><value>7 Tage</value></data>
   <data name="90 days" xml:space="preserve"><value>90 Tage</value></data>
@@ -146,6 +153,7 @@
   <data name="Confirm &amp; file" xml:space="preserve"><value>Bestätigen &amp; ablegen</value></data>
   <data name="Confirm all" xml:space="preserve"><value>Alle bestätigen</value></data>
   <data name="Confirm password" xml:space="preserve"><value>Passwort bestätigen</value></data>
+  <data name="Connected to {0}." xml:space="preserve"><value>Verbunden mit {0}.</value></data>
   <data name="Connection" xml:space="preserve"><value>Verbindung</value></data>
   <data name="Content hash" xml:space="preserve"><value>Inhalts-Hash</value></data>
   <data name="Correspondent" xml:space="preserve"><value>Korrespondent</value></data>
@@ -184,6 +192,7 @@
   <data name="Discover files on disk under this location and add unknown ones to the inbox." xml:space="preserve"><value>Dateien unter diesem Speicherort auf der Platte finden und unbekannte dem Posteingang hinzufügen.</value></data>
   <data name="Dismiss selected" xml:space="preserve"><value>Auswahl verwerfen</value></data>
   <data name="Dismiss the selected inbox items? They will be hidden from the inbox." xml:space="preserve"><value>Die ausgewählten Posteingangs-Einträge verwerfen? Sie werden im Posteingang ausgeblendet.</value></data>
+  <data name="Dismissed {0} item(s)." xml:space="preserve"><value>{0} Eintrag/Einträge verworfen.</value></data>
   <data name="Display name" xml:space="preserve"><value>Anzeigename</value></data>
   <data name="Display name is required." xml:space="preserve"><value>Anzeigename ist erforderlich.</value></data>
   <data name="Do nothing" xml:space="preserve"><value>Nichts tun</value></data>
@@ -224,6 +233,7 @@
   <data name="Expires" xml:space="preserve"><value>Läuft ab</value></data>
   <data name="Expires in" xml:space="preserve"><value>Läuft ab in</value></data>
   <data name="Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Export task &quot;{0}&quot; queued to run now." xml:space="preserve"><value>Export-Regel „{0}“ wurde zur sofortigen Ausführung eingereiht.</value></data>
   <data name="Export tasks" xml:space="preserve"><value>Sicherungen</value></data>
   <data name="Failed" xml:space="preserve"><value>Fehlgeschlagen</value></data>
   <data name="File all processed documents with their current suggestions?" xml:space="preserve"><value>Alle verarbeiteten Dokumente mit den aktuellen Vorschlägen ablegen?</value></data>
@@ -238,6 +248,7 @@
   <data name="Filter…" xml:space="preserve"><value>Filtern…</value></data>
   <data name="Finished" xml:space="preserve"><value>Beendet</value></data>
   <data name="Folder" xml:space="preserve"><value>Ordner</value></data>
+  <data name="Folder {0} is available." xml:space="preserve"><value>Ordner {0} ist verfügbar.</value></data>
   <data name="Folder in share" xml:space="preserve"><value>Ordner in der Freigabe</value></data>
   <data name="Folders" xml:space="preserve"><value>Ordner</value></data>
   <data name="Friday" xml:space="preserve"><value>Freitag</value></data>
@@ -256,6 +267,7 @@
   <data name="Import inbox" xml:space="preserve"><value>Speicher-Scan</value></data>
   <data name="Import selected" xml:space="preserve"><value>Auswahl importieren</value></data>
   <data name="Import tasks" xml:space="preserve"><value>Import-Regeln</value></data>
+  <data name="Imported {0}, {1} duplicate(s) dismissed, {2} error(s)." xml:space="preserve"><value>{0} importiert, {1} Duplikat(e) verworfen, {2} Fehler.</value></data>
   <data name="Inactive" xml:space="preserve"><value>Inaktiv</value></data>
   <data name="Inbox" xml:space="preserve"><value>Posteingang</value></data>
   <data name="Inbox (not filed yet)" xml:space="preserve"><value>Posteingang (noch nicht abgelegt)</value></data>
@@ -358,7 +370,6 @@
   <data name="Nothing found." xml:space="preserve"><value>Nichts gefunden.</value></data>
   <data name="OCR failed" xml:space="preserve"><value>OCR fehlgeschlagen</value></data>
   <data name="OCR status" xml:space="preserve"><value>OCR-Status</value></data>
-  <data name="OK" xml:space="preserve"><value>OK</value></data>
   <data name="Oldest first" xml:space="preserve"><value>Älteste zuerst</value></data>
   <data name="On day {0} of each month at {1}" xml:space="preserve"><value>Am {0}. jedes Monats um {1}</value></data>
   <data name="One level up" xml:space="preserve"><value>Eine Ebene höher</value></data>
@@ -374,6 +385,7 @@
   <data name="Owner" xml:space="preserve"><value>Besitzer</value></data>
   <data name="Pages" xml:space="preserve"><value>Seiten</value></data>
   <data name="Password" xml:space="preserve"><value>Passwort</value></data>
+  <data name="Password must be at least {0} characters." xml:space="preserve"><value>Das Passwort muss mindestens {0} Zeichen lang sein.</value></data>
   <data name="Passwords do not match." xml:space="preserve"><value>Die Passwörter stimmen nicht überein.</value></data>
   <data name="Path" xml:space="preserve"><value>Pfad</value></data>
   <data name="Path template" xml:space="preserve"><value>Pfadvorlage</value></data>
@@ -437,6 +449,7 @@
   <data name="Scan now" xml:space="preserve"><value>Jetzt scannen</value></data>
   <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
   <data name="Scan storage locations and import discovered files" xml:space="preserve"><value>Speicherorte scannen und gefundene Dateien importieren</value></data>
+  <data name="Scanned {0}, added {1} new, {2} already known." xml:space="preserve"><value>{0} gescannt, {1} neu hinzugefügt, {2} bereits bekannt.</value></data>
   <data name="Schedule" xml:space="preserve"><value>Zeitplan</value></data>
   <data name="Scheduled database and document backups" xml:space="preserve"><value>Geplante Datenbank- und Dokumentsicherungen</value></data>
   <data name="Scheduled imports from folders and mailboxes" xml:space="preserve"><value>Geplante Importe aus Ordnern und Postfächern</value></data>
@@ -520,6 +533,7 @@
   <data name="Test connection" xml:space="preserve"><value>Verbindung testen</value></data>
   <data name="That name is already in use." xml:space="preserve"><value>Dieser Name wird bereits verwendet.</value></data>
   <data name="That username is already in use." xml:space="preserve"><value>Dieser Benutzername wird bereits verwendet.</value></data>
+  <data name="The document file could not be moved: {0} No changes were saved." xml:space="preserve"><value>Die Dokumentdatei konnte nicht verschoben werden: {0} Es wurden keine Änderungen gespeichert.</value></data>
   <data name="The document is still being processed — try confirming again in a moment." xml:space="preserve"><value>Das Dokument wird noch verarbeitet — bitte gleich erneut bestätigen.</value></data>
   <data name="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location." xml:space="preserve"><value>Die Datei bleibt im Posteingang, bis sie bestätigt wird; danach wird sie am gewählten Speicherort abgelegt.</value></data>
   <data name="The photos could not be converted into a PDF. Please try again with different images." xml:space="preserve"><value>Die Fotos konnten nicht in ein PDF umgewandelt werden. Bitte mit anderen Bildern erneut versuchen.</value></data>

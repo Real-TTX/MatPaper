@@ -9,17 +9,9 @@
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title or correspondent"]' />
 </mp-toolbar>
 
-@if (TempData["InboxMessage"] is string inboxMessage && !string.IsNullOrEmpty(inboxMessage))
-{
-    <div class="form-summary" style="color:var(--color-text)">@inboxMessage</div>
-}
-@if (TempData["InboxError"] is string inboxError && !string.IsNullOrEmpty(inboxError))
-{
-    <div class="form-summary">@inboxError</div>
-}
 @if (!Model.HasStorage && Model.TotalCount > 0)
 {
-    <div class="form-summary">
+    <div class="notice notice--warn">
         @L["No storage location configured — documents can't be filed yet."]
         @if (Model.IsAdmin)
         {
@@ -27,7 +19,7 @@
         }
     </div>
 }
-<div id="inbox-refresh" class="form-summary" style="color:var(--color-text)" hidden>
+<div id="inbox-refresh" class="notice notice--info" hidden>
     @L["Processing finished"] — <a href="">@L["reload to see the suggestions."]</a>
 </div>
 

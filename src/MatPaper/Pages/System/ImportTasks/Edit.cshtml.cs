@@ -59,9 +59,6 @@ public class EditModel : PageModel
 
     public bool IsEdit => Id != 0;
 
-    public string? Notice { get; private set; }
-    public bool NoticeOk { get; private set; }
-
     // Option lists.
     public List<SelectListItem> StorageLocationOptions { get; private set; } = new();
     public List<SelectListItem> CorrespondentOptions { get; private set; } = new();
@@ -231,7 +228,7 @@ public class EditModel : PageModel
         }
 
         _queue.Enqueue(TaskRunKind.Import, Id);
-        TempData["TaskMessage"] = _l["Task queued"].Value;
+        this.Notify(_l["Task queued"].Value);
 
         return RedirectToPage("Edit", new { id = Id });
     }
@@ -346,8 +343,7 @@ public class EditModel : PageModel
 
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
-            NoticeOk = false;
-            Notice = _l["A filesystem import has no connection to test."].Value;
+            this.NotifyNow(_l["A filesystem import has no connection to test."].Value, NoticeKind.Info);
             await BuildOptionListsAsync();
             return Page();
         }
@@ -369,8 +365,7 @@ public class EditModel : PageModel
             var smbSettings = BuildSmbSettings(storedSmbPassword);
             var smbOverride = string.IsNullOrEmpty(Input.SmbPassword) ? null : Input.SmbPassword;
             var (smbOk, smbMessage) = await _runner.TestSmbConnectionAsync(smbSettings, smbOverride, ct);
-            NoticeOk = smbOk;
-            Notice = smbMessage;
+            this.NotifyNow(smbOk, smbMessage);
 
             await BuildOptionListsAsync();
             return Page();
@@ -395,8 +390,7 @@ public class EditModel : PageModel
         var plaintextOverride = string.IsNullOrEmpty(Input.Password) ? null : Input.Password;
 
         var (ok, message) = await _runner.TestMailConnectionAsync(settings, isPop3, plaintextOverride, ct);
-        NoticeOk = ok;
-        Notice = message;
+        this.NotifyNow(ok, message);
 
         await BuildOptionListsAsync();
         return Page();

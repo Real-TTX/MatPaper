@@ -4,14 +4,6 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Storage locations / Edit"].Value : L["System / Storage locations / New"].Value;
 }
 
-@if (!string.IsNullOrEmpty(Model.Notice))
-{
-    <div class="form-summary">
-        <span class="badge @(Model.NoticeOk ? "badge--ok" : "badge--off")">@(Model.NoticeOk ? L["OK"].Value : L["Failed"].Value)</span>
-        @Model.Notice
-    </div>
-}
-
 <form class="form" method="post">
     <input type="hidden" asp-for="Id" />
 

@@ -195,11 +195,6 @@
     }
 </style>
 
-@if (TempData["TaskMessage"] is string taskMsg)
-{
-    <div class="form-summary" style="color:var(--color-text)">@taskMsg</div>
-}
-
 <div class="doc-status">
     <span class="doc-status__owner">@L["Owner"]: <strong>@(Model.OwnerName ?? "—")</strong></span>
     @if (Model.IsCommon)

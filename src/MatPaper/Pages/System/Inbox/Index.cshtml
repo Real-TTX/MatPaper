@@ -4,11 +4,6 @@
     ViewData["Breadcrumb"] = L["System / Import inbox"].Value;
 }
 
-@if (TempData["InboxMessage"] is string message && !string.IsNullOrEmpty(message))
-{
-    <div class="form-summary">@message</div>
-}
-
 <form class="form" method="post">
     <div class="form-row">
         <label for="ScanLocationId">@L["Storage location"]</label>

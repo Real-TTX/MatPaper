@@ -99,9 +99,14 @@ public class IndexModel : PageModel
     {
         var result = await _scan.ScanAsync(ScanLocationId, ct);
 
-        TempData["InboxMessage"] = result.LocationMissing
-            ? _l["Storage location not found."].Value
-            : _l["Scanned {0}, added {1} new, {2} already known.", result.Scanned, result.Added, result.Skipped].Value;
+        if (result.LocationMissing)
+        {
+            this.Notify(_l["Storage location not found."].Value, NoticeKind.Danger);
+        }
+        else
+        {
+            this.Notify(_l["Scanned {0}, added {1} new, {2} already known.", result.Scanned, result.Added, result.Skipped].Value);
+        }
 
         return RedirectToPage(new { location = ScanLocationId });
     }
@@ -117,7 +122,7 @@ public class IndexModel : PageModel
     {
         if (SelectedIds is null || SelectedIds.Length == 0)
         {
-            TempData["InboxMessage"] = _l["Select at least one inbox item to import."].Value;
+            this.Notify(_l["Select at least one inbox item to import."].Value, NoticeKind.Warn);
             return RedirectToPage();
         }
 
@@ -131,8 +136,9 @@ public class IndexModel : PageModel
             _currentUser.UserId,
             ct);
 
-        TempData["InboxMessage"] =
-            _l["Imported {0}, {1} duplicate(s) dismissed, {2} error(s).", summary.Imported, summary.Duplicates, summary.Errors].Value;
+        this.Notify(
+            _l["Imported {0}, {1} duplicate(s) dismissed, {2} error(s).", summary.Imported, summary.Duplicates, summary.Errors].Value,
+            summary.Errors > 0 ? NoticeKind.Warn : NoticeKind.Ok);
 
         return RedirectToPage();
     }
@@ -141,12 +147,12 @@ public class IndexModel : PageModel
     {
         if (SelectedIds is null || SelectedIds.Length == 0)
         {
-            TempData["InboxMessage"] = _l["Select at least one inbox item to dismiss."].Value;
+            this.Notify(_l["Select at least one inbox item to dismiss."].Value, NoticeKind.Warn);
             return RedirectToPage();
         }
 
         var dismissed = await _scan.DismissAsync(SelectedIds, _currentUser.UserId, ct);
-        TempData["InboxMessage"] = _l["Dismissed {0} item(s).", dismissed].Value;
+        this.Notify(_l["Dismissed {0} item(s).", dismissed].Value);
         return RedirectToPage();
     }
 

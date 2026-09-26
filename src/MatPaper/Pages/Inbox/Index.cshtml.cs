@@ -125,7 +125,7 @@ public class IndexModel : PageModel
 
         if (document.OcrState == OcrState.Pending)
         {
-            TempData["InboxError"] = _l["\"{0}\" is still being processed — try again in a moment.", document.Title].Value;
+            this.Notify(_l["\"{0}\" is still being processed — try again in a moment.", document.Title].Value, NoticeKind.Warn);
             return RedirectBack();
         }
 
@@ -169,7 +169,7 @@ public class IndexModel : PageModel
         var result = await _filing.FileAsync(document, storageLocationId, uid, ct);
         if (!result.Success)
         {
-            TempData["InboxError"] = result.Error;
+            this.Notify(result.Error, NoticeKind.Danger);
         }
 
         return RedirectBack();

@@ -37,10 +37,6 @@ public class EditModel : PageModel
 
     public List<SelectListItem> CredentialOptions { get; private set; } = new();
 
-    /// <summary>Result of the last "Test connection" (null = none).</summary>
-    public string? Notice { get; private set; }
-    public bool NoticeOk { get; private set; }
-
     public class InputModel
     {
         public string Name { get; set; } = string.Empty;
@@ -202,10 +198,9 @@ public class EditModel : PageModel
         try
         {
             await _storage.TestAsync(draft, HttpContext.RequestAborted);
-            NoticeOk = true;
-            Notice = draft.Kind == StorageKind.Smb
+            this.NotifyNow(draft.Kind == StorageKind.Smb
                 ? _l["Connected to {0}.", draft.DisplayRoot].Value
-                : _l["Folder {0} is available.", draft.RootPath].Value;
+                : _l["Folder {0} is available.", draft.RootPath].Value);
         }
         catch (OperationCanceledException)
         {
@@ -213,8 +208,7 @@ public class EditModel : PageModel
         }
         catch (Exception ex)
         {
-            NoticeOk = false;
-            Notice = ex.Message;
+            this.NotifyNow(ex.Message, NoticeKind.Danger);
         }
 
         return Page();

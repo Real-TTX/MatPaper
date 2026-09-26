@@ -180,7 +180,7 @@ public class EditModel : PageModel
         }
 
         _triggers.Enqueue(TaskRunKind.Export, Id);
-        TempData["ExportTaskMessage"] = _l["Export task \"{0}\" queued to run now.", entity.Name].Value;
+        this.Notify(_l["Export task \"{0}\" queued to run now.", entity.Name].Value);
 
         return RedirectToPage("Edit", new { id = Id });
     }

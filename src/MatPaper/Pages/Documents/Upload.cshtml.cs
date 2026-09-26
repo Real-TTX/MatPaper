@@ -125,7 +125,7 @@ public class UploadModel : PageModel
                 parts.Add(_l["{0} failed", failed].Value);
             }
 
-            TempData["InboxMessage"] = string.Join(", ", parts) + ".";
+            this.Notify(string.Join(", ", parts) + ".");
             return RedirectToPage("/Inbox/Index");
         }
 

@@ -4,11 +4,6 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Export tasks / Edit"].Value : L["System / Export tasks / New"].Value;
 }
 
-@if (TempData["ExportTaskMessage"] is string message && !string.IsNullOrEmpty(message))
-{
-    <div class="form-summary">@message</div>
-}
-
 <form class="form" method="post">
     <input type="hidden" asp-for="Id" />
 

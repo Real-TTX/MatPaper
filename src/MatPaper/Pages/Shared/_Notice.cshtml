@@ -1,0 +1,36 @@
+@*
+    The page-level "what just happened" message. Rendered once by the layouts; page models
+    fill it with page.Notify(...) / page.NotifyNow(...). Field errors do NOT belong here —
+    they stay with asp-validation-summary.
+*@
+@{
+    var noticeText = (ViewData[MatPaper.Services.NoticeExtensions.TextKey]
+        ?? TempData[MatPaper.Services.NoticeExtensions.TextKey]) as string;
+    var noticeKind = ((ViewData[MatPaper.Services.NoticeExtensions.KindKey]
+        ?? TempData[MatPaper.Services.NoticeExtensions.KindKey]) as string ?? "Ok").ToLowerInvariant();
+}
+
+@if (!string.IsNullOrWhiteSpace(noticeText))
+{
+    <div class="notice notice--@noticeKind" role="status">
+        <svg class="notice__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            @switch (noticeKind)
+            {
+                case "danger":
+                    <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" />
+                    break;
+                case "warn":
+                    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                    <path d="M12 9v4M12 17h.01" />
+                    break;
+                case "info":
+                    <circle cx="12" cy="12" r="9" /><path d="M12 16v-5M12 8h.01" />
+                    break;
+                default:
+                    <path d="M20 6 9 17l-5-5" />
+                    break;
+            }
+        </svg>
+        <span class="notice__text">@noticeText</span>
+    </div>
+}

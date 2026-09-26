@@ -360,12 +360,12 @@ public class EditModel : PageModel
 
         if (document.OcrState == OcrState.Pending)
         {
-            TempData["TaskMessage"] = _l["The document is still being processed — try confirming again in a moment."].Value;
+            this.Notify(_l["The document is still being processed — try confirming again in a moment."].Value, NoticeKind.Warn);
             return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
         }
 
         var result = await _filing.FileAsync(document, null, _currentUser.UserId, HttpContext.RequestAborted);
-        TempData["TaskMessage"] = result.Success ? _l["Filed and marked as reviewed."].Value : result.Error;
+        this.Notify(result.Success, result.Success ? _l["Filed and marked as reviewed."].Value : result.Error);
 
         return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
     }
@@ -556,18 +556,18 @@ public class EditModel : PageModel
             // Filing moves the staged file out from under the still-running OCR worker.
             if (document.OcrState == OcrState.Pending)
             {
-                TempData["TaskMessage"] = _l["The document is still being processed — try confirming again in a moment."].Value;
+                this.Notify(_l["The document is still being processed — try confirming again in a moment."].Value, NoticeKind.Warn);
                 return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
             }
 
             var result = await _filing.FileAsync(document, Input.StorageLocationId, _currentUser.UserId, HttpContext.RequestAborted);
             if (!result.Success)
             {
-                TempData["TaskMessage"] = result.Error;
+                this.Notify(result.Error, NoticeKind.Danger);
                 return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
             }
 
-            TempData["InboxMessage"] = _l["\"{0}\" filed.", document.Title].Value;
+            this.Notify(_l["\"{0}\" filed.", document.Title].Value);
             return LocalRedirect(!string.IsNullOrEmpty(ReturnUrl) && Url.IsLocalUrl(ReturnUrl) ? ReturnUrl : "/Inbox");
         }
 
@@ -607,13 +607,13 @@ public class EditModel : PageModel
             document.UpdateDate = DateTime.UtcNow;
             document.UpdateUserId = _currentUser.UserId;
             await _db.SaveChangesAsync();
-            TempData["TaskMessage"] = result.UsedInvoiceData
+            this.Notify(result.UsedInvoiceData
                 ? _l["Re-analyzed from the structured e-invoice (XRechnung/ZUGFeRD)."].Value
-                : _l["Re-analyzed from the document text."].Value;
+                : _l["Re-analyzed from the document text."].Value);
         }
         else
         {
-            TempData["TaskMessage"] = _l["Analysis found nothing to change."].Value;
+            this.Notify(_l["Analysis found nothing to change."].Value, NoticeKind.Info);
         }
 
         return RedirectToPage("Edit", new { id = Id });

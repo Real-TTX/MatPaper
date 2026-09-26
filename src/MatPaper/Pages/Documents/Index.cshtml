@@ -6,11 +6,6 @@
     ViewData["Breadcrumb"] = L["Documents"].Value;
 }
 
-@if (TempData["UploadSummary"] is string uploadSummary)
-{
-    <div class="form-summary" style="color:var(--color-text)">@uploadSummary</div>
-}
-
 <mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Full-text search"]' />
 

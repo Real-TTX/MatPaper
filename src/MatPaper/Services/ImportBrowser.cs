@@ -22,7 +22,7 @@ public sealed record BrowseEntry(string Path, string Name, int? ItemCount, bool 
 public sealed record PreviewItem(string Title, string? Detail, DateTime? Date, string? Extra);
 
 /// <summary>Result of a preview run: the first <see cref="Items"/> of <see cref="TotalMatches"/>.</summary>
-public sealed record PreviewResult(bool Ok, string? Error, int TotalMatches, IReadOnlyList<PreviewItem> Items, int Scanned);
+public sealed record PreviewResult(bool Ok, string? Error, int TotalMatches, IReadOnlyList<PreviewItem> Items, int Scanned, bool Truncated = false);
 
 /// <summary>
 /// Read-only inspection of an import source for the wizard: lists mail folders, SMB shares
@@ -33,6 +33,18 @@ public sealed class ImportBrowser
 {
     private const int PreviewLimit = 25;
     private const int ScanLimit = 200;
+
+    /// <summary>Per-operation network timeout for the wizard (MailKit defaults to two minutes).</summary>
+    private const int MailTimeoutMs = 20000;
+
+    /// <summary>Messages above this size are skipped by the POP3 preview (it must download them).</summary>
+    private const long Pop3PreviewMaxBytes = 25L * 1024 * 1024;
+
+    /// <summary>
+    /// Hard budget for one SMB browse/preview. SMBLibrary blocks without a timeout, so the
+    /// request gives up and reports an error instead of holding the page forever.
+    /// </summary>
+    private const int NetworkBudgetSeconds = 30;
 
     private readonly AppDbContext _db;
     private readonly SecretProtector _secrets;
@@ -55,7 +67,7 @@ public sealed class ImportBrowser
 
         var (user, password) = await ResolveMailLoginAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
 
-        using var client = new ImapClient();
+        using var client = new ImapClient { Timeout = MailTimeoutMs };
         try
         {
             await client.ConnectAsync(settings.Host, settings.Port, ImportRunner.SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
@@ -132,7 +144,7 @@ public sealed class ImportBrowser
         MailImportSettings settings, string user, string password,
         IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, CancellationToken ct)
     {
-        using var client = new ImapClient();
+        using var client = new ImapClient { Timeout = MailTimeoutMs };
         try
         {
             await client.ConnectAsync(settings.Host, settings.Port, ImportRunner.SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
@@ -144,9 +156,10 @@ public sealed class ImportBrowser
 
             await folder.OpenAsync(FolderAccess.ReadOnly, ct).ConfigureAwait(false);
 
-            // Same selection the runner uses: unread messages only.
-            var uids = await folder.SearchAsync(MailKit.Search.SearchQuery.NotSeen, ct).ConfigureAwait(false);
-            var window = uids.Take(ScanLimit).ToList();
+            // Exactly the selection RunImapAsync uses, so the preview cannot promise
+            // more or less than the import; newest first, capped at ScanLimit.
+            var uids = await folder.SearchAsync(MailKit.Search.SearchQuery.All, ct).ConfigureAwait(false);
+            var window = uids.Reverse().Take(ScanLimit).ToList();
 
             var items = new List<PreviewItem>();
             var matches = 0;
@@ -154,7 +167,7 @@ public sealed class ImportBrowser
             if (window.Count > 0)
             {
                 // Envelope + structure only: downloading the body would set \Seen on the
-                // server and the real import (which reads unseen mail) would skip them.
+                // server, which the post-action "mark seen" is supposed to decide.
                 var summaries = await folder
                     .FetchAsync(window, MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure, ct)
                     .ConfigureAwait(false);
@@ -201,7 +214,7 @@ public sealed class ImportBrowser
                 }
             }
 
-            return new PreviewResult(true, null, matches, items, window.Count);
+            return new PreviewResult(true, null, matches, items, window.Count, uids.Count > window.Count);
         }
         finally
         {
@@ -216,7 +229,7 @@ public sealed class ImportBrowser
         MailImportSettings settings, string user, string password,
         IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, CancellationToken ct)
     {
-        using var client = new Pop3Client();
+        using var client = new Pop3Client { Timeout = MailTimeoutMs };
         try
         {
             await client.ConnectAsync(settings.Host, settings.Port, ImportRunner.SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
@@ -227,9 +240,26 @@ public sealed class ImportBrowser
             var total = await client.GetMessageCountAsync(ct).ConfigureAwait(false);
             var scanned = Math.Min(total, ScanLimit);
 
+            // POP3 cannot fetch envelopes, so sizes decide what is worth downloading.
+            IList<int> sizes;
+            try
+            {
+                sizes = await client.GetMessageSizesAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "POP3 server does not report message sizes.");
+                sizes = Array.Empty<int>();
+            }
+
             for (var i = 0; i < scanned; i++)
             {
                 ct.ThrowIfCancellationRequested();
+
+                if (i < sizes.Count && sizes[i] > Pop3PreviewMaxBytes)
+                {
+                    continue;
+                }
 
                 var message = await client.GetMessageAsync(i, ct).ConfigureAwait(false);
                 if (!ImportRunner.MessageMatches(message, settings, senderRegex, subjectRegex))
@@ -250,7 +280,7 @@ public sealed class ImportBrowser
                 }
             }
 
-            return new PreviewResult(true, null, matches, items, scanned);
+            return new PreviewResult(true, null, matches, items, scanned, total > scanned);
         }
         finally
         {
@@ -300,25 +330,27 @@ public sealed class ImportBrowser
             extra);
     }
 
+    /// <summary>
+    /// Same precedence the runner uses: a saved credential wins over anything typed into
+    /// the task, so the preview signs in exactly like the import will.
+    /// </summary>
     private async Task<(string User, string Password)> ResolveMailLoginAsync(
         MailImportSettings settings, string? plaintextPassword, CancellationToken ct)
     {
-        var user = settings.Username;
-        var password = string.IsNullOrEmpty(plaintextPassword)
-            ? _secrets.Unprotect(settings.ProtectedPassword)
-            : plaintextPassword;
-
-        if (string.IsNullOrEmpty(plaintextPassword) && settings.CredentialId is long id)
+        if (settings.CredentialId is long id)
         {
             var cred = await LoadCredentialAsync(id, ct).ConfigureAwait(false);
             if (cred is not null)
             {
-                user = cred.Username;
-                password = _secrets.Unprotect(cred.ProtectedPassword);
+                return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword));
             }
         }
 
-        return (user, password);
+        var password = string.IsNullOrEmpty(plaintextPassword)
+            ? _secrets.Unprotect(settings.ProtectedPassword)
+            : plaintextPassword;
+
+        return (settings.Username, password);
     }
 
     // ----- SMB --------------------------------------------------------------
@@ -334,7 +366,7 @@ public sealed class ImportBrowser
         return await Task.Run(() => SmbSession
             .ListShares(settings.Host, login.Domain, login.User, login.Password)
             .Select(s => new BrowseEntry(s, s, null, true))
-            .ToList(), ct).ConfigureAwait(false);
+            .ToList(), ct).WaitAsync(TimeSpan.FromSeconds(NetworkBudgetSeconds), ct).ConfigureAwait(false);
     }
 
     /// <summary>Lists the subfolders of <paramref name="path"/> on the configured share.</summary>
@@ -356,12 +388,14 @@ public sealed class ImportBrowser
                 .Select(name =>
                 {
                     var full = string.IsNullOrEmpty(basePath) ? name : basePath + "\\" + name;
+                    // One round trip per entry for the file count; whether it has
+                    // subfolders is left open (the picker shows "nothing found" if not)
+                    // so listing a folder does not cost two calls per child.
                     var count = session.CountFiles(full, pattern);
-                    var children = session.ListDirectories(full).Count > 0;
-                    return new BrowseEntry(full.Replace('\\', '/'), name, count, children);
+                    return new BrowseEntry(full.Replace('\\', '/'), name, count, true);
                 })
                 .ToList();
-        }, ct).ConfigureAwait(false);
+        }, ct).WaitAsync(TimeSpan.FromSeconds(NetworkBudgetSeconds), ct).ConfigureAwait(false);
     }
 
     /// <summary>Lists the files an SMB import would pick up right now.</summary>
@@ -379,7 +413,9 @@ public sealed class ImportBrowser
                 using var session = SmbSession.Connect(
                     new SmbConnection(settings.Host, settings.Share, login.Domain, login.User, login.Password));
 
-                var entries = session.ListEntries(settings.Path, settings.Pattern, settings.Recursive);
+                // Stop walking the share once the scan cap is reached — a deep archive
+                // must not be enumerated in full just to show the first rows.
+                var entries = session.ListEntries(settings.Path, settings.Pattern, settings.Recursive, ScanLimit);
                 var items = entries
                     .Take(PreviewLimit)
                     .Select(e => new PreviewItem(
@@ -389,8 +425,8 @@ public sealed class ImportBrowser
                         FormatBytes(e.Size)))
                     .ToList();
 
-                return new PreviewResult(true, null, entries.Count, items, entries.Count);
-            }, ct).ConfigureAwait(false);
+                return new PreviewResult(true, null, entries.Count, items, entries.Count, entries.Count >= ScanLimit);
+            }, ct).WaitAsync(TimeSpan.FromSeconds(NetworkBudgetSeconds), ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -402,27 +438,24 @@ public sealed class ImportBrowser
         }
     }
 
+    /// <summary>Saved credential first, exactly like <see cref="ImportRunner"/> resolves it.</summary>
     private async Task<(string User, string Password, string? Domain)> ResolveSmbLoginAsync(
         SmbImportSettings settings, string? plaintextPassword, CancellationToken ct)
     {
-        var user = settings.Username;
-        var domain = settings.Domain;
-        var password = string.IsNullOrEmpty(plaintextPassword)
-            ? _secrets.Unprotect(settings.ProtectedPassword)
-            : plaintextPassword;
-
-        if (string.IsNullOrEmpty(plaintextPassword) && settings.CredentialId is long id)
+        if (settings.CredentialId is long id)
         {
             var cred = await LoadCredentialAsync(id, ct).ConfigureAwait(false);
             if (cred is not null)
             {
-                user = cred.Username;
-                domain = cred.Domain;
-                password = _secrets.Unprotect(cred.ProtectedPassword);
+                return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword), cred.Domain);
             }
         }
 
-        return (user, password, domain);
+        var password = string.IsNullOrEmpty(plaintextPassword)
+            ? _secrets.Unprotect(settings.ProtectedPassword)
+            : plaintextPassword;
+
+        return (settings.Username, password, settings.Domain);
     }
 
     // ----- Local filesystem -------------------------------------------------
@@ -484,19 +517,43 @@ public sealed class ImportBrowser
                     return new PreviewResult(false, $"Folder '{settings.SourcePath}' does not exist inside the container.", 0, Array.Empty<PreviewItem>(), 0);
                 }
 
-                var option = settings.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
                 var pattern = string.IsNullOrWhiteSpace(settings.Pattern) ? "*" : settings.Pattern;
+                var options = new EnumerationOptions
+                {
+                    RecurseSubdirectories = settings.Recursive,
+                    IgnoreInaccessible = true,
+                    MaxRecursionDepth = 12
+                };
 
-                var files = Directory.EnumerateFiles(settings.SourcePath, pattern, option).ToList();
+                // Walk lazily and stop at the scan cap: pointing a preview at a huge tree
+                // must not enumerate the whole container before showing the first rows.
                 var items = new List<PreviewItem>();
-                foreach (var file in files.Take(PreviewLimit))
+                var found = 0;
+                foreach (var file in Directory.EnumerateFiles(settings.SourcePath, pattern, options))
                 {
                     ct.ThrowIfCancellationRequested();
-                    var info = new FileInfo(file);
-                    items.Add(new PreviewItem(info.Name, file, info.LastWriteTimeUtc, FormatBytes(info.Length)));
+                    found++;
+
+                    if (items.Count < PreviewLimit)
+                    {
+                        try
+                        {
+                            var info = new FileInfo(file);
+                            items.Add(new PreviewItem(info.Name, file, info.LastWriteTimeUtc, FormatBytes(info.Length)));
+                        }
+                        catch (IOException)
+                        {
+                            // vanished mid-enumeration: skip
+                        }
+                    }
+
+                    if (found >= ScanLimit)
+                    {
+                        break;
+                    }
                 }
 
-                return new PreviewResult(true, null, files.Count, items, files.Count);
+                return new PreviewResult(true, null, found, items, found, found >= ScanLimit);
             }
             catch (OperationCanceledException)
             {

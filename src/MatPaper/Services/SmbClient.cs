@@ -210,8 +210,12 @@ public sealed class SmbSession : IDisposable
     public IReadOnlyList<string> ListFiles(string startPath, string? pattern, bool recursive)
         => ListEntries(startPath, pattern, recursive).Select(e => e.Path).ToList();
 
-    /// <summary>Lists files under <paramref name="startPath"/>. Throws if the start folder is missing.</summary>
-    public IReadOnlyList<SmbEntry> ListEntries(string startPath, string? pattern, bool recursive)
+    /// <summary>
+    /// Lists files under <paramref name="startPath"/>. Throws if the start folder is missing.
+    /// <paramref name="limit"/> stops the walk early (0 = no limit), so a preview does not
+    /// have to enumerate a whole archive.
+    /// </summary>
+    public IReadOnlyList<SmbEntry> ListEntries(string startPath, string? pattern, bool recursive, int limit = 0)
     {
         var start = Norm(startPath);
         if (!DirectoryExists(start))
@@ -220,12 +224,17 @@ public sealed class SmbSession : IDisposable
         }
 
         var results = new List<SmbEntry>();
-        Walk(start, pattern, recursive, results);
+        Walk(start, pattern, recursive, results, limit);
         return results;
     }
 
-    private void Walk(string dir, string? pattern, bool recursive, List<SmbEntry> results)
+    private void Walk(string dir, string? pattern, bool recursive, List<SmbEntry> results, int limit = 0)
     {
+        if (limit > 0 && results.Count >= limit)
+        {
+            return;
+        }
+
         var status = _store.CreateFile(out var handle, out _, dir,
             AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
             ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN,
@@ -253,12 +262,16 @@ public sealed class SmbSession : IDisposable
                 {
                     if (recursive)
                     {
-                        Walk(full, pattern, recursive, results);
+                        Walk(full, pattern, recursive, results, limit);
                     }
                 }
                 else if (MatchPattern(name, pattern))
                 {
                     results.Add(new SmbEntry(full, entry.EndOfFile, entry.LastWriteTime.ToUniversalTime()));
+                    if (limit > 0 && results.Count >= limit)
+                    {
+                        return;
+                    }
                 }
             }
         }

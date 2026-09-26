@@ -44,6 +44,13 @@ public class EditModel : PageModel
     [BindProperty(SupportsGet = true)]
     public long Id { get; set; }
 
+    /// <summary>
+    /// Wizard step the user is on. Travels with every post so a validation error or a
+    /// connection test returns to the same step instead of jumping back to the start.
+    /// </summary>
+    [BindProperty]
+    public int ActiveStep { get; set; } = 1;
+
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
@@ -451,7 +458,8 @@ public class EditModel : PageModel
             {
                 ModelState.AddModelError("Input.SmbShare", _l["Share name is required."]);
             }
-            if (string.IsNullOrWhiteSpace(Input.SmbUsername))
+            // A saved credential supplies user/password, so the manual fields stay empty.
+            if (Input.CredentialId is null && string.IsNullOrWhiteSpace(Input.SmbUsername))
             {
                 ModelState.AddModelError("Input.SmbUsername", _l["Username is required."]);
             }
@@ -462,7 +470,7 @@ public class EditModel : PageModel
             {
                 ModelState.AddModelError("Input.Host", _l["Host is required."]);
             }
-            if (string.IsNullOrWhiteSpace(Input.Username))
+            if (Input.CredentialId is null && string.IsNullOrWhiteSpace(Input.Username))
             {
                 ModelState.AddModelError("Input.Username", _l["Username is required."]);
             }

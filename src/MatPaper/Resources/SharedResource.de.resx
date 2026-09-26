@@ -119,6 +119,7 @@
   <data name="At least 8 characters" xml:space="preserve"><value>Mindestens 8 Zeichen</value></data>
   <data name="at minute" xml:space="preserve"><value>zur Minute</value></data>
   <data name="Attachment extensions" xml:space="preserve"><value>Anhang-Dateiendungen</value></data>
+  <data name="Attachments" xml:space="preserve"><value>Anhänge</value></data>
   <data name="Attachments from a mailbox; folders stay on the server." xml:space="preserve"><value>Anhänge aus einem Postfach; die Ordner bleiben auf dem Server.</value></data>
   <data name="Auto-assign type, correspondent and date (from XRechnung/ZUGFeRD data if present, else the text)" xml:space="preserve"><value>Typ, Korrespondent und Datum automatisch zuordnen (aus XRechnung-/ZUGFeRD-Daten, sonst aus dem Text)</value></data>
   <data name="Back" xml:space="preserve"><value>Zurück</value></data>
@@ -360,6 +361,7 @@
   <data name="OK" xml:space="preserve"><value>OK</value></data>
   <data name="Oldest first" xml:space="preserve"><value>Älteste zuerst</value></data>
   <data name="On day {0} of each month at {1}" xml:space="preserve"><value>Am {0}. jedes Monats um {1}</value></data>
+  <data name="One level up" xml:space="preserve"><value>Eine Ebene höher</value></data>
   <data name="Open" xml:space="preserve"><value>Öffnen</value></data>
   <data name="Open in tab" xml:space="preserve"><value>In neuem Tab öffnen</value></data>
   <data name="Optional" xml:space="preserve"><value>Optional</value></data>
@@ -433,6 +435,7 @@
   <data name="Scan" xml:space="preserve"><value>Scannen</value></data>
   <data name="Scan for files" xml:space="preserve"><value>Nach Dateien scannen</value></data>
   <data name="Scan now" xml:space="preserve"><value>Jetzt scannen</value></data>
+  <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
   <data name="Scan storage locations and import discovered files" xml:space="preserve"><value>Speicherorte scannen und gefundene Dateien importieren</value></data>
   <data name="Schedule" xml:space="preserve"><value>Zeitplan</value></data>
   <data name="Scheduled database and document backups" xml:space="preserve"><value>Geplante Datenbank- und Dokumentsicherungen</value></data>
@@ -461,6 +464,7 @@
   <data name="Show documents" xml:space="preserve"><value>Dokumente anzeigen</value></data>
   <data name="Show folders…" xml:space="preserve"><value>Ordner anzeigen…</value></data>
   <data name="Show in the common area (visible to everyone)" xml:space="preserve"><value>Im gemeinsamen Bereich anzeigen (für alle sichtbar)</value></data>
+  <data name="showing the first {0}" xml:space="preserve"><value>die ersten {0} angezeigt</value></data>
   <data name="Sign in" xml:space="preserve"><value>Anmelden</value></data>
   <data name="Sign out" xml:space="preserve"><value>Abmelden</value></data>
   <data name="Simple mailbox without folders." xml:space="preserve"><value>Einfaches Postfach ohne Ordner.</value></data>
@@ -480,6 +484,7 @@
   <data name="Storage location not found." xml:space="preserve"><value>Speicherort nicht gefunden.</value></data>
   <data name="Storage locations" xml:space="preserve"><value>Speicherorte</value></data>
   <data name="Street, ZIP, city" xml:space="preserve"><value>Straße, PLZ, Ort</value></data>
+  <data name="Subject" xml:space="preserve"><value>Betreff</value></data>
   <data name="Subject contains" xml:space="preserve"><value>Betreff enthält</value></data>
   <data name="Subject regex (advanced)" xml:space="preserve"><value>Betreff-Regex (erweitert)</value></data>
   <data name="Success" xml:space="preserve"><value>Erfolgreich</value></data>
@@ -518,6 +523,7 @@
   <data name="The document is still being processed — try confirming again in a moment." xml:space="preserve"><value>Das Dokument wird noch verarbeitet — bitte gleich erneut bestätigen.</value></data>
   <data name="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location." xml:space="preserve"><value>Die Datei bleibt im Posteingang, bis sie bestätigt wird; danach wird sie am gewählten Speicherort abgelegt.</value></data>
   <data name="The photos could not be converted into a PDF. Please try again with different images." xml:space="preserve"><value>Die Fotos konnten nicht in ein PDF umgewandelt werden. Bitte mit anderen Bildern erneut versuchen.</value></data>
+  <data name="The request failed — please reload the page." xml:space="preserve"><value>Die Anfrage ist fehlgeschlagen — bitte die Seite neu laden.</value></data>
   <data name="The scan could not be stored." xml:space="preserve"><value>Der Scan konnte nicht gespeichert werden.</value></data>
   <data name="The schedule is not a valid cron expression." xml:space="preserve"><value>Der Zeitplan ist kein gültiger Cron-Ausdruck.</value></data>
   <data name="Theme" xml:space="preserve"><value>Darstellung</value></data>

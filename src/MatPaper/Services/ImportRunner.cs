@@ -829,10 +829,12 @@ public sealed class ImportRunner
     internal static SecureSocketOptions SecureOption(bool useSsl)
         => useSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable;
 
+    /// <summary>Compiles a user-supplied filter pattern. The timeout keeps a pathological
+    /// expression from pinning a thread (the wizard preview runs these in a request).</summary>
     internal static Regex? CompileRegex(string? pattern)
         => string.IsNullOrWhiteSpace(pattern)
             ? null
-            : new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            : new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
 
     internal static bool MessageMatches(MimeMessage message, MailImportSettings settings, Regex? senderRegex, Regex? subjectRegex)
         => HeadersMatch(
@@ -863,12 +865,20 @@ public sealed class ImportRunner
             return false;
         }
 
-        // Optional advanced regex filters.
-        if (senderRegex is not null && !senderRegex.IsMatch(from))
+        // Optional advanced regex filters. A pattern that runs into its timeout counts
+        // as "no match" instead of failing the whole run.
+        try
         {
-            return false;
+            if (senderRegex is not null && !senderRegex.IsMatch(from))
+            {
+                return false;
+            }
+            if (subjectRegex is not null && !subjectRegex.IsMatch(subject))
+            {
+                return false;
+            }
         }
-        if (subjectRegex is not null && !subjectRegex.IsMatch(subject))
+        catch (RegexMatchTimeoutException)
         {
             return false;
         }

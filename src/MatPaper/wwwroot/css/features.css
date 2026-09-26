@@ -784,3 +784,47 @@
     margin: 0 0 0.6rem;
     font-size: 0.9rem;
 }
+
+/* Wizard details: hidden default submit, tile focus/selection, picker "up" row. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.type-tile.is-selected {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.type-tile.is-selected svg {
+    color: var(--color-primary);
+}
+
+.type-tile:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.browse-dialog__item--up .browse-dialog__up {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    padding: 0.5rem 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.browse-dialog__item--up .browse-dialog__up:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+}

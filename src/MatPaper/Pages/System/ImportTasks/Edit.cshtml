@@ -26,11 +26,19 @@
       data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'
       data-t-no-match='@L["No items match the current rules."]'
       data-t-matches='@L["{0} match(es)"]' data-t-scanned='@L["{0} scanned"]'
-      data-t-folders='@L["Folders"]' data-t-shares='@L["Shares"]'>
+      data-t-folders='@L["Folders"]' data-t-shares='@L["Shares"]'
+      data-t-showing='@L["showing the first {0}"]' data-t-more='@L["scan stopped at {0} — there may be more"]'
+      data-t-col-subject='@L["Subject"]' data-t-col-from='@L["From"]' data-t-col-date='@L["Date"]' data-t-col-attachments='@L["Attachments"]'
+      data-t-col-name='@L["Name"]' data-t-col-path='@L["Path"]' data-t-col-size='@L["Size"]'
+      data-t-up='@L["One level up"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    <div asp-validation-summary="All" class="form-summary"></div>
+
+    @* Enter in a text field must save, not fire the first submit button in the markup. *@
+    <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">@L["Save"]</button>
+    <input type="hidden" asp-for="ActiveStep" id="wizard-active-step" />
 
     <ol class="wizard__steps" id="wizard-steps">
         <li class="wizard__step" data-goto="1"><span class="wizard__num"></span><span class="wizard__label">@L["Type"]</span></li>
@@ -91,14 +99,6 @@
 
         <div data-show-when-field="Input.Type" data-show-when-value="3">
             <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
-            <div class="form-row">
-                <label asp-for="Input.SmbShare">@L["SMB share"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.SmbShare" placeholder="documents" />
-                    <button class="btn btn--secondary" type="button" data-browse="smb-shares">@L["List shares"]</button>
-                </div>
-                <span class="field-error" asp-validation-for="Input.SmbShare"></span>
-            </div>
         </div>
 
         <div data-show-when-field="Input.Type" data-show-when-value="0,1">
@@ -153,6 +153,14 @@
 
         @* SMB *@
         <div data-show-when-field="Input.Type" data-show-when-value="3">
+            <div class="form-row">
+                <label asp-for="Input.SmbShare">@L["SMB share"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.SmbShare" placeholder="documents" />
+                    <button class="btn btn--secondary" type="button" data-browse="smb-shares">@L["List shares"]</button>
+                </div>
+                <span class="field-error" asp-validation-for="Input.SmbShare"></span>
+            </div>
             <div class="form-row">
                 <label asp-for="Input.SmbPath">@L["Folder in share"]</label>
                 <div class="input-with-action">

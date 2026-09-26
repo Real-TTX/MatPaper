@@ -13,7 +13,10 @@
         var backBtn = document.getElementById("wizard-back");
         var nextBtn = document.getElementById("wizard-next");
         var typeInputs = form.querySelectorAll('[name="Input.Type"]');
-        var current = 1;
+        var stepField = document.getElementById("wizard-active-step");
+        // A postback (Test connection, validation error) re-renders the page; the step
+        // the user was on travels in a hidden field so they land back there.
+        var current = parseInt(stepField && stepField.value, 10) || 1;
 
         function t(name, fallback) { return form.getAttribute("data-t-" + name) || fallback; }
         function fill(template, a) { return String(template).replace("{0}", a); }
@@ -58,6 +61,8 @@
                 var num = chip.querySelector(".wizard__num");
                 if (num) { num.textContent = index === -1 ? "" : String(index + 1); }
             });
+
+            if (stepField) { stepField.value = String(current); }
 
             var pos = visible.indexOf(current);
             backBtn.disabled = pos <= 0;
@@ -120,13 +125,22 @@
             }
         }
 
+        function markSelectedTile() {
+            for (var i = 0; i < typeInputs.length; i++) {
+                var tile = typeInputs[i].closest(".type-tile");
+                if (tile) { tile.classList.toggle("is-selected", typeInputs[i].checked); }
+            }
+        }
+
         for (var i = 0; i < typeInputs.length; i++) {
             typeInputs[i].addEventListener("change", function () {
                 syncPort();
                 syncPostAction();
+                markSelectedTile();
                 render();
             });
         }
+        markSelectedTile();
         if (sslField) { sslField.addEventListener("change", syncPort); }
 
         syncPostAction();
@@ -136,6 +150,33 @@
         var dialog = document.getElementById("browse-dialog");
         var browseUrl = form.getAttribute("data-browse-url");
         var state = { scope: null, targetId: null, path: "", stack: [] };
+
+        // One place for "POST the form, expect JSON": status and content type are checked
+        // so a redirect to the login page cannot surface as a JSON syntax error.
+        function postJson(url, extra) {
+            var data = new FormData(form);
+            if (extra) {
+                Object.keys(extra).forEach(function (k) { data.append(k, extra[k]); });
+            }
+
+            var controller = typeof AbortController === "function" ? new AbortController() : null;
+            var timer = controller ? setTimeout(function () { controller.abort(); }, 60000) : null;
+
+            return fetch(url, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "RequestVerificationToken": token() },
+                body: data,
+                signal: controller ? controller.signal : undefined
+            }).then(function (r) {
+                if (timer) { clearTimeout(timer); }
+                var type = r.headers.get("content-type") || "";
+                if (!r.ok || type.indexOf("json") === -1) {
+                    throw new Error(t("request-failed", "The request failed — please reload the page."));
+                }
+                return r.json();
+            });
+        }
 
         function token() {
             var el = form.querySelector('input[name="__RequestVerificationToken"]');
@@ -160,31 +201,35 @@
             setPath(state.path);
             setList('<li class="browse-dialog__empty">' + t("loading", "Loading…") + "</li>");
 
-            var data = new FormData(form);
-            data.append("scope", state.scope);
-            data.append("path", state.path);
-
-            fetch(browseUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                headers: { "RequestVerificationToken": token() },
-                body: data
-            })
-                .then(function (r) { return r.json(); })
+            postJson(browseUrl, { scope: state.scope, path: state.path })
                 .then(function (res) {
                     if (!res.ok) {
                         setList('<li class="browse-dialog__error">' + escapeHtml(res.error || "") + "</li>");
                         return;
                     }
+                    var flatScope = state.scope === "smb-shares" || state.scope === "mail-folders";
+                    var up = flatScope || !state.path || state.path === "/" ? "" : renderUpRow();
                     if (!res.entries.length) {
-                        setList('<li class="browse-dialog__empty">' + t("empty", "Nothing found.") + "</li>");
+                        setList(up + '<li class="browse-dialog__empty">' + t("empty", "Nothing found.") + "</li>");
                         return;
                     }
-                    setList(res.entries.map(renderEntry).join(""));
+                    setList(up + res.entries.map(renderEntry).join(""));
                 })
                 .catch(function (err) {
                     setList('<li class="browse-dialog__error">' + escapeHtml(String(err)) + "</li>");
                 });
+        }
+
+        function parentOf(path) {
+            var clean = String(path || "").replace(/[/]+$/, "");
+            var cut = Math.max(clean.lastIndexOf("/"), clean.lastIndexOf("\\"));
+            if (cut <= 0) { return state.scope === "local-folders" ? "/" : ""; }
+            return clean.slice(0, cut);
+        }
+
+        function renderUpRow() {
+            return '<li class="browse-dialog__item browse-dialog__item--up">' +
+                '<button type="button" class="browse-dialog__up">↑ ' + escapeHtml(t("up", "One level up")) + "</button></li>";
         }
 
         function renderEntry(entry) {
@@ -246,6 +291,11 @@
             });
         });
 
+        // Clicking the backdrop (the dialog element itself, outside its content) closes it.
+        dialog.addEventListener("mousedown", function (ev) {
+            if (ev.target === dialog) { dialog.close(); }
+        });
+
         dialog.addEventListener("click", function (ev) {
             var pick = ev.target.closest(".browse-dialog__pick");
             if (pick) { choose(pick.getAttribute("data-path")); return; }
@@ -253,6 +303,7 @@
             var open = ev.target.closest(".browse-dialog__open");
             if (open) { state.stack.push(state.path); load(open.getAttribute("data-path")); return; }
 
+            if (ev.target.closest(".browse-dialog__up")) { load(parentOf(state.path)); return; }
             if (ev.target.closest(".browse-dialog__close")) { dialog.close(); return; }
             if (ev.target.closest(".browse-dialog__use")) { choose(state.path); }
         });
@@ -268,13 +319,7 @@
                 previewBox.innerHTML = '<p class="form-help">' + t("loading", "Loading…") + "</p>";
                 previewBtn.disabled = true;
 
-                fetch(previewUrl, {
-                    method: "POST",
-                    credentials: "same-origin",
-                    headers: { "RequestVerificationToken": token() },
-                    body: new FormData(form)
-                })
-                    .then(function (r) { return r.json(); })
+                postJson(previewUrl)
                     .then(function (res) { previewBox.innerHTML = renderPreview(res); })
                     .catch(function (err) {
                         previewBox.innerHTML = '<div class="form-summary">' + escapeHtml(String(err)) + "</div>";
@@ -292,8 +337,27 @@
                     " · " + fill(t("scanned", "{0} scanned"), res.scanned) + "</p>";
             }
 
-            var head = '<p class="preview__summary"><strong>' + fill(t("matches", "{0} match(es)"), res.total) +
-                "</strong> · " + fill(t("scanned", "{0} scanned"), res.scanned) + "</p>";
+            var notes = [fill(t("scanned", "{0} scanned"), res.scanned)];
+            if (res.items.length < res.total) {
+                notes.push(fill(t("showing", "showing the first {0}"), res.items.length));
+            }
+            if (res.truncated) {
+                notes.push(fill(t("more", "scan stopped at {0} — there may be more"), res.scanned));
+            }
+
+            var head = '<p class="preview__summary"><strong>' +
+                fill(t("matches", "{0} match(es)"), res.total) + "</strong> · " +
+                escapeHtml(notes.join(" · ")) + "</p>";
+
+            // Column meaning differs per source, so the header follows the chosen type.
+            var mail = currentType() === "0" || currentType() === "1";
+            var columns = mail
+                ? [t("col-subject", "Subject"), t("col-from", "From"), t("col-date", "Date"), t("col-attachments", "Attachments")]
+                : [t("col-name", "Name"), t("col-path", "Path"), t("col-date", "Date"), t("col-size", "Size")];
+
+            var thead = "<thead><tr>" + columns.map(function (c) {
+                return "<th>" + escapeHtml(c) + "</th>";
+            }).join("") + "</tr></thead>";
 
             var rows = res.items.map(function (item) {
                 return "<tr><td>" + escapeHtml(item.title) + "</td>" +
@@ -302,7 +366,7 @@
                     "<td>" + escapeHtml(item.extra || "—") + "</td></tr>";
             }).join("");
 
-            return head + '<div class="data-table-wrap"><table class="data-table"><tbody>' + rows + "</tbody></table></div>";
+            return head + '<div class="data-table-wrap"><table class="data-table">' + thead + "<tbody>" + rows + "</tbody></table></div>";
         }
     });
 })();

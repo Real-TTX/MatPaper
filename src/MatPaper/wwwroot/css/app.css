@@ -198,7 +198,7 @@ a {
 
 .nav-item.is-active {
     background: var(--color-active);
-    color: var(--color-primary);
+    color: var(--color-primary-text);
 }
 
 .nav-item__icon {
@@ -354,6 +354,13 @@ button.account__logout {
 .lang-switch--auth {
     width: 120px;
     margin: 16px auto 0;
+}
+
+/* Every interactive element gets the same visible keyboard focus. Components that
+   draw their own ring (buttons, inputs, picker) keep it via :focus-visible below. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 /* ---- Main column ------------------------------------------------------- */

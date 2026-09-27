@@ -343,7 +343,7 @@
 }
 
 .nav-upload:hover {
-    filter: brightness(1.05);
+    background: var(--color-primary-hover);
 }
 
 .nav-upload__icon {

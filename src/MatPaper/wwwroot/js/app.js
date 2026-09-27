@@ -199,26 +199,162 @@
         wireSidebarToggle();
         wireDependentFields();
         wireConfirmActions();
+        wireBusyForms();
+        wireRowLinks();
         markActiveNav();
         registerServiceWorker();
     }
 
-    // Any control carrying data-confirm asks first. Putting the text in an attribute
-    // keeps quotes and apostrophes out of a JavaScript string literal, where a single
-    // stray quote would silently disable the prompt.
+    // ----- Confirmation dialog ---------------------------------------------
+
+    // Any control carrying data-confirm asks first, in MatPaper's own dialog rather than
+    // the browser's. The text lives in an attribute so quotes and apostrophes cannot
+    // break out of a JavaScript string and silently disable the question.
+    // One pending question at a time, one close listener for the whole page. Attaching a
+    // listener per question let unanswered ones pile up and answer each other's promises.
+    var confirmPending = null;
+
     function wireConfirmActions() {
+        var dialog = document.getElementById("mp-confirm");
+        if (dialog) {
+            dialog.addEventListener("close", function () {
+                var resolve = confirmPending;
+                confirmPending = null;
+                var confirmed = dialog.returnValue === "ok";
+                dialog.returnValue = "";
+                if (resolve) {
+                    resolve(confirmed);
+                }
+            });
+        }
+
         document.addEventListener("click", function (event) {
             var el = event.target && event.target.closest ? event.target.closest("[data-confirm]") : null;
-            if (!el) {
+            if (!el || el.getAttribute("data-confirmed") === "1") {
                 return;
             }
 
             var message = el.getAttribute("data-confirm");
-            if (message && !window.confirm(message)) {
-                event.preventDefault();
-                event.stopPropagation();
+            if (!message) {
+                return;
             }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            ask(message, el).then(function (confirmed) {
+                if (!confirmed) {
+                    return;
+                }
+
+                // Replay the very same click; the marker keeps us from asking again.
+                el.setAttribute("data-confirmed", "1");
+                el.click();
+                el.removeAttribute("data-confirmed");
+            });
         }, true);
+    }
+
+    function ask(message, source) {
+        var dialog = document.getElementById("mp-confirm");
+        if (!dialog || typeof dialog.showModal !== "function") {
+            return Promise.resolve(window.confirm(message));
+        }
+
+        // A question that is somehow still open counts as declined.
+        if (dialog.open) {
+            dialog.close("");
+        }
+
+        var danger = !!(source && source.closest(".btn--danger, .icon-btn--danger"));
+        dialog.querySelector(".confirm__text").textContent = message;
+        var ok = dialog.querySelector(".confirm__ok");
+        ok.className = "btn confirm__ok " + (danger ? "btn--danger" : "btn--primary");
+
+        return new Promise(function (resolve) {
+            confirmPending = resolve;
+            dialog.returnValue = "";
+            dialog.showModal();
+            ok.focus();
+        });
+    }
+
+    // ----- Clickable rows --------------------------------------------------
+
+    function wireRowLinks() {
+        document.addEventListener("click", function (event) {
+            var row = event.target && event.target.closest ? event.target.closest("[data-row-href]") : null;
+            if (!row) {
+                return;
+            }
+
+            // Anything interactive inside the row wins, and so does a text selection.
+            if (event.target.closest("a, button, input, select, textarea, label, [data-confirm]")) {
+                return;
+            }
+            var selection = window.getSelection();
+            if (selection && selection.toString().length > 0) {
+                return;
+            }
+
+            var href = row.getAttribute("data-row-href");
+            if (event.metaKey || event.ctrlKey || event.button === 1) {
+                window.open(href, "_blank", "noopener");
+            } else {
+                window.location.href = href;
+            }
+        });
+
+        // Keyboard: a row is reachable with Tab and opens with Enter.
+        document.addEventListener("keydown", function (event) {
+            if (event.key !== "Enter") {
+                return;
+            }
+            var row = event.target && event.target.closest ? event.target.closest("[data-row-href]") : null;
+            if (row && event.target === row) {
+                window.location.href = row.getAttribute("data-row-href");
+            }
+        });
+    }
+
+    // ----- Busy state ------------------------------------------------------
+
+    // A slow POST used to look like nothing happened, so people clicked again. The
+    // button is marked instead of disabled: a disabled submitter is not sent, which
+    // would drop the name/value that tells the handler which action was chosen.
+    function wireBusyForms() {
+        // Bubble phase on purpose: a page script that cancels its own submit (the uploader
+        // posts by XHR) runs first, and a cancelled submit is not a request in flight.
+        document.addEventListener("submit", function (event) {
+            var form = event.target;
+            if (!(form instanceof HTMLFormElement) || form.hasAttribute("data-no-busy")) {
+                return;
+            }
+
+            if (event.defaultPrevented) {
+                return;
+            }
+
+            if (form.getAttribute("data-busy") === "1") {
+                event.preventDefault();
+                return;
+            }
+
+            form.setAttribute("data-busy", "1");
+            var submitter = event.submitter || form.querySelector("[type=submit]");
+            if (submitter) {
+                submitter.setAttribute("aria-busy", "true");
+            }
+
+            // A validation failure or a cancelled navigation must not leave the form
+            // stuck, so let go again after a moment.
+            window.setTimeout(function () {
+                form.removeAttribute("data-busy");
+                if (submitter) {
+                    submitter.removeAttribute("aria-busy");
+                }
+            }, 15000);
+        });
     }
 
     // PWA: register the service worker for offline shell + installability.

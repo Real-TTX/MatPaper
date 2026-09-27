@@ -19,10 +19,11 @@
     </div>
 }
 
-<form class="form" id="upload-form" method="post" enctype="multipart/form-data"
+<form class="form" id="upload-form" method="post" enctype="multipart/form-data" data-no-busy
       data-ajax-url="/Documents/Upload?handler=Ajax" data-inbox-url="/Inbox"
       data-t-uploading='@L["Uploading…"]' data-t-added='@L["Added"]'
       data-t-duplicate='@L["Duplicate — skipped"]' data-t-failed='@L["Failed"]'
+      data-t-show-existing='@L["Show existing document"]'
       data-t-network-error='@L["Network error"]'
       data-t-summary-added='@L["{0} added"]' data-t-summary-duplicates='@L["{0} duplicate(s) skipped"]'
       data-t-summary-failed='@L["{0} failed"]' data-t-review-link='@L["Review them in your inbox →"]'>

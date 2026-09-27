@@ -84,10 +84,21 @@
         if (fill) { fill.style.width = pct + "%"; }
     }
 
-    function setStatus(item, status, text) {
+    function setStatus(item, status, text, href) {
         item.status = status;
         item.row.className = "upload-item upload-item--" + status;
-        item.row.querySelector(".upload-item__status").textContent = text;
+        var cell = item.row.querySelector(".upload-item__status");
+        cell.textContent = text;
+
+        if (href) {
+            cell.appendChild(document.createTextNode(" "));
+            var link = document.createElement("a");
+            link.href = href;
+            link.target = "_blank";
+            link.rel = "noopener";
+            link.textContent = t("show-existing", "Show existing document");
+            cell.appendChild(link);
+        }
     }
 
     function uploadOne(item) {
@@ -114,7 +125,8 @@
                     if (res.status === "created") {
                         setStatus(item, "created", t("added", "Added"));
                     } else if (res.status === "duplicate") {
-                        setStatus(item, "duplicate", t("duplicate", "Duplicate — skipped"));
+                        setStatus(item, "duplicate", t("duplicate", "Duplicate — skipped"),
+                            res.id ? "/Documents/Edit?id=" + encodeURIComponent(res.id) : null);
                     } else {
                         setStatus(item, "failed", res.message || t("failed", "Failed"));
                     }

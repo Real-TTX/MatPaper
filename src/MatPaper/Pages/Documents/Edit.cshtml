@@ -2,6 +2,7 @@
 @model MatPaper.Pages.Documents.EditModel
 @{
     ViewData["Breadcrumb"] = L["Documents / Edit"].Value;
+    ViewData["Title"] = Model.Input.Title;
 
     var (ocrLabel, ocrBadge) = Model.OcrState switch
     {
@@ -251,7 +252,7 @@
     </aside>
 
     <div class="doc-right">
-    <form class="form" method="post">
+    <form class="form form--wide" method="post">
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="ReturnUrl" />
 
@@ -379,8 +380,17 @@
 
 @if (Model.IsOwner)
 {
-<section class="doc-shares">
-    <h2 class="doc-shares__title">@L["Sharing"]</h2>
+    var shareParts = new List<string>();
+    if (Model.IsCommon) { shareParts.Add(L["Common area"].Value); }
+    if (Model.UserShares.Count > 0) { shareParts.Add(L["{0} person(s)", Model.UserShares.Count].Value); }
+    if (Model.ShareLinks.Count > 0) { shareParts.Add(L["{0} link(s)", Model.ShareLinks.Count].Value); }
+    var shareState = shareParts.Count == 0 ? L["Not shared"].Value : string.Join(" · ", shareParts);
+
+<details class="doc-shares" open="@(shareParts.Count > 0)">
+    <summary class="doc-shares__summary">
+        <span class="doc-shares__title">@L["Sharing"]</span>
+        <span class="doc-shares__state">@shareState</span>
+    </summary>
 
     <form method="post" asp-page-handler="SetCommon">
         <input type="hidden" asp-for="Id" />
@@ -390,7 +400,7 @@
         </label>
     </form>
 
-    <h3 style="margin:1.25rem 0 0.35rem;font-size:1rem">@L["Shared with users"]</h3>
+    <h3 class="doc-shares__sub">@L["Shared with users"]</h3>
     @if (Model.UserShares.Count > 0)
     {
         <ul class="share-users">
@@ -425,7 +435,7 @@
         </form>
     }
 
-    <h3 style="margin:1.5rem 0 0.35rem;font-size:1rem">@L["Share links"]</h3>
+    <h3 class="doc-shares__sub">@L["Share links"]</h3>
     <p class="form-help">@L["Anyone with a share link can view and download this document without signing in."]</p>
 
     @if (Model.ShareLinks.Count > 0)
@@ -472,7 +482,7 @@
         </select>
         <button class="btn btn--primary" type="submit" asp-page-handler="CreateShare">@L["Create share link"]</button>
     </form>
-</section>
+</details>
 }
     </div>
 </div>

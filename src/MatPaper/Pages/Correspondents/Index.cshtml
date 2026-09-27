@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = L["Correspondents"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name, pattern or notes"]' />
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
@@ -27,7 +27,7 @@
         @foreach (var c in Model.Rows)
         {
             Model.Stats.TryGetValue(c.Id, out var st);
-            <tr>
+            <tr data-row-href="/Correspondents/Edit?id=@c.Id" tabindex="0">
                 <td><a href="/Documents?CorrespondentIds=@c.Id" title='@L["Show documents"]'>@c.Name</a></td>
                 <td>@(string.IsNullOrWhiteSpace(c.Email) ? "—" : c.Email)</td>
                 <td>

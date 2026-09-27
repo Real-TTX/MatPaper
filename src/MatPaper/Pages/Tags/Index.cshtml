@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = L["Tags"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
@@ -25,7 +25,7 @@
         @foreach (var tag in Model.Rows)
         {
             var swatch = string.IsNullOrWhiteSpace(tag.Color) ? "#808080" : tag.Color;
-            <tr>
+            <tr data-row-href="/Tags/Edit?id=@tag.Id" tabindex="0">
                 <td>
                     <span class="tag-label"><span class="tag-label__dot" style="background:@swatch"></span>@tag.Name</span>
                 </td>

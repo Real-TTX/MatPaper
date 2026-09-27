@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = L["System / Task history"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-select name="Kind" label='@L["Kind"]' value="@Model.Kind">
         <option value="all">@L["All"]</option>
         <option value="import">@L["Import"]</option>

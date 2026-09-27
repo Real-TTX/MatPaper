@@ -62,7 +62,7 @@ public sealed class ButtonTagHelper : TagHelper
     [HtmlAttributeName("handler")]
     public string? Handler { get; set; }
 
-    /// <summary>Confirmation prompt; emits onclick="return confirm('…')".</summary>
+    /// <summary>Confirmation prompt; emits data-confirm, handled by the dialog in app.js.</summary>
     [HtmlAttributeName("confirm")]
     public string? Confirm { get; set; }
 
@@ -91,8 +91,7 @@ public sealed class ButtonTagHelper : TagHelper
 
         if (!string.IsNullOrEmpty(Confirm))
         {
-            string message = Confirm.Replace("\\", "\\\\").Replace("'", "\\'");
-            output.Attributes.SetAttribute("onclick", $"return confirm('{message}');");
+            output.Attributes.SetAttribute("data-confirm", Confirm);
         }
 
         output.Content.SetHtmlContent(body);

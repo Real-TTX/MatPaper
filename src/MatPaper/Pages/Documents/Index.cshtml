@@ -6,7 +6,7 @@
     ViewData["Breadcrumb"] = L["Documents"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Full-text search"]' />
 
     <mp-picker asp-for="CorrespondentIds" label='@L["Correspondent"]' multiple="true" placeholder='@L["All"]'

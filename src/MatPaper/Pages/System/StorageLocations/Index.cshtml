@@ -6,7 +6,7 @@
     ViewData["Breadcrumb"] = L["System / Storage locations"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or path"]' />
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
@@ -35,7 +35,7 @@
         <tbody>
             @foreach (var s in Model.Rows)
             {
-                <tr>
+                <tr data-row-href="/System/StorageLocations/Edit?id=@s.Id" tabindex="0">
                     <td>@s.Name</td>
                     <td>
                         <span class="badge @(s.Kind == StorageKind.Smb ? "badge--admin" : "badge--muted")">

@@ -2,6 +2,7 @@
 @model MatPaper.Pages.Tags.EditModel
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Tags / Edit"].Value : L["Tags / New"].Value;
+    ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
 }
 
 <form class="form" method="post">

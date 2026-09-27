@@ -996,3 +996,114 @@ input[type="color"].form-control {
 .notice--danger .notice__icon {
     color: var(--color-danger, #c0392b);
 }
+
+/* ==========================================================================
+   Confirmation dialog (replaces the browser's own window)
+   ========================================================================== */
+.confirm {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--color-surface);
+    color: var(--color-text);
+    padding: 0;
+    max-width: min(28rem, calc(100vw - 2rem));
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.confirm::backdrop {
+    background: rgba(15, 18, 20, 0.45);
+}
+
+.confirm__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.25rem 1.35rem 1.15rem;
+}
+
+.confirm__text {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.confirm__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* ==========================================================================
+   Busy state: a submit button that is waiting for the server
+   ========================================================================== */
+.btn[aria-busy="true"],
+.icon-btn[aria-busy="true"] {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn[aria-busy="true"]::after,
+.icon-btn[aria-busy="true"]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1em;
+    height: 1em;
+    margin: -0.5em 0 0 -0.5em;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: var(--color-primary-contrast);
+    animation: mp-spin 0.7s linear infinite;
+}
+
+.btn--secondary[aria-busy="true"]::after,
+.icon-btn[aria-busy="true"]::after {
+    color: var(--color-text);
+}
+
+/* An outlined danger button has no fill, so a white ring would be invisible. */
+.btn--danger[aria-busy="true"]::after {
+    color: var(--color-danger-text);
+}
+
+@keyframes mp-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn[aria-busy="true"]::after,
+    .icon-btn[aria-busy="true"]::after {
+        animation-duration: 2.4s;
+    }
+}
+
+/* Reading a form is easier when a line stays short. Layouts that already sit in a
+   column of their own opt out with .form--wide. */
+.form:not(.form--wide) {
+    max-width: 52rem;
+}
+
+.toolbar__count {
+    margin-left: auto;
+    align-self: center;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* A row that opens its entry on click. */
+tr[data-row-href] {
+    cursor: pointer;
+}
+
+tr[data-row-href]:hover {
+    background: var(--color-surface-alt);
+}
+
+tr[data-row-href]:focus-visible {
+    outline: none;
+    box-shadow: inset var(--focus-ring);
+}

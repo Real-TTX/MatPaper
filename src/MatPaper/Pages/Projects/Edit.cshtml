@@ -2,6 +2,7 @@
 @model MatPaper.Pages.Projects.EditModel
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Projects / Edit"].Value : L["Projects / New"].Value;
+    ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
 }
 
 @if (Model.IsEdit)

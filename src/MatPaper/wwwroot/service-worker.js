@@ -1,5 +1,7 @@
 /* MatPaper service worker */
-const CACHE_NAME = "matpaper-v1";
+// Bumped when shipped assets are removed or replaced, so the activate step drops the
+// old cache instead of keeping files that no longer exist.
+const CACHE_NAME = "matpaper-v2";
 const APP_SHELL = [
   "/css/app.css",
   "/css/components.css",

@@ -66,7 +66,7 @@ else
                     "User" => "badge--user",
                     _ => "badge--muted"
                 };
-                <tr>
+                <tr data-row-href="/System/Users/Edit?id=@user.Id" tabindex="0">
                     <td>@user.Username</td>
                     <td>@user.DisplayName</td>
                     <td>@user.Email</td>

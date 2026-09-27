@@ -990,3 +990,36 @@
 .doc-card--deleted .doc-card__title {
     color: var(--color-text-muted);
 }
+
+/* The sharing panel folds away; its header already answers whether anything is shared. */
+.doc-shares__summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.doc-shares__summary::-webkit-details-marker {
+    display: none;
+}
+
+.doc-shares__summary::before {
+    content: "\25B8";
+    color: var(--color-text-muted);
+    transition: transform 0.15s ease;
+}
+
+.doc-shares[open] > .doc-shares__summary::before {
+    transform: rotate(90deg);
+}
+
+.doc-shares__state {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.doc-shares__sub {
+    margin: 1.25rem 0 0.35rem;
+    font-size: 1rem;
+}

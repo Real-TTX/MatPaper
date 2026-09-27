@@ -83,8 +83,11 @@
   <data name="{0} ignored" xml:space="preserve"><value>{0} ignoriert</value></data>
   <data name="{0} ignored, {1} skipped (still in the staging area)." xml:space="preserve"><value>{0} ignoriert, {1} übersprungen (liegen noch im Zwischenspeicher).</value></data>
   <data name="{0} in the inbox · {1} found · {2} being processed" xml:space="preserve"><value>{0} im Eingang · {1} gefunden · {2} in Arbeit</value></data>
+  <data name="{0} link(s)" xml:space="preserve"><value>{0} Link(s)</value></data>
   <data name="{0} match(es)" xml:space="preserve"><value>{0} Treffer</value></data>
+  <data name="{0} matches" xml:space="preserve"><value>{0} Treffer</value></data>
   <data name="{0} new" xml:space="preserve"><value>{0} neu</value></data>
+  <data name="{0} person(s)" xml:space="preserve"><value>{0} Person(en)</value></data>
   <data name="{0} scanned" xml:space="preserve"><value>{0} geprüft</value></data>
   <data name="{0} still processing" xml:space="preserve"><value>{0} noch in Verarbeitung</value></data>
   <data name="{0} taken over, {1} still open." xml:space="preserve"><value>{0} übernommen, {1} noch offen.</value></data>
@@ -168,6 +171,7 @@
   <data name="Common" xml:space="preserve"><value>Gemeinsam</value></data>
   <data name="Common area" xml:space="preserve"><value>Gemeinsamer Bereich</value></data>
   <data name="Common area (visible to everyone)" xml:space="preserve"><value>Gemeinsamer Bereich (für alle sichtbar)</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Bestätigen</value></data>
   <data name="Confirm all" xml:space="preserve"><value>Alle bestätigen</value></data>
   <data name="Confirm password" xml:space="preserve"><value>Passwort bestätigen</value></data>
   <data name="Connected to {0}." xml:space="preserve"><value>Verbunden mit {0}.</value></data>
@@ -390,6 +394,7 @@
   <data name="No users match your criteria." xml:space="preserve"><value>Keine Benutzer entsprechen den Kriterien.</value></data>
   <data name="Not analyzed yet" xml:space="preserve"><value>Noch nicht analysiert</value></data>
   <data name="Not filed yet" xml:space="preserve"><value>Noch nicht abgelegt</value></data>
+  <data name="Not shared" xml:space="preserve"><value>Nicht freigegeben</value></data>
   <data name="Not shared with any user yet." xml:space="preserve"><value>Noch für keinen Benutzer freigegeben.</value></data>
   <data name="Not signed in" xml:space="preserve"><value>Nicht angemeldet</value></data>
   <data name="Notes" xml:space="preserve"><value>Notizen</value></data>
@@ -507,6 +512,7 @@
   <data name="Sharing" xml:space="preserve"><value>Freigabe</value></data>
   <data name="Sharing a project gives the selected users access to every document in it." xml:space="preserve"><value>Eine Projektfreigabe gibt den ausgewählten Benutzern Zugriff auf alle Dokumente des Projekts.</value></data>
   <data name="Show documents" xml:space="preserve"><value>Dokumente anzeigen</value></data>
+  <data name="Show existing document" xml:space="preserve"><value>Vorhandenes Dokument anzeigen</value></data>
   <data name="Show folders…" xml:space="preserve"><value>Ordner anzeigen…</value></data>
   <data name="Show in the common area (visible to everyone)" xml:space="preserve"><value>Im gemeinsamen Bereich anzeigen (für alle sichtbar)</value></data>
   <data name="showing the first {0}" xml:space="preserve"><value>die ersten {0} angezeigt</value></data>

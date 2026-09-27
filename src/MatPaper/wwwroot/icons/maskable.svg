@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="512" height="512">
+  <!-- Maskable: the platform crops this to its own shape, so the colour runs edge to edge
+       and the mark stays inside the safe area (the middle 80%). -->
+  <rect width="24" height="24" fill="#2f9e44" />
+  <g transform="translate(12 12) scale(0.62) translate(-12 -12)">
+    <path d="M6.5 16.8V8.2l5.5 5.4 5.5-5.4v8.6" fill="none" stroke="#ffffff" stroke-width="1.9"
+          stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="12" cy="18.4" r="1.05" fill="#ffffff" />
+  </g>
+</svg>

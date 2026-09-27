@@ -38,5 +38,15 @@
 
     <script src="~/js/app.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    <dialog id="mp-confirm" class="confirm">
+        <form method="dialog" class="confirm__inner" data-no-busy>
+            <p class="confirm__text"></p>
+            <div class="confirm__actions">
+                <button class="btn btn--secondary" value="cancel">@L["Cancel"]</button>
+                <button class="btn btn--primary confirm__ok" value="ok">@L["Confirm"]</button>
+            </div>
+        </form>
+    </dialog>
 </body>
 </html>

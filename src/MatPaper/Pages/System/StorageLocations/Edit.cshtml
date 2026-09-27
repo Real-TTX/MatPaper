@@ -2,6 +2,7 @@
 @model MatPaper.Pages.System.StorageLocations.EditModel
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Storage locations / Edit"].Value : L["System / Storage locations / New"].Value;
+    ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
 }
 
 <form class="form" method="post">

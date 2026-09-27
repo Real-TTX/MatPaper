@@ -5,7 +5,7 @@
     ViewData["Breadcrumb"] = L["System / Export tasks"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
 </mp-toolbar>
 
@@ -29,7 +29,7 @@
     <tbody>
         @foreach (var t in Model.Rows)
         {
-            <tr>
+            <tr data-row-href="/System/ExportTasks/Edit?id=@t.Id" tabindex="0">
                 <td>@t.Name</td>
                 <td>@(t.Type == MatPaper.Data.ExportTaskType.Backup ? L["Backup"].Value : L["Export"].Value)</td>
                 <td>

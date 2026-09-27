@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = L["System / Document types"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
@@ -28,7 +28,7 @@
     <tbody>
         @foreach (var t in Model.Rows)
         {
-            <tr>
+            <tr data-row-href="/System/DocumentTypes/Edit?id=@t.Id" tabindex="0">
                 <td>@t.Name</td>
                 <td class="is-actions"><a href="/System/DocumentTypes/Edit?id=@t.Id">@L["Edit"]</a></td>
             </tr>

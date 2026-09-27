@@ -2,6 +2,7 @@
 @model MatPaper.Pages.Correspondents.EditModel
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Correspondents / Edit"].Value : L["Correspondents / New"].Value;
+    ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
     var matchPatternHelp = L["Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too."].Value;
 }
 

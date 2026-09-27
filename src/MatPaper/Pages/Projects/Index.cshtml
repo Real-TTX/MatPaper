@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = L["Projects"].Value;
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
@@ -25,7 +25,7 @@
         @foreach (var project in Model.Rows)
         {
             var swatch = string.IsNullOrWhiteSpace(project.Color) ? "#808080" : project.Color;
-            <tr>
+            <tr data-row-href="/Projects/Edit?id=@project.Id" tabindex="0">
                 <td>
                     <a href="/Documents?ProjectIds=@project.Id" title='@L["Show documents"]' class="tag-label">
                         <span class="tag-label__dot" style="background:@swatch"></span>@project.Name

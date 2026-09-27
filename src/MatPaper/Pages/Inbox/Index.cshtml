@@ -24,7 +24,7 @@
         new MatPaper.Services.FilterSpec("State", L["Status"].Value, Model.ShowingIgnored ? L["Ignored"].Value : null));
 }
 
-<mp-toolbar>
+<mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title, file name or correspondent"]' />
     <mp-toolbar-select name="Origin" label='@L["Origin"]' value="@(Model.Origin?.ToString() ?? string.Empty)">
         <option value="">@L["All"]</option>
@@ -136,7 +136,7 @@ else
 
     @if (!Model.ShowingIgnored)
     {
-    <form method="post" id="inbox-bulk" class="form inbox-bulk" asp-page-handler="Bulk"
+    <form method="post" id="inbox-bulk" class="form form--wide inbox-bulk" asp-page-handler="Bulk"
           asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
           asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
           asp-route-AllOwners="@Model.AllOwners" asp-route-PageNumber="@Model.PageNumber">

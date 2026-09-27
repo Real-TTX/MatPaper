@@ -37,7 +37,7 @@ public sealed class ToolbarTagHelper : TagHelper
         TagHelperContent children = await output.GetChildContentAsync();
         output.Content.SetHtmlContent(children);
 
-        var applyText = ApplyText ?? _l["Apply"].Value;
+        var applyText = ApplyText ?? _l["Filter"].Value;
         if (!string.IsNullOrEmpty(applyText))
         {
             string label = HtmlEncoder.Default.Encode(applyText);

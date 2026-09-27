@@ -25,7 +25,6 @@ public class AppDbContext : DbContext
     public DbSet<ExportTask> ExportTasks => Set<ExportTask>();
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
-    public DbSet<InboxItem> InboxItems => Set<InboxItem>();
     public DbSet<Credential> Credentials => Set<Credential>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -50,7 +49,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ExportTask>().ToTable("ExportTask");
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
         modelBuilder.Entity<ShareLink>().ToTable("ShareLink");
-        modelBuilder.Entity<InboxItem>().ToTable("InboxItem");
         modelBuilder.Entity<Credential>().ToTable("Credential");
 
         modelBuilder.Entity<User>()
@@ -123,14 +121,16 @@ public class AppDbContext : DbContext
             .HasIndex(s => new { s.ProjectId, s.UserId })
             .IsUnique();
 
-        modelBuilder.Entity<InboxItem>()
-            .HasIndex(i => new { i.StorageLocationId, i.RelativePath })
-            .IsUnique();
-
         modelBuilder.Entity<StorageLocation>()
             .HasOne(s => s.Credential)
             .WithMany()
             .HasForeignKey(s => s.CredentialId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<StorageLocation>()
+            .HasOne(s => s.DefaultOwner)
+            .WithMany()
+            .HasForeignKey(s => s.DefaultOwnerId)
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Document>(entity =>
@@ -141,6 +141,16 @@ public class AppDbContext : DbContext
                     d => new { d.Title, d.OcrText })
                 .HasIndex(d => d.SearchVector)
                 .HasMethod("GIN");
+
+            // A storage search asks "which paths in this location do I already know?" —
+            // deliberately not unique: a soft-deleted row keeps its path as a tombstone.
+            entity.HasIndex(d => new { d.StorageLocationId, d.RelativePath });
+
+            // The inbox list, the nav badge and the dashboard counter all run this predicate.
+            entity.HasIndex(d => new { d.OwnerId, d.ReviewState, d.UpdateState });
+
+            // Duplicate detection when a found document is analysed.
+            entity.HasIndex(d => d.ContentHash);
         });
 
         var seedTimestamp = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

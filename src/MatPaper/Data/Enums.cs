@@ -11,7 +11,13 @@ public enum OcrState
 {
     Pending = 0,
     Done = 1,
-    Failed = 2
+    Failed = 2,
+
+    /// <summary>
+    /// Never queued for analysis. Files discovered by a storage search start here so a
+    /// search over thousands of files costs nothing; the user starts OCR explicitly.
+    /// </summary>
+    Deferred = 3
 }
 
 /// <summary>
@@ -22,7 +28,26 @@ public enum OcrState
 public enum ReviewState
 {
     Pending = 0,
-    Reviewed = 1
+    Reviewed = 1,
+
+    /// <summary>
+    /// A known file that is deliberately not managed by MatPaper. Used for files a storage
+    /// search discovered and the user waved away; the file itself is never touched, and the
+    /// row keeps the next search from offering it again.
+    /// </summary>
+    Ignored = 2
+}
+
+/// <summary>How a document entered MatPaper. Shown as a badge in the inbox.</summary>
+public enum DocumentOrigin
+{
+    Upload = 0,
+    Mail = 1,
+    ImportFolder = 2,
+    CameraScan = 3,
+
+    /// <summary>Found by a storage search; the file already lay inside the storage location.</summary>
+    StorageScan = 4
 }
 
 /// <summary>Where a <see cref="StorageLocation"/> keeps its files.</summary>

@@ -4,41 +4,46 @@ using MatPaper.Data;
 namespace MatPaper.Services;
 
 /// <summary>
-/// Discovers files in a <see cref="StorageLocation"/> (local folder or SMB share) and records
-/// the unknown ones as <see cref="InboxItem"/>s, then turns selected inbox items into managed
-/// <see cref="Document"/>s (or dismisses them). Listing, hashing and file moves are delegated
-/// to <see cref="DocumentStorageService"/>; OCR/thumbnail work is triggered via
-/// <see cref="DocumentProcessingQueue"/>.
+/// Searches a <see cref="StorageLocation"/> (local folder or SMB share) for files MatPaper
+/// does not know yet and records each one as a <see cref="Document"/> that waits in the
+/// inbox. Discovery is deliberately cheap: it lists the location once and never reads file
+/// contents, never copies anything into the staging area and never queues OCR. Hashing and
+/// text recognition happen later, when the user asks for them.
 /// </summary>
 public sealed class StorageScanService
 {
+    /// <summary>Documents written per SaveChanges so a large archive does not build one giant transaction.</summary>
+    private const int ChunkSize = 500;
+
     private readonly AppDbContext _db;
     private readonly DocumentStorageService _storage;
-    private readonly DocumentProcessingQueue _queue;
     private readonly ILogger<StorageScanService> _logger;
 
     public StorageScanService(
         AppDbContext db,
         DocumentStorageService storage,
-        DocumentProcessingQueue queue,
         ILogger<StorageScanService> logger)
     {
         _db = db;
         _storage = storage;
-        _queue = queue;
         _logger = logger;
     }
 
-    public record ScanResult(int Scanned, int Added, int Skipped, bool LocationMissing);
-
-    public record ImportSummary(int Imported, int Duplicates, int Errors);
+    /// <summary>
+    /// Outcome of a search. <paramref name="Failure"/> is a user-facing reason why nothing
+    /// could be searched (share offline, root inside MatPaper's own data folder).
+    /// </summary>
+    public record ScanResult(int Scanned, int Added, int Skipped, bool LocationMissing, string? Failure)
+    {
+        public bool Ok => !LocationMissing && Failure is null;
+    }
 
     /// <summary>
-    /// Walks the storage location recursively and adds an <see cref="InboxItem"/> for every
-    /// file that is not already tracked as a non-deleted document or a known inbox item.
-    /// Dot-files and any path containing a dot-prefixed segment are ignored.
+    /// Walks the storage location recursively and adds a pending document for every file that
+    /// is not known yet. Dot-files, paths with a dot-prefixed segment and extensions outside
+    /// the location's <see cref="StorageLocation.ScanExtensions"/> are ignored.
     /// </summary>
-    public async Task<ScanResult> ScanAsync(long storageLocationId, CancellationToken ct)
+    public async Task<ScanResult> ScanAsync(long storageLocationId, long? actingUserId, CancellationToken ct)
     {
         var loc = await _db.StorageLocations
             .AsNoTracking()
@@ -47,7 +52,12 @@ public sealed class StorageScanService
 
         if (loc is null)
         {
-            return new ScanResult(0, 0, 0, true);
+            return new ScanResult(0, 0, 0, true, null);
+        }
+
+        if (_storage.OverlapsInternalData(loc, out var conflict))
+        {
+            return await FinishAsync(loc, 0, $"The root overlaps MatPaper's own folder \"{conflict}\".", ct);
         }
 
         IReadOnlyList<StorageEntry> entries;
@@ -62,286 +72,167 @@ public sealed class StorageScanService
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Storage location {LocationId} ('{Root}') could not be listed; scan skipped.",
+                "Storage location {LocationId} ('{Root}') could not be listed.",
                 storageLocationId, loc.DisplayRoot);
-            return new ScanResult(0, 0, 0, true);
+            return await FinishAsync(loc, 0, ex.Message, ct);
         }
 
-        var docPaths = await _db.Documents
+        // Known paths include soft-deleted and ignored documents on purpose: both are
+        // tombstones that keep the next search from offering the same file again.
+        var knownPaths = await _db.Documents
             .AsNoTracking()
-            .Where(d => d.StorageLocationId == storageLocationId && !d.IsStaged && d.UpdateState != UpdateState.Deleted)
+            .Where(d => d.StorageLocationId == storageLocationId && !d.IsStaged)
             .Select(d => d.RelativePath)
             .ToListAsync(ct);
 
-        var inboxPaths = await _db.InboxItems
-            .AsNoTracking()
-            .Where(i => i.StorageLocationId == storageLocationId)
-            .Select(i => i.RelativePath)
-            .ToListAsync(ct);
+        var known = new HashSet<string>(knownPaths, StringComparer.Ordinal);
+        var extensions = ParseExtensions(loc.ScanExtensions);
+        var ownerId = await ResolveOwnerIdAsync(loc, actingUserId, ct);
 
-        var docSet = new HashSet<string>(docPaths, StringComparer.Ordinal);
-        var inboxSet = new HashSet<string>(inboxPaths, StringComparer.Ordinal);
-
-        int scanned = 0;
-        int skipped = 0;
         var now = DateTime.UtcNow;
+        int scanned = 0, skipped = 0, added = 0;
+        var batch = new List<Document>(ChunkSize);
 
-        var fresh = new List<StorageEntry>();
         foreach (var entry in entries)
         {
-            if (HasHiddenSegment(entry.RelativePath))
+            ct.ThrowIfCancellationRequested();
+
+            if (HasHiddenSegment(entry.RelativePath) || !Wanted(entry.RelativePath, extensions))
             {
                 continue;
             }
 
             scanned++;
 
-            if (docSet.Contains(entry.RelativePath) || inboxSet.Contains(entry.RelativePath))
+            if (!known.Add(entry.RelativePath))
             {
                 skipped++;
                 continue;
             }
 
-            fresh.Add(entry);
-        }
+            var fileName = Path.GetFileName(entry.RelativePath);
+            var title = Path.GetFileNameWithoutExtension(fileName);
 
-        // Hash the new files in one batch so a remote location needs a single connection
-        // for the whole scan instead of one handshake per file.
-        var hashes = await _storage.ComputeHashesAsync(loc, fresh.Select(e => e.RelativePath).ToList(), ct);
-
-        int added = 0;
-        foreach (var entry in fresh)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            if (!hashes.TryGetValue(entry.RelativePath, out var hash))
+            batch.Add(new Document
             {
-                _logger.LogWarning("Could not read '{File}' while scanning; skipping.", entry.RelativePath);
-                continue;
-            }
-
-            _db.InboxItems.Add(new InboxItem
-            {
-                StorageLocationId = storageLocationId,
+                Token = Guid.NewGuid(),
+                Title = string.IsNullOrWhiteSpace(title) ? fileName : title,
+                OriginalFileName = fileName,
                 RelativePath = entry.RelativePath,
-                FileName = Path.GetFileName(entry.RelativePath),
+                StorageLocationId = storageLocationId,
+                IsStaged = false,
+                Origin = DocumentOrigin.StorageScan,
                 FileSize = entry.Size,
-                ContentHash = hash,
                 FileModifiedUtc = entry.ModifiedUtc,
+                ContentHash = null,
+                OwnerId = ownerId,
+                IsCommon = loc.DefaultIsCommon,
+                ReviewState = ReviewState.Pending,
+                OcrState = OcrState.Deferred,
                 UpdateState = UpdateState.Created,
+                PageCount = 0,
                 CreateDate = now,
                 UpdateDate = now,
-                CreateUserId = null,
-                UpdateUserId = null
+                CreateUserId = actingUserId,
+                UpdateUserId = actingUserId
             });
 
             added++;
+
+            if (batch.Count >= ChunkSize)
+            {
+                await FlushAsync(batch, ct);
+            }
         }
 
-        if (added > 0)
+        await FlushAsync(batch, ct);
+
+        _logger.LogInformation(
+            "Storage search of location {LocationId} finished: {Scanned} scanned, {Added} new, {Skipped} known.",
+            storageLocationId, scanned, added, skipped);
+
+        await FinishAsync(loc, added, null, ct);
+        return new ScanResult(scanned, added, skipped, false, null);
+    }
+
+    private async Task FlushAsync(List<Document> batch, CancellationToken ct)
+    {
+        if (batch.Count == 0)
         {
-            await _db.SaveChangesAsync(ct);
+            return;
         }
 
-        return new ScanResult(scanned, added, skipped, false);
+        _db.Documents.AddRange(batch);
+        await _db.SaveChangesAsync(ct);
+        _db.ChangeTracker.Clear();
+        batch.Clear();
+    }
+
+    /// <summary>Records the outcome on the location so the storage list can show it.</summary>
+    private async Task<ScanResult> FinishAsync(StorageLocation loc, int added, string? failure, CancellationToken ct)
+    {
+        var finishedAt = DateTime.UtcNow;
+
+        await _db.StorageLocations
+            .Where(s => s.Id == loc.Id)
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(s => s.LastScanUtc, finishedAt)
+                .SetProperty(s => s.LastScanFound, added)
+                .SetProperty(s => s.LastScanError, failure), ct);
+
+        return new ScanResult(0, added, 0, false, failure);
     }
 
     /// <summary>
-    /// Imports the given inbox items as documents applying the shared metadata. Content-hash
-    /// duplicates of existing documents are dismissed instead of re-imported. Each import is
-    /// isolated; a failure counts as an error and does not abort the batch. The files are
-    /// already inside the location, so the documents are created as filed (not staged) but
-    /// still land in the owner's review inbox.
+    /// The location's configured owner (when still active), else the user who started the
+    /// search, else the first active administrator.
     /// </summary>
-    public async Task<ImportSummary> ImportAsync(
-        IReadOnlyCollection<long> inboxItemIds,
-        long? correspondentId,
-        long? documentTypeId,
-        long? projectId,
-        IReadOnlyCollection<long> tagIds,
-        bool refile,
-        long? actingUserId,
-        CancellationToken ct)
+    private async Task<long?> ResolveOwnerIdAsync(StorageLocation loc, long? actingUserId, CancellationToken ct)
     {
-        int imported = 0;
-        int duplicates = 0;
-        int errors = 0;
-
-        if (inboxItemIds is null || inboxItemIds.Count == 0)
+        if (loc.DefaultOwnerId is long configured)
         {
-            return new ImportSummary(0, 0, 0);
-        }
+            var active = await _db.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == configured && u.IsActive, ct);
 
-        string? correspondentName = null;
-        string? documentTypeName = null;
-        if (refile)
-        {
-            if (correspondentId.HasValue)
+            if (active)
             {
-                correspondentName = await _db.Correspondents
-                    .AsNoTracking()
-                    .Where(c => c.Id == correspondentId.Value)
-                    .Select(c => c.Name)
-                    .FirstOrDefaultAsync(ct);
-            }
-
-            if (documentTypeId.HasValue)
-            {
-                documentTypeName = await _db.DocumentTypes
-                    .AsNoTracking()
-                    .Where(t => t.Id == documentTypeId.Value)
-                    .Select(t => t.Name)
-                    .FirstOrDefaultAsync(ct);
+                return configured;
             }
         }
 
-        var tagIdList = tagIds is null ? new List<long>() : tagIds.Distinct().ToList();
-
-        foreach (var id in inboxItemIds.Distinct())
+        if (actingUserId is not null)
         {
-            ct.ThrowIfCancellationRequested();
-
-            try
-            {
-                var item = await _db.InboxItems
-                    .Include(i => i.StorageLocation).ThenInclude(s => s!.Credential)
-                    .FirstOrDefaultAsync(i => i.Id == id && i.UpdateState != UpdateState.Deleted, ct);
-
-                if (item is null || item.StorageLocation is null)
-                {
-                    errors++;
-                    continue;
-                }
-
-                var now = DateTime.UtcNow;
-
-                if (!string.IsNullOrEmpty(item.ContentHash))
-                {
-                    var isDuplicate = await _db.Documents
-                        .AsNoTracking()
-                        .AnyAsync(d => d.ContentHash == item.ContentHash
-                            && d.UpdateState != UpdateState.Deleted
-                            && (d.OwnerId == actingUserId || d.IsCommon), ct);
-
-                    if (isDuplicate)
-                    {
-                        item.UpdateState = UpdateState.Deleted;
-                        item.UpdateDate = now;
-                        item.UpdateUserId = actingUserId;
-                        await _db.SaveChangesAsync(ct);
-                        duplicates++;
-                        continue;
-                    }
-                }
-
-                var title = Path.GetFileNameWithoutExtension(item.FileName);
-                var loc = item.StorageLocation;
-
-                string actualRel;
-                if (refile)
-                {
-                    var desired = _storage.BuildRelativePath(
-                        loc, title, item.FileModifiedUtc, correspondentName, documentTypeName, item.FileName);
-                    actualRel = await _storage.MoveAsync(loc, item.RelativePath, desired, ct);
-                }
-                else
-                {
-                    actualRel = item.RelativePath;
-                }
-
-                var doc = new Document
-                {
-                    Token = Guid.NewGuid(),
-                    Title = title,
-                    DocumentDate = null,
-                    DocumentTypeId = documentTypeId,
-                    CorrespondentId = correspondentId,
-                    ProjectId = projectId,
-                    StorageLocationId = item.StorageLocationId,
-                    IsStaged = false,
-                    RelativePath = actualRel,
-                    OriginalFileName = item.FileName,
-                    FileSize = item.FileSize,
-                    ContentHash = item.ContentHash,
-                    OwnerId = actingUserId,
-                    ReviewState = ReviewState.Pending,
-                    PageCount = 0,
-                    OcrState = OcrState.Pending,
-                    UpdateState = UpdateState.Created,
-                    CreateDate = now,
-                    UpdateDate = now,
-                    CreateUserId = actingUserId,
-                    UpdateUserId = actingUserId
-                };
-
-                foreach (var tagId in tagIdList)
-                {
-                    doc.DocumentTags.Add(new DocumentTag
-                    {
-                        TagId = tagId,
-                        CreateDate = now,
-                        UpdateDate = now,
-                        CreateUserId = actingUserId,
-                        UpdateUserId = actingUserId
-                    });
-                }
-
-                _db.Documents.Add(doc);
-
-                item.UpdateState = UpdateState.Deleted;
-                item.UpdateDate = now;
-                item.UpdateUserId = actingUserId;
-
-                await _db.SaveChangesAsync(ct);
-                _queue.Enqueue(doc.Id);
-                imported++;
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to import inbox item {InboxItemId}.", id);
-                errors++;
-            }
+            return actingUserId;
         }
 
-        return new ImportSummary(imported, duplicates, errors);
+        return await _db.Users
+            .AsNoTracking()
+            .Where(u => u.IsActive && u.Role != null && u.Role.Name == "Admin")
+            .OrderBy(u => u.Id)
+            .Select(u => (long?)u.Id)
+            .FirstOrDefaultAsync(ct);
     }
 
-    /// <summary>Marks the given non-deleted inbox items as dismissed. Returns the number changed.</summary>
-    public async Task<int> DismissAsync(
-        IReadOnlyCollection<long> inboxItemIds,
-        long? actingUserId,
-        CancellationToken ct)
+    /// <summary>Extensions to pick up, lowercase and with a leading dot. Empty = every file.</summary>
+    internal static HashSet<string> ParseExtensions(string? raw)
     {
-        if (inboxItemIds is null || inboxItemIds.Count == 0)
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(raw))
         {
-            return 0;
+            return set;
         }
 
-        var ids = inboxItemIds.Distinct().ToList();
-
-        var items = await _db.InboxItems
-            .Where(i => ids.Contains(i.Id) && i.UpdateState != UpdateState.Deleted)
-            .ToListAsync(ct);
-
-        var now = DateTime.UtcNow;
-        foreach (var item in items)
+        foreach (var part in raw.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            item.UpdateState = UpdateState.Deleted;
-            item.UpdateDate = now;
-            item.UpdateUserId = actingUserId;
+            set.Add(part.StartsWith('.') ? part : "." + part);
         }
 
-        if (items.Count > 0)
-        {
-            await _db.SaveChangesAsync(ct);
-        }
-
-        return items.Count;
+        return set;
     }
+
+    private static bool Wanted(string relativePath, HashSet<string> extensions)
+        => extensions.Count == 0 || extensions.Contains(Path.GetExtension(relativePath));
 
     private static bool HasHiddenSegment(string relativePath)
     {
@@ -355,5 +246,4 @@ public sealed class StorageScanService
 
         return false;
     }
-
 }

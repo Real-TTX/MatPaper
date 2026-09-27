@@ -59,6 +59,8 @@ builder.Services.AddSingleton<ThumbnailService>();
 builder.Services.AddScoped<DocumentIngestService>();
 builder.Services.AddScoped<DocumentFilingService>();
 builder.Services.AddScoped<StorageScanService>();
+builder.Services.AddSingleton<StorageScanQueue>();
+builder.Services.AddHostedService<StorageScanWorker>();
 builder.Services.AddSingleton<InvoiceDataExtractor>();
 builder.Services.AddScoped<DocumentAnalysisService>();
 builder.Services.AddHostedService<DocumentProcessingService>();

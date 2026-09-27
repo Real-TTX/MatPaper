@@ -1,0 +1,34 @@
+@using MatPaper.Data
+@model MatPaper.Pages.Inbox.IndexModel.RowContext
+@{
+    var m = Model.Page;
+    var row = Model.Row;
+    var originLabel = row.Origin switch
+    {
+        DocumentOrigin.Mail => L["E-mail"].Value,
+        DocumentOrigin.ImportFolder => L["Import folder"].Value,
+        DocumentOrigin.CameraScan => L["Camera scan"].Value,
+        DocumentOrigin.StorageScan => L["Found"].Value,
+        _ => L["Upload"].Value
+    };
+}
+<span class="inbox-item__meta">
+    <span class="badge badge--muted">@originLabel</span>
+    @if (row.OcrState == OcrState.Pending)
+    {
+        <span class="badge badge--muted">@L["Processing…"]</span>
+    }
+    else if (row.OcrState == OcrState.Failed)
+    {
+        <span class="badge badge--off">@L["OCR failed"]</span>
+    }
+    else if (row.OcrState == OcrState.Deferred)
+    {
+        <span class="badge badge--muted">@L["Not analyzed yet"]</span>
+    }
+    @if (m.IsAdmin && m.AllOwners && row.OwnerName != null)
+    {
+        <span class="badge badge--muted">@row.OwnerName</span>
+    }
+    <span title="@row.OriginalFileName">@Fmt.Date(row.AddedDate)</span>
+</span>

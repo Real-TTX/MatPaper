@@ -66,6 +66,7 @@ public sealed class DocumentStorageService
         var dataDir = Environment.GetEnvironmentVariable("MATPAPER_DATA") ?? "/data";
         StagingRoot = config.ResolveInboxPath(dataDir);
         TempRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine(dataDir, "tmp")));
+        ThumbnailRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.Combine(dataDir, "thumbnails")));
         Directory.CreateDirectory(StagingRoot);
         Directory.CreateDirectory(TempRoot);
         SweepTemp();
@@ -104,6 +105,53 @@ public sealed class DocumentStorageService
 
     /// <summary>Scratch folder for temporary local copies of remote (SMB) files.</summary>
     public string TempRoot { get; }
+
+    /// <summary>Folder holding generated thumbnails.</summary>
+    public string ThumbnailRoot { get; }
+
+    /// <summary>
+    /// True when a local storage location would cover one of MatPaper's own folders. Searching
+    /// such a root would turn staging files, temp copies and thumbnails into inbox entries, and
+    /// filing into it could overwrite them. <paramref name="conflict"/> names the folder.
+    /// </summary>
+    public bool OverlapsInternalData(StorageLocation loc, out string conflict)
+    {
+        ArgumentNullException.ThrowIfNull(loc);
+        conflict = string.Empty;
+
+        if (loc.Kind != StorageKind.Local || string.IsNullOrWhiteSpace(loc.RootPath))
+        {
+            return false;
+        }
+
+        string root;
+        try
+        {
+            root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(loc.RootPath));
+        }
+        catch
+        {
+            return false;
+        }
+
+        foreach (var internalPath in new[] { StagingRoot, TempRoot, ThumbnailRoot })
+        {
+            if (Covers(root, internalPath) || Covers(internalPath, root))
+            {
+                conflict = internalPath;
+                return true;
+            }
+        }
+
+        return false;
+
+        static bool Covers(string outer, string inner)
+        {
+            var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return string.Equals(outer, inner, comparison)
+                || inner.StartsWith(outer + Path.DirectorySeparatorChar, comparison);
+        }
+    }
 
     // ----- Path template ----------------------------------------------------
 
@@ -267,8 +315,18 @@ public sealed class DocumentStorageService
         return await backend.SaveNewAsync(desiredRelativePath, content, ct).ConfigureAwait(false);
     }
 
-    /// <summary>Moves a file within one location, unique-suffixing on collision and cleaning emptied folders.</summary>
-    public async Task<string> MoveAsync(StorageLocation loc, string currentRelativePath, string desiredRelativePath, CancellationToken ct = default)
+    /// <summary>
+    /// Moves a file within one location, unique-suffixing on collision. Folders left empty by
+    /// the move are removed unless <paramref name="cleanupEmptyDirectories"/> is false — which
+    /// callers use for files that were found in place, so MatPaper never prunes a folder tree
+    /// the user built themselves.
+    /// </summary>
+    public async Task<string> MoveAsync(
+        StorageLocation loc,
+        string currentRelativePath,
+        string desiredRelativePath,
+        CancellationToken ct = default,
+        bool cleanupEmptyDirectories = true)
     {
         ArgumentNullException.ThrowIfNull(loc);
         if (string.Equals(currentRelativePath, desiredRelativePath, StringComparison.Ordinal))
@@ -277,21 +335,22 @@ public sealed class DocumentStorageService
         }
 
         var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
-        return await backend.MoveAsync(currentRelativePath, desiredRelativePath, ct).ConfigureAwait(false);
+        return await backend.MoveAsync(currentRelativePath, desiredRelativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
     }
 
     /// <summary>Moves a file between two locations (any kinds): copy, then delete the source.</summary>
     public async Task<string> RelocateAsync(
         StorageLocation fromLoc, string fromRelativePath,
         StorageLocation toLoc, string desiredRelativePath,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool cleanupEmptyDirectories = true)
     {
         ArgumentNullException.ThrowIfNull(fromLoc);
         ArgumentNullException.ThrowIfNull(toLoc);
 
         if (fromLoc.Id == toLoc.Id)
         {
-            return await MoveAsync(fromLoc, fromRelativePath, desiredRelativePath, ct).ConfigureAwait(false);
+            return await MoveAsync(fromLoc, fromRelativePath, desiredRelativePath, ct, cleanupEmptyDirectories).ConfigureAwait(false);
         }
 
         var from = await GetBackendAsync(fromLoc, ct).ConfigureAwait(false);
@@ -303,7 +362,7 @@ public sealed class DocumentStorageService
             actual = await to.SaveNewAsync(desiredRelativePath, source, ct).ConfigureAwait(false);
         }
 
-        await from.DeleteAsync(fromRelativePath, ct).ConfigureAwait(false);
+        await from.DeleteAsync(fromRelativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
         return actual;
     }
 
@@ -322,11 +381,15 @@ public sealed class DocumentStorageService
         return await backend.OpenReadAsync(relativePath, ct).ConfigureAwait(false);
     }
 
-    public async Task DeleteAsync(StorageLocation loc, string relativePath, CancellationToken ct = default)
+    public async Task DeleteAsync(
+        StorageLocation loc,
+        string relativePath,
+        CancellationToken ct = default,
+        bool cleanupEmptyDirectories = true)
     {
         ArgumentNullException.ThrowIfNull(loc);
         var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
-        await backend.DeleteAsync(relativePath, ct).ConfigureAwait(false);
+        await backend.DeleteAsync(relativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
     }
 
     /// <summary>Lists every file under the location root. Throws <see cref="DirectoryNotFoundException"/> when the root is missing.</summary>
@@ -598,10 +661,10 @@ public sealed class DocumentStorageService
 internal interface IStorageBackend
 {
     Task<string> SaveNewAsync(string desiredRelativePath, Stream content, CancellationToken ct);
-    Task<string> MoveAsync(string currentRelativePath, string desiredRelativePath, CancellationToken ct);
+    Task<string> MoveAsync(string currentRelativePath, string desiredRelativePath, bool cleanupEmptyDirectories, CancellationToken ct);
     Task<bool> ExistsAsync(string relativePath, CancellationToken ct);
     Task<Stream> OpenReadAsync(string relativePath, CancellationToken ct);
-    Task DeleteAsync(string relativePath, CancellationToken ct);
+    Task DeleteAsync(string relativePath, bool cleanupEmptyDirectories, CancellationToken ct);
     Task<IReadOnlyList<StorageEntry>> ListFilesAsync(CancellationToken ct);
     Task<IReadOnlyDictionary<string, string>> ComputeHashesAsync(IReadOnlyCollection<string> relativePaths, CancellationToken ct);
     Task TestAsync(CancellationToken ct);
@@ -673,7 +736,7 @@ internal sealed class LocalBackend : IStorageBackend
         return ToRelative(_root, uniqueAbsolute);
     }
 
-    public Task<string> MoveAsync(string currentRelativePath, string desiredRelativePath, CancellationToken ct)
+    public Task<string> MoveAsync(string currentRelativePath, string desiredRelativePath, bool cleanupEmptyDirectories, CancellationToken ct)
     {
         var sourceAbsolute = ResolveWithinRoot(_root, currentRelativePath);
         var targetAbsolute = ResolveWithinRoot(_root, desiredRelativePath);
@@ -688,7 +751,10 @@ internal sealed class LocalBackend : IStorageBackend
         var uniqueAbsolute = MakeUnique(targetAbsolute);
         File.Move(sourceAbsolute, uniqueAbsolute);
 
-        CleanupEmptyDirectories(_root, Path.GetDirectoryName(sourceAbsolute));
+        if (cleanupEmptyDirectories)
+        {
+            CleanupEmptyDirectories(_root, Path.GetDirectoryName(sourceAbsolute));
+        }
 
         return Task.FromResult(ToRelative(_root, uniqueAbsolute));
     }
@@ -707,13 +773,16 @@ internal sealed class LocalBackend : IStorageBackend
         return Task.FromResult<Stream>(new FileStream(absolute, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true));
     }
 
-    public Task DeleteAsync(string relativePath, CancellationToken ct)
+    public Task DeleteAsync(string relativePath, bool cleanupEmptyDirectories, CancellationToken ct)
     {
         var absolute = ResolveWithinRoot(_root, relativePath);
         if (File.Exists(absolute))
         {
             File.Delete(absolute);
-            CleanupEmptyDirectories(_root, Path.GetDirectoryName(absolute));
+            if (cleanupEmptyDirectories)
+            {
+                CleanupEmptyDirectories(_root, Path.GetDirectoryName(absolute));
+            }
         }
 
         return Task.CompletedTask;
@@ -864,7 +933,7 @@ internal sealed class SmbBackend : IStorageBackend
         return ToRelative(target);
     }, ct);
 
-    public Task<string> MoveAsync(string currentRelativePath, string desiredRelativePath, CancellationToken ct) => Task.Run(() =>
+    public Task<string> MoveAsync(string currentRelativePath, string desiredRelativePath, bool cleanupEmptyDirectories, CancellationToken ct) => Task.Run(() =>
     {
         var source = Full(currentRelativePath);
         var target = Full(desiredRelativePath);
@@ -882,7 +951,11 @@ internal sealed class SmbBackend : IStorageBackend
         session.EnsureDirectory(DirOf(target));
         target = MakeUnique(session, target);
         session.Rename(source, target);
-        CleanupEmptyDirectories(session, DirOf(source));
+        if (cleanupEmptyDirectories)
+        {
+            CleanupEmptyDirectories(session, DirOf(source));
+        }
+
         return ToRelative(target);
     }, ct);
 
@@ -906,12 +979,15 @@ internal sealed class SmbBackend : IStorageBackend
         }
     }, ct);
 
-    public Task DeleteAsync(string relativePath, CancellationToken ct) => Task.Run(() =>
+    public Task DeleteAsync(string relativePath, bool cleanupEmptyDirectories, CancellationToken ct) => Task.Run(() =>
     {
         using var session = SmbSession.Connect(_connection);
         var full = Full(relativePath);
         session.TryDelete(full);
-        CleanupEmptyDirectories(session, DirOf(full));
+        if (cleanupEmptyDirectories)
+        {
+            CleanupEmptyDirectories(session, DirOf(full));
+        }
     }, ct);
 
     public Task<IReadOnlyList<StorageEntry>> ListFilesAsync(CancellationToken ct) => Task.Run<IReadOnlyList<StorageEntry>>(() =>

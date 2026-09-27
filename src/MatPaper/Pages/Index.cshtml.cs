@@ -28,12 +28,12 @@ public class IndexModel : PageModel
 
         var documents = _db.Documents
             .Where(d => d.UpdateState != UpdateState.Deleted)
-            .AccessibleTo(_currentUser);
+            .AccessibleTo(_currentUser)
+            .InArchive();
         var uid = _currentUser.UserId;
 
         DocumentCount = await documents.CountAsync();
-        PendingReviewCount = await _db.Documents.CountAsync(d =>
-            d.OwnerId == uid && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
+        PendingReviewCount = await _db.Documents.InInboxOf(uid, _currentUser.IsAdmin).CountAsync();
 
         Recent = await documents
             .AsNoTracking()

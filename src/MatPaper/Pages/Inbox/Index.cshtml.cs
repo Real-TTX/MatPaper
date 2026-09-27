@@ -9,28 +9,44 @@ using Microsoft.Extensions.Localization;
 namespace MatPaper.Pages.Inbox;
 
 /// <summary>
-/// The per-user review inbox ("Posteingang"): documents the current user owns that
-/// still wait for confirmation. Their files sit in the local staging area; each row
-/// lets the user correct the suggested metadata, pick the storage location and
-/// confirm — which files the document (template path in the chosen location) and
-/// marks it reviewed. Rows are inline forms; the pickers post plain field names.
+/// The one inbox ("Eingang"): every document that has not been taken into the archive yet,
+/// whatever brought it here. Two kinds of row share the list:
+/// <list type="bullet">
+/// <item><b>Staged</b> — uploaded, scanned or imported. The file waits in the local staging
+/// area and is moved into a storage location when the row is confirmed.</item>
+/// <item><b>Found</b> — discovered by a storage search. The file already lies inside a
+/// storage location; confirming adopts it where it is, or re-files it by the template.</item>
+/// </list>
+/// Rows are inline forms; a shared bulk form below the list applies metadata and one action
+/// to the selected rows.
 /// </summary>
 public class IndexModel : PageModel
 {
     private const int PageSize = 20;
 
+    /// <summary>Upper bound for anything that loops over documents inside one request.</summary>
+    private const int BatchLimit = 50;
+
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
     private readonly DocumentFilingService _filing;
     private readonly DocumentStorageService _storage;
+    private readonly DocumentProcessingQueue _queue;
     private readonly IStringLocalizer<SharedResource> _l;
 
-    public IndexModel(AppDbContext db, CurrentUser currentUser, DocumentFilingService filing, DocumentStorageService storage, IStringLocalizer<SharedResource> l)
+    public IndexModel(
+        AppDbContext db,
+        CurrentUser currentUser,
+        DocumentFilingService filing,
+        DocumentStorageService storage,
+        DocumentProcessingQueue queue,
+        IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
         _filing = filing;
         _storage = storage;
+        _queue = queue;
         _l = l;
     }
 
@@ -40,10 +56,32 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
+    /// <summary>Filter by how the document arrived.</summary>
+    [BindProperty(SupportsGet = true)]
+    public DocumentOrigin? Origin { get; set; }
+
+    /// <summary>Filter found documents by the storage location they were found in.</summary>
+    [BindProperty(SupportsGet = true)]
+    public long? LocationId { get; set; }
+
+    /// <summary>Filter found documents by a folder prefix inside the location.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Folder { get; set; }
+
+    /// <summary>"open" (waiting) or "ignored" (waved away).</summary>
+    [BindProperty(SupportsGet = true)]
+    public string State { get; set; } = "open";
+
+    /// <summary>Administrators can work through every owner's inbox.</summary>
+    [BindProperty(SupportsGet = true)]
+    public bool AllOwners { get; set; }
+
     public int TotalCount { get; private set; }
     public int TotalPages { get; private set; } = 1;
     public int ProcessingCount { get; private set; }
+    public int FoundCount { get; private set; }
     public bool IsAdmin => _currentUser.IsAdmin;
+    public bool ShowingIgnored => string.Equals(State, "ignored", StringComparison.OrdinalIgnoreCase);
 
     public IReadOnlyList<InboxRow> Rows { get; private set; } = Array.Empty<InboxRow>();
 
@@ -62,6 +100,12 @@ public class IndexModel : PageModel
     public long? ProjectId { get; set; }
     public long[] TagIds { get; set; } = Array.Empty<long>();
 
+    // …and the same for the bulk form below the list.
+    public long? BulkDocumentTypeId { get; set; }
+    public long? BulkCorrespondentId { get; set; }
+    public long? BulkProjectId { get; set; }
+    public long[] BulkTagIds { get; set; } = Array.Empty<long>();
+
     public record InboxRow(
         long Id,
         Guid Token,
@@ -76,9 +120,26 @@ public class IndexModel : PageModel
         DateTime AddedDate,
         long? StorageLocationId,
         bool IsStaged,
-        string OriginalFileName);
+        string OriginalFileName,
+        DocumentOrigin Origin,
+        string RelativePath,
+        string? LocationName,
+        long FileSize,
+        DateTime? FileModifiedUtc,
+        string? OwnerName);
 
     public record LocationOption(long Id, string Name, bool IsDefault);
+
+    /// <summary>What the shared row partial needs: the row plus the page it lives on.</summary>
+    public record RowContext(IndexModel Page, InboxRow Row)
+    {
+        // Expression-only members so the row pickers post plain field names
+        // (CorrespondentId, …) that the Confirm handler binds directly.
+        public long? CorrespondentId => Row.CorrespondentId;
+        public long? DocumentTypeId => Row.DocumentTypeId;
+        public long? ProjectId => Row.ProjectId;
+        public long[] TagIds => Row.TagIds.ToArray();
+    }
 
     public async Task OnGetAsync(CancellationToken ct)
     {
@@ -86,20 +147,22 @@ public class IndexModel : PageModel
         await LoadAsync(ct);
     }
 
-    /// <summary>Processing state of the given own documents (polled while OCR runs).</summary>
+    /// <summary>Processing state of the given documents (polled while OCR runs).</summary>
     public async Task<IActionResult> OnGetStatusAsync(long[] ids, CancellationToken ct)
     {
-        var uid = _currentUser.UserId;
         var wanted = ids ?? Array.Empty<long>();
 
         var rows = await _db.Documents
             .AsNoTracking()
-            .Where(d => wanted.Contains(d.Id) && d.OwnerId == uid)
+            .AccessibleTo(_currentUser)
+            .Where(d => wanted.Contains(d.Id))
             .Select(d => new { d.Id, d.OcrState })
             .ToListAsync(ct);
 
         return new JsonResult(rows.Select(r => new { id = r.Id, state = r.OcrState.ToString().ToLowerInvariant() }));
     }
+
+    // ----- Single row -------------------------------------------------------
 
     public async Task<IActionResult> OnPostConfirmAsync(
         long id,
@@ -110,15 +173,18 @@ public class IndexModel : PageModel
         DateTime? documentDate,
         long[]? tagIds,
         long? storageLocationId,
+        string? mode,
         CancellationToken ct)
     {
-        var uid = _currentUser.UserId;
-        var document = await _db.Documents
-            .Include(d => d.DocumentTags)
-            .FirstOrDefaultAsync(d => d.Id == id && d.OwnerId == uid
-                && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted, ct);
+        var document = await LoadEditableAsync(id, ct);
+        if (document is null)
+        {
+            return RedirectBack();
+        }
 
-        if (document == null)
+        // Only a waiting document can be taken over. Anything else (already archived,
+        // ignored) must not be re-filed and must not have its metadata overwritten.
+        if (document.ReviewState != ReviewState.Pending)
         {
             return RedirectBack();
         }
@@ -129,6 +195,7 @@ public class IndexModel : PageModel
             return RedirectBack();
         }
 
+        var uid = _currentUser.UserId;
         var now = DateTime.UtcNow;
 
         var cleanTitle = title?.Trim();
@@ -137,27 +204,15 @@ public class IndexModel : PageModel
             document.Title = cleanTitle;
         }
 
-        document.DocumentTypeId = documentTypeId is long typeId
-            && await _db.DocumentTypes.AnyAsync(t => t.Id == typeId && t.UpdateState != UpdateState.Deleted, ct)
-            ? typeId : null;
-
-        document.CorrespondentId = correspondentId is long corrId
-            && await _db.Correspondents.AnyAsync(c => c.Id == corrId && c.UpdateState != UpdateState.Deleted, ct)
-            ? corrId : null;
-
-        document.ProjectId = projectId is long projId
-            && await _db.Projects.Where(p => p.UpdateState != UpdateState.Deleted).AccessibleTo(_currentUser).AnyAsync(p => p.Id == projId, ct)
-            ? projId : null;
+        document.DocumentTypeId = await ValidTypeAsync(documentTypeId, ct);
+        document.CorrespondentId = await ValidCorrespondentAsync(correspondentId, ct);
+        document.ProjectId = await ValidProjectAsync(projectId, ct);
 
         document.DocumentDate = documentDate.HasValue
             ? DateTime.SpecifyKind(documentDate.Value, DateTimeKind.Utc)
             : null;
 
-        var wantedTags = tagIds ?? Array.Empty<long>();
-        var validTags = wantedTags.Length == 0
-            ? new List<long>()
-            : await _db.Tags.Where(t => wantedTags.Contains(t.Id) && t.UpdateState != UpdateState.Deleted).Select(t => t.Id).ToListAsync(ct);
-        _filing.SyncTags(document, validTags, now, uid);
+        _filing.SyncTags(document, await ValidTagsAsync(tagIds, ct), now, uid);
 
         document.UpdateState = UpdateState.Updated;
         document.UpdateDate = now;
@@ -166,22 +221,329 @@ public class IndexModel : PageModel
         // Persist the corrections first so nothing is lost if filing fails (e.g. NAS offline).
         await _db.SaveChangesAsync(ct);
 
-        var result = await _filing.FileAsync(document, storageLocationId, uid, ct);
+        var filingMode = document.IsStaged
+            ? FilingMode.FromStaging
+            : string.Equals(mode, "refile", StringComparison.OrdinalIgnoreCase)
+                ? FilingMode.RefileByTemplate
+                : FilingMode.KeepInPlace;
+
+        var result = await _filing.FileAsync(document, storageLocationId, filingMode, uid, ct);
         if (!result.Success)
         {
             this.Notify(result.Error, NoticeKind.Danger);
+            return RedirectBack();
+        }
+
+        // A found file has never been looked at. Confirming one is a deliberate,
+        // single-document act, so this is the moment to start text recognition.
+        if (document.OcrState == OcrState.Deferred)
+        {
+            document.OcrState = OcrState.Pending;
+            await _db.SaveChangesAsync(ct);
+            _queue.Enqueue(document.Id);
         }
 
         return RedirectBack();
     }
 
-    public async Task<IActionResult> OnPostConfirmAllAsync(CancellationToken ct)
+    /// <summary>Wave a document away. The file is never touched; the row blocks re-discovery.</summary>
+    public async Task<IActionResult> OnPostIgnoreAsync(long id, CancellationToken ct)
+    {
+        var document = await LoadEditableAsync(id, ct);
+        if (document is null)
+        {
+            return RedirectBack();
+        }
+
+        if (document.IsStaged)
+        {
+            this.Notify(_l["A document that is still in the staging area cannot be ignored — take it over or delete it."].Value, NoticeKind.Warn);
+            return RedirectBack();
+        }
+
+        document.ReviewState = ReviewState.Ignored;
+        document.UpdateState = UpdateState.Updated;
+        document.UpdateDate = DateTime.UtcNow;
+        document.UpdateUserId = _currentUser.UserId;
+        await _db.SaveChangesAsync(ct);
+
+        return RedirectBack();
+    }
+
+    public async Task<IActionResult> OnPostRestoreAsync(long id, CancellationToken ct)
+    {
+        var document = await LoadEditableAsync(id, ct);
+        if (document is null || document.ReviewState != ReviewState.Ignored)
+        {
+            return RedirectBack();
+        }
+
+        document.ReviewState = ReviewState.Pending;
+        document.UpdateState = UpdateState.Updated;
+        document.UpdateDate = DateTime.UtcNow;
+        document.UpdateUserId = _currentUser.UserId;
+        await _db.SaveChangesAsync(ct);
+
+        return RedirectBack();
+    }
+
+    public async Task<IActionResult> OnPostAnalyzeAsync(long id, CancellationToken ct)
+    {
+        var document = await LoadEditableAsync(id, ct);
+        if (document is null || document.OcrState != OcrState.Deferred)
+        {
+            return RedirectBack();
+        }
+
+        document.OcrState = OcrState.Pending;
+        document.UpdateDate = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        _queue.Enqueue(document.Id);
+
+        this.Notify(_l["Text recognition started for {0} document(s).", 1].Value);
+        return RedirectBack();
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(long id, CancellationToken ct)
+    {
+        var document = await LoadEditableAsync(id, ct);
+        if (document is not null)
+        {
+            // A staged document never reached a storage location: drop the file too, so
+            // the staging area only ever holds what is still waiting for review.
+            if (document.IsStaged)
+            {
+                _storage.TryDeleteStaged(document.RelativePath);
+                document.IsStaged = false;
+                document.RelativePath = string.Empty;
+            }
+
+            document.UpdateState = UpdateState.Deleted;
+            document.UpdateDate = DateTime.UtcNow;
+            document.UpdateUserId = _currentUser.UserId;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return RedirectBack();
+    }
+
+    // ----- Many rows --------------------------------------------------------
+
+    /// <summary>
+    /// One handler for the bulk form so typed-in metadata can never be lost by pressing a
+    /// different button. Metadata is additive: a field left empty changes nothing.
+    /// </summary>
+    public async Task<IActionResult> OnPostBulkAsync(
+        long[]? selectedIds,
+        string action,
+        long? bulkCorrespondentId,
+        long? bulkDocumentTypeId,
+        long? bulkProjectId,
+        long[]? bulkTagIds,
+        string? mode,
+        CancellationToken ct)
+    {
+        var ids = (selectedIds ?? Array.Empty<long>()).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            this.Notify(_l["Nothing was selected."].Value, NoticeKind.Warn);
+            return RedirectBack();
+        }
+
+        if (ids.Count > BatchLimit)
+        {
+            this.Notify(_l["Select at most {0} documents at once.", BatchLimit].Value, NoticeKind.Warn);
+            return RedirectBack();
+        }
+
+        var uid = _currentUser.UserId;
+        var documents = await _db.Documents
+            .Include(d => d.DocumentTags)
+            .AccessibleTo(_currentUser)
+            .Where(d => ids.Contains(d.Id) && d.UpdateState != UpdateState.Deleted)
+            .ToListAsync(ct);
+
+        documents = documents.Where(d => DocumentAccess.IsOwnerOrAdmin(d, uid, IsAdmin)).ToList();
+        if (documents.Count == 0)
+        {
+            this.Notify(_l["You are not allowed to change this document."].Value, NoticeKind.Warn);
+            return RedirectBack();
+        }
+
+        switch (action)
+        {
+            case "ignore":
+                return await BulkIgnoreAsync(documents, ct);
+            case "analyze":
+                return await BulkAnalyzeAsync(documents, ct);
+            default:
+                return await BulkConfirmAsync(documents, bulkCorrespondentId, bulkDocumentTypeId, bulkProjectId, bulkTagIds, mode, ct);
+        }
+    }
+
+    private async Task<IActionResult> BulkConfirmAsync(
+        List<Document> documents,
+        long? correspondentId,
+        long? documentTypeId,
+        long? projectId,
+        long[]? tagIds,
+        string? mode,
+        CancellationToken ct)
     {
         var uid = _currentUser.UserId;
+        var now = DateTime.UtcNow;
 
-        var pending = await _db.Documents
-            .Where(d => d.OwnerId == uid && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted)
+        var validType = await ValidTypeAsync(documentTypeId, ct);
+        var validCorrespondent = await ValidCorrespondentAsync(correspondentId, ct);
+        var validProject = await ValidProjectAsync(projectId, ct);
+        var validTags = await ValidTagsAsync(tagIds, ct);
+
+        int filed = 0, skipped = 0, deferred = 0;
+        string? firstError = null;
+
+        foreach (var document in documents)
+        {
+            if (document.ReviewState != ReviewState.Pending || document.OcrState == OcrState.Pending)
+            {
+                skipped++;
+                continue;
+            }
+
+            if (validType is not null)
+            {
+                document.DocumentTypeId = validType;
+            }
+            if (validCorrespondent is not null)
+            {
+                document.CorrespondentId = validCorrespondent;
+            }
+            if (validProject is not null)
+            {
+                document.ProjectId = validProject;
+            }
+            if (validTags.Count > 0)
+            {
+                var merged = document.DocumentTags.Select(t => t.TagId).Union(validTags).ToList();
+                _filing.SyncTags(document, merged, now, uid);
+            }
+
+            document.UpdateState = UpdateState.Updated;
+            document.UpdateDate = now;
+            document.UpdateUserId = uid;
+
+            var filingMode = document.IsStaged
+                ? FilingMode.FromStaging
+                : string.Equals(mode, "refile", StringComparison.OrdinalIgnoreCase)
+                    ? FilingMode.RefileByTemplate
+                    : FilingMode.KeepInPlace;
+
+            var result = await _filing.FileAsync(document, null, filingMode, uid, ct);
+            if (result.Success)
+            {
+                filed++;
+                if (document.OcrState == OcrState.Deferred)
+                {
+                    deferred++;
+                }
+            }
+            else
+            {
+                firstError ??= result.Error;
+            }
+        }
+
+        var parts = new List<string> { _l["{0} filed", filed].Value };
+        if (skipped > 0)
+        {
+            parts.Add(_l["{0} still processing", skipped].Value);
+        }
+
+        var message = string.Join(", ", parts) + ".";
+        if (deferred > 0)
+        {
+            message += " " + _l["Taken over without text recognition — start it separately if you need full-text search."].Value;
+        }
+        if (firstError is not null)
+        {
+            message += " " + firstError;
+        }
+
+        this.Notify(message, firstError is null ? NoticeKind.Ok : NoticeKind.Warn);
+        return RedirectBack();
+    }
+
+    private async Task<IActionResult> BulkIgnoreAsync(List<Document> documents, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        int ignored = 0, staged = 0;
+
+        foreach (var document in documents)
+        {
+            // Ignoring a staged upload would strand its file in the staging area forever.
+            if (document.IsStaged || document.ReviewState != ReviewState.Pending)
+            {
+                staged++;
+                continue;
+            }
+
+            document.ReviewState = ReviewState.Ignored;
+            document.UpdateState = UpdateState.Updated;
+            document.UpdateDate = now;
+            document.UpdateUserId = _currentUser.UserId;
+            ignored++;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        this.Notify(_l["{0} ignored, {1} skipped (still in the staging area).", ignored, staged].Value,
+            staged > 0 ? NoticeKind.Warn : NoticeKind.Ok);
+        return RedirectBack();
+    }
+
+    private async Task<IActionResult> BulkAnalyzeAsync(List<Document> documents, CancellationToken ct)
+    {
+        var started = new List<long>();
+        foreach (var document in documents.Where(d => d.OcrState == OcrState.Deferred))
+        {
+            document.OcrState = OcrState.Pending;
+            document.UpdateDate = DateTime.UtcNow;
+            started.Add(document.Id);
+        }
+
+        await _db.SaveChangesAsync(ct);
+        foreach (var id in started)
+        {
+            _queue.Enqueue(id);
+        }
+
+        this.Notify(_l["Text recognition started for {0} document(s).", started.Count].Value);
+        return RedirectBack();
+    }
+
+    /// <summary>
+    /// Takes over everything the current filter shows, up to <see cref="BatchLimit"/>.
+    /// Without a filter a large backlog would be a single endless request.
+    /// </summary>
+    public async Task<IActionResult> OnPostConfirmAllAsync(CancellationToken ct)
+    {
+        if (ShowingIgnored)
+        {
+            return RedirectBack();
+        }
+
+        var uid = _currentUser.UserId;
+        var query = FilteredQuery(tracked: true);
+        var total = await query.CountAsync(ct);
+
+        if (total > BatchLimit && !HasFilter)
+        {
+            this.Notify(_l["Narrow the list with a filter before taking everything over."].Value, NoticeKind.Warn);
+            return RedirectBack();
+        }
+
+        var pending = await query
+            .Include(d => d.DocumentTags)
             .OrderBy(d => d.CreateDate)
+            .Take(BatchLimit)
             .ToListAsync(ct);
 
         int filed = 0, skipped = 0;
@@ -195,7 +557,8 @@ public class IndexModel : PageModel
                 continue;
             }
 
-            var result = await _filing.FileAsync(document, null, uid, ct);
+            var filingMode = document.IsStaged ? FilingMode.FromStaging : FilingMode.KeepInPlace;
+            var result = await _filing.FileAsync(document, null, filingMode, uid, ct);
             if (result.Success)
             {
                 filed++;
@@ -206,72 +569,106 @@ public class IndexModel : PageModel
             }
         }
 
-        var failed = pending.Count - filed - skipped;
-        var parts = new List<string> { _l["{0} filed", filed].Value };
+        var remaining = Math.Max(0, total - filed);
+        var message = _l["{0} taken over, {1} still open.", filed, remaining].Value;
         if (skipped > 0)
         {
-            parts.Add(_l["{0} still processing", skipped].Value);
+            message += " " + _l["{0} still processing", skipped].Value + ".";
         }
-        if (failed > 0)
+        if (firstError is not null)
         {
-            parts.Add(_l["{0} failed", failed].Value);
+            message += " " + firstError;
         }
 
-        TempData[failed > 0 ? "InboxError" : "InboxMessage"] =
-            string.Join(", ", parts) + "." + (firstError is null ? string.Empty : " " + firstError);
-
+        this.Notify(message, firstError is null ? NoticeKind.Ok : NoticeKind.Warn);
         return RedirectBack();
     }
 
-    public async Task<IActionResult> OnPostDeleteAsync(long id, CancellationToken ct)
+    /// <summary>
+    /// Clears a mis-aimed search in one statement: every found, still open document of one
+    /// location becomes ignored. Moves no files, so it is safe as a mass update.
+    /// </summary>
+    public async Task<IActionResult> OnPostIgnoreAllFoundAsync(long locationId, CancellationToken ct)
     {
         var uid = _currentUser.UserId;
-        var document = await _db.Documents
-            .FirstOrDefaultAsync(d => d.Id == id && d.UpdateState != UpdateState.Deleted, ct);
+        var now = DateTime.UtcNow;
 
-        if (document != null && DocumentAccess.IsOwnerOrAdmin(document, uid, _currentUser.IsAdmin))
-        {
-            // A staged document never reached a storage location: drop the file too, so
-            // the inbox area only ever holds what is still waiting for review.
-            if (document.IsStaged)
-            {
-                _storage.TryDeleteStaged(document.RelativePath);
-                document.IsStaged = false;
-                document.RelativePath = string.Empty;
-            }
+        // Exactly the rows the list was showing — the confirmation named that number,
+        // and an active folder or search filter must not silently widen the action.
+        var query = FilteredQuery(tracked: false)
+            .Where(d => !d.IsStaged
+                && d.Origin == DocumentOrigin.StorageScan
+                && d.StorageLocationId == locationId);
 
-            document.UpdateState = UpdateState.Deleted;
-            document.UpdateDate = DateTime.UtcNow;
-            document.UpdateUserId = uid;
-            await _db.SaveChangesAsync(ct);
-        }
+        var count = await query.ExecuteUpdateAsync(set => set
+            .SetProperty(d => d.ReviewState, ReviewState.Ignored)
+            .SetProperty(d => d.UpdateState, UpdateState.Updated)
+            .SetProperty(d => d.UpdateDate, now)
+            .SetProperty(d => d.UpdateUserId, uid), ct);
 
+        this.Notify(_l["{0} found file(s) ignored. The files stay where they are.", count].Value);
         return RedirectBack();
     }
 
-    private IActionResult RedirectBack()
-        => RedirectToPage(new { Search, PageNumber = PageNumber > 1 ? PageNumber : (int?)null });
+    // ----- Loading ----------------------------------------------------------
 
-    private async Task LoadAsync(CancellationToken ct)
+    private bool HasFilter =>
+        !string.IsNullOrWhiteSpace(Search) || Origin is not null || LocationId is not null
+        || !string.IsNullOrWhiteSpace(Folder);
+
+    private IQueryable<Document> FilteredQuery(bool tracked)
     {
         var uid = _currentUser.UserId;
+        IQueryable<Document> query = tracked ? _db.Documents : _db.Documents.AsNoTracking();
 
-        IQueryable<Document> query = _db.Documents
-            .AsNoTracking()
-            .Where(d => d.OwnerId == uid && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
+        query = ShowingIgnored
+            ? query.IgnoredOf(uid, IsAdmin, AllOwners)
+            : query.InInboxOf(uid, IsAdmin, AllOwners);
 
         if (!string.IsNullOrWhiteSpace(Search))
         {
             var pattern = $"%{Search.Trim()}%";
             query = query.Where(d =>
                 EF.Functions.ILike(d.Title, pattern) ||
+                EF.Functions.ILike(d.OriginalFileName, pattern) ||
                 (d.Correspondent != null && EF.Functions.ILike(d.Correspondent.Name, pattern)));
         }
+
+        if (Origin is DocumentOrigin origin)
+        {
+            query = query.Where(d => d.Origin == origin);
+        }
+
+        if (LocationId is long locationId)
+        {
+            query = query.Where(d => !d.IsStaged && d.StorageLocationId == locationId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(Folder))
+        {
+            var prefix = Folder.Trim().Trim('/');
+            if (prefix.Length > 0)
+            {
+                var like = prefix.Replace("%", "\\%").Replace("_", "\\_") + "/%";
+                query = query.Where(d => !d.IsStaged && EF.Functions.Like(d.RelativePath, like));
+            }
+        }
+
+        return query;
+    }
+
+    private async Task LoadAsync(CancellationToken ct)
+    {
+        var uid = _currentUser.UserId;
+        var query = FilteredQuery(tracked: false);
 
         TotalCount = await query.CountAsync(ct);
         TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);
         PageNumber = Math.Clamp(PageNumber, 1, TotalPages);
+
+        // Deferred is not "in progress" — nothing will process it until the user asks.
         ProcessingCount = await query.CountAsync(d => d.OcrState == OcrState.Pending, ct);
+        FoundCount = await query.CountAsync(d => d.Origin == DocumentOrigin.StorageScan, ct);
 
         Rows = await query
             .OrderByDescending(d => d.CreateDate)
@@ -291,7 +688,13 @@ public class IndexModel : PageModel
                 d.CreateDate,
                 d.StorageLocationId,
                 d.IsStaged,
-                d.OriginalFileName))
+                d.OriginalFileName,
+                d.Origin,
+                d.RelativePath,
+                d.StorageLocation != null ? d.StorageLocation.Name : null,
+                d.FileSize,
+                d.FileModifiedUtc,
+                d.Owner != null ? d.Owner.DisplayName : null))
             .ToListAsync(ct);
 
         await LoadOptionsAsync(ct);
@@ -333,4 +736,54 @@ public class IndexModel : PageModel
 
         DefaultLocationId = StorageLocations.FirstOrDefault()?.Id;
     }
+
+    // ----- Helpers ----------------------------------------------------------
+
+    /// <summary>Loads a document the current user may change, or warns and returns null.</summary>
+    private async Task<Document?> LoadEditableAsync(long id, CancellationToken ct)
+    {
+        var document = await _db.Documents
+            .Include(d => d.DocumentTags)
+            .FirstOrDefaultAsync(d => d.Id == id && d.UpdateState != UpdateState.Deleted, ct);
+
+        if (document is null || !DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, IsAdmin))
+        {
+            this.Notify(_l["You are not allowed to change this document."].Value, NoticeKind.Warn);
+            return null;
+        }
+
+        return document;
+    }
+
+    private async Task<long?> ValidTypeAsync(long? id, CancellationToken ct)
+        => id is long value && await _db.DocumentTypes.AnyAsync(t => t.Id == value && t.UpdateState != UpdateState.Deleted, ct)
+            ? value : null;
+
+    private async Task<long?> ValidCorrespondentAsync(long? id, CancellationToken ct)
+        => id is long value && await _db.Correspondents.AnyAsync(c => c.Id == value && c.UpdateState != UpdateState.Deleted, ct)
+            ? value : null;
+
+    private async Task<long?> ValidProjectAsync(long? id, CancellationToken ct)
+        => id is long value && await _db.Projects.Where(p => p.UpdateState != UpdateState.Deleted).AccessibleTo(_currentUser).AnyAsync(p => p.Id == value, ct)
+            ? value : null;
+
+    private async Task<List<long>> ValidTagsAsync(long[]? tagIds, CancellationToken ct)
+    {
+        var wanted = tagIds ?? Array.Empty<long>();
+        return wanted.Length == 0
+            ? new List<long>()
+            : await _db.Tags.Where(t => wanted.Contains(t.Id) && t.UpdateState != UpdateState.Deleted).Select(t => t.Id).ToListAsync(ct);
+    }
+
+    private IActionResult RedirectBack()
+        => RedirectToPage(new
+        {
+            Search,
+            Origin,
+            LocationId,
+            Folder,
+            State = ShowingIgnored ? "ignored" : null,
+            AllOwners = AllOwners ? true : (bool?)null,
+            PageNumber = PageNumber > 1 ? PageNumber : (int?)null
+        });
 }

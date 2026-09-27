@@ -122,7 +122,8 @@ public sealed class ImportRunner
                     var result = await _ingest.IngestAsync(
                         stream, fileName, locationId,
                         settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
-                        settings.TagIds ?? new List<long>(), ownerId, ct, reviewState, settings.IsCommon).ConfigureAwait(false);
+                        settings.TagIds ?? new List<long>(), ownerId, ct, reviewState, settings.IsCommon,
+                        origin: DocumentOrigin.ImportFolder).ConfigureAwait(false);
 
                     switch (result.Status)
                     {
@@ -319,7 +320,8 @@ public sealed class ImportRunner
                         actingUserId: ownerId,
                         ct,
                         reviewState: settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending,
-                        isCommon: settings.IsCommon).ConfigureAwait(false);
+                        isCommon: settings.IsCommon,
+                        origin: DocumentOrigin.ImportFolder).ConfigureAwait(false);
                 }
 
                 switch (result.Status)
@@ -609,7 +611,8 @@ public sealed class ImportRunner
 
             await using var stream = new MemoryStream(pdf);
             var result = await _ingest.IngestAsync(
-                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct, reviewState, isCommon).ConfigureAwait(false);
+                stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct, reviewState, isCommon,
+                origin: DocumentOrigin.Mail).ConfigureAwait(false);
 
             if (result.Status == IngestStatus.Created)
             {
@@ -693,7 +696,8 @@ public sealed class ImportRunner
                     actingUserId: ownerId,
                     ct,
                     reviewState: reviewState,
-                    isCommon: isCommon).ConfigureAwait(false);
+                    isCommon: isCommon,
+                    origin: DocumentOrigin.Mail).ConfigureAwait(false);
 
                 switch (result.Status)
                 {

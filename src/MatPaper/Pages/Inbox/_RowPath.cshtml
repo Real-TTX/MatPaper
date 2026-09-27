@@ -1,0 +1,12 @@
+@model MatPaper.Pages.Inbox.IndexModel.RowContext
+@{
+    var row = Model.Row;
+}
+@if (!row.IsStaged)
+{
+    <p class="inbox-item__path">
+        <span class="badge badge--muted">@(row.LocationName ?? L["Unknown"].Value)</span>
+        <code>@row.RelativePath</code>
+        <span class="form-help">@Fmt.Size(row.FileSize)@(row.FileModifiedUtc.HasValue ? " · " + Fmt.Date(row.FileModifiedUtc) : string.Empty)</span>
+    </p>
+}

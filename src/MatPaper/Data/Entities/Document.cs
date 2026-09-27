@@ -20,8 +20,22 @@ public class Document : BaseEntity
     /// True while the file still sits in the local inbox staging area (not yet filed
     /// into a storage location). <see cref="RelativePath"/> is then relative to the
     /// staging root instead of the location root.
+    /// <para>
+    /// False plus <see cref="DocumentOrigin.StorageScan"/> means the file was found where it
+    /// already lay: MatPaper must never copy, move or delete it unless the user asks for it.
+    /// </para>
     /// </summary>
     public bool IsStaged { get; set; }
+
+    /// <summary>How the document entered MatPaper (upload, mail, import folder, camera, search).</summary>
+    public DocumentOrigin Origin { get; set; }
+
+    /// <summary>
+    /// Last-modified time of the file as reported by the storage, for documents that were
+    /// found rather than uploaded. Used for sorting and as the date fallback when a found
+    /// document is re-filed by template, so an old invoice does not land under this year.
+    /// </summary>
+    public DateTime? FileModifiedUtc { get; set; }
 
     public string RelativePath { get; set; } = string.Empty;
     public string OriginalFileName { get; set; } = string.Empty;

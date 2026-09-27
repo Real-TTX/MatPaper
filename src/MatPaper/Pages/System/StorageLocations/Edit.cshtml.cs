@@ -37,6 +37,8 @@ public class EditModel : PageModel
 
     public List<SelectListItem> CredentialOptions { get; private set; } = new();
 
+    public List<SelectListItem> OwnerOptions { get; private set; } = new();
+
     public class InputModel
     {
         public string Name { get; set; } = string.Empty;
@@ -51,6 +53,14 @@ public class EditModel : PageModel
         public long? CredentialId { get; set; }
         public string PathTemplate { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
+
+        /// <summary>Owner for documents a storage search finds here; null = whoever starts it.</summary>
+        public long? DefaultOwnerId { get; set; }
+
+        public bool DefaultIsCommon { get; set; }
+
+        /// <summary>Extensions a storage search picks up. Empty = every file.</summary>
+        public string? ScanExtensions { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -77,13 +87,17 @@ public class EditModel : PageModel
                 SmbPath = entity.SmbPath,
                 CredentialId = entity.CredentialId,
                 PathTemplate = entity.PathTemplate,
-                IsDefault = entity.IsDefault
+                IsDefault = entity.IsDefault,
+                DefaultOwnerId = entity.DefaultOwnerId,
+                DefaultIsCommon = entity.DefaultIsCommon,
+                ScanExtensions = entity.ScanExtensions
             };
         }
         else
         {
             Input.PathTemplate = DefaultPathTemplate;
             Input.RootPath = "/storage";
+            Input.ScanExtensions = new StorageLocation().ScanExtensions;
         }
 
         await BuildOptionListsAsync();
@@ -132,6 +146,9 @@ public class EditModel : PageModel
             existing.CredentialId = draft.CredentialId;
             existing.PathTemplate = draft.PathTemplate;
             existing.IsDefault = draft.IsDefault;
+            existing.DefaultOwnerId = draft.DefaultOwnerId;
+            existing.DefaultIsCommon = draft.DefaultIsCommon;
+            existing.ScanExtensions = draft.ScanExtensions;
             existing.UpdateState = UpdateState.Updated;
             existing.UpdateDate = now;
             existing.UpdateUserId = _currentUser.UserId;
@@ -253,7 +270,10 @@ public class EditModel : PageModel
             SmbPath = kind == StorageKind.Smb ? NullIfEmpty(Input.SmbPath) : null,
             CredentialId = kind == StorageKind.Smb ? Input.CredentialId : null,
             PathTemplate = (Input.PathTemplate ?? string.Empty).Trim(),
-            IsDefault = Input.IsDefault
+            IsDefault = Input.IsDefault,
+            DefaultOwnerId = Input.DefaultOwnerId,
+            DefaultIsCommon = Input.DefaultIsCommon,
+            ScanExtensions = (Input.ScanExtensions ?? string.Empty).Trim()
         };
     }
 
@@ -269,6 +289,11 @@ public class EditModel : PageModel
             if (string.IsNullOrWhiteSpace(draft.RootPath))
             {
                 ModelState.AddModelError("Input.RootPath", _l["Root path is required."]);
+            }
+            else if (_storage.OverlapsInternalData(draft, out var conflict))
+            {
+                ModelState.AddModelError("Input.RootPath",
+                    _l["This root overlaps MatPaper's own data folder ({0}).", conflict]);
             }
         }
         else
@@ -297,6 +322,24 @@ public class EditModel : PageModel
 
     private async Task BuildOptionListsAsync()
     {
+        var users = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.DisplayName)
+            .Select(u => new { u.Id, u.DisplayName, u.Username })
+            .ToListAsync();
+
+        OwnerOptions = new List<SelectListItem>
+        {
+            new() { Value = string.Empty, Text = string.Empty, Selected = Input.DefaultOwnerId is null }
+        };
+        OwnerOptions.AddRange(users.Select(u => new SelectListItem
+        {
+            Value = u.Id.ToString(),
+            Text = string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : u.DisplayName,
+            Selected = Input.DefaultOwnerId == u.Id
+        }));
+
         var credentials = await _db.Credentials
             .AsNoTracking()
             .Where(c => c.UpdateState != UpdateState.Deleted)

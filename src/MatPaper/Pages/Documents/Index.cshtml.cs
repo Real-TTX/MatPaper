@@ -55,7 +55,7 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Scope { get; set; } = "all";
 
-    /// <summary>Review state: all | pending | reviewed.</summary>
+    /// <summary>Review state: all | pending | reviewed | ignored.</summary>
     [BindProperty(SupportsGet = true)]
     public string Review { get; set; } = "all";
 
@@ -103,7 +103,9 @@ public class IndexModel : PageModel
         {
             "pending" => query.Where(d => d.ReviewState == ReviewState.Pending),
             "reviewed" => query.Where(d => d.ReviewState == ReviewState.Reviewed),
-            _ => query,
+            "ignored" => query.Where(d => d.ReviewState == ReviewState.Ignored),
+            // The archive: no ignored files and nothing a storage search merely found.
+            _ => query.InArchive(),
         };
 
         if (!string.IsNullOrWhiteSpace(Search))
@@ -193,9 +195,9 @@ public class IndexModel : PageModel
 
         var scopeLabel = Scope switch
         {
-            "mine" => "Mine",
-            "shared" => "Shared with me",
-            "common" => "Common area",
+            "mine" => _l["Mine"].Value,
+            "shared" => _l["Shared with me"].Value,
+            "common" => _l["Common area"].Value,
             _ => null
         };
         if (scopeLabel != null)
@@ -205,8 +207,9 @@ public class IndexModel : PageModel
 
         var reviewLabel = Review switch
         {
-            "pending" => "Needs review",
-            "reviewed" => "Reviewed",
+            "pending" => _l["Needs review"].Value,
+            "reviewed" => _l["Reviewed"].Value,
+            "ignored" => _l["Ignored"].Value,
             _ => null
         };
         if (reviewLabel != null)

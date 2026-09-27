@@ -13,8 +13,8 @@ modern .NET stack.
 ## Features (evolving)
 
 - Document storage with correspondents, tags, projects and document types
-- Review inbox: new documents wait in a staging area with auto-suggested metadata; on
-  confirmation they are filed into a storage location using a human-readable path template
+- One inbox: everything that is not in the archive yet waits there — uploads, mail and
+  folder imports, and files a storage search found — and is taken over with one click
 - Storage locations on local folders **or SMB/CIFS shares** (no host mount needed)
 - Full-text search over title and OCR text
 - Import (IMAP / POP3 / filesystem / SMB) and export/backup tasks
@@ -46,16 +46,28 @@ docker compose -f docker-compose.release.yml up -d
 Application data (config, data-protection keys, thumbnails) is persisted in the `/data`
 volume.
 
-**Inbox (staging).** Uploaded, scanned and imported documents first land in the review
-inbox. Their files are kept in a local staging folder — `/data/inbox` by default — and are
-only moved into a storage location when you confirm them. To keep the inbox off the
-container host (e.g. on a NAS), mount a share into the container and point
-`MATPAPER_INBOX` (or `Storage.InboxPath` in `/data/config/app.json`) at it; see the
-commented `matpaper-inbox` example in the compose files. The folder must be a local path
-inside the container because OCR and thumbnail generation run directly on it.
+**Inbox.** The inbox lists every document that has not been taken into the archive yet,
+no matter where it came from. Two kinds of entry share the list:
+
+- *Staged* — uploaded, camera-scanned or imported. The file waits in a local staging
+  folder (`/data/inbox` by default) and is moved into a storage location when you take the
+  document over. To keep that folder off the container host (e.g. on a NAS), mount a share
+  into the container and point `MATPAPER_INBOX` (or `Storage.InboxPath` in
+  `/data/config/app.json`) at it; see the commented `matpaper-inbox` example in the compose
+  files. It must be a local path inside the container because OCR and thumbnail generation
+  run directly on it.
+- *Found* — discovered by a storage search. The file already lies inside a storage
+  location and nothing is copied. Taking it over either adopts it where it is or re-files
+  it by the location's path template. Files you do not want are ignored, not deleted: the
+  entry keeps the next search from offering them again.
+
+Nothing is read from disk during a search, so pointing MatPaper at a large archive is
+cheap. Text recognition for found files starts when you take one over or press "analyze".
 
 **Storage locations** (System → Storage locations) hold the filed documents. A location is
 either a local folder (such as the `/storage` volume or a mounted share) or an SMB/CIFS
 share reached over the network with a saved credential. Files are placed by the location's
 path template, e.g. `{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}`. Import
-tasks that skip the inbox file directly into their configured location.
+tasks that skip the inbox file directly into their configured location. The search icon on
+a location looks through it for files MatPaper does not know yet; which extensions it picks
+up, who owns the finds and whether they go to the common area is configured per location.

@@ -7,6 +7,7 @@
     {
         MatPaper.Data.OcrState.Done => (L["Processed"].Value, "badge--ok"),
         MatPaper.Data.OcrState.Failed => (L["Failed"].Value, "badge--off"),
+        MatPaper.Data.OcrState.Deferred => (L["Not analyzed yet"].Value, "badge--muted"),
         _ => (L["Pending"].Value, "badge--muted")
     };
 }
@@ -201,6 +202,10 @@
     {
         <span class="badge badge--ok">@L["Common area"]</span>
     }
+    @if (Model.Origin == MatPaper.Data.DocumentOrigin.StorageScan)
+    {
+        <span class="badge badge--muted" title='@L["The file was found in a storage location and stays where it is."]'>@L["Found in storage"]</span>
+    }
     @if (Model.ReviewState == MatPaper.Data.ReviewState.Pending)
     {
         <span class="badge badge--muted">@L["Needs review"]</span>
@@ -208,6 +213,10 @@
         {
             <span class="badge badge--muted" title='@L["The file waits in the inbox area until you confirm; then it is filed into the chosen storage location."]'>@L["Not filed yet"]</span>
         }
+    }
+    else if (Model.ReviewState == MatPaper.Data.ReviewState.Ignored)
+    {
+        <span class="badge badge--muted">@L["Ignored"]</span>
     }
     else
     {
@@ -296,6 +305,14 @@
             else if (Model.CanEdit)
             {
                 <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+            }
+            @if (Model.CanEdit && Model.OcrState == MatPaper.Data.OcrState.Deferred)
+            {
+                <mp-button variant="secondary" type="submit" handler="Analyze">@L["Analyze now"]</mp-button>
+            }
+            @if (Model.CanEdit && Model.ReviewState == MatPaper.Data.ReviewState.Ignored)
+            {
+                <mp-button variant="secondary" type="submit" handler="Restore">@L["Back to the inbox"]</mp-button>
             }
             <mp-button variant="secondary" href="@Model.BackUrl">@L["Back"]</mp-button>
             @if (Model.IsOwner)
@@ -430,7 +447,7 @@
                                     <input type="hidden" name="Id" value="@Model.Id" />
                                     <input type="hidden" name="shareLinkId" value="@link.Id" />
                                     <button class="btn btn--danger" type="submit" asp-page-handler="RevokeShare"
-                                            onclick='return confirm("@L["Revoke this share link?"]")'>@L["Revoke"]</button>
+                                            data-confirm='@L["Revoke this share link?"]'>@L["Revoke"]</button>
                                 </form>
                             </td>
                         </tr>

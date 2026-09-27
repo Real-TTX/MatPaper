@@ -43,6 +43,34 @@ public static class DocumentAccess
         => query.AccessibleTo(user.UserId, user.IsAdmin);
 
     /// <summary>
+    /// Restricts a query to documents that are part of the archive: everything except files
+    /// the user ignored and files a storage search merely found and nobody has taken over yet.
+    /// Used by the document list, the dashboard and the vocabulary statistics so one search of
+    /// a large share cannot flood them.
+    /// </summary>
+    public static IQueryable<Document> InArchive(this IQueryable<Document> query)
+        => query.Where(d =>
+            d.ReviewState != ReviewState.Ignored &&
+            !(d.Origin == DocumentOrigin.StorageScan && d.ReviewState == ReviewState.Pending));
+
+    /// <summary>
+    /// The inbox predicate: documents waiting to be taken over. Normally the user's own;
+    /// an administrator can ask for every owner with <paramref name="allOwners"/>.
+    /// </summary>
+    public static IQueryable<Document> InInboxOf(
+        this IQueryable<Document> query, long? userId, bool isAdmin, bool allOwners = false)
+        => isAdmin && allOwners
+            ? query.Where(d => d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted)
+            : query.Where(d => d.OwnerId == userId && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
+
+    /// <summary>Documents the user waved away. Same owner scoping as the inbox.</summary>
+    public static IQueryable<Document> IgnoredOf(
+        this IQueryable<Document> query, long? userId, bool isAdmin, bool allOwners = false)
+        => isAdmin && allOwners
+            ? query.Where(d => d.ReviewState == ReviewState.Ignored && d.UpdateState != UpdateState.Deleted)
+            : query.Where(d => d.OwnerId == userId && d.ReviewState == ReviewState.Ignored && d.UpdateState != UpdateState.Deleted);
+
+    /// <summary>
     /// True if the user may change the document's metadata — as the document owner,
     /// a document share with edit rights, or an edit share on the document's project.
     /// </summary>

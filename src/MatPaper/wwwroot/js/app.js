@@ -198,8 +198,27 @@
         wireSystemListener();
         wireSidebarToggle();
         wireDependentFields();
+        wireConfirmActions();
         markActiveNav();
         registerServiceWorker();
+    }
+
+    // Any control carrying data-confirm asks first. Putting the text in an attribute
+    // keeps quotes and apostrophes out of a JavaScript string literal, where a single
+    // stray quote would silently disable the prompt.
+    function wireConfirmActions() {
+        document.addEventListener("click", function (event) {
+            var el = event.target && event.target.closest ? event.target.closest("[data-confirm]") : null;
+            if (!el) {
+                return;
+            }
+
+            var message = el.getAttribute("data-confirm");
+            if (message && !window.confirm(message)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
     }
 
     // PWA: register the service worker for offline shell + installability.

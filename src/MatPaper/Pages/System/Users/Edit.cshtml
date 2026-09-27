@@ -59,7 +59,7 @@
         @if (Model.IsEdit)
         {
             <button class="btn btn--danger" type="submit" asp-page-handler="Delete"
-                    onclick="return confirm('@deleteConfirm');">@L["Delete"]</button>
+                    data-confirm="@deleteConfirm">@L["Delete"]</button>
         }
     </div>
 </form>

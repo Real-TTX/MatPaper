@@ -46,6 +46,7 @@
         <option value="all">@L["All"]</option>
         <option value="pending">@L["Needs review"]</option>
         <option value="reviewed">@L["Reviewed"]</option>
+        <option value="ignored">@L["Ignored"]</option>
     </mp-toolbar-select>
 
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
@@ -110,6 +111,10 @@ else
                         @if (d.ReviewState == ReviewState.Pending)
                         {
                             <span class="badge badge--muted">@L["Needs review"]</span>
+                        }
+                        else if (d.ReviewState == ReviewState.Ignored)
+                        {
+                            <span class="badge badge--muted">@L["Ignored"]</span>
                         }
                         else
                         {

@@ -87,6 +87,7 @@ public class IndexModel : PageModel
                     && d.CorrespondentId != null
                     && pageIds.Contains(d.CorrespondentId.Value))
                 .AccessibleTo(_currentUser)
+                .InArchive()
                 .Select(d => new
                 {
                     d.Id,

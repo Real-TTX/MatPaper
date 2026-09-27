@@ -451,6 +451,13 @@
     font-size: 1.02rem;
 }
 
+/* An ignored row shows its title as text — there is nothing to edit there. */
+.inbox-item__title--static {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .inbox-item__meta {
     flex: 0 0 auto;
     display: inline-flex;
@@ -481,6 +488,68 @@
 
 .inbox-item__tools {
     margin-left: auto;
+}
+
+/* A row for a file that was found in a storage location: no thumbnail (nothing has
+   read the file yet), but the path it lives at. */
+.inbox-item--found {
+    border-left: 3px solid var(--color-border);
+}
+
+.inbox-item__pick {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+}
+
+.inbox-item__thumb--file {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 58px;
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface-alt);
+    color: var(--color-text-muted);
+}
+
+.inbox-item__thumb--file svg {
+    width: 22px;
+    height: 22px;
+}
+
+.inbox-item__path {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+}
+
+.inbox-item__path code {
+    overflow-wrap: anywhere;
+}
+
+.inbox-item__path .form-help {
+    margin: 0;
+}
+
+/* The shared bulk form under the list. */
+.inbox-bulk {
+    margin-top: 1.25rem;
+}
+
+.inbox-bulk h2 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+}
+
+.list-header__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 /* ==========================================================================

@@ -124,7 +124,7 @@ UpdateState, Audit
 
 1. **Verwalten:** CRUD unter System → Speicherorte. Ein Speicherort = gemounteter Pfad + Pfad-Template. Ein Speicherort ist Default für neue Dokumente.
 2. **Ablage:** Beim Import/Upload wird die Datei nach Template abgelegt, z. B. `Telekom/2026/Rechnung/2026-09-01 Mobilfunk September.pdf`. Bei Metadaten-Änderung (Korrespondent, Datum, Typ, Titel) wird die Datei **verschoben/umbenannt** (Konsistenz Datei ↔ Metadaten). Kollisionen: Suffix ` (2)`.
-3. **Bestehende Speicherorte einbinden:** Ein Speicherort kann gescannt werden („Inhalte erkennen“). Gefundene, noch nicht registrierte Dateien (Abgleich per Pfad + ContentHash) landen in einer **Import-Inbox-Ansicht**: dort kann man pro Datei/Auswahl Korrespondent, Typ, Tags zuordnen und importieren — wahlweise „an Ort und Stelle belassen“ (Pfad wird übernommen, keine Umbenennung) oder „nach Template einsortieren“.
+3. **Bestehende Speicherorte einbinden:** Ein Speicherort kann nach Dateien durchsucht werden. Gefundene, noch nicht registrierte Dateien (Abgleich per Pfad, Dubletten später per ContentHash) landen als wartende Dokumente **im normalen Eingang** — es gibt keine zweite Liste. Dort ordnet man pro Zeile oder für eine Auswahl Korrespondent, Typ, Tags zu und übernimmt sie — wahlweise „am Ort belassen“ (Pfad bleibt, keine Umbenennung) oder „nach Vorlage neu ablegen“. Nicht gewollte Funde werden ignoriert (Datei bleibt liegen, die nächste Suche bietet sie nicht erneut an).
 4. **Export-Schedules werden dadurch nicht ersetzt** — Backup/Export-Tasks bleiben eigenständig (Punkt 8).
 5. Thumbnails & Systemdaten liegen NICHT im Speicherort, sondern im Daten-Volume (`/data/thumbnails/{Token}.webp`) — der Speicherort bleibt sauber.
 
@@ -191,7 +191,7 @@ Liste (`/tags`) → Bearbeiten/Neu auf **separater Unterseite** (`/tags/edit/{id
 - **Dashboard:** Kennzahlen (Dokumente gesamt, letzte 7 Tage, OCR-Queue, fehlgeschlagene Tasks), zuletzt hinzugefügte Dokumente (Thumbnails).
 - **Documents:** Liste mit Thumbnails, Toolbar (Suche = Volltext, Filter: Korrespondent, Typ, Tag, Projekt, Datum von/bis, Speicherort), Upload-Button. Detailseite: Vorschau (Thumbnail/Seiten), Metadaten-Form, Tags, Share-Link erzeugen, Download, Delete (soft).
 - **Correspondents / Tags / Projects / DocumentTypes:** Standard-CRUD nach Muster. Klick auf Tag/Projekt im Menü → vorgefilterte Dokumentenliste.
-- **System:** Users, StorageLocations (+ „Scannen/Inbox“), Import-Tasks, Export-Tasks, Task-Historie, Settings.
+- **System:** Users, StorageLocations (inkl. Speichersuche pro Ort), Import-Tasks, Export-Tasks, Task-Historie, Settings.
 - **Account:** Login (zentriert, ohne Menü), Setup-Seite beim Erststart.
 
 ### PWA
@@ -265,8 +265,8 @@ Controls bauen (Table, Toolbar, Pagination, Form, TabBar, Buttons, Icons). Damit
 **Phase 4 — Dokumente**
 Upload, Ingest-Pipeline (Ablage nach Template, Hash, OCR-Queue, Thumbnail), Dokumentenliste mit Toolbar/Filtern/Volltextsuche, Detailseite mit Metadaten-Edit (inkl. Datei-Move bei Änderungen), Download, Soft-Delete, Dashboard-Kennzahlen. ✔ Kernnutzen komplett.
 
-**Phase 5 — Speicherort-Scan & Inbox**
-„Scannen“-Funktion pro Speicherort, Inbox-Ansicht mit Massen-Zuordnung, Import „an Ort und Stelle“ oder „einsortieren“. ✔ Bestehende Ablagen einbindbar.
+**Phase 5 — Speichersuche & ein Eingang**
+Speichersuche pro Speicherort (im Hintergrund), Funde erscheinen im gemeinsamen Eingang, Massen-Zuordnung, Übernahme „am Ort belassen“ oder „nach Vorlage neu ablegen“, Ignorieren als Merker. ✔ Bestehende Ablagen einbindbar.
 
 **Phase 6 — Tasks**
 Scheduler, Import-Tasks (Filesystem zuerst, dann IMAP/POP3 mit Filtern), Export/Backup-Tasks, TaskRun-Historie, „Jetzt ausführen“. ✔ Automatisierung komplett.

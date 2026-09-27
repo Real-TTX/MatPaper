@@ -1,3 +1,4 @@
+@using MatPaper.Services
 @inject MatPaper.Services.CurrentUser CurrentUser
 @inject MatPaper.Data.AppDbContext Db
 @using MatPaper.Data
@@ -17,8 +18,7 @@
     var pendingCount = 0;
     if (CurrentUser.UserId is long uid)
     {
-        pendingCount = await Db.Documents.CountAsync(d =>
-            d.OwnerId == uid && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
+        pendingCount = await Db.Documents.InInboxOf(uid, CurrentUser.IsAdmin).CountAsync();
     }
 }
 <!DOCTYPE html>

@@ -3,16 +3,57 @@
 @model MatPaper.Pages.Inbox.IndexModel
 @{
     ViewData["Breadcrumb"] = L["Inbox"].Value;
+
+    var originLabels = new Dictionary<DocumentOrigin, string>
+    {
+        [DocumentOrigin.Upload] = L["Upload"].Value,
+        [DocumentOrigin.Mail] = L["E-mail"].Value,
+        [DocumentOrigin.ImportFolder] = L["Import folder"].Value,
+        [DocumentOrigin.CameraScan] = L["Camera scan"].Value,
+        [DocumentOrigin.StorageScan] = L["Found"].Value
+    };
+
+    var locationLabel = Model.StorageLocations.FirstOrDefault(l => l.Id == Model.LocationId)?.Name;
+    var originLabel = Model.Origin is DocumentOrigin o ? originLabels[o] : null;
+
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("Origin", L["Origin"].Value, originLabel),
+        new MatPaper.Services.FilterSpec("LocationId", L["Location"].Value, locationLabel),
+        new MatPaper.Services.FilterSpec("Folder", L["Folder"].Value, Model.Folder),
+        new MatPaper.Services.FilterSpec("State", L["Status"].Value, Model.ShowingIgnored ? L["Ignored"].Value : null));
 }
 
 <mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title or correspondent"]' />
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title, file name or correspondent"]' />
+    <mp-toolbar-select name="Origin" label='@L["Origin"]' value="@(Model.Origin?.ToString() ?? string.Empty)">
+        <option value="">@L["All"]</option>
+        @foreach (var entry in originLabels)
+        {
+            <option value="@entry.Key">@entry.Value</option>
+        }
+    </mp-toolbar-select>
+    <mp-toolbar-select name="LocationId" label='@L["Location"]' value="@(Model.LocationId?.ToString() ?? string.Empty)">
+        <option value="">@L["All locations"]</option>
+        @foreach (var loc in Model.StorageLocations)
+        {
+            <option value="@loc.Id">@loc.Name</option>
+        }
+    </mp-toolbar-select>
+    <mp-toolbar-search name="Folder" value="@Model.Folder" label='@L["Folder"]' placeholder='@L["Path inside the location"]' />
+    <mp-toolbar-select name="State" label='@L["Status"]' value="@Model.State">
+        <option value="open">@L["Waiting"]</option>
+        <option value="ignored">@L["Ignored"]</option>
+    </mp-toolbar-select>
+    @if (Model.IsAdmin)
+    {
+        <div class="toolbar__group toolbar__filter">
+            <label for="AllOwners">@L["All owners"]</label>
+            <input type="checkbox" id="AllOwners" name="AllOwners" value="true" checked="@Model.AllOwners" />
+        </div>
+    }
 </mp-toolbar>
 
-@{
-    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
-        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
-}
 <partial name="_FilterChips" model="activeFilters" />
 
 @if (!Model.HasStorage && Model.TotalCount > 0)
@@ -31,105 +72,113 @@
 
 @if (Model.TotalCount == 0)
 {
-    <div class="empty-state">@L["Inbox empty"] · <a href="/Documents/Upload">@L["Upload"]</a></div>
+    <div class="empty-state">
+        @if (activeFilters.Any)
+        {
+            @L["No document matches your filter."]<text> · </text><a href="@activeFilters.ClearAllUrl">@L["Clear all"]</a>
+        }
+        else
+        {
+            @(Model.ShowingIgnored ? L["Nothing ignored"] : L["Inbox empty"])<text> · </text>
+            <a href="/Documents/Upload">@L["Upload"]</a>
+            @if (Model.IsAdmin)
+            {
+                <text> · </text><a href="/System/StorageLocations">@L["Search storage for files"]</a>
+            }
+        }
+    </div>
 }
 else
 {
     <div class="list-header">
         <span class="form-help" style="margin:0">
-            @Model.TotalCount @L["to review"]@(Model.ProcessingCount > 0 ? " · " + Model.ProcessingCount + " " + L["processing"].Value : string.Empty)
+            @if (Model.ShowingIgnored)
+            {
+                @L["{0} ignored", Model.TotalCount]
+            }
+            else
+            {
+                @L["{0} in the inbox · {1} found · {2} being processed", Model.TotalCount, Model.FoundCount, Model.ProcessingCount]
+            }
         </span>
-        <form method="post" asp-page-handler="ConfirmAll" style="margin-left:auto">
-            <button class="btn btn--secondary" type="submit" disabled="@(!Model.HasStorage)"
-                    onclick='return confirm("@L["File all processed documents with their current suggestions?"]")'>
-                @L["Confirm all"]
-            </button>
-        </form>
+
+        @if (!Model.ShowingIgnored)
+        {
+            <span class="list-header__actions" style="margin-left:auto">
+                @if (Model.LocationId is long filteredLocation && Model.FoundCount > 0)
+                {
+                    <form method="post" asp-page-handler="IgnoreAllFound" asp-route-LocationId="@Model.LocationId"
+                          asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-Folder="@Model.Folder"
+                          asp-route-AllOwners="@Model.AllOwners" style="display:inline">
+                        <input type="hidden" name="locationId" value="@filteredLocation" />
+                        <button class="btn btn--secondary" type="submit"
+                                data-confirm='@L["Ignore {0} found file(s) in \"{1}\"? The files stay where they are.", Model.FoundCount, locationLabel ?? string.Empty]'>
+                            @L["Ignore all found files in this location"]
+                        </button>
+                    </form>
+                }
+                <form method="post" asp-page-handler="ConfirmAll"
+                      asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
+                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" style="display:inline">
+                    <button class="btn btn--secondary" type="submit" disabled="@(!Model.HasStorage)"
+                            data-confirm='@L["File all processed documents with their current suggestions?"]'>
+                        @L["Confirm all"]
+                    </button>
+                </form>
+            </span>
+        }
     </div>
 
     @foreach (var row in Model.Rows)
     {
-        var processing = row.OcrState == OcrState.Pending;
-        var failed = row.OcrState == OcrState.Failed;
-        var suffix = row.Id.ToString();
-        var selectedLocation = row.StorageLocationId ?? Model.DefaultLocationId;
+        <partial name="_Row" model="new MatPaper.Pages.Inbox.IndexModel.RowContext(Model, row)" />
+    }
 
-        <article class="inbox-item @(processing ? "is-processing" : string.Empty)"
-                 data-doc-id="@row.Id" data-ocr="@row.OcrState.ToString().ToLowerInvariant()">
-            <form method="post" asp-page-handler="Confirm" asp-route-Search="@Model.Search" asp-route-PageNumber="@Model.PageNumber">
-                <input type="hidden" name="id" value="@row.Id" />
+    @if (!Model.ShowingIgnored)
+    {
+    <form method="post" id="inbox-bulk" class="form inbox-bulk" asp-page-handler="Bulk"
+          asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
+          asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
+          asp-route-AllOwners="@Model.AllOwners" asp-route-PageNumber="@Model.PageNumber">
+        <h2>@L["Apply to selection"]</h2>
+        <p class="form-help">
+            <label class="form-check">
+                <input type="checkbox" id="inbox-select-all" />
+                <span>@L["Select all on this page"]</span>
+            </label>
+        </p>
 
-                <div class="inbox-item__head">
-                    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'>
-                        @if (row.ThumbnailPath != null)
-                        {
-                            <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
-                        }
-                        else
-                        {
-                            <span class="inbox-item__thumb-empty" aria-hidden="true"></span>
-                        }
-                    </a>
-                    <input class="form-control inbox-item__title" type="text" name="title" value="@row.Title" aria-label='@L["Title"]' />
-                    <span class="inbox-item__meta">
-                        @if (processing)
-                        {
-                            <span class="badge badge--muted">@L["Processing…"]</span>
-                        }
-                        else if (failed)
-                        {
-                            <span class="badge badge--off">@L["OCR failed"]</span>
-                        }
-                        <span title="@row.OriginalFileName">@Fmt.Date(row.AddedDate)</span>
-                    </span>
+        <div class="inbox-grid">
+            <mp-picker asp-for="BulkCorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
+                       placeholder='@L["— Unchanged —"]' />
+            <mp-picker asp-for="BulkDocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions"
+                       placeholder='@L["— Unchanged —"]' />
+            <mp-picker asp-for="BulkProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions"
+                       placeholder='@L["— Unchanged —"]' />
+            <mp-picker asp-for="BulkTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true"
+                       placeholder='@L["Add tags…"]' />
+            <div class="form-row">
+                <label>@L["Filing"]</label>
+                <div class="checkbox-group">
+                    <label class="form-check">
+                        <input type="radio" name="mode" value="keep" checked />
+                        <span>@L["Keep in place"]</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="radio" name="mode" value="refile" />
+                        <span>@L["Re-file by template"]</span>
+                    </label>
                 </div>
+            </div>
+        </div>
 
-                <div class="inbox-grid">
-                    <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
-                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                    <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions"
-                               value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                    <div class="form-row">
-                        <label for="documentDate_@suffix">@L["Date"]</label>
-                        <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
-                               value="@Fmt.InputDate(row.DocumentDate)" />
-                    </div>
-                    <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions"
-                               value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                    <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true"
-                               value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder='@L["Add tags…"]' />
-                    <div class="form-row">
-                        <label for="storageLocationId_@suffix">@L["File to"]</label>
-                        <select class="form-control" id="storageLocationId_@suffix" name="storageLocationId">
-                            @foreach (var loc in Model.StorageLocations)
-                            {
-                                <option value="@loc.Id" selected="@(loc.Id == selectedLocation)">@loc.Name</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-
-                <div class="inbox-item__actions">
-                    <button class="btn btn--primary" type="submit" disabled="@(processing || !Model.HasStorage)"
-                            title='@(processing ? L["Still processing"].Value : L["Apply the values above, file the document and mark it reviewed"].Value)'>
-                        @L["Confirm & file"]
-                    </button>
-                    <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">@L["Open"]</a>
-                    <span class="icon-actions inbox-item__tools">
-                        <button class="icon-btn icon-btn--danger" type="submit" form="inbox-delete-@row.Id" title='@L["Delete"]'
-                                onclick='return confirm("@L["Delete this document?"]")'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
-                            </svg>
-                        </button>
-                    </span>
-                </div>
-            </form>
-            <form method="post" id="inbox-delete-@row.Id" asp-page-handler="Delete"
-                  asp-route-Search="@Model.Search" asp-route-PageNumber="@Model.PageNumber">
-                <input type="hidden" name="id" value="@row.Id" />
-            </form>
-        </article>
+        <mp-button-row>
+            <button class="btn btn--primary" type="submit" name="action" value="confirm">@L["Take into archive"]</button>
+            <button class="btn btn--secondary" type="submit" name="action" value="analyze">@L["Analyze selected"]</button>
+            <mp-button-spacer />
+            <button class="btn btn--secondary" type="submit" name="action" value="ignore">@L["Ignore"]</button>
+        </mp-button-row>
+    </form>
     }
 
     <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
@@ -154,7 +203,11 @@ else
                 fetch("/Inbox?handler=Status&" + qs, { credentials: "same-origin", headers: { "Accept": "application/json" } })
                     .then(function (r) { return r.ok ? r.json() : []; })
                     .then(function (rows) {
-                        var done = rows.some(function (r) { return r.state !== "pending"; });
+                        // A row the endpoint no longer returns is gone (deleted, reassigned):
+                        // treat that as done so the poll cannot run forever.
+                        var seen = {};
+                        rows.forEach(function (r) { seen[r.id] = r.state; });
+                        var done = pending.some(function (id) { return seen[id] === undefined || seen[id] !== "pending"; });
                         if (!done) { setTimeout(tick, 3000); return; }
                         if (!dirty) { location.reload(); return; }
                         var note = document.getElementById("inbox-refresh");
@@ -164,6 +217,16 @@ else
             }
 
             setTimeout(tick, 3000);
+        })();
+
+        // "Select all on this page" drives the per-row checkboxes of the bulk form.
+        (function () {
+            var master = document.getElementById("inbox-select-all");
+            if (!master) { return; }
+            master.addEventListener("change", function () {
+                var boxes = document.querySelectorAll('input[name="selectedIds"]');
+                for (var i = 0; i < boxes.length; i++) { boxes[i].checked = master.checked; }
+            });
         })();
     </script>
 }

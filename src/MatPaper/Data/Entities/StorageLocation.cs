@@ -30,7 +30,33 @@ public class StorageLocation : BaseEntity
     public bool IsDefault { get; set; }
     public UpdateState UpdateState { get; set; }
 
+    /// <summary>
+    /// Owner assigned to documents a storage search finds here. Null = the user who
+    /// started the search.
+    /// </summary>
+    public long? DefaultOwnerId { get; set; }
+
+    /// <summary>Put documents found here into the shared common area.</summary>
+    public bool DefaultIsCommon { get; set; }
+
+    /// <summary>
+    /// Comma-separated file extensions a storage search picks up (".pdf,.png"). Empty
+    /// means every file.
+    /// </summary>
+    public string ScanExtensions { get; set; } = ".pdf,.png,.jpg,.jpeg,.tif,.tiff";
+
+    /// <summary>When the last storage search finished (UTC), or null if it never ran.</summary>
+    public DateTime? LastScanUtc { get; set; }
+
+    /// <summary>How many new documents the last storage search added.</summary>
+    public int LastScanFound { get; set; }
+
+    /// <summary>Error of the last storage search, or null when it succeeded.</summary>
+    public string? LastScanError { get; set; }
+
     public Credential? Credential { get; set; }
+
+    public User? DefaultOwner { get; set; }
 
     /// <summary>Human-readable root, e.g. "/storage" or "\\nas\docs\archive".</summary>
     public string DisplayRoot

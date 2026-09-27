@@ -59,7 +59,8 @@ public sealed class DocumentIngestService(
         long? actingUserId,
         CancellationToken ct,
         ReviewState reviewState = ReviewState.Pending,
-        bool isCommon = false)
+        bool isCommon = false,
+        DocumentOrigin origin = DocumentOrigin.Upload)
     {
         ArgumentNullException.ThrowIfNull(content);
 
@@ -187,6 +188,7 @@ public sealed class DocumentIngestService(
             ContentHash = contentHash,
             OwnerId = actingUserId,
             IsCommon = isCommon,
+            Origin = origin,
             ReviewState = reviewState,
             PageCount = 0,
             OcrState = OcrState.Pending,

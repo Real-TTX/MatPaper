@@ -126,6 +126,27 @@ public sealed class DocumentProcessingService : BackgroundService
             var absolutePath = local.FilePath;
             var extension = Path.GetExtension(document.OriginalFileName);
 
+            // A storage search records files without reading them, so the hash is missing.
+            // Fill it here — this is the first moment the bytes are on local disk anyway.
+            if (string.IsNullOrEmpty(document.ContentHash))
+            {
+                document.ContentHash = await ComputeHashAsync(absolutePath, ct);
+
+                // Only a document that is still waiting may be waved away automatically —
+                // one the user has already taken into the archive stays there.
+                if (document.ReviewState == ReviewState.Pending && await IsDuplicateAsync(db, document, ct))
+                {
+                    _logger.LogInformation(
+                        "Document {DocumentId} is a duplicate of an existing document; ignoring it.", documentId);
+                    document.ReviewState = ReviewState.Ignored;
+                    document.OcrState = OcrState.Done;
+                    document.UpdateState = UpdateState.Updated;
+                    document.UpdateDate = DateTime.UtcNow;
+                    await db.SaveChangesAsync(ct);
+                    return;
+                }
+            }
+
             var extraction = await extractor.ExtractAsync(absolutePath, extension, ct);
             var thumbnail = await thumbnails.GenerateAsync(document.Token, absolutePath, extension, ct);
 
@@ -164,6 +185,26 @@ public sealed class DocumentProcessingService : BackgroundService
             }
         }
     }
+
+    private static async Task<string> ComputeHashAsync(string filePath, CancellationToken ct)
+    {
+        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var hash = await sha256.ComputeHashAsync(stream, ct);
+        return Convert.ToHexStringLower(hash);
+    }
+
+    /// <summary>
+    /// True when the same content already exists for this owner (or in the common area).
+    /// Found files are checked here rather than during the search, which never reads bytes.
+    /// </summary>
+    private static Task<bool> IsDuplicateAsync(AppDbContext db, Document document, CancellationToken ct)
+        => db.Documents.AnyAsync(d =>
+            d.Id != document.Id
+            && d.ContentHash == document.ContentHash
+            && d.UpdateState != UpdateState.Deleted
+            && d.ReviewState != ReviewState.Ignored
+            && (d.OwnerId == document.OwnerId || d.IsCommon), ct);
 
     private async Task AutoAssignCorrespondentAsync(AppDbContext db, Document document, CancellationToken ct)
     {

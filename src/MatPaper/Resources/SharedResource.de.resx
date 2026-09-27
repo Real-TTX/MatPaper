@@ -65,6 +65,7 @@
 
   <data name="— Auto-detect —" xml:space="preserve"><value>— Automatisch erkennen —</value></data>
   <data name="— None —" xml:space="preserve"><value>— Keine —</value></data>
+  <data name="— Unchanged —" xml:space="preserve"><value>— Unverändert —</value></data>
   <data name="&quot;{0}&quot; could not be stored." xml:space="preserve"><value>„{0}“ konnte nicht gespeichert werden.</value></data>
   <data name="&quot;{0}&quot; filed." xml:space="preserve"><value>„{0}“ abgelegt.</value></data>
   <data name="&quot;{0}&quot; is still being processed — try again in a moment." xml:space="preserve"><value>„{0}“ wird noch verarbeitet — bitte gleich erneut versuchen.</value></data>
@@ -76,14 +77,21 @@
   <data name="{0} duplicate(s) skipped" xml:space="preserve"><value>{0} Duplikat(e) übersprungen</value></data>
   <data name="{0} failed" xml:space="preserve"><value>{0} fehlgeschlagen</value></data>
   <data name="{0} filed" xml:space="preserve"><value>{0} abgelegt</value></data>
+  <data name="{0} found file(s) ignored. The files stay where they are." xml:space="preserve"><value>{0} gefundene Datei(en) ignoriert. Die Dateien bleiben, wo sie sind.</value></data>
+  <data name="{0} ignored" xml:space="preserve"><value>{0} ignoriert</value></data>
+  <data name="{0} ignored, {1} skipped (still in the staging area)." xml:space="preserve"><value>{0} ignoriert, {1} übersprungen (liegen noch im Zwischenspeicher).</value></data>
+  <data name="{0} in the inbox · {1} found · {2} being processed" xml:space="preserve"><value>{0} im Eingang · {1} gefunden · {2} in Arbeit</value></data>
   <data name="{0} match(es)" xml:space="preserve"><value>{0} Treffer</value></data>
+  <data name="{0} new" xml:space="preserve"><value>{0} neu</value></data>
   <data name="{0} scanned" xml:space="preserve"><value>{0} geprüft</value></data>
   <data name="{0} still processing" xml:space="preserve"><value>{0} noch in Verarbeitung</value></data>
+  <data name="{0} taken over, {1} still open." xml:space="preserve"><value>{0} übernommen, {1} noch offen.</value></data>
   <data name="30 days" xml:space="preserve"><value>30 Tage</value></data>
   <data name="7 days" xml:space="preserve"><value>7 Tage</value></data>
   <data name="90 days" xml:space="preserve"><value>90 Tage</value></data>
   <data name="A correspondent with that name already exists." xml:space="preserve"><value>Ein Korrespondent mit diesem Namen existiert bereits.</value></data>
   <data name="A credential with that name already exists." xml:space="preserve"><value>Zugangsdaten mit diesem Namen existieren bereits.</value></data>
+  <data name="A document that is still in the staging area cannot be ignored — take it over or delete it." xml:space="preserve"><value>Ein Dokument im Zwischenspeicher kann nicht ignoriert werden — übernehmen oder löschen.</value></data>
   <data name="A dry run: nothing is imported, moved, deleted or marked as read." xml:space="preserve"><value>Testlauf: es wird nichts importiert, verschoben, gelöscht oder als gelesen markiert.</value></data>
   <data name="A filesystem import has no connection to test." xml:space="preserve"><value>Ein Dateisystem-Import hat keine Verbindung zum Testen.</value></data>
   <data name="A folder inside the container, e.g. a scanner drop." xml:space="preserve"><value>Ein Ordner im Container, z. B. die Ablage des Scanners.</value></data>
@@ -91,6 +99,7 @@
   <data name="A NAS share, reached directly over the network." xml:space="preserve"><value>Eine NAS-Freigabe, direkt über das Netzwerk erreicht.</value></data>
   <data name="A password is required for a new credential." xml:space="preserve"><value>Für neue Zugangsdaten ist ein Passwort erforderlich.</value></data>
   <data name="A password is required." xml:space="preserve"><value>Ein Passwort ist erforderlich.</value></data>
+  <data name="A search for this location is already running." xml:space="preserve"><value>Für diesen Speicherort läuft bereits eine Suche.</value></data>
   <data name="A storage location is required." xml:space="preserve"><value>Ein Speicherort ist erforderlich.</value></data>
   <data name="A storage location with that name already exists." xml:space="preserve"><value>Ein Speicherort mit diesem Namen existiert bereits.</value></data>
   <data name="A tag with that name already exists." xml:space="preserve"><value>Ein Schlagwort mit diesem Namen existiert bereits.</value></data>
@@ -111,17 +120,19 @@
   <data name="All" xml:space="preserve"><value>Alle</value></data>
   <data name="All documents" xml:space="preserve"><value>Alle Dokumente</value></data>
   <data name="All locations" xml:space="preserve"><value>Alle Speicherorte</value></data>
+  <data name="All owners" xml:space="preserve"><value>Alle Eigentümer</value></data>
   <data name="Also import the mail body as a PDF" xml:space="preserve"><value>Mailtext zusätzlich als PDF importieren</value></data>
   <data name="Also used for auto-matching when it appears in the document text." xml:space="preserve"><value>Wird ebenfalls für die automatische Zuordnung genutzt, wenn sie im Dokumenttext vorkommt.</value></data>
   <data name="Also used for auto-matching: a document mentioning this address is assigned to this correspondent." xml:space="preserve"><value>Wird ebenfalls für die automatische Zuordnung genutzt: Ein Dokument, das diese Adresse enthält, wird diesem Korrespondenten zugeordnet.</value></data>
   <data name="Alternative names / keywords" xml:space="preserve"><value>Alternative Namen / Stichwörter</value></data>
   <data name="Analysis found nothing to change." xml:space="preserve"><value>Die Analyse hat keine Änderungen ergeben.</value></data>
+  <data name="Analyze now" xml:space="preserve"><value>Jetzt analysieren</value></data>
+  <data name="Analyze selected" xml:space="preserve"><value>Auswahl analysieren</value></data>
   <data name="Anonymous" xml:space="preserve"><value>Anonym</value></data>
   <data name="Anyone with a share link can view and download this document without signing in." xml:space="preserve"><value>Wer den Freigabe-Link hat, kann dieses Dokument ohne Anmeldung ansehen und herunterladen.</value></data>
-  <data name="Apply" xml:space="preserve"><value>Übernehmen</value></data>
-  <data name="Apply the values above, file the document and mark it reviewed" xml:space="preserve"><value>Werte übernehmen, Dokument ablegen und als geprüft markieren</value></data>
+  <data name="Apply the values above and take the document into the archive" xml:space="preserve"><value>Werte oben anwenden und das Dokument übernehmen</value></data>
+  <data name="Apply to selection" xml:space="preserve"><value>Auf Auswahl anwenden</value></data>
   <data name="archive (optional)" xml:space="preserve"><value>archiv (optional)</value></data>
-  <data name="Assign metadata to selected items" xml:space="preserve"><value>Metadaten für ausgewählte Einträge festlegen</value></data>
   <data name="at" xml:space="preserve"><value>um</value></data>
   <data name="At least 8 characters" xml:space="preserve"><value>Mindestens 8 Zeichen</value></data>
   <data name="at minute" xml:space="preserve"><value>zur Minute</value></data>
@@ -132,10 +143,12 @@
   <data name="Back" xml:space="preserve"><value>Zurück</value></data>
   <data name="Back to home" xml:space="preserve"><value>Zur Startseite</value></data>
   <data name="Back to the dashboard" xml:space="preserve"><value>Zurück zur Übersicht</value></data>
+  <data name="Back to the inbox" xml:space="preserve"><value>Zurück in den Eingang</value></data>
   <data name="Backup settings" xml:space="preserve"><value>Sicherungseinstellungen</value></data>
   <data name="Breadcrumb" xml:space="preserve"><value>Navigationspfad</value></data>
   <data name="Browse…" xml:space="preserve"><value>Durchsuchen…</value></data>
   <data name="Camera" xml:space="preserve"><value>Kamera</value></data>
+  <data name="Camera scan" xml:space="preserve"><value>Kamera-Scan</value></data>
   <data name="can edit" xml:space="preserve"><value>darf bearbeiten</value></data>
   <data name="can edit documents" xml:space="preserve"><value>kann Dokumente bearbeiten</value></data>
   <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
@@ -148,10 +161,10 @@
   <data name="Coming soon" xml:space="preserve"><value>Demnächst verfügbar</value></data>
   <data name="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too." xml:space="preserve"><value>Kommagetrennte alternative Namen oder ein regulärer Ausdruck, der gegen den Text eines Dokuments geprüft wird, um diesen Korrespondenten automatisch zuzuordnen. Der eigene Name des Korrespondenten wird immer mitgeprüft.</value></data>
   <data name="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this type — e.g. invoice, faktura." xml:space="preserve"><value>Kommagetrennte alternative Namen oder ein regulärer Ausdruck; wird mit dem Text eines Dokuments abgeglichen, um diesen Typ automatisch zuzuweisen — z. B. invoice, faktura.</value></data>
+  <data name="Comma-separated extensions; empty means all files." xml:space="preserve"><value>Endungen mit Komma getrennt; leer bedeutet alle Dateien.</value></data>
   <data name="Common" xml:space="preserve"><value>Gemeinsam</value></data>
   <data name="Common area" xml:space="preserve"><value>Gemeinsamer Bereich</value></data>
   <data name="Common area (visible to everyone)" xml:space="preserve"><value>Gemeinsamer Bereich (für alle sichtbar)</value></data>
-  <data name="Confirm &amp; file" xml:space="preserve"><value>Bestätigen &amp; ablegen</value></data>
   <data name="Confirm all" xml:space="preserve"><value>Alle bestätigen</value></data>
   <data name="Confirm password" xml:space="preserve"><value>Passwort bestätigen</value></data>
   <data name="Connected to {0}." xml:space="preserve"><value>Verbunden mit {0}.</value></data>
@@ -176,12 +189,13 @@
   <data name="day" xml:space="preserve"><value>Tag</value></data>
   <data name="Default" xml:space="preserve"><value>Standard</value></data>
   <data name="Default location" xml:space="preserve"><value>Standard-Speicherort</value></data>
+  <data name="Default owner for found files" xml:space="preserve"><value>Eigentümer für gefundene Dateien</value></data>
   <data name="Delete" xml:space="preserve"><value>Löschen</value></data>
   <data name="Delete this correspondent? This cannot be undone." xml:space="preserve"><value>Diesen Korrespondenten löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this credential? Import tasks using it will fall back to their own username/password." xml:space="preserve"><value>Diese Zugangsdaten löschen? Import-Regeln, die sie nutzen, greifen auf ihren eigenen Benutzernamen bzw. ihr eigenes Passwort zurück.</value></data>
   <data name="Delete this document type? This cannot be undone." xml:space="preserve"><value>Diesen Dokumenttyp löschen? Das kann nicht rückgängig gemacht werden.</value></data>
-  <data name="Delete this document?" xml:space="preserve"><value>Dieses Dokument löschen?</value></data>
   <data name="Delete this document? It is removed from the inbox together with its file." xml:space="preserve"><value>Dieses Dokument löschen? Es wird samt Datei aus dem Posteingang entfernt.</value></data>
+  <data name="Delete this document? The file in the staging area is deleted as well." xml:space="preserve"><value>Dieses Dokument löschen? Die Datei im Zwischenspeicher wird mitgelöscht.</value></data>
   <data name="Delete this document? The file stays in its storage location but the document is removed from MatPaper." xml:space="preserve"><value>Dieses Dokument löschen? Die Datei bleibt am Speicherort, das Dokument wird aber aus MatPaper entfernt.</value></data>
   <data name="Delete this export task? This cannot be undone." xml:space="preserve"><value>Diese Sicherung löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this import task? This cannot be undone." xml:space="preserve"><value>Diese Import-Regel löschen? Das kann nicht rückgängig gemacht werden.</value></data>
@@ -190,10 +204,6 @@
   <data name="Delete this tag? This cannot be undone." xml:space="preserve"><value>Dieses Schlagwort löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this user? This cannot be undone." xml:space="preserve"><value>Diesen Benutzer löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Disabled" xml:space="preserve"><value>Inaktiv</value></data>
-  <data name="Discover files on disk under this location and add unknown ones to the inbox." xml:space="preserve"><value>Dateien unter diesem Speicherort auf der Platte finden und unbekannte dem Posteingang hinzufügen.</value></data>
-  <data name="Dismiss selected" xml:space="preserve"><value>Auswahl verwerfen</value></data>
-  <data name="Dismiss the selected inbox items? They will be hidden from the inbox." xml:space="preserve"><value>Die ausgewählten Posteingangs-Einträge verwerfen? Sie werden im Posteingang ausgeblendet.</value></data>
-  <data name="Dismissed {0} item(s)." xml:space="preserve"><value>{0} Eintrag/Einträge verworfen.</value></data>
   <data name="Display name" xml:space="preserve"><value>Anzeigename</value></data>
   <data name="Display name is required." xml:space="preserve"><value>Anzeigename ist erforderlich.</value></data>
   <data name="Do nothing" xml:space="preserve"><value>Nichts tun</value></data>
@@ -214,6 +224,7 @@
   <data name="Drag &amp; drop" xml:space="preserve"><value>Dateien hierher ziehen</value></data>
   <data name="Duplicate — skipped" xml:space="preserve"><value>Duplikat — übersprungen</value></data>
   <data name="Duration" xml:space="preserve"><value>Dauer</value></data>
+  <data name="E-mail" xml:space="preserve"><value>E-Mail</value></data>
   <data name="e.g. Archive" xml:space="preserve"><value>z. B. Archiv</value></data>
   <data name="e.g. Finanzamt" xml:space="preserve"><value>z. B. Finanzamt</value></data>
   <data name="e.g. Invoice" xml:space="preserve"><value>z. B. Rechnung</value></data>
@@ -226,6 +237,7 @@
   <data name="Edit" xml:space="preserve"><value>Bearbeiten</value></data>
   <data name="Email" xml:space="preserve"><value>E-Mail</value></data>
   <data name="Empty file." xml:space="preserve"><value>Leere Datei.</value></data>
+  <data name="Empty: the administrator who starts the search." xml:space="preserve"><value>Leer: wer die Suche startet.</value></data>
   <data name="Enabled" xml:space="preserve"><value>Aktiv</value></data>
   <data name="Enter your credentials to continue." xml:space="preserve"><value>Zugangsdaten eingeben, um fortzufahren.</value></data>
   <data name="Every {0} at {1}" xml:space="preserve"><value>Jeden {0} um {1}</value></data>
@@ -238,21 +250,23 @@
   <data name="Export tasks" xml:space="preserve"><value>Sicherungen</value></data>
   <data name="Failed" xml:space="preserve"><value>Fehlgeschlagen</value></data>
   <data name="File all processed documents with their current suggestions?" xml:space="preserve"><value>Alle verarbeiteten Dokumente mit den aktuellen Vorschlägen ablegen?</value></data>
-  <data name="File name" xml:space="preserve"><value>Dateiname</value></data>
   <data name="File pattern" xml:space="preserve"><value>Dateimuster</value></data>
   <data name="File size" xml:space="preserve"><value>Dateigröße</value></data>
   <data name="File to" xml:space="preserve"><value>Ablegen in</value></data>
+  <data name="File types to search for" xml:space="preserve"><value>Zu suchende Dateitypen</value></data>
   <data name="Filed and marked as reviewed." xml:space="preserve"><value>Abgelegt und als geprüft markiert.</value></data>
   <data name="Files" xml:space="preserve"><value>Dateien</value></data>
   <data name="files here, or" xml:space="preserve"><value>oder</value></data>
   <data name="Filing" xml:space="preserve"><value>Ablage</value></data>
+  <data name="Filter" xml:space="preserve"><value>Filtern</value></data>
   <data name="Filter…" xml:space="preserve"><value>Filtern…</value></data>
-  <data name="Find files on disk and register them as documents" xml:space="preserve"><value>Dateien im Speicher finden und als Dokumente aufnehmen</value></data>
   <data name="Finished" xml:space="preserve"><value>Beendet</value></data>
   <data name="Folder" xml:space="preserve"><value>Ordner</value></data>
   <data name="Folder {0} is available." xml:space="preserve"><value>Ordner {0} ist verfügbar.</value></data>
   <data name="Folder in share" xml:space="preserve"><value>Ordner in der Freigabe</value></data>
   <data name="Folders" xml:space="preserve"><value>Ordner</value></data>
+  <data name="Found" xml:space="preserve"><value>Gefunden</value></data>
+  <data name="Found in storage" xml:space="preserve"><value>Im Speicher gefunden</value></data>
   <data name="Friday" xml:space="preserve"><value>Freitag</value></data>
   <data name="From" xml:space="preserve"><value>Von</value></data>
   <data name="From contains" xml:space="preserve"><value>Von enthält</value></data>
@@ -263,17 +277,19 @@
   <data name="How does it sign in?" xml:space="preserve"><value>Wie wird angemeldet?</value></data>
   <data name="how many backups to keep" xml:space="preserve"><value>wie viele Sicherungen aufbewahrt werden</value></data>
   <data name="How often the backup runs automatically. Choose Manual to run it only on demand." xml:space="preserve"><value>Wie oft die Sicherung automatisch läuft. Mit Manuell nur bei Bedarf ausführen.</value></data>
+  <data name="Ignore" xml:space="preserve"><value>Ignorieren</value></data>
+  <data name="Ignore {0} found file(s) in &quot;{1}&quot;? The files stay where they are." xml:space="preserve"><value>{0} gefundene Datei(en) in „{1}“ ignorieren? Die Dateien bleiben, wo sie sind.</value></data>
+  <data name="Ignore all found files in this location" xml:space="preserve"><value>Alle gefundenen Dateien in diesem Speicherort ignorieren</value></data>
+  <data name="Ignored" xml:space="preserve"><value>Ignoriert</value></data>
   <data name="IMAP mailbox" xml:space="preserve"><value>IMAP-Postfach</value></data>
   <data name="Import" xml:space="preserve"><value>Import</value></data>
   <data name="Import all" xml:space="preserve"><value>Alle importieren</value></data>
-  <data name="Import selected" xml:space="preserve"><value>Auswahl importieren</value></data>
+  <data name="Import folder" xml:space="preserve"><value>Importordner</value></data>
   <data name="Import tasks" xml:space="preserve"><value>Import-Regeln</value></data>
-  <data name="Imported {0}, {1} duplicate(s) dismissed, {2} error(s)." xml:space="preserve"><value>{0} importiert, {1} Duplikat(e) verworfen, {2} Fehler.</value></data>
   <data name="Inactive" xml:space="preserve"><value>Inaktiv</value></data>
-  <data name="Inbox" xml:space="preserve"><value>Posteingang</value></data>
+  <data name="Inbox" xml:space="preserve"><value>Eingang</value></data>
   <data name="Inbox (not filed yet)" xml:space="preserve"><value>Posteingang (noch nicht abgelegt)</value></data>
-  <data name="Inbox empty" xml:space="preserve"><value>Posteingang leer</value></data>
-  <data name="Inbox is empty — scan a storage location to discover files." xml:space="preserve"><value>Posteingang ist leer — einen Speicherort scannen, um Dateien zu finden.</value></data>
+  <data name="Inbox empty" xml:space="preserve"><value>Eingang leer</value></data>
   <data name="Inbox of" xml:space="preserve"><value>Posteingang von</value></data>
   <data name="Inbox staging:" xml:space="preserve"><value>Posteingang-Zwischenspeicher:</value></data>
   <data name="Include configuration" xml:space="preserve"><value>Konfiguration einschließen</value></data>
@@ -286,11 +302,12 @@
   <data name="Items" xml:space="preserve"><value>Elemente</value></data>
   <data name="Items processed" xml:space="preserve"><value>Verarbeitete Elemente</value></data>
   <data name="Keep in place" xml:space="preserve"><value>Am Ort belassen</value></data>
-  <data name="Keep in place registers files where they are. Re-file moves them into the location's path template." xml:space="preserve"><value>Am Ort belassen erfasst Dateien dort, wo sie liegen. Neu ablegen verschiebt sie in die Pfadvorlage des Speicherorts.</value></data>
+  <data name="Keeping it in place leaves the file untouched; re-filing moves it into the template path." xml:space="preserve"><value>Am Ort belassen lässt die Datei unverändert; neu ablegen verschiebt sie in den Vorlagenpfad.</value></data>
   <data name="Kind" xml:space="preserve"><value>Art</value></data>
   <data name="Language" xml:space="preserve"><value>Sprache</value></data>
   <data name="Last document" xml:space="preserve"><value>Letztes Dokument</value></data>
   <data name="Last run" xml:space="preserve"><value>Letzter Lauf</value></data>
+  <data name="Last searched" xml:space="preserve"><value>Zuletzt durchsucht</value></data>
   <data name="Leave blank to keep current" xml:space="preserve"><value>Leer lassen, um das gespeicherte zu behalten</value></data>
   <data name="Leave blank to keep the stored password." xml:space="preserve"><value>Leer lassen, um das gespeicherte Passwort zu behalten.</value></data>
   <data name="Leave on server" xml:space="preserve"><value>Auf dem Server belassen</value></data>
@@ -306,7 +323,7 @@
   <data name="Mailbox folder" xml:space="preserve"><value>Postfach-Ordner</value></data>
   <data name="Main navigation" xml:space="preserve"><value>Hauptnavigation</value></data>
   <data name="Manage local accounts and roles" xml:space="preserve"><value>Lokale Konten und Rollen verwalten</value></data>
-  <data name="Manage native, human-readable storage locations" xml:space="preserve"><value>Native, lesbare Speicherorte verwalten</value></data>
+  <data name="Manage storage locations and search them for files" xml:space="preserve"><value>Speicherorte verwalten und nach Dateien durchsuchen</value></data>
   <data name="Manage the document type vocabulary" xml:space="preserve"><value>Vokabular der Dokumenttypen verwalten</value></data>
   <data name="Manual only" xml:space="preserve"><value>Nur manuell</value></data>
   <data name="Mark seen (IMAP only)" xml:space="preserve"><value>Als gelesen markieren (nur IMAP)</value></data>
@@ -314,7 +331,6 @@
   <data name="may edit documents" xml:space="preserve"><value>darf Dokumente bearbeiten</value></data>
   <data name="Messages" xml:space="preserve"><value>Nachrichten</value></data>
   <data name="Mine" xml:space="preserve"><value>Meine</value></data>
-  <data name="Modified" xml:space="preserve"><value>Geändert</value></data>
   <data name="Monday" xml:space="preserve"><value>Montag</value></data>
   <data name="Monthly" xml:space="preserve"><value>Monatlich</value></data>
   <data name="Move" xml:space="preserve"><value>Verschieben</value></data>
@@ -329,6 +345,7 @@
   <data name="Name or path" xml:space="preserve"><value>Name oder Pfad</value></data>
   <data name="Name or username" xml:space="preserve"><value>Name oder Benutzername</value></data>
   <data name="Name, pattern or notes" xml:space="preserve"><value>Name, Muster oder Notizen</value></data>
+  <data name="Narrow the list with a filter before taking everything over." xml:space="preserve"><value>Vor dem Übernehmen aller Einträge bitte die Liste filtern.</value></data>
   <data name="Needs review" xml:space="preserve"><value>Zu prüfen</value></data>
   <data name="Network error" xml:space="preserve"><value>Netzwerkfehler</value></data>
   <data name="Network share (SMB)" xml:space="preserve"><value>Netzwerkfreigabe (SMB)</value></data>
@@ -348,6 +365,7 @@
   <data name="No access" xml:space="preserve"><value>Kein Zugriff</value></data>
   <data name="No correspondents match your criteria." xml:space="preserve"><value>Keine Korrespondenten entsprechen den Kriterien.</value></data>
   <data name="No credentials yet." xml:space="preserve"><value>Noch keine Zugangsdaten vorhanden.</value></data>
+  <data name="No document matches your filter." xml:space="preserve"><value>Kein Dokument passt zum Filter.</value></data>
   <data name="No document types match your criteria." xml:space="preserve"><value>Keine Dokumenttypen entsprechen den Kriterien.</value></data>
   <data name="No documents match your criteria." xml:space="preserve"><value>Keine Dokumente entsprechen den Kriterien.</value></data>
   <data name="No documents were uploaded." xml:space="preserve"><value>Es wurden keine Dokumente hochgeladen.</value></data>
@@ -359,17 +377,21 @@
   <data name="No records found." xml:space="preserve"><value>Keine Einträge gefunden.</value></data>
   <data name="No share links yet." xml:space="preserve"><value>Noch keine Freigabe-Links.</value></data>
   <data name="No storage location configured — documents can't be filed yet." xml:space="preserve"><value>Kein Speicherort eingerichtet — Dokumente können noch nicht abgelegt werden.</value></data>
+  <data name="No storage location is configured. Create one under System → Storage locations first." xml:space="preserve"><value>Es ist kein Speicherort eingerichtet. Bitte zuerst unter System → Speicherorte einen anlegen.</value></data>
   <data name="No storage locations match your criteria." xml:space="preserve"><value>Keine Speicherorte entsprechen den Kriterien.</value></data>
   <data name="No tags defined yet." xml:space="preserve"><value>Noch keine Schlagwörter angelegt.</value></data>
   <data name="No tags match your criteria." xml:space="preserve"><value>Keine Schlagwörter entsprechen den Kriterien.</value></data>
   <data name="No task runs recorded yet." xml:space="preserve"><value>Noch keine Läufe aufgezeichnet.</value></data>
   <data name="No text extracted yet." xml:space="preserve"><value>Noch kein Text extrahiert.</value></data>
   <data name="No users match your criteria." xml:space="preserve"><value>Keine Benutzer entsprechen den Kriterien.</value></data>
+  <data name="Not analyzed yet" xml:space="preserve"><value>Noch nicht analysiert</value></data>
   <data name="Not filed yet" xml:space="preserve"><value>Noch nicht abgelegt</value></data>
   <data name="Not shared with any user yet." xml:space="preserve"><value>Noch für keinen Benutzer freigegeben.</value></data>
   <data name="Not signed in" xml:space="preserve"><value>Nicht angemeldet</value></data>
   <data name="Notes" xml:space="preserve"><value>Notizen</value></data>
   <data name="Nothing found." xml:space="preserve"><value>Nichts gefunden.</value></data>
+  <data name="Nothing ignored" xml:space="preserve"><value>Nichts ignoriert</value></data>
+  <data name="Nothing was selected." xml:space="preserve"><value>Es wurde nichts ausgewählt.</value></data>
   <data name="OCR failed" xml:space="preserve"><value>OCR fehlgeschlagen</value></data>
   <data name="OCR status" xml:space="preserve"><value>OCR-Status</value></data>
   <data name="Oldest first" xml:space="preserve"><value>Älteste zuerst</value></data>
@@ -381,6 +403,7 @@
   <data name="Optional (Windows domain or workgroup)." xml:space="preserve"><value>Optional (Windows-Domäne oder Arbeitsgruppe).</value></data>
   <data name="Optional notes" xml:space="preserve"><value>Optionale Notizen</value></data>
   <data name="Optional. Defaults to grey when left unset." xml:space="preserve"><value>Optional. Ohne Angabe wird Grau verwendet.</value></data>
+  <data name="Origin" xml:space="preserve"><value>Herkunft</value></data>
   <data name="Original file" xml:space="preserve"><value>Originaldatei</value></data>
   <data name="Overview" xml:space="preserve"><value>Übersicht</value></data>
   <data name="overwrite existing" xml:space="preserve"><value>vorhandene überschreiben</value></data>
@@ -391,6 +414,7 @@
   <data name="Password must be at least {0} characters." xml:space="preserve"><value>Das Passwort muss mindestens {0} Zeichen lang sein.</value></data>
   <data name="Passwords do not match." xml:space="preserve"><value>Die Passwörter stimmen nicht überein.</value></data>
   <data name="Path" xml:space="preserve"><value>Pfad</value></data>
+  <data name="Path inside the location" xml:space="preserve"><value>Pfad im Speicherort</value></data>
   <data name="Path template" xml:space="preserve"><value>Pfadvorlage</value></data>
   <data name="Path template is required." xml:space="preserve"><value>Pfadvorlage ist erforderlich.</value></data>
   <data name="PDF or images. Files wait in your inbox until you confirm and file them." xml:space="preserve"><value>PDF oder Bilder. Dateien bleiben im Posteingang, bis sie bestätigt und abgelegt werden.</value></data>
@@ -407,20 +431,19 @@
   <data name="Preset metadata" xml:space="preserve"><value>Vorgaben für die Dokumente</value></data>
   <data name="Preview" xml:space="preserve"><value>Vorschau</value></data>
   <data name="Processed" xml:space="preserve"><value>Verarbeitet</value></data>
-  <data name="processing" xml:space="preserve"><value>in Verarbeitung</value></data>
   <data name="Processing finished" xml:space="preserve"><value>Verarbeitung abgeschlossen</value></data>
   <data name="Processing…" xml:space="preserve"><value>Wird verarbeitet…</value></data>
   <data name="Project" xml:space="preserve"><value>Projekt</value></data>
   <data name="Projects" xml:space="preserve"><value>Projekte</value></data>
   <data name="Projects / Edit" xml:space="preserve"><value>Projekte / Bearbeiten</value></data>
   <data name="Projects / New" xml:space="preserve"><value>Projekte / Neu</value></data>
+  <data name="Put found files in the common area" xml:space="preserve"><value>Gefundene Dateien in den gemeinsamen Bereich legen</value></data>
   <data name="Re-analyze" xml:space="preserve"><value>Neu analysieren</value></data>
   <data name="Re-analyzed from the document text." xml:space="preserve"><value>Neu analysiert aus dem Dokumenttext.</value></data>
   <data name="Re-analyzed from the structured e-invoice (XRechnung/ZUGFeRD)." xml:space="preserve"><value>Neu analysiert aus der strukturierten E-Rechnung (XRechnung/ZUGFeRD).</value></data>
   <data name="Re-file by template" xml:space="preserve"><value>Nach Vorlage neu ablegen</value></data>
   <data name="Recent documents" xml:space="preserve"><value>Neueste Dokumente</value></data>
   <data name="Recently added" xml:space="preserve"><value>Zuletzt hinzugefügt</value></data>
-  <data name="Relative path" xml:space="preserve"><value>Relativer Pfad</value></data>
   <data name="reload to see the suggestions." xml:space="preserve"><value>neu laden, um die Vorschläge zu sehen.</value></data>
   <data name="Remember me" xml:space="preserve"><value>Angemeldet bleiben</value></data>
   <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
@@ -449,19 +472,21 @@
   <data name="Save the task before running it." xml:space="preserve"><value>Import-Regel vor dem Ausführen speichern.</value></data>
   <data name="Saved credential" xml:space="preserve"><value>Gespeicherte Zugangsdaten</value></data>
   <data name="Scan" xml:space="preserve"><value>Scannen</value></data>
-  <data name="Scan for files" xml:space="preserve"><value>Nach Dateien scannen</value></data>
-  <data name="Scan now" xml:space="preserve"><value>Jetzt scannen</value></data>
   <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
-  <data name="Scanned {0}, added {1} new, {2} already known." xml:space="preserve"><value>{0} gescannt, {1} neu hinzugefügt, {2} bereits bekannt.</value></data>
   <data name="Schedule" xml:space="preserve"><value>Zeitplan</value></data>
   <data name="Scheduled database and document backups" xml:space="preserve"><value>Geplante Datenbank- und Dokumentsicherungen</value></data>
   <data name="Scheduled imports from folders and mailboxes" xml:space="preserve"><value>Geplante Importe aus Ordnern und Postfächern</value></data>
   <data name="Scope" xml:space="preserve"><value>Bereich</value></data>
   <data name="Search" xml:space="preserve"><value>Suche</value></data>
+  <data name="Search all storage locations" xml:space="preserve"><value>Alle Speicherorte durchsuchen</value></data>
+  <data name="Search running…" xml:space="preserve"><value>Suche läuft …</value></data>
+  <data name="Search started for &quot;{0}&quot; — found files appear in the inbox." xml:space="preserve"><value>Suche für „{0}“ gestartet — gefundene Dateien erscheinen im Eingang.</value></data>
+  <data name="Search started for {0} storage location(s) — found files appear in the inbox." xml:space="preserve"><value>Suche für {0} Speicherort(e) gestartet — gefundene Dateien erscheinen im Eingang.</value></data>
+  <data name="Search storage for files" xml:space="preserve"><value>Speicher nach Dateien durchsuchen</value></data>
   <data name="Search…" xml:space="preserve"><value>Suchen…</value></data>
-  <data name="Select all" xml:space="preserve"><value>Alle auswählen</value></data>
-  <data name="Select at least one inbox item to dismiss." xml:space="preserve"><value>Mindestens einen Eintrag im Posteingang zum Verwerfen auswählen.</value></data>
-  <data name="Select at least one inbox item to import." xml:space="preserve"><value>Mindestens einen Eintrag im Posteingang zum Importieren auswählen.</value></data>
+  <data name="Select &quot;{0}&quot;" xml:space="preserve"><value>„{0}“ auswählen</value></data>
+  <data name="Select all on this page" xml:space="preserve"><value>Alle auf dieser Seite auswählen</value></data>
+  <data name="Select at most {0} documents at once." xml:space="preserve"><value>Höchstens {0} Dokumente auf einmal auswählen.</value></data>
   <data name="Sender regex (advanced)" xml:space="preserve"><value>Absender-Regex (erweitert)</value></data>
   <data name="Settings" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="Share" xml:space="preserve"><value>Freigeben</value></data>
@@ -493,13 +518,14 @@
   <data name="Source path is required." xml:space="preserve"><value>Quellpfad ist erforderlich.</value></data>
   <data name="Started" xml:space="preserve"><value>Gestartet</value></data>
   <data name="State" xml:space="preserve"><value>Status</value></data>
+  <data name="Status" xml:space="preserve"><value>Status</value></data>
   <data name="Still being processed" xml:space="preserve"><value>Wird noch verarbeitet</value></data>
   <data name="Still processing" xml:space="preserve"><value>Wird noch verarbeitet</value></data>
   <data name="Storage" xml:space="preserve"><value>Speicherort</value></data>
   <data name="Storage location" xml:space="preserve"><value>Speicherort</value></data>
   <data name="Storage location not found." xml:space="preserve"><value>Speicherort nicht gefunden.</value></data>
   <data name="Storage locations" xml:space="preserve"><value>Speicherorte</value></data>
-  <data name="Storage scan" xml:space="preserve"><value>Speicher-Scan</value></data>
+  <data name="Storage search" xml:space="preserve"><value>Speichersuche</value></data>
   <data name="Street, ZIP, city" xml:space="preserve"><value>Straße, PLZ, Ort</value></data>
   <data name="Subject" xml:space="preserve"><value>Betreff</value></data>
   <data name="Subject contains" xml:space="preserve"><value>Betreff enthält</value></data>
@@ -522,43 +548,57 @@
   <data name="System / Storage locations" xml:space="preserve"><value>System / Speicherorte</value></data>
   <data name="System / Storage locations / Edit" xml:space="preserve"><value>System / Speicherorte / Bearbeiten</value></data>
   <data name="System / Storage locations / New" xml:space="preserve"><value>System / Speicherorte / Neu</value></data>
-  <data name="System / Storage scan" xml:space="preserve"><value>System / Speicher-Scan</value></data>
   <data name="System / Task history" xml:space="preserve"><value>System / Laufverlauf</value></data>
   <data name="System / Task history / Run" xml:space="preserve"><value>System / Laufverlauf / Lauf</value></data>
   <data name="Tag" xml:space="preserve"><value>Schlagwort</value></data>
   <data name="Tags" xml:space="preserve"><value>Schlagwörter</value></data>
   <data name="Tags / Edit" xml:space="preserve"><value>Schlagwörter / Bearbeiten</value></data>
   <data name="Tags / New" xml:space="preserve"><value>Schlagwörter / Neu</value></data>
+  <data name="Take into archive" xml:space="preserve"><value>Übernehmen</value></data>
+  <data name="Taken over without text recognition — start it separately if you need full-text search." xml:space="preserve"><value>Ohne Texterkennung übernommen — für die Volltextsuche separat starten.</value></data>
   <data name="Target path" xml:space="preserve"><value>Zielpfad</value></data>
   <data name="Target path is required." xml:space="preserve"><value>Zielpfad ist erforderlich.</value></data>
   <data name="Task" xml:space="preserve"><value>Aufgabe</value></data>
   <data name="Task history" xml:space="preserve"><value>Aufgaben-Verlauf</value></data>
   <data name="Task queued" xml:space="preserve"><value>Aufgabe eingereiht</value></data>
   <data name="Test connection" xml:space="preserve"><value>Verbindung testen</value></data>
+  <data name="Text recognition started for {0} document(s)." xml:space="preserve"><value>Texterkennung für {0} Dokument(e) gestartet.</value></data>
   <data name="That name is already in use." xml:space="preserve"><value>Dieser Name wird bereits verwendet.</value></data>
   <data name="That username is already in use." xml:space="preserve"><value>Dieser Benutzername wird bereits verwendet.</value></data>
+  <data name="The {0} field is not a valid e-mail address." xml:space="preserve"><value>{0} ist keine gültige E-Mail-Adresse.</value></data>
+  <data name="The {0} field is required." xml:space="preserve"><value>{0} ist erforderlich.</value></data>
   <data name="The action could not be completed. The details are in the server log." xml:space="preserve"><value>Die Aktion konnte nicht abgeschlossen werden. Einzelheiten stehen im Server-Protokoll.</value></data>
   <data name="The document file could not be moved: {0} No changes were saved." xml:space="preserve"><value>Die Dokumentdatei konnte nicht verschoben werden: {0} Es wurden keine Änderungen gespeichert.</value></data>
   <data name="The document is still being processed — try confirming again in a moment." xml:space="preserve"><value>Das Dokument wird noch verarbeitet — bitte gleich erneut bestätigen.</value></data>
+  <data name="The field {0} must be a string or array type with a minimum length of '{1}'." xml:space="preserve"><value>{0} muss mindestens {1} Zeichen lang sein.</value></data>
+  <data name="The field {0} must be a string with a maximum length of {1}." xml:space="preserve"><value>{0} darf höchstens {1} Zeichen lang sein.</value></data>
+  <data name="The field {0} must be between {1} and {2}." xml:space="preserve"><value>{0} muss zwischen {1} und {2} liegen.</value></data>
+  <data name="The file could not be stored in &quot;{0}&quot;: {1}" xml:space="preserve"><value>Die Datei konnte nicht in „{0}“ abgelegt werden: {1}</value></data>
   <data name="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location." xml:space="preserve"><value>Die Datei bleibt im Posteingang, bis sie bestätigt wird; danach wird sie am gewählten Speicherort abgelegt.</value></data>
+  <data name="The file was found in a storage location and stays where it is." xml:space="preserve"><value>Die Datei wurde in einem Speicherort gefunden und bleibt, wo sie ist.</value></data>
   <data name="The page you asked for does not exist (any more)." xml:space="preserve"><value>Die aufgerufene Seite gibt es nicht (mehr).</value></data>
+  <data name="The password must be at least 8 characters long." xml:space="preserve"><value>Das Passwort muss mindestens 8 Zeichen lang sein.</value></data>
+  <data name="The passwords do not match." xml:space="preserve"><value>Die Passwörter stimmen nicht überein.</value></data>
   <data name="The photos could not be converted into a PDF. Please try again with different images." xml:space="preserve"><value>Die Fotos konnten nicht in ein PDF umgewandelt werden. Bitte mit anderen Bildern erneut versuchen.</value></data>
   <data name="The request failed — please reload the page." xml:space="preserve"><value>Die Anfrage ist fehlgeschlagen — bitte die Seite neu laden.</value></data>
   <data name="The scan could not be stored." xml:space="preserve"><value>Der Scan konnte nicht gespeichert werden.</value></data>
   <data name="The schedule is not a valid cron expression." xml:space="preserve"><value>Der Zeitplan ist kein gültiger Cron-Ausdruck.</value></data>
+  <data name="The value '{0}' is invalid." xml:space="preserve"><value>„{0}“ ist ungültig.</value></data>
+  <data name="The value '{0}' is not valid for {1}." xml:space="preserve"><value>„{0}“ ist kein gültiger Wert für {1}.</value></data>
   <data name="Theme" xml:space="preserve"><value>Darstellung</value></data>
+  <data name="This root overlaps MatPaper's own data folder ({0})." xml:space="preserve"><value>Dieser Wurzelpfad überschneidet sich mit MatPapers eigenem Datenordner ({0}).</value></data>
   <data name="This scan matches an existing document; nothing new was created." xml:space="preserve"><value>Dieser Scan entspricht einem vorhandenen Dokument; es wurde nichts Neues erstellt.</value></data>
   <data name="Thursday" xml:space="preserve"><value>Donnerstag</value></data>
   <data name="Title" xml:space="preserve"><value>Titel</value></data>
   <data name="Title is required." xml:space="preserve"><value>Titel ist erforderlich.</value></data>
-  <data name="Title or correspondent" xml:space="preserve"><value>Titel oder Korrespondent</value></data>
+  <data name="Title, file name or correspondent" xml:space="preserve"><value>Titel, Dateiname oder Korrespondent</value></data>
   <data name="To" xml:space="preserve"><value>Bis</value></data>
   <data name="To contains" xml:space="preserve"><value>An enthält</value></data>
-  <data name="to review" xml:space="preserve"><value>zu prüfen</value></data>
   <data name="Toggle navigation" xml:space="preserve"><value>Navigation ein-/ausblenden</value></data>
   <data name="Token" xml:space="preserve"><value>Token</value></data>
   <data name="Tuesday" xml:space="preserve"><value>Dienstag</value></data>
   <data name="Type" xml:space="preserve"><value>Typ</value></data>
+  <data name="Unknown" xml:space="preserve"><value>Unbekannt</value></data>
   <data name="Upload" xml:space="preserve"><value>Hochladen</value></data>
   <data name="Upload your first document" xml:space="preserve"><value>Erstes Dokument hochladen</value></data>
   <data name="Uploading…" xml:space="preserve"><value>Wird hochgeladen…</value></data>
@@ -573,6 +613,7 @@
   <data name="Users" xml:space="preserve"><value>Benutzer</value></data>
   <data name="Version" xml:space="preserve"><value>Version</value></data>
   <data name="view only" xml:space="preserve"><value>nur lesen</value></data>
+  <data name="Waiting" xml:space="preserve"><value>Offen</value></data>
   <data name="Watch folder" xml:space="preserve"><value>Überwachter Ordner</value></data>
   <data name="Wednesday" xml:space="preserve"><value>Mittwoch</value></data>
   <data name="Weekly" xml:space="preserve"><value>Wöchentlich</value></data>
@@ -585,6 +626,7 @@
   <data name="Where does it connect to?" xml:space="preserve"><value>Womit wird verbunden?</value></data>
   <data name="Which folder should be watched?" xml:space="preserve"><value>Welcher Ordner wird überwacht?</value></data>
   <data name="You already have a project with that name." xml:space="preserve"><value>Ein eigenes Projekt mit diesem Namen existiert bereits.</value></data>
+  <data name="You are not allowed to change this document." xml:space="preserve"><value>Dieses Dokument dürfen Sie nicht ändern.</value></data>
   <data name="You cannot change the role of the last active administrator." xml:space="preserve"><value>Die Rolle des letzten aktiven Administrators kann nicht geändert werden.</value></data>
   <data name="You cannot deactivate the last active administrator." xml:space="preserve"><value>Der letzte aktive Administrator kann nicht deaktiviert werden.</value></data>
   <data name="You cannot deactivate your own account." xml:space="preserve"><value>Das eigene Konto kann nicht deaktiviert werden.</value></data>
@@ -592,13 +634,4 @@
   <data name="You cannot delete your own account." xml:space="preserve"><value>Das eigene Konto kann nicht gelöscht werden.</value></data>
   <data name="You do not have permission to view this page." xml:space="preserve"><value>Keine Berechtigung für diese Seite.</value></data>
   <data name="Your account may not open this page." xml:space="preserve"><value>Dieses Konto darf diese Seite nicht öffnen.</value></data>
-  <data name="The {0} field is required." xml:space="preserve"><value>{0} ist erforderlich.</value></data>
-  <data name="The {0} field is not a valid e-mail address." xml:space="preserve"><value>{0} ist keine gültige E-Mail-Adresse.</value></data>
-  <data name="The password must be at least 8 characters long." xml:space="preserve"><value>Das Passwort muss mindestens 8 Zeichen lang sein.</value></data>
-  <data name="The passwords do not match." xml:space="preserve"><value>Die Passwörter stimmen nicht überein.</value></data>
-  <data name="The field {0} must be a string or array type with a minimum length of '{1}'." xml:space="preserve"><value>{0} muss mindestens {1} Zeichen lang sein.</value></data>
-  <data name="The field {0} must be a string with a maximum length of {1}." xml:space="preserve"><value>{0} darf höchstens {1} Zeichen lang sein.</value></data>
-  <data name="The field {0} must be between {1} and {2}." xml:space="preserve"><value>{0} muss zwischen {1} und {2} liegen.</value></data>
-  <data name="The value '{0}' is not valid for {1}." xml:space="preserve"><value>„{0}“ ist kein gültiger Wert für {1}.</value></data>
-  <data name="The value '{0}' is invalid." xml:space="preserve"><value>„{0}“ ist ungültig.</value></data>
 </root>

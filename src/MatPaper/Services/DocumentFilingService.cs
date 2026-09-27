@@ -3,6 +3,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MatPaper.Services;
 
+/// <summary>What confirming a document should do with its file.</summary>
+public enum FilingMode
+{
+    /// <summary>Move the file out of the local staging area into the storage location.</summary>
+    FromStaging = 0,
+
+    /// <summary>Leave the file exactly where it is. Used for files a storage search found.</summary>
+    KeepInPlace = 1,
+
+    /// <summary>Move the already-stored file to the path the location template produces.</summary>
+    RefileByTemplate = 2
+}
+
 /// <summary>Outcome of filing a document. <see cref="Error"/> is a user-facing message.</summary>
 public sealed record FilingResult(bool Success, string? Error)
 {
@@ -20,21 +33,43 @@ public sealed record FilingResult(bool Success, string? Error)
 public sealed class DocumentFilingService(
     AppDbContext db,
     DocumentStorageService storage,
+    Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l,
     ILogger<DocumentFilingService> logger)
 {
     /// <summary>
-    /// Files the (tracked) <paramref name="document"/> into <paramref name="storageLocationId"/>,
-    /// falling back to the document's own target and then to the default location. The file is
-    /// placed by the location's template using the document's current metadata. Saves on success.
+    /// Confirms the (tracked) <paramref name="document"/> and marks it reviewed.
+    /// <list type="bullet">
+    /// <item><see cref="FilingMode.FromStaging"/> moves the file out of the staging area into
+    /// <paramref name="storageLocationId"/> (falling back to the document target, then the default).</item>
+    /// <item><see cref="FilingMode.KeepInPlace"/> touches no file at all — the document is adopted
+    /// exactly where it lies.</item>
+    /// <item><see cref="FilingMode.RefileByTemplate"/> moves the stored file to the path the
+    /// location template produces.</item>
+    /// </list>
+    /// A staged document is always filed from staging, whatever the mode says. Saves on success.
     /// </summary>
-    public async Task<FilingResult> FileAsync(Document document, long? storageLocationId, long? actingUserId, CancellationToken ct)
+    public async Task<FilingResult> FileAsync(
+        Document document,
+        long? storageLocationId,
+        FilingMode mode,
+        long? actingUserId,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(document);
+
+        // Adopting a found file must not consult a storage location at all: resolving one
+        // would fall back to the default location and move the file off the user's own tree.
+        if (!document.IsStaged && mode == FilingMode.KeepInPlace)
+        {
+            MarkReviewed(document, actingUserId);
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            return FilingResult.Ok();
+        }
 
         var target = await ResolveTargetAsync(storageLocationId ?? document.StorageLocationId, ct).ConfigureAwait(false);
         if (target is null)
         {
-            return FilingResult.Fail("No storage location is configured. Create one under System → Storage locations first.");
+            return FilingResult.Fail(l["No storage location is configured. Create one under System → Storage locations first."].Value);
         }
 
         string? correspondentName = null;
@@ -57,13 +92,21 @@ public sealed class DocumentFilingService(
                 .ConfigureAwait(false);
         }
 
+        // A file found on a NAS carries its own age: without the file date a 2019 invoice
+        // would be filed under this year's {Year} folder.
+        var effectiveDate = document.DocumentDate ?? document.FileModifiedUtc ?? document.CreateDate;
+
         var desired = storage.BuildRelativePath(
             target,
             document.Title,
-            document.DocumentDate ?? document.CreateDate,
+            effectiveDate,
             correspondentName,
             documentTypeName,
             document.OriginalFileName);
+
+        // Files MatPaper never placed itself live in folders the user created. Moving one on
+        // request is fine; tidying up the folders around it is not.
+        var keepFolders = document.Origin == DocumentOrigin.StorageScan;
 
         try
         {
@@ -74,19 +117,26 @@ public sealed class DocumentFilingService(
                     .ConfigureAwait(false);
                 document.IsStaged = false;
             }
-            else if (!string.IsNullOrEmpty(document.RelativePath) && document.StorageLocationId != target.Id)
+            else if (!string.IsNullOrEmpty(document.RelativePath))
             {
-                // The file is already stored somewhere (storage-scan import or older data).
-                // Only a deliberate change of location moves it — confirming must not
-                // silently re-file documents that were adopted "keep in place".
                 var current = document.StorageLocationId is long currentId
                     ? await db.StorageLocations.Include(s => s.Credential).FirstOrDefaultAsync(s => s.Id == currentId, ct).ConfigureAwait(false)
                     : null;
 
-                if (current is not null)
+                if (current is null)
+                {
+                    // No source location on record — nothing to move, just record the target.
+                }
+                else if (current.Id == target.Id)
                 {
                     document.RelativePath = await storage
-                        .RelocateAsync(current, document.RelativePath, target, desired, ct)
+                        .MoveAsync(target, document.RelativePath, desired, ct, cleanupEmptyDirectories: !keepFolders)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    document.RelativePath = await storage
+                        .RelocateAsync(current, document.RelativePath, target, desired, ct, cleanupEmptyDirectories: !keepFolders)
                         .ConfigureAwait(false);
                 }
             }
@@ -98,18 +148,23 @@ public sealed class DocumentFilingService(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Filing document {DocumentId} into storage location {LocationId} failed.", document.Id, target.Id);
-            return FilingResult.Fail($"The file could not be stored in \"{target.Name}\": {ex.Message}");
+            return FilingResult.Fail(l["The file could not be stored in \"{0}\": {1}", target.Name, ex.Message].Value);
         }
 
-        var now = DateTime.UtcNow;
         document.StorageLocationId = target.Id;
+        MarkReviewed(document, actingUserId);
+
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        return FilingResult.Ok();
+    }
+
+    private static void MarkReviewed(Document document, long? actingUserId)
+    {
+        var now = DateTime.UtcNow;
         document.ReviewState = ReviewState.Reviewed;
         document.UpdateState = UpdateState.Updated;
         document.UpdateDate = now;
         document.UpdateUserId = actingUserId;
-
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
-        return FilingResult.Ok();
     }
 
     /// <summary>The active location with the given id, else the default (or first) active location, else null.</summary>

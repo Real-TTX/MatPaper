@@ -16,6 +16,7 @@ public class EditModel : PageModel
     private readonly ShareLinkService _shareLinks;
     private readonly DocumentAnalysisService _analysis;
     private readonly DocumentFilingService _filing;
+    private readonly DocumentProcessingQueue _queue;
     private readonly IStringLocalizer<SharedResource> _l;
 
     public EditModel(
@@ -25,6 +26,7 @@ public class EditModel : PageModel
         ShareLinkService shareLinks,
         DocumentAnalysisService analysis,
         DocumentFilingService filing,
+        DocumentProcessingQueue queue,
         IStringLocalizer<SharedResource> l)
     {
         _db = db;
@@ -33,6 +35,7 @@ public class EditModel : PageModel
         _shareLinks = shareLinks;
         _analysis = analysis;
         _filing = filing;
+        _queue = queue;
         _l = l;
     }
 
@@ -44,6 +47,8 @@ public class EditModel : PageModel
 
     /// <summary>True while the file still sits in the inbox staging area (not filed yet).</summary>
     public bool IsStaged { get; private set; }
+
+    public DocumentOrigin Origin { get; private set; }
 
     public List<ShareLink> ShareLinks { get; private set; } = new();
     public string ShareBaseUrl { get; private set; } = string.Empty;
@@ -162,6 +167,7 @@ public class EditModel : PageModel
     private async Task RenderAsync(Document document)
     {
         IsStaged = document.IsStaged;
+        Origin = document.Origin;
         FillPreview(document);
         await BuildOptionListsAsync(SelectedTagIds);
         await BuildAccessViewAsync(document, HttpContext.RequestAborted);
@@ -364,7 +370,8 @@ public class EditModel : PageModel
             return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
         }
 
-        var result = await _filing.FileAsync(document, null, _currentUser.UserId, HttpContext.RequestAborted);
+        var mode = document.IsStaged ? FilingMode.FromStaging : FilingMode.KeepInPlace;
+        var result = await _filing.FileAsync(document, null, mode, _currentUser.UserId, HttpContext.RequestAborted);
         this.Notify(result.Success, result.Success ? _l["Filed and marked as reviewed."].Value : result.Error);
 
         return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
@@ -508,17 +515,22 @@ public class EditModel : PageModel
                 ? await _db.StorageLocations.Include(s => s.Credential).FirstOrDefaultAsync(s => s.Id == oldId)
                 : null;
 
-            if (oldLoc != null)
+            // A file MatPaper found where it lay keeps its path: only an explicit change of
+            // storage location moves it, and even then its folders are left alone.
+            var keepFolders = document.Origin == DocumentOrigin.StorageScan;
+            var locationChanged = oldLoc != null && oldLoc.Id != newLoc.Id;
+
+            if (oldLoc != null && (locationChanged || !keepFolders))
             {
-                var effectiveDate = Input.DocumentDate ?? document.CreateDate;
+                var effectiveDate = Input.DocumentDate ?? document.FileModifiedUtc ?? document.CreateDate;
                 var desiredRelativePath = _storage.BuildRelativePath(
                     newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName);
 
                 try
                 {
-                    document.RelativePath = oldLoc.Id != newLoc.Id
-                        ? await _storage.RelocateAsync(oldLoc, document.RelativePath, newLoc, desiredRelativePath, HttpContext.RequestAborted)
-                        : await _storage.MoveAsync(oldLoc, document.RelativePath, desiredRelativePath, HttpContext.RequestAborted);
+                    document.RelativePath = locationChanged
+                        ? await _storage.RelocateAsync(oldLoc, document.RelativePath, newLoc, desiredRelativePath, HttpContext.RequestAborted, cleanupEmptyDirectories: !keepFolders)
+                        : await _storage.MoveAsync(oldLoc, document.RelativePath, desiredRelativePath, HttpContext.RequestAborted, cleanupEmptyDirectories: !keepFolders);
                 }
                 catch (OperationCanceledException)
                 {
@@ -560,7 +572,9 @@ public class EditModel : PageModel
                 return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
             }
 
-            var result = await _filing.FileAsync(document, Input.StorageLocationId, _currentUser.UserId, HttpContext.RequestAborted);
+            // The physical move, if any, already happened above.
+            var filingMode = document.IsStaged ? FilingMode.FromStaging : FilingMode.KeepInPlace;
+            var result = await _filing.FileAsync(document, Input.StorageLocationId, filingMode, _currentUser.UserId, HttpContext.RequestAborted);
             if (!result.Success)
             {
                 this.Notify(result.Error, NoticeKind.Danger);
@@ -617,6 +631,74 @@ public class EditModel : PageModel
         }
 
         return RedirectToPage("Edit", new { id = Id });
+    }
+
+    /// <summary>Starts text recognition for a found document that was never analysed.</summary>
+    public async Task<IActionResult> OnPostAnalyzeAsync()
+    {
+        var document = await LoadEditableAsync();
+        if (document is null)
+        {
+            return NotFound();
+        }
+
+        if (document.OcrState != OcrState.Deferred)
+        {
+            return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+        }
+
+        document.OcrState = OcrState.Pending;
+        document.UpdateDate = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        _queue.Enqueue(document.Id);
+
+        this.Notify(_l["Text recognition started for {0} document(s).", 1].Value);
+        return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+    }
+
+    /// <summary>Puts an ignored document back into the inbox.</summary>
+    public async Task<IActionResult> OnPostRestoreAsync()
+    {
+        var document = await LoadEditableAsync();
+        if (document is null)
+        {
+            return NotFound();
+        }
+
+        if (document.ReviewState != ReviewState.Ignored)
+        {
+            return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+        }
+
+        document.ReviewState = ReviewState.Pending;
+        document.UpdateState = UpdateState.Updated;
+        document.UpdateDate = DateTime.UtcNow;
+        document.UpdateUserId = _currentUser.UserId;
+        await _db.SaveChangesAsync();
+
+        return RedirectToPage("Edit", new { id = Id, returnUrl = ReturnUrl });
+    }
+
+    /// <summary>The tracked document, but only when the current user may change it.</summary>
+    private async Task<Document?> LoadEditableAsync()
+    {
+        if (Id == 0)
+        {
+            return null;
+        }
+
+        var document = await _db.Documents
+            .AccessibleTo(_currentUser)
+            .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
+
+        if (document is null)
+        {
+            return null;
+        }
+
+        return await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, _currentUser.IsAdmin, HttpContext.RequestAborted)
+            ? document
+            : null;
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()

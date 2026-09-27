@@ -106,7 +106,8 @@ public class ScanModel : PageModel
             null,
             Array.Empty<long>(),
             _currentUser.UserId,
-            ct);
+            ct,
+            origin: DocumentOrigin.CameraScan);
 
         switch (result.Status)
         {

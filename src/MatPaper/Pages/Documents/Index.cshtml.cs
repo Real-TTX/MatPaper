@@ -55,7 +55,7 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Scope { get; set; } = "all";
 
-    /// <summary>Review state: all | pending | reviewed | ignored.</summary>
+    /// <summary>Review state: all | pending | reviewed | ignored | deleted.</summary>
     [BindProperty(SupportsGet = true)]
     public string Review { get; set; } = "all";
 
@@ -74,6 +74,39 @@ public class IndexModel : PageModel
 
     public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
 
+    /// <summary>True while the list shows the bin instead of the archive.</summary>
+    public bool ShowingDeleted => string.Equals(Review, "deleted", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Undoes a soft delete. The file was left in its storage location, so the document is
+    /// simply visible again; a staged document whose file was removed cannot come back.
+    /// </summary>
+    public async Task<IActionResult> OnPostRestoreAsync(long id, CancellationToken ct)
+    {
+        var document = await _db.Documents
+            .FirstOrDefaultAsync(d => d.Id == id && d.UpdateState == UpdateState.Deleted, ct);
+
+        if (document is null || !DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            this.Notify(_l["You are not allowed to change this document."].Value, NoticeKind.Warn);
+            return RedirectToPage(new { Review });
+        }
+
+        if (string.IsNullOrEmpty(document.RelativePath))
+        {
+            this.Notify(_l["\"{0}\" cannot be restored: its file was deleted with it.", document.Title].Value, NoticeKind.Warn);
+            return RedirectToPage(new { Review });
+        }
+
+        document.UpdateState = UpdateState.Updated;
+        document.UpdateDate = DateTime.UtcNow;
+        document.UpdateUserId = _currentUser.UserId;
+        await _db.SaveChangesAsync(ct);
+
+        this.Notify(_l["\"{0}\" restored.", document.Title].Value);
+        return RedirectToPage(new { Review });
+    }
+
     public async Task OnGetAsync()
     {
         ViewData["Breadcrumb"] = "Documents";
@@ -86,8 +119,12 @@ public class IndexModel : PageModel
             .Include(d => d.DocumentType)
             .Include(d => d.Project)
             .Include(d => d.DocumentTags).ThenInclude(dt => dt.Tag)
-            .Where(d => d.UpdateState != UpdateState.Deleted)
             .AccessibleTo(_currentUser);
+
+        // The bin is the one view that looks past the soft delete.
+        query = ShowingDeleted
+            ? query.Where(d => d.UpdateState == UpdateState.Deleted)
+            : query.Where(d => d.UpdateState != UpdateState.Deleted);
 
         var userId = _currentUser.UserId;
         query = Scope switch
@@ -104,6 +141,7 @@ public class IndexModel : PageModel
             "pending" => query.Where(d => d.ReviewState == ReviewState.Pending),
             "reviewed" => query.Where(d => d.ReviewState == ReviewState.Reviewed),
             "ignored" => query.Where(d => d.ReviewState == ReviewState.Ignored),
+            "deleted" => query,
             // The archive: no ignored files and nothing a storage search merely found.
             _ => query.InArchive(),
         };
@@ -210,6 +248,7 @@ public class IndexModel : PageModel
             "pending" => _l["Needs review"].Value,
             "reviewed" => _l["Reviewed"].Value,
             "ignored" => _l["Ignored"].Value,
+            "deleted" => _l["Deleted"].Value,
             _ => null
         };
         if (reviewLabel != null)

@@ -14,9 +14,9 @@
     --color-ok: #2e9e5b;
     --color-ok-soft: #dcf3e6;
     --color-ok-text: #1b7a44;
-    --color-warn: #b7791f;
-    --color-warn-soft: #f8ecd2;
-    --color-warn-text: #8a5a00;
+    --color-warn: #d97706;
+    --color-warn-soft: #fdead0;
+    --color-warn-text: #92400e;
     --focus-ring: 0 0 0 3px rgba(47, 158, 68, 0.28);
 }
 
@@ -29,9 +29,9 @@
     --color-ok: #57c98a;
     --color-ok-soft: #1f3a2c;
     --color-ok-text: #57c98a;
-    --color-warn: #e0b25a;
-    --color-warn-soft: #3a3222;
-    --color-warn-text: #e0b25a;
+    --color-warn: #f0a94a;
+    --color-warn-soft: #43301a;
+    --color-warn-text: #f5b971;
     --focus-ring: 0 0 0 3px rgba(64, 192, 87, 0.35);
 }
 
@@ -45,9 +45,9 @@
         --color-ok: #57c98a;
         --color-ok-soft: #1f3a2c;
         --color-ok-text: #57c98a;
-        --color-warn: #e0b25a;
-        --color-warn-soft: #3a3222;
-        --color-warn-text: #e0b25a;
+        --color-warn: #f0a94a;
+        --color-warn-soft: #43301a;
+        --color-warn-text: #f5b971;
         --focus-ring: 0 0 0 3px rgba(64, 192, 87, 0.35);
     }
 }
@@ -535,6 +535,12 @@ select.form-control {
 .badge--off {
     background: var(--color-danger-soft);
     color: var(--color-danger-text);
+}
+
+/* Switched off, on hold, in the bin: not an error, so not red. */
+.badge--warn {
+    background: var(--color-warn-soft);
+    color: var(--color-warn-text);
 }
 
 /* ==========================================================================

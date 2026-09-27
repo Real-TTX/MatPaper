@@ -45,6 +45,12 @@ public class StorageLocation : BaseEntity
     /// </summary>
     public string ScanExtensions { get; set; } = ".pdf,.png,.jpg,.jpeg,.tif,.tiff";
 
+    /// <summary>
+    /// Cron expression for an automatic storage search, or null/empty for manual only.
+    /// Evaluated in the configured display time zone, like the import and export tasks.
+    /// </summary>
+    public string? ScanCron { get; set; }
+
     /// <summary>When the last storage search finished (UTC), or null if it never ran.</summary>
     public DateTime? LastScanUtc { get; set; }
 

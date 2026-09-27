@@ -9,26 +9,27 @@ namespace MatPaper.Pages.System.StorageLocations;
 
 /// <summary>
 /// Lists the storage locations and starts a storage search on one of them. Searching walks a
-/// whole share, so the page only queues the request; <see cref="StorageScanWorker"/> runs it
-/// and the outcome lands on the location itself (last run, count, error).
+/// whole share, so the page only queues the request; <see cref="TaskSchedulerService"/> runs
+/// it like any other task. The outcome lands on the location itself (last run, count, error)
+/// and in the task history.
 /// </summary>
 public class IndexModel : PageModel
 {
     private const int PageSize = 20;
 
     private readonly AppDbContext _db;
-    private readonly StorageScanQueue _scanQueue;
+    private readonly TaskTriggerQueue _tasks;
     private readonly CurrentUser _currentUser;
     private readonly IStringLocalizer<SharedResource> _l;
 
     public IndexModel(
         AppDbContext db,
-        StorageScanQueue scanQueue,
+        TaskTriggerQueue tasks,
         CurrentUser currentUser,
         IStringLocalizer<SharedResource> l)
     {
         _db = db;
-        _scanQueue = scanQueue;
+        _tasks = tasks;
         _currentUser = currentUser;
         _l = l;
     }
@@ -86,7 +87,7 @@ public class IndexModel : PageModel
             .Take(PageSize)
             .ToListAsync();
 
-        Busy = Rows.Where(r => _scanQueue.IsBusy(r.Id)).Select(r => r.Id).ToHashSet();
+        Busy = Rows.Where(r => _tasks.IsBusy(TaskRunKind.Scan, r.Id)).Select(r => r.Id).ToHashSet();
     }
 
     /// <summary>Queues a storage search for one location.</summary>
@@ -102,7 +103,7 @@ public class IndexModel : PageModel
             return RedirectBack();
         }
 
-        if (!_scanQueue.TryEnqueue(new ScanRequest(location.Id, _currentUser.UserId)))
+        if (!_tasks.Enqueue(TaskRunKind.Scan, location.Id, _currentUser.UserId))
         {
             this.Notify(_l["A search for this location is already running."].Value, NoticeKind.Warn);
             return RedirectBack();
@@ -121,7 +122,7 @@ public class IndexModel : PageModel
             .Select(s => s.Id)
             .ToListAsync(ct);
 
-        var started = locations.Count(id => _scanQueue.TryEnqueue(new ScanRequest(id, _currentUser.UserId)));
+        var started = locations.Count(id => _tasks.Enqueue(TaskRunKind.Scan, id, _currentUser.UserId));
 
         this.Notify(_l["Search started for {0} storage location(s) — found files appear in the inbox.", started].Value);
         return RedirectBack();

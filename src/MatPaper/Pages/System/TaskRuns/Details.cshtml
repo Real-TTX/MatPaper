@@ -11,7 +11,7 @@
     </div>
     <div>
         <strong>@L["Kind"]</strong>
-        <div>@Model.Run.Kind</div>
+        <div>@(Model.Run.Kind switch { MatPaper.Data.TaskRunKind.Import => L["Import"].Value, MatPaper.Data.TaskRunKind.Export => L["Export"].Value, _ => L["Storage search"].Value })</div>
     </div>
     <div>
         <strong>@L["State"]</strong>

@@ -64,10 +64,19 @@ no matter where it came from. Two kinds of entry share the list:
 Nothing is read from disk during a search, so pointing MatPaper at a large archive is
 cheap. Text recognition for found files starts when you take one over or press "analyze".
 
+A storage location can run its search on a schedule, like the import and export tasks. Every
+run, manual or scheduled, is recorded in the task history with its log.
+
+Documents in the common area appear in everybody's inbox and everybody may take them over or
+ignore them. Deleting stays with the owner. A deleted document goes to the bin, reachable
+through the "Deleted" filter on the document list, and can be restored as long as its file
+still exists.
+
 **Storage locations** (System → Storage locations) hold the filed documents. A location is
 either a local folder (such as the `/storage` volume or a mounted share) or an SMB/CIFS
 share reached over the network with a saved credential. Files are placed by the location's
 path template, e.g. `{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}`. Import
 tasks that skip the inbox file directly into their configured location. The search icon on
 a location looks through it for files MatPaper does not know yet; which extensions it picks
-up, who owns the finds and whether they go to the common area is configured per location.
+up, who owns the finds, whether they go to the common area and how often the search runs is
+configured per location.

@@ -7,9 +7,10 @@ namespace MatPaper.Services;
 /// Central authorization rules for documents. A document is <b>visible</b> to a
 /// user if they are an administrator, they own it, it lives in the common area
 /// (<see cref="Document.IsCommon"/>), or it has been shared with them. It is
-/// <b>editable</b> only by administrators, its owner, or a user it was shared
-/// with using <see cref="DocumentShare.CanEdit"/>. Ownership-only actions
-/// (delete, manage shares, toggle common) require owner or admin.
+/// <b>editable</b> by administrators, its owner, anyone when it lives in the common
+/// area, or a user it was shared with using <see cref="DocumentShare.CanEdit"/> —
+/// the common area is shared work, so everybody can clear it. Ownership-only actions
+/// (delete, manage shares, toggle common) still require owner or admin.
 ///
 /// These helpers are the single source of truth so every query and handler
 /// enforces the same rule; background services deliberately query without them.
@@ -61,14 +62,16 @@ public static class DocumentAccess
         this IQueryable<Document> query, long? userId, bool isAdmin, bool allOwners = false)
         => isAdmin && allOwners
             ? query.Where(d => d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted)
-            : query.Where(d => d.OwnerId == userId && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
+            : query.Where(d => (d.OwnerId == userId || d.IsCommon)
+                && d.ReviewState == ReviewState.Pending && d.UpdateState != UpdateState.Deleted);
 
-    /// <summary>Documents the user waved away. Same owner scoping as the inbox.</summary>
+    /// <summary>Documents the user waved away. Same scoping as the inbox.</summary>
     public static IQueryable<Document> IgnoredOf(
         this IQueryable<Document> query, long? userId, bool isAdmin, bool allOwners = false)
         => isAdmin && allOwners
             ? query.Where(d => d.ReviewState == ReviewState.Ignored && d.UpdateState != UpdateState.Deleted)
-            : query.Where(d => d.OwnerId == userId && d.ReviewState == ReviewState.Ignored && d.UpdateState != UpdateState.Deleted);
+            : query.Where(d => (d.OwnerId == userId || d.IsCommon)
+                && d.ReviewState == ReviewState.Ignored && d.UpdateState != UpdateState.Deleted);
 
     /// <summary>
     /// True if the user may change the document's metadata — as the document owner,
@@ -88,6 +91,12 @@ public static class DocumentAccess
         }
 
         if (doc.OwnerId == userId)
+        {
+            return true;
+        }
+
+        // The common area is meant to be worked on together.
+        if (doc.IsCommon)
         {
             return true;
         }

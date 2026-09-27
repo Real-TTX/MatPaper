@@ -2,9 +2,9 @@
 @{
     var row = Model.Row;
 }
-@if (!row.IsStaged)
+@if (row.ThumbnailPath == null)
 {
-    @* Nothing has read the file yet, so there is no thumbnail to show. *@
+    @* No preview: either nothing has read the file yet, or the type has no thumbnail. *@
     <span class="inbox-item__thumb inbox-item__thumb--file" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" />
@@ -14,13 +14,6 @@
 else
 {
     <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'>
-        @if (row.ThumbnailPath != null)
-        {
-            <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
-        }
-        else
-        {
-            <span class="inbox-item__thumb-empty" aria-hidden="true"></span>
-        }
+        <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
     </a>
 }

@@ -76,9 +76,21 @@ public sealed class DocumentIngestService(
 
         // Dedupe within the owner's own documents (plus the common area) so two
         // users can each hold their own copy of the same file.
+        //
+        // For anything a machine brings in repeatedly - a mailbox that keeps the message,
+        // a watched folder that keeps the file - a deleted document counts as a tombstone,
+        // exactly like a known path does for the storage search. Otherwise the next run
+        // would hand back what the user just threw away. A person uploading the same file
+        // again means it, so there the deleted copy is ignored.
+        //
+        // The tombstone only counts while the file still exists. A staged document that was
+        // deleted lost its file, so treating it as known would make the import task delete
+        // the source as a duplicate and leave no copy anywhere.
+        var automated = origin is DocumentOrigin.Mail or DocumentOrigin.ImportFolder or DocumentOrigin.StorageScan;
+
         var existing = await db.Documents
             .AsNoTracking()
-            .Where(d => d.UpdateState != UpdateState.Deleted
+            .Where(d => (d.UpdateState != UpdateState.Deleted || (automated && d.RelativePath != ""))
                 && d.ContentHash == contentHash
                 && (d.OwnerId == actingUserId || d.IsCommon))
             .Select(d => new { d.Id })

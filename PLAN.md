@@ -266,7 +266,7 @@ Controls bauen (Table, Toolbar, Pagination, Form, TabBar, Buttons, Icons). Damit
 Upload, Ingest-Pipeline (Ablage nach Template, Hash, OCR-Queue, Thumbnail), Dokumentenliste mit Toolbar/Filtern/Volltextsuche, Detailseite mit Metadaten-Edit (inkl. Datei-Move bei Änderungen), Download, Soft-Delete, Dashboard-Kennzahlen. ✔ Kernnutzen komplett.
 
 **Phase 5 — Speichersuche & ein Eingang**
-Speichersuche pro Speicherort (im Hintergrund), Funde erscheinen im gemeinsamen Eingang, Massen-Zuordnung, Übernahme „am Ort belassen“ oder „nach Vorlage neu ablegen“, Ignorieren als Merker. ✔ Bestehende Ablagen einbindbar.
+Speichersuche pro Speicherort (im Hintergrund, auf Knopfdruck oder nach Zeitplan, mit Eintrag in der Task-Historie), Funde erscheinen im gemeinsamen Eingang, Massen-Zuordnung, Übernahme „am Ort belassen“ oder „nach Vorlage neu ablegen“, Ignorieren als Merker, Papierkorb mit Wiederherstellen. ✔ Bestehende Ablagen einbindbar.
 
 **Phase 6 — Tasks**
 Scheduler, Import-Tasks (Filesystem zuerst, dann IMAP/POP3 mit Filtern), Export/Backup-Tasks, TaskRun-Historie, „Jetzt ausführen“. ✔ Automatisierung komplett.

@@ -307,6 +307,14 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostDeleteAsync(long id, CancellationToken ct)
     {
         var document = await LoadEditableAsync(id, ct);
+
+        // Deleting is not shared work: it stays with the owner even in the common area.
+        if (document is not null && !DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, IsAdmin))
+        {
+            this.Notify(_l["You are not allowed to change this document."].Value, NoticeKind.Warn);
+            return RedirectBack();
+        }
+
         if (document is not null)
         {
             // A staged document never reached a storage location: drop the file too, so
@@ -363,7 +371,16 @@ public class IndexModel : PageModel
             .Where(d => ids.Contains(d.Id) && d.UpdateState != UpdateState.Deleted)
             .ToListAsync(ct);
 
-        documents = documents.Where(d => DocumentAccess.IsOwnerOrAdmin(d, uid, IsAdmin)).ToList();
+        var editable = new List<Document>(documents.Count);
+        foreach (var candidate in documents)
+        {
+            if (await DocumentAccess.CanEditAsync(_db, candidate, uid, IsAdmin, ct))
+            {
+                editable.Add(candidate);
+            }
+        }
+
+        documents = editable;
         if (documents.Count == 0)
         {
             this.Notify(_l["You are not allowed to change this document."].Value, NoticeKind.Warn);
@@ -746,7 +763,8 @@ public class IndexModel : PageModel
             .Include(d => d.DocumentTags)
             .FirstOrDefaultAsync(d => d.Id == id && d.UpdateState != UpdateState.Deleted, ct);
 
-        if (document is null || !DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, IsAdmin))
+        if (document is null
+            || !await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, IsAdmin, ct))
         {
             this.Notify(_l["You are not allowed to change this document."].Value, NoticeKind.Warn);
             return null;

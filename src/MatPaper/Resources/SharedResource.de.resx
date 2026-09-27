@@ -66,9 +66,11 @@
   <data name="— Auto-detect —" xml:space="preserve"><value>— Automatisch erkennen —</value></data>
   <data name="— None —" xml:space="preserve"><value>— Keine —</value></data>
   <data name="— Unchanged —" xml:space="preserve"><value>— Unverändert —</value></data>
+  <data name="&quot;{0}&quot; cannot be restored: its file was deleted with it." xml:space="preserve"><value>„{0}“ lässt sich nicht wiederherstellen: die Datei wurde mitgelöscht.</value></data>
   <data name="&quot;{0}&quot; could not be stored." xml:space="preserve"><value>„{0}“ konnte nicht gespeichert werden.</value></data>
   <data name="&quot;{0}&quot; filed." xml:space="preserve"><value>„{0}“ abgelegt.</value></data>
   <data name="&quot;{0}&quot; is still being processed — try again in a moment." xml:space="preserve"><value>„{0}“ wird noch verarbeitet — bitte gleich erneut versuchen.</value></data>
+  <data name="&quot;{0}&quot; restored." xml:space="preserve"><value>„{0}“ wiederhergestellt.</value></data>
   <data name="&quot;{0}&quot; was skipped as a duplicate of an existing document." xml:space="preserve"><value>„{0}“ wurde als Duplikat eines vorhandenen Dokuments übersprungen.</value></data>
   <data name="(no log)" xml:space="preserve"><value>(kein Protokoll)</value></data>
   <data name="(optional)" xml:space="preserve"><value>(optional)</value></data>
@@ -144,6 +146,7 @@
   <data name="Back to home" xml:space="preserve"><value>Zur Startseite</value></data>
   <data name="Back to the dashboard" xml:space="preserve"><value>Zurück zur Übersicht</value></data>
   <data name="Back to the inbox" xml:space="preserve"><value>Zurück in den Eingang</value></data>
+  <data name="Backup" xml:space="preserve"><value>Sicherung</value></data>
   <data name="Backup settings" xml:space="preserve"><value>Sicherungseinstellungen</value></data>
   <data name="Breadcrumb" xml:space="preserve"><value>Navigationspfad</value></data>
   <data name="Browse…" xml:space="preserve"><value>Durchsuchen…</value></data>
@@ -203,6 +206,7 @@
   <data name="Delete this storage location? This cannot be undone." xml:space="preserve"><value>Diesen Speicherort löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this tag? This cannot be undone." xml:space="preserve"><value>Dieses Schlagwort löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this user? This cannot be undone." xml:space="preserve"><value>Diesen Benutzer löschen? Das kann nicht rückgängig gemacht werden.</value></data>
+  <data name="Deleted" xml:space="preserve"><value>Gelöscht</value></data>
   <data name="Disabled" xml:space="preserve"><value>Inaktiv</value></data>
   <data name="Display name" xml:space="preserve"><value>Anzeigename</value></data>
   <data name="Display name is required." xml:space="preserve"><value>Anzeigename ist erforderlich.</value></data>
@@ -449,6 +453,7 @@
   <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
   <data name="Remove filter" xml:space="preserve"><value>Filter entfernen</value></data>
   <data name="Required." xml:space="preserve"><value>Erforderlich.</value></data>
+  <data name="Restore" xml:space="preserve"><value>Wiederherstellen</value></data>
   <data name="Results and logs of import/export runs" xml:space="preserve"><value>Ergebnisse und Protokolle der Import- und Sicherungsläufe</value></data>
   <data name="Retention" xml:space="preserve"><value>Aufbewahrung</value></data>
   <data name="Retention must be at least 1." xml:space="preserve"><value>Aufbewahrung muss mindestens 1 betragen.</value></data>
@@ -615,6 +620,7 @@
   <data name="view only" xml:space="preserve"><value>nur lesen</value></data>
   <data name="Waiting" xml:space="preserve"><value>Offen</value></data>
   <data name="Watch folder" xml:space="preserve"><value>Überwachter Ordner</value></data>
+  <data name="Watched folder" xml:space="preserve"><value>Überwachter Ordner</value></data>
   <data name="Wednesday" xml:space="preserve"><value>Mittwoch</value></data>
   <data name="Weekly" xml:space="preserve"><value>Wöchentlich</value></data>
   <data name="Welcome to MatPaper" xml:space="preserve"><value>Willkommen bei MatPaper</value></data>

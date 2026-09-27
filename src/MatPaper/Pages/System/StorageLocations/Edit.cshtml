@@ -52,6 +52,8 @@
                   help='@L["Empty: the administrator who starts the search."]' />
 
         <mp-field asp-for="Input.DefaultIsCommon" kind="checkbox" label='@L["Put found files in the common area"]' />
+
+        <mp-schedule asp-for="Input.ScanCron" label='@L["Schedule"]' />
     </section>
 
     <mp-button-row>

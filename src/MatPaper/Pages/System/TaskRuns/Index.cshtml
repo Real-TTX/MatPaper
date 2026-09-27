@@ -9,11 +9,27 @@
         <option value="all">@L["All"]</option>
         <option value="import">@L["Import"]</option>
         <option value="export">@L["Export"]</option>
+        <option value="scan">@L["Storage search"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
+@functions {
+    string KindLabel(MatPaper.Data.TaskRunKind kind) => kind switch
+    {
+        MatPaper.Data.TaskRunKind.Import => L["Import"].Value,
+        MatPaper.Data.TaskRunKind.Export => L["Export"].Value,
+        _ => L["Storage search"].Value
+    };
+}
+
 @{
-    var kindLabel = Model.Kind == "import" ? L["Import"].Value : Model.Kind == "export" ? L["Export"].Value : null;
+    var kindLabel = Model.Kind switch
+    {
+        "import" => L["Import"].Value,
+        "export" => L["Export"].Value,
+        "scan" => L["Storage search"].Value,
+        _ => null
+    };
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
         new MatPaper.Services.FilterSpec("Kind", L["Kind"].Value, kindLabel));
 }
@@ -35,7 +51,7 @@
         {
             <tr>
                 <td><a href="/System/TaskRuns/Details?id=@r.Id">@Fmt.DateTime(r.StartedAt)</a></td>
-                <td>@r.Kind</td>
+                <td>@KindLabel(r.Kind)</td>
                 <td>@r.TaskName</td>
                 <td>
                     @switch (r.State)

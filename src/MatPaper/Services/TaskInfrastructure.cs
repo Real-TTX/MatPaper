@@ -189,7 +189,7 @@ public static class TaskSettingsJson
 /// <summary>
 /// A request to run a specific import or export task.
 /// </summary>
-public record TaskTrigger(TaskRunKind Kind, long TaskId);
+public record TaskTrigger(TaskRunKind Kind, long TaskId, long? ActingUserId = null);
 
 /// <summary>
 /// Unbounded in-memory queue of task triggers consumed by the scheduler service.
@@ -203,8 +203,31 @@ public class TaskTriggerQueue
             SingleWriter = false
         });
 
-    public void Enqueue(TaskRunKind kind, long taskId) =>
-        _channel.Writer.TryWrite(new TaskTrigger(kind, taskId));
+    /// <summary>Tasks that are queued or running, so the same work is never started twice.</summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(TaskRunKind, long), byte> _busy = new();
+
+    /// <summary>Queues a task run. False when one is already queued or running for that task.</summary>
+    public bool Enqueue(TaskRunKind kind, long taskId, long? actingUserId = null)
+    {
+        if (!_busy.TryAdd((kind, taskId), 0))
+        {
+            return false;
+        }
+
+        if (_channel.Writer.TryWrite(new TaskTrigger(kind, taskId, actingUserId)))
+        {
+            return true;
+        }
+
+        _busy.TryRemove((kind, taskId), out _);
+        return false;
+    }
+
+    /// <summary>Marks a task as runnable again. Called by the scheduler when a run ends.</summary>
+    public void Release(TaskRunKind kind, long taskId) => _busy.TryRemove((kind, taskId), out _);
+
+    /// <summary>True while a run for this task is queued or in progress.</summary>
+    public bool IsBusy(TaskRunKind kind, long taskId) => _busy.ContainsKey((kind, taskId));
 
     public ChannelReader<TaskTrigger> Reader => _channel.Reader;
 }

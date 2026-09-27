@@ -974,3 +974,19 @@
     max-width: 44ch;
     color: var(--color-text-muted);
 }
+
+/* A card in the bin: nothing behind it is reachable, so it does not pretend to be. */
+.doc-card--deleted {
+    opacity: 0.8;
+}
+
+.doc-card__thumb--static {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+}
+
+.doc-card--deleted .doc-card__title {
+    color: var(--color-text-muted);
+}

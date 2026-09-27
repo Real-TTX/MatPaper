@@ -20,11 +20,16 @@ public sealed class ScheduleTagHelper : TagHelper
 {
     private readonly Services.Fmt _fmt;
     private readonly Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> _l;
+    private readonly IHtmlGenerator _generator;
 
-    public ScheduleTagHelper(Services.Fmt fmt, Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l)
+    public ScheduleTagHelper(
+        Services.Fmt fmt,
+        Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l,
+        IHtmlGenerator generator)
     {
         _fmt = fmt;
         _l = l;
+        _generator = generator;
     }
 
     [HtmlAttributeName("asp-for")]
@@ -94,6 +99,18 @@ public sealed class ScheduleTagHelper : TagHelper
         w.Append("</div>");
 
         w.Append("<p class=\"mp-schedule__summary form-help\"></p>");
+
+        // Without this an invalid cron is refused silently: the page only shows
+        // model-level errors, and this field used to render no message of its own.
+        var validation = _generator.GenerateValidationMessage(
+            ViewContext, For.ModelExplorer, For.Name, message: null, tag: "span",
+            htmlAttributes: new { @class = "field-error" });
+        if (validation is not null)
+        {
+            using var writer = new System.IO.StringWriter();
+            validation.WriteTo(writer, enc);
+            w.Append(writer.ToString());
+        }
 
         if (!string.IsNullOrEmpty(Help))
         {

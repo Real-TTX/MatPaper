@@ -47,6 +47,7 @@
         <option value="pending">@L["Needs review"]</option>
         <option value="reviewed">@L["Reviewed"]</option>
         <option value="ignored">@L["Ignored"]</option>
+        <option value="deleted">@L["Deleted"]</option>
     </mp-toolbar-select>
 
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
@@ -70,25 +71,44 @@ else
         {
             var displayDate = Fmt.Date(d.DocumentDate ?? d.CreateDate);
             var docTags = d.DocumentTags?.Where(t => t.Tag != null).Select(t => t.Tag!).ToList() ?? new List<MatPaper.Data.Tag>();
-            <article class="doc-card">
-                <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
-                    @if (d.ThumbnailPath != null)
-                    {
-                        <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
-                    }
-                    else
-                    {
-                        <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <article class="doc-card @(Model.ShowingDeleted ? "doc-card--deleted" : string.Empty)">
+                @if (Model.ShowingDeleted)
+                {
+                    <span class="doc-card__thumb doc-card__thumb--static" aria-hidden="true">
+                        <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 3v4a1 1 0 0 0 1 1h4" />
                             <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
                         </svg>
-                    }
-                    <span class="doc-card__zoom" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" /></svg>
                     </span>
-                </button>
+                }
+                else
+                {
+                    <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
+                        @if (d.ThumbnailPath != null)
+                        {
+                            <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
+                        }
+                        else
+                        {
+                            <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                            </svg>
+                        }
+                        <span class="doc-card__zoom" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" /></svg>
+                        </span>
+                    </button>
+                }
                 <div class="doc-card__body">
-                    <a class="doc-card__title" href="/Documents/Edit?id=@d.Id" title="@d.Title">@d.Title</a>
+                    @if (Model.ShowingDeleted)
+                    {
+                        <span class="doc-card__title" title="@d.Title">@d.Title</span>
+                    }
+                    else
+                    {
+                        <a class="doc-card__title" href="/Documents/Edit?id=@d.Id" title="@d.Title">@d.Title</a>
+                    }
                     <div class="doc-card__meta">
                         <span>@(d.Correspondent?.Name ?? "—")</span>
                         <span>@(d.DocumentType?.Name ?? "—")</span>
@@ -108,7 +128,11 @@ else
                         </div>
                     }
                     <div class="doc-card__footer">
-                        @if (d.ReviewState == ReviewState.Pending)
+                        @if (Model.ShowingDeleted)
+                        {
+                            <span class="badge badge--warn">@L["Deleted"]</span>
+                        }
+                        else if (d.ReviewState == ReviewState.Pending)
                         {
                             <span class="badge badge--muted">@L["Needs review"]</span>
                         }
@@ -120,9 +144,23 @@ else
                         {
                             <span></span>
                         }
+                        @if (Model.ShowingDeleted)
+                        {
+                            <form method="post" asp-page-handler="Restore" asp-route-Review="deleted" style="display:inline">
+                                <input type="hidden" name="id" value="@d.Id" />
+                                <button class="icon-btn" type="submit" title='@L["Restore"]' aria-label='@L["Restore"]'>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" />
+                                    </svg>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
                         <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
                         </a>
+                        }
                     </div>
                 </div>
             </article>

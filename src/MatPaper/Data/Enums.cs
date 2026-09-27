@@ -77,7 +77,10 @@ public enum ExportTaskType
 public enum TaskRunKind
 {
     Import = 0,
-    Export = 1
+    Export = 1,
+
+    /// <summary>A storage search. <c>TaskRun.TaskId</c> is then the storage location id.</summary>
+    Scan = 2
 }
 
 public enum TaskRunState

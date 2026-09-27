@@ -14,8 +14,10 @@ namespace MatPaper.Services;
 
 /// <summary>
 /// Background service that (1) consumes queued task triggers and executes the matching
-/// import/export runner, recording a <see cref="TaskRun"/>, and (2) evaluates cron
-/// schedules once a minute and enqueues due tasks.
+/// import runner, export runner or storage search, recording a <see cref="TaskRun"/>, and
+/// (2) evaluates cron schedules once a minute and enqueues due work. A storage search is a
+/// task like any other here, so it gets history, a run log and the same "already running"
+/// protection; its <see cref="TaskRun.TaskId"/> is the storage location id.
 /// </summary>
 public class TaskSchedulerService : BackgroundService
 {
@@ -66,6 +68,12 @@ public class TaskSchedulerService : BackgroundService
                     _logger.LogError(ex, "Unhandled error while executing task trigger {Kind}/{TaskId}",
                         trigger.Kind, trigger.TaskId);
                 }
+                finally
+                {
+                    // Every path ends here, including the early returns for a task that is
+                    // gone; without this the task would look busy until the next restart.
+                    _queue.Release(trigger.Kind, trigger.TaskId);
+                }
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -81,26 +89,40 @@ public class TaskSchedulerService : BackgroundService
 
         ImportTask? importTask = null;
         ExportTask? exportTask = null;
+        StorageLocation? location = null;
 
-        if (trigger.Kind == TaskRunKind.Import)
+        switch (trigger.Kind)
         {
-            importTask = await db.ImportTasks
-                .FirstOrDefaultAsync(t => t.Id == trigger.TaskId && t.UpdateState != UpdateState.Deleted, ct);
-            if (importTask is null)
-            {
-                _logger.LogWarning("Import task {TaskId} not found or deleted; skipping run.", trigger.TaskId);
-                return;
-            }
-        }
-        else
-        {
-            exportTask = await db.ExportTasks
-                .FirstOrDefaultAsync(t => t.Id == trigger.TaskId && t.UpdateState != UpdateState.Deleted, ct);
-            if (exportTask is null)
-            {
-                _logger.LogWarning("Export task {TaskId} not found or deleted; skipping run.", trigger.TaskId);
-                return;
-            }
+            case TaskRunKind.Import:
+                importTask = await db.ImportTasks
+                    .FirstOrDefaultAsync(t => t.Id == trigger.TaskId && t.UpdateState != UpdateState.Deleted, ct);
+                if (importTask is null)
+                {
+                    _logger.LogWarning("Import task {TaskId} not found or deleted; skipping run.", trigger.TaskId);
+                    return;
+                }
+                break;
+
+            case TaskRunKind.Export:
+                exportTask = await db.ExportTasks
+                    .FirstOrDefaultAsync(t => t.Id == trigger.TaskId && t.UpdateState != UpdateState.Deleted, ct);
+                if (exportTask is null)
+                {
+                    _logger.LogWarning("Export task {TaskId} not found or deleted; skipping run.", trigger.TaskId);
+                    return;
+                }
+                break;
+
+            default:
+                location = await db.StorageLocations
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Id == trigger.TaskId && s.UpdateState != UpdateState.Deleted, ct);
+                if (location is null)
+                {
+                    _logger.LogWarning("Storage location {LocationId} not found or deleted; skipping search.", trigger.TaskId);
+                    return;
+                }
+                break;
         }
 
         var run = new TaskRun
@@ -125,10 +147,19 @@ public class TaskSchedulerService : BackgroundService
                 var runner = scope.ServiceProvider.GetRequiredService<ImportRunner>();
                 report = await runner.RunAsync(importTask, ct);
             }
-            else
+            else if (exportTask is not null)
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ExportRunner>();
-                report = await runner.RunAsync(exportTask!, ct);
+                report = await runner.RunAsync(exportTask, ct);
+            }
+            else
+            {
+                // Its own scope on purpose: the search clears its change tracker between
+                // chunks, which would detach the TaskRun this method is holding.
+                using var scanScope = _scopeFactory.CreateScope();
+                var scan = scanScope.ServiceProvider.GetRequiredService<StorageScanService>();
+                var result = await scan.ScanAsync(location!.Id, trigger.ActingUserId, ct);
+                report = ScanReport(location!, result);
             }
 
             run.State = report.Success ? TaskRunState.Success : TaskRunState.Failed;
@@ -147,6 +178,23 @@ public class TaskSchedulerService : BackgroundService
             run.UpdateDate = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
         }
+    }
+
+    /// <summary>Turns a search result into the same report shape the runners produce.</summary>
+    private static RunReport ScanReport(StorageLocation location, StorageScanService.ScanResult result)
+    {
+        if (result.LocationMissing)
+        {
+            return new RunReport(false, 0, $"Storage location \"{location.Name}\" is gone.");
+        }
+
+        if (result.Failure is not null)
+        {
+            return new RunReport(false, 0, $"Storage location \"{location.Name}\" could not be searched: {result.Failure}");
+        }
+
+        return new RunReport(true, result.Added,
+            $"Searched \"{location.Name}\": {result.Scanned} file(s) checked, {result.Added} new, {result.Skipped} already known.");
     }
 
     private async Task ScheduleAsync(CancellationToken ct)
@@ -217,6 +265,18 @@ public class TaskSchedulerService : BackgroundService
         foreach (var t in exportTasks)
         {
             await EvaluateOneAsync(db, TaskRunKind.Export, t.Id, t.CronExpression!, t.CreateDate, now, ct);
+        }
+
+        var locations = await db.StorageLocations
+            .Where(s => s.UpdateState != UpdateState.Deleted
+                && s.ScanCron != null
+                && s.ScanCron != "")
+            .Select(s => new { s.Id, s.ScanCron, s.CreateDate })
+            .ToListAsync(ct);
+
+        foreach (var s in locations)
+        {
+            await EvaluateOneAsync(db, TaskRunKind.Scan, s.Id, s.ScanCron!, s.CreateDate, now, ct);
         }
     }
 

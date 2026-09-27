@@ -61,6 +61,9 @@ public class EditModel : PageModel
 
         /// <summary>Extensions a storage search picks up. Empty = every file.</summary>
         public string? ScanExtensions { get; set; }
+
+        /// <summary>Cron expression for an automatic search; empty = only on demand.</summary>
+        public string? ScanCron { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -90,7 +93,8 @@ public class EditModel : PageModel
                 IsDefault = entity.IsDefault,
                 DefaultOwnerId = entity.DefaultOwnerId,
                 DefaultIsCommon = entity.DefaultIsCommon,
-                ScanExtensions = entity.ScanExtensions
+                ScanExtensions = entity.ScanExtensions,
+                ScanCron = entity.ScanCron
             };
         }
         else
@@ -149,6 +153,7 @@ public class EditModel : PageModel
             existing.DefaultOwnerId = draft.DefaultOwnerId;
             existing.DefaultIsCommon = draft.DefaultIsCommon;
             existing.ScanExtensions = draft.ScanExtensions;
+            existing.ScanCron = draft.ScanCron;
             existing.UpdateState = UpdateState.Updated;
             existing.UpdateDate = now;
             existing.UpdateUserId = _currentUser.UserId;
@@ -273,7 +278,8 @@ public class EditModel : PageModel
             IsDefault = Input.IsDefault,
             DefaultOwnerId = Input.DefaultOwnerId,
             DefaultIsCommon = Input.DefaultIsCommon,
-            ScanExtensions = (Input.ScanExtensions ?? string.Empty).Trim()
+            ScanExtensions = (Input.ScanExtensions ?? string.Empty).Trim(),
+            ScanCron = NullIfEmpty(Input.ScanCron)
         };
     }
 
@@ -315,6 +321,18 @@ public class EditModel : PageModel
         if (string.IsNullOrWhiteSpace(draft.PathTemplate))
         {
             ModelState.AddModelError("Input.PathTemplate", _l["Path template is required."]);
+        }
+
+        if (draft.ScanCron is not null)
+        {
+            try
+            {
+                Cronos.CronExpression.Parse(draft.ScanCron);
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError("Input.ScanCron", _l["The schedule is not a valid cron expression."]);
+            }
         }
 
         return ModelState.IsValid;

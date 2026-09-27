@@ -45,6 +45,7 @@ public class IndexModel : PageModel
         {
             "import" => TaskRunKind.Import,
             "export" => TaskRunKind.Export,
+            "scan" => TaskRunKind.Scan,
             _ => null
         };
 
@@ -74,6 +75,7 @@ public class IndexModel : PageModel
 
         var importIds = runs.Where(r => r.Kind == TaskRunKind.Import).Select(r => r.TaskId).Distinct().ToList();
         var exportIds = runs.Where(r => r.Kind == TaskRunKind.Export).Select(r => r.TaskId).Distinct().ToList();
+        var scanIds = runs.Where(r => r.Kind == TaskRunKind.Scan).Select(r => r.TaskId).Distinct().ToList();
 
         var importNames = await _db.ImportTasks
             .AsNoTracking()
@@ -85,9 +87,21 @@ public class IndexModel : PageModel
             .Where(t => exportIds.Contains(t.Id))
             .ToDictionaryAsync(t => t.Id, t => t.Name);
 
+        // A search run carries the storage location id, so it must not be looked up in the
+        // export tasks — that would show an unrelated task name.
+        var scanNames = await _db.StorageLocations
+            .AsNoTracking()
+            .Where(s => scanIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => s.Name);
+
         Rows = runs.Select(r =>
         {
-            var names = r.Kind == TaskRunKind.Import ? importNames : exportNames;
+            var names = r.Kind switch
+            {
+                TaskRunKind.Import => importNames,
+                TaskRunKind.Export => exportNames,
+                _ => scanNames
+            };
             var name = names.TryGetValue(r.TaskId, out var n) ? n : $"#{r.TaskId} (deleted)";
             var duration = r.FinishedAt is null ? (TimeSpan?)null : r.FinishedAt.Value - r.StartedAt;
             return new Row(r.Id, r.StartedAt, r.Kind, name, r.State, r.ItemsProcessed, duration);

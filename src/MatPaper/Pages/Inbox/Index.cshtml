@@ -9,6 +9,12 @@
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title or correspondent"]' />
 </mp-toolbar>
 
+@{
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+}
+<partial name="_FilterChips" model="activeFilters" />
+
 @if (!Model.HasStorage && Model.TotalCount > 0)
 {
     <div class="notice notice--warn">

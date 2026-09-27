@@ -49,7 +49,7 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync(CancellationToken ct)
     {
-        ViewData["Breadcrumb"] = "System / Import inbox";
+        ViewData["Breadcrumb"] = "System / Storage scan";
 
         await LoadOptionsAsync(ct);
 

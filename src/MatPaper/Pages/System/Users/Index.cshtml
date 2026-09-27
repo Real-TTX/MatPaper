@@ -30,6 +30,14 @@
     </div>
 </form>
 
+@{
+    var roleLabel = Model.Role == "All" ? null : L[Model.Role].Value;
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("Role", L["Role"].Value, roleLabel));
+}
+<partial name="_FilterChips" model="activeFilters" />
+
 @if (Model.Users.Count == 0)
 {
     <div class="empty-state">@L["No users match your criteria."]</div>

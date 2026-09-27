@@ -1,7 +1,7 @@
 @page "/System/Inbox"
 @model MatPaper.Pages.System.Inbox.IndexModel
 @{
-    ViewData["Breadcrumb"] = L["System / Import inbox"].Value;
+    ViewData["Breadcrumb"] = L["System / Storage scan"].Value;
 }
 
 <form class="form" method="post">
@@ -30,6 +30,14 @@
         }
     </mp-toolbar-select>
 </mp-toolbar>
+
+@{
+    var locationLabel = Model.StorageLocations.FirstOrDefault(l => l.Id == Model.LocationId)?.Name;
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("LocationId", L["Location"].Value, locationLabel));
+}
+<partial name="_FilterChips" model="activeFilters" />
 
 <form method="post">
     <mp-table item-count="Model.Rows.Count" empty-text='@L["Inbox is empty — scan a storage location to discover files."]'>

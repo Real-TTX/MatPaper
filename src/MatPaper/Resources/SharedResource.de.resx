@@ -247,6 +247,7 @@
   <data name="files here, or" xml:space="preserve"><value>oder</value></data>
   <data name="Filing" xml:space="preserve"><value>Ablage</value></data>
   <data name="Filter…" xml:space="preserve"><value>Filtern…</value></data>
+  <data name="Find files on disk and register them as documents" xml:space="preserve"><value>Dateien im Speicher finden und als Dokumente aufnehmen</value></data>
   <data name="Finished" xml:space="preserve"><value>Beendet</value></data>
   <data name="Folder" xml:space="preserve"><value>Ordner</value></data>
   <data name="Folder {0} is available." xml:space="preserve"><value>Ordner {0} ist verfügbar.</value></data>
@@ -265,7 +266,6 @@
   <data name="IMAP mailbox" xml:space="preserve"><value>IMAP-Postfach</value></data>
   <data name="Import" xml:space="preserve"><value>Import</value></data>
   <data name="Import all" xml:space="preserve"><value>Alle importieren</value></data>
-  <data name="Import inbox" xml:space="preserve"><value>Speicher-Scan</value></data>
   <data name="Import selected" xml:space="preserve"><value>Auswahl importieren</value></data>
   <data name="Import tasks" xml:space="preserve"><value>Import-Regeln</value></data>
   <data name="Imported {0}, {1} duplicate(s) dismissed, {2} error(s)." xml:space="preserve"><value>{0} importiert, {1} Duplikat(e) verworfen, {2} Fehler.</value></data>
@@ -452,7 +452,6 @@
   <data name="Scan for files" xml:space="preserve"><value>Nach Dateien scannen</value></data>
   <data name="Scan now" xml:space="preserve"><value>Jetzt scannen</value></data>
   <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
-  <data name="Scan storage locations and import discovered files" xml:space="preserve"><value>Speicherorte scannen und gefundene Dateien importieren</value></data>
   <data name="Scanned {0}, added {1} new, {2} already known." xml:space="preserve"><value>{0} gescannt, {1} neu hinzugefügt, {2} bereits bekannt.</value></data>
   <data name="Schedule" xml:space="preserve"><value>Zeitplan</value></data>
   <data name="Scheduled database and document backups" xml:space="preserve"><value>Geplante Datenbank- und Dokumentsicherungen</value></data>
@@ -500,6 +499,7 @@
   <data name="Storage location" xml:space="preserve"><value>Speicherort</value></data>
   <data name="Storage location not found." xml:space="preserve"><value>Speicherort nicht gefunden.</value></data>
   <data name="Storage locations" xml:space="preserve"><value>Speicherorte</value></data>
+  <data name="Storage scan" xml:space="preserve"><value>Speicher-Scan</value></data>
   <data name="Street, ZIP, city" xml:space="preserve"><value>Straße, PLZ, Ort</value></data>
   <data name="Subject" xml:space="preserve"><value>Betreff</value></data>
   <data name="Subject contains" xml:space="preserve"><value>Betreff enthält</value></data>
@@ -516,13 +516,13 @@
   <data name="System / Export tasks" xml:space="preserve"><value>System / Sicherungen</value></data>
   <data name="System / Export tasks / Edit" xml:space="preserve"><value>System / Sicherungen / Bearbeiten</value></data>
   <data name="System / Export tasks / New" xml:space="preserve"><value>System / Sicherungen / Neu</value></data>
-  <data name="System / Import inbox" xml:space="preserve"><value>System / Import-Posteingang</value></data>
   <data name="System / Import tasks" xml:space="preserve"><value>System / Import-Regeln</value></data>
   <data name="System / Import tasks / Edit" xml:space="preserve"><value>System / Import-Regeln / Bearbeiten</value></data>
   <data name="System / Import tasks / New" xml:space="preserve"><value>System / Import-Regeln / Neu</value></data>
   <data name="System / Storage locations" xml:space="preserve"><value>System / Speicherorte</value></data>
   <data name="System / Storage locations / Edit" xml:space="preserve"><value>System / Speicherorte / Bearbeiten</value></data>
   <data name="System / Storage locations / New" xml:space="preserve"><value>System / Speicherorte / Neu</value></data>
+  <data name="System / Storage scan" xml:space="preserve"><value>System / Speicher-Scan</value></data>
   <data name="System / Task history" xml:space="preserve"><value>System / Laufverlauf</value></data>
   <data name="System / Task history / Run" xml:space="preserve"><value>System / Laufverlauf / Lauf</value></data>
   <data name="Tag" xml:space="preserve"><value>Schlagwort</value></data>

@@ -12,6 +12,13 @@
     </mp-toolbar-select>
 </mp-toolbar>
 
+@{
+    var kindLabel = Model.Kind == "import" ? L["Import"].Value : Model.Kind == "export" ? L["Export"].Value : null;
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Kind", L["Kind"].Value, kindLabel));
+}
+<partial name="_FilterChips" model="activeFilters" />
+
 <mp-table item-count="Model.Rows.Count" empty-text='@L["No task runs recorded yet."]'>
     <thead>
         <tr>

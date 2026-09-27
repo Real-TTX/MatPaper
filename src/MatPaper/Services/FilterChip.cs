@@ -7,6 +7,13 @@ namespace MatPaper.Services;
 public record FilterChip(string Label, string RemoveUrl);
 
 /// <summary>
+/// A filter a list page offers: the query-string key, the label to show, the current
+/// value (already display-ready — a name, not an id) and the value that counts as
+/// "not filtered" (e.g. "all").
+/// </summary>
+public record FilterSpec(string Key, string Label, string? Value, string? Default = null);
+
+/// <summary>
 /// The set of active filters for a list/gallery page. Rendered by the shared
 /// <c>_FilterChips</c> partial so every list uses the same model: a chip per
 /// active, non-default filter (each removes just itself) plus a "Clear all".
@@ -16,6 +23,30 @@ public record FilterChipBar(IReadOnlyList<FilterChip> Chips, string ClearAllUrl)
     public bool Any => Chips.Count > 0;
 
     public static FilterChipBar Empty { get; } = new(Array.Empty<FilterChip>(), string.Empty);
+
+    /// <summary>
+    /// Builds the bar for the simple case most list pages have: a handful of
+    /// single-valued filters. Entries whose value is empty or equals the default
+    /// ("all", "name_asc", …) are skipped, so only real filters show up.
+    /// </summary>
+    public static FilterChipBar From(HttpRequest request, params FilterSpec[] filters)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var chips = new List<FilterChip>();
+        foreach (var filter in filters)
+        {
+            if (string.IsNullOrWhiteSpace(filter.Value)
+                || string.Equals(filter.Value, filter.Default, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            chips.Add(new FilterChip($"{filter.Label}: {filter.Value}", FilterUrl.Without(request, filter.Key)));
+        }
+
+        return chips.Count == 0 ? Empty : new FilterChipBar(chips, FilterUrl.ClearAll(request));
+    }
 }
 
 /// <summary>

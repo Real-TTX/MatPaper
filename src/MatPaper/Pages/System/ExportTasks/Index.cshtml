@@ -9,6 +9,12 @@
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
 </mp-toolbar>
 
+@{
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+}
+<partial name="_FilterChips" model="activeFilters" />
+
 <mp-table item-count="Model.Rows.Count" empty-text='@L["No export tasks match your criteria."]'>
     <thead>
         <tr>

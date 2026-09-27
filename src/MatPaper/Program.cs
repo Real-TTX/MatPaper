@@ -115,6 +115,7 @@ builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
 
 builder.Services.AddRazorPages(options =>
 {
+    options.Conventions.AllowAnonymousToPage("/Error");
     options.Conventions.AllowAnonymousToFolder("/Account");
     options.Conventions.AllowAnonymousToFolder("/Share");
     options.Conventions.AuthorizeFolder("/System", "AdminOnly");
@@ -170,6 +171,19 @@ for (var attempt = 1; attempt <= maxAttempts; attempt++)
 }
 
 app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
+// Errors get a readable page instead of a blank browser 404 / 500. Re-execute keeps the
+// original status code, so a 404 stays a 404 for the browser and for monitoring.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Error");
+}
+
+app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();

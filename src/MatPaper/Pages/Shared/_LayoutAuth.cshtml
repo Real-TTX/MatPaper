@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
 </head>
 <body class="auth-page">
-    <main class="auth-shell">
+    <main class="auth-shell @(ViewData["ShellClass"] as string)">
         <div class="auth-brand">
             <svg class="auth-brand__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M14 3v4a1 1 0 0 0 1 1h4" />

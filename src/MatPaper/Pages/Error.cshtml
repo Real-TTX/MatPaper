@@ -1,0 +1,13 @@
+@page "/Error"
+@model MatPaper.Pages.ErrorModel
+@{
+    ViewData["Breadcrumb"] = Model.Title;
+    ViewData["BreadcrumbLiteral"] = true;
+}
+
+<div class="error-page">
+    <div class="error-page__code">@Model.StatusCode</div>
+    <h1 class="error-page__title">@Model.Title</h1>
+    <p class="error-page__text">@Model.Message</p>
+    <a class="btn btn--primary" href="/">@L["Back to the dashboard"]</a>
+</div>

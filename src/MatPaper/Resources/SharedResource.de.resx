@@ -131,6 +131,7 @@
   <data name="Auto-assign type, correspondent and date (from XRechnung/ZUGFeRD data if present, else the text)" xml:space="preserve"><value>Typ, Korrespondent und Datum automatisch zuordnen (aus XRechnung-/ZUGFeRD-Daten, sonst aus dem Text)</value></data>
   <data name="Back" xml:space="preserve"><value>Zurück</value></data>
   <data name="Back to home" xml:space="preserve"><value>Zur Startseite</value></data>
+  <data name="Back to the dashboard" xml:space="preserve"><value>Zurück zur Übersicht</value></data>
   <data name="Backup settings" xml:space="preserve"><value>Sicherungseinstellungen</value></data>
   <data name="Breadcrumb" xml:space="preserve"><value>Navigationspfad</value></data>
   <data name="Browse…" xml:space="preserve"><value>Durchsuchen…</value></data>
@@ -296,7 +297,6 @@
   <data name="Leave on share" xml:space="preserve"><value>Auf der Freigabe belassen</value></data>
   <data name="Light" xml:space="preserve"><value>Hell</value></data>
   <data name="Link" xml:space="preserve"><value>Link</value></data>
-  <data name="Link unavailable" xml:space="preserve"><value>Link nicht verfügbar</value></data>
   <data name="List shares" xml:space="preserve"><value>Freigaben anzeigen</value></data>
   <data name="Loading…" xml:space="preserve"><value>Wird geladen…</value></data>
   <data name="Local" xml:space="preserve"><value>Lokal</value></data>
@@ -345,6 +345,7 @@
   <data name="New user" xml:space="preserve"><value>Neuer Benutzer</value></data>
   <data name="Next" xml:space="preserve"><value>Weiter</value></data>
   <data name="next:" xml:space="preserve"><value>nächster:</value></data>
+  <data name="No access" xml:space="preserve"><value>Kein Zugriff</value></data>
   <data name="No correspondents match your criteria." xml:space="preserve"><value>Keine Korrespondenten entsprechen den Kriterien.</value></data>
   <data name="No credentials yet." xml:space="preserve"><value>Noch keine Zugangsdaten vorhanden.</value></data>
   <data name="No document types match your criteria." xml:space="preserve"><value>Keine Dokumenttypen entsprechen den Kriterien.</value></data>
@@ -366,6 +367,7 @@
   <data name="No users match your criteria." xml:space="preserve"><value>Keine Benutzer entsprechen den Kriterien.</value></data>
   <data name="Not filed yet" xml:space="preserve"><value>Noch nicht abgelegt</value></data>
   <data name="Not shared with any user yet." xml:space="preserve"><value>Noch für keinen Benutzer freigegeben.</value></data>
+  <data name="Not signed in" xml:space="preserve"><value>Nicht angemeldet</value></data>
   <data name="Notes" xml:space="preserve"><value>Notizen</value></data>
   <data name="Nothing found." xml:space="preserve"><value>Nichts gefunden.</value></data>
   <data name="OCR failed" xml:space="preserve"><value>OCR fehlgeschlagen</value></data>
@@ -383,6 +385,7 @@
   <data name="Overview" xml:space="preserve"><value>Übersicht</value></data>
   <data name="overwrite existing" xml:space="preserve"><value>vorhandene überschreiben</value></data>
   <data name="Owner" xml:space="preserve"><value>Besitzer</value></data>
+  <data name="Page not found" xml:space="preserve"><value>Seite nicht gefunden</value></data>
   <data name="Pages" xml:space="preserve"><value>Seiten</value></data>
   <data name="Password" xml:space="preserve"><value>Passwort</value></data>
   <data name="Password must be at least {0} characters." xml:space="preserve"><value>Das Passwort muss mindestens {0} Zeichen lang sein.</value></data>
@@ -396,6 +399,7 @@
   <data name="Photos" xml:space="preserve"><value>Fotos</value></data>
   <data name="Please choose at least one file to upload." xml:space="preserve"><value>Bitte mindestens eine Datei zum Hochladen auswählen.</value></data>
   <data name="Please select a valid storage location." xml:space="preserve"><value>Bitte einen gültigen Speicherort auswählen.</value></data>
+  <data name="Please sign in again." xml:space="preserve"><value>Bitte erneut anmelden.</value></data>
   <data name="Please take or choose at least one photo." xml:space="preserve"><value>Bitte mindestens ein Foto aufnehmen oder auswählen.</value></data>
   <data name="POP3 has no folders — the whole mailbox is checked." xml:space="preserve"><value>POP3 kennt keine Ordner — es wird das ganze Postfach geprüft.</value></data>
   <data name="POP3 mailbox" xml:space="preserve"><value>POP3-Postfach</value></data>
@@ -466,7 +470,6 @@
   <data name="Share links" xml:space="preserve"><value>Freigabe-Links</value></data>
   <data name="Share name is required." xml:space="preserve"><value>Freigabename ist erforderlich.</value></data>
   <data name="Shared" xml:space="preserve"><value>Freigegeben</value></data>
-  <data name="Shared document" xml:space="preserve"><value>Freigegebenes Dokument</value></data>
   <data name="Shared with me" xml:space="preserve"><value>Für mich freigegeben</value></data>
   <data name="Shared with users" xml:space="preserve"><value>Für Benutzer freigegeben</value></data>
   <data name="Shared with you — read only." xml:space="preserve"><value>Freigegeben — nur Lesezugriff.</value></data>
@@ -485,6 +488,7 @@
   <data name="Skip inbox (mark imported documents as reviewed)" xml:space="preserve"><value>Posteingang überspringen (importierte Dokumente als geprüft markieren)</value></data>
   <data name="SMB / CIFS network share" xml:space="preserve"><value>SMB-/CIFS-Netzwerkfreigabe</value></data>
   <data name="SMB share" xml:space="preserve"><value>Freigabe</value></data>
+  <data name="Something went wrong" xml:space="preserve"><value>Da ist etwas schiefgelaufen</value></data>
   <data name="Sort" xml:space="preserve"><value>Sortierung</value></data>
   <data name="Source" xml:space="preserve"><value>Quelle</value></data>
   <data name="Source path is required." xml:space="preserve"><value>Quellpfad ist erforderlich.</value></data>
@@ -533,16 +537,17 @@
   <data name="Test connection" xml:space="preserve"><value>Verbindung testen</value></data>
   <data name="That name is already in use." xml:space="preserve"><value>Dieser Name wird bereits verwendet.</value></data>
   <data name="That username is already in use." xml:space="preserve"><value>Dieser Benutzername wird bereits verwendet.</value></data>
+  <data name="The action could not be completed. The details are in the server log." xml:space="preserve"><value>Die Aktion konnte nicht abgeschlossen werden. Einzelheiten stehen im Server-Protokoll.</value></data>
   <data name="The document file could not be moved: {0} No changes were saved." xml:space="preserve"><value>Die Dokumentdatei konnte nicht verschoben werden: {0} Es wurden keine Änderungen gespeichert.</value></data>
   <data name="The document is still being processed — try confirming again in a moment." xml:space="preserve"><value>Das Dokument wird noch verarbeitet — bitte gleich erneut bestätigen.</value></data>
   <data name="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location." xml:space="preserve"><value>Die Datei bleibt im Posteingang, bis sie bestätigt wird; danach wird sie am gewählten Speicherort abgelegt.</value></data>
+  <data name="The page you asked for does not exist (any more)." xml:space="preserve"><value>Die aufgerufene Seite gibt es nicht (mehr).</value></data>
   <data name="The photos could not be converted into a PDF. Please try again with different images." xml:space="preserve"><value>Die Fotos konnten nicht in ein PDF umgewandelt werden. Bitte mit anderen Bildern erneut versuchen.</value></data>
   <data name="The request failed — please reload the page." xml:space="preserve"><value>Die Anfrage ist fehlgeschlagen — bitte die Seite neu laden.</value></data>
   <data name="The scan could not be stored." xml:space="preserve"><value>Der Scan konnte nicht gespeichert werden.</value></data>
   <data name="The schedule is not a valid cron expression." xml:space="preserve"><value>Der Zeitplan ist kein gültiger Cron-Ausdruck.</value></data>
   <data name="Theme" xml:space="preserve"><value>Darstellung</value></data>
   <data name="This scan matches an existing document; nothing new was created." xml:space="preserve"><value>Dieser Scan entspricht einem vorhandenen Dokument; es wurde nichts Neues erstellt.</value></data>
-  <data name="This share link is invalid or has expired." xml:space="preserve"><value>Dieser Freigabelink ist ungültig oder abgelaufen.</value></data>
   <data name="Thursday" xml:space="preserve"><value>Donnerstag</value></data>
   <data name="Title" xml:space="preserve"><value>Titel</value></data>
   <data name="Title is required." xml:space="preserve"><value>Titel ist erforderlich.</value></data>
@@ -586,6 +591,7 @@
   <data name="You cannot delete the last active administrator." xml:space="preserve"><value>Der letzte aktive Administrator kann nicht gelöscht werden.</value></data>
   <data name="You cannot delete your own account." xml:space="preserve"><value>Das eigene Konto kann nicht gelöscht werden.</value></data>
   <data name="You do not have permission to view this page." xml:space="preserve"><value>Keine Berechtigung für diese Seite.</value></data>
+  <data name="Your account may not open this page." xml:space="preserve"><value>Dieses Konto darf diese Seite nicht öffnen.</value></data>
   <data name="The {0} field is required." xml:space="preserve"><value>{0} ist erforderlich.</value></data>
   <data name="The {0} field is not a valid e-mail address." xml:space="preserve"><value>{0} ist keine gültige E-Mail-Adresse.</value></data>
   <data name="The password must be at least 8 characters long." xml:space="preserve"><value>Das Passwort muss mindestens 8 Zeichen lang sein.</value></data>

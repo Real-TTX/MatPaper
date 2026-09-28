@@ -120,7 +120,7 @@ public sealed class DocumentFilingService(
             else if (!string.IsNullOrEmpty(document.RelativePath))
             {
                 var current = document.StorageLocationId is long currentId
-                    ? await db.StorageLocations.Include(s => s.Credential).FirstOrDefaultAsync(s => s.Id == currentId, ct).ConfigureAwait(false)
+                    ? await db.StorageLocations.Include(s => s.Connection).FirstOrDefaultAsync(s => s.Id == currentId, ct).ConfigureAwait(false)
                     : null;
 
                 if (current is null)
@@ -173,7 +173,7 @@ public sealed class DocumentFilingService(
         if (preferredId is long id)
         {
             var preferred = await db.StorageLocations
-                .Include(s => s.Credential)
+                .Include(s => s.Connection)
                 .FirstOrDefaultAsync(s => s.Id == id && s.UpdateState != UpdateState.Deleted, ct)
                 .ConfigureAwait(false);
             if (preferred is not null)
@@ -183,7 +183,7 @@ public sealed class DocumentFilingService(
         }
 
         return await db.StorageLocations
-            .Include(s => s.Credential)
+            .Include(s => s.Connection)
             .Where(s => s.UpdateState != UpdateState.Deleted)
             .OrderByDescending(s => s.IsDefault)
             .ThenBy(s => s.Id)

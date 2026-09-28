@@ -92,7 +92,7 @@ public sealed class ShareLinkService
             .AsNoTracking()
             .Include(l => l.Document!)
                 .ThenInclude(d => d.StorageLocation)
-                .ThenInclude(s => s!.Credential)
+                .ThenInclude(s => s!.Connection)
             .FirstOrDefaultAsync(
                 l => l.Token == token
                     && l.UpdateState != UpdateState.Deleted

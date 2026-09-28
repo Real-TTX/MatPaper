@@ -28,7 +28,7 @@ public class ViewModel : PageModel
     {
         var document = await _db.Documents
             .AsNoTracking()
-            .Include(d => d.StorageLocation).ThenInclude(s => s!.Credential)
+            .Include(d => d.StorageLocation).ThenInclude(s => s!.Connection)
             .AccessibleTo(_currentUser)
             .FirstOrDefaultAsync(d => d.Token == token && d.UpdateState != UpdateState.Deleted, ct);
 

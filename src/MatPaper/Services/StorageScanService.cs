@@ -47,7 +47,7 @@ public sealed class StorageScanService
     {
         var loc = await _db.StorageLocations
             .AsNoTracking()
-            .Include(s => s.Credential)
+            .Include(s => s.Connection)
             .FirstOrDefaultAsync(s => s.Id == storageLocationId && s.UpdateState != UpdateState.Deleted, ct);
 
         if (loc is null)

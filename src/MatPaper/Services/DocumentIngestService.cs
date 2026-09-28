@@ -111,7 +111,7 @@ public sealed class DocumentIngestService(
         if (storageLocationId is long requestedId)
         {
             location = await db.StorageLocations
-                .Include(s => s.Credential)
+                .Include(s => s.Connection)
                 .FirstOrDefaultAsync(s => s.Id == requestedId && s.UpdateState != UpdateState.Deleted, ct)
                 .ConfigureAwait(false);
         }
@@ -119,7 +119,7 @@ public sealed class DocumentIngestService(
         if (location is null && !stage)
         {
             location = await db.StorageLocations
-                .Include(s => s.Credential)
+                .Include(s => s.Connection)
                 .Where(s => s.UpdateState != UpdateState.Deleted)
                 .OrderByDescending(s => s.IsDefault)
                 .ThenBy(s => s.Id)

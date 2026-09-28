@@ -496,7 +496,7 @@ public class EditModel : PageModel
         if (Input.StorageLocationId is long newLocId)
         {
             newLoc = await _db.StorageLocations
-                .Include(s => s.Credential)
+                .Include(s => s.Connection)
                 .FirstOrDefaultAsync(s => s.Id == newLocId && s.UpdateState != UpdateState.Deleted);
             if (newLoc == null)
             {
@@ -512,7 +512,7 @@ public class EditModel : PageModel
         if (!document.IsStaged && newLoc != null && !string.IsNullOrEmpty(document.RelativePath))
         {
             var oldLoc = document.StorageLocationId is long oldId
-                ? await _db.StorageLocations.Include(s => s.Credential).FirstOrDefaultAsync(s => s.Id == oldId)
+                ? await _db.StorageLocations.Include(s => s.Connection).FirstOrDefaultAsync(s => s.Id == oldId)
                 : null;
 
             // A file MatPaper found where it lay keeps its path: only an explicit change of

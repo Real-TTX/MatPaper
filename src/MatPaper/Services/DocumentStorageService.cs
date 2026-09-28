@@ -550,29 +550,62 @@ public sealed class DocumentStorageService
     {
         if (loc.Kind == StorageKind.Smb)
         {
-            var connection = await ResolveSmbConnectionAsync(loc, ct).ConfigureAwait(false);
-            return new SmbBackend(connection, loc.SmbPath);
+            var (connection, basePath) = await ResolveSmbConnectionAsync(loc, ct).ConfigureAwait(false);
+            return new SmbBackend(connection, basePath);
         }
 
         return new LocalBackend(LocalBackend.RootFullPath(loc));
     }
 
-    /// <summary>Builds the SMB connection from the location; loads the credential when it is not attached.</summary>
-    private async Task<SmbConnection> ResolveSmbConnectionAsync(StorageLocation loc, CancellationToken ct)
+    /// <summary>
+    /// Builds the SMB connection for a location from its <see cref="Connection"/> (endpoint in
+    /// the connection's settings JSON, sign-in in its columns). Falls back to the legacy inline
+    /// SMB fields for a location the backfill has not reached yet. Returns the connection and
+    /// the sub-folder within the share that acts as this location's root.
+    /// </summary>
+    private async Task<(SmbConnection Connection, string? BasePath)> ResolveSmbConnectionAsync(StorageLocation loc, CancellationToken ct)
     {
+        var connection = loc.Connection;
+        if (connection is null && loc.ConnectionId is long connectionId)
+        {
+            using var scope = _scopes.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            connection = await db.Connections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == connectionId && c.UpdateState != UpdateState.Deleted, ct)
+                .ConfigureAwait(false);
+        }
+
+        if (connection is not null)
+        {
+            var endpoint = TaskSettingsJson.Read<SmbEndpoint>(connection.SettingsJson);
+            if (string.IsNullOrWhiteSpace(endpoint.Host) || string.IsNullOrWhiteSpace(endpoint.Share))
+            {
+                throw new InvalidOperationException($"Connection '{connection.Name}' has no SMB host or share.");
+            }
+
+            return (new SmbConnection(
+                endpoint.Host.Trim(),
+                endpoint.Share.Trim(),
+                connection.Domain,
+                connection.Username ?? string.Empty,
+                _secrets.Unprotect(connection.ProtectedPassword)), loc.BasePath);
+        }
+
+        // Legacy path: an SMB location the backfill has not converted yet.
         if (string.IsNullOrWhiteSpace(loc.SmbHost) || string.IsNullOrWhiteSpace(loc.SmbShare))
         {
-            throw new InvalidOperationException($"Storage location '{loc.Name}' has no SMB host or share.");
+            throw new InvalidOperationException($"Storage location '{loc.Name}' has no SMB connection.");
         }
 
         var credential = loc.Credential;
-        if (credential is null && loc.CredentialId is long credentialId)
+        if (credential is null && loc.CredentialId is long credId)
         {
             using var scope = _scopes.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             credential = await db.Credentials
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == credentialId && c.UpdateState != UpdateState.Deleted, ct)
+                .FirstOrDefaultAsync(c => c.Id == credId && c.UpdateState != UpdateState.Deleted, ct)
                 .ConfigureAwait(false);
         }
 
@@ -581,12 +614,12 @@ public sealed class DocumentStorageService
             throw new InvalidOperationException($"Storage location '{loc.Name}' has no saved credential.");
         }
 
-        return new SmbConnection(
+        return (new SmbConnection(
             loc.SmbHost.Trim(),
             loc.SmbShare.Trim(),
             credential.Domain,
             credential.Username,
-            _secrets.Unprotect(credential.ProtectedPassword));
+            _secrets.Unprotect(credential.ProtectedPassword)), loc.SmbPath);
     }
 
     // ----- Sanitizing -------------------------------------------------------

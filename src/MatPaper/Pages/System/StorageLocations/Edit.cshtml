@@ -18,6 +18,7 @@
         <mp-field asp-for="Input.Kind" kind="select" label='@L["Type"]'>
             <option value="0">@L["Local folder"]</option>
             <option value="1">@L["SMB / CIFS network share"]</option>
+            <option value="2">@L["Cloud drive (Google Drive, OneDrive)"]</option>
         </mp-field>
 
         <mp-field asp-for="Input.IsDefault" kind="checkbox" label='@L["Default location"]' />
@@ -34,6 +35,12 @@
             <mp-field asp-for="Input.ConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.SmbConnectionOptions" />
             <mp-field asp-for="Input.BasePath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]' />
             <p class="form-help">@L["Manage SMB connections under System, Connections."]</p>
+        </div>
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="2">
+            <mp-field asp-for="Input.CloudConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.CloudConnectionOptions" />
+            <mp-field asp-for="Input.CloudBasePath" label='@L["Folder in drive"]' placeholder='@L["MatPaper/Archive (optional)"]' />
+            <p class="form-help">@L["Manage cloud connections under System, Connections."]</p>
         </div>
 
         <mp-field asp-for="Input.PathTemplate" label='@L["Path template"]'

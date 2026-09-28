@@ -86,6 +86,13 @@ public class StorageLocation : BaseEntity
     {
         get
         {
+            if (Kind == StorageKind.Cloud)
+            {
+                var label = Connection?.Name ?? "?";
+                var folder = (BasePath ?? string.Empty).Trim().Trim('/', '\\');
+                return folder.Length == 0 ? label : label + " / " + folder.Replace('\\', '/');
+            }
+
             if (Kind != StorageKind.Smb)
             {
                 return RootPath;

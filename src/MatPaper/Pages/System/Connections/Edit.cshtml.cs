@@ -50,7 +50,7 @@ public class EditModel : PageModel
     {
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>0 SMB, 1 IMAP, 2 POP3 (int for plain select binding).</summary>
+        /// <summary>0 SMB, 1 IMAP, 2 POP3, 3 Google Drive, 4 OneDrive (int for plain select binding).</summary>
         public int Kind { get; set; } = 1;
 
         /// <summary>0 Password, 1 OAuth2.</summary>
@@ -68,8 +68,15 @@ public class EditModel : PageModel
         public string? Username { get; set; }
         public string? Password { get; set; }
 
+        /// <summary>The account e-mail for an OAuth connection. Separate from <see cref="Username"/>
+        /// so the password-mode and OAuth-mode identity fields never collide on one posted name.</summary>
+        public string? OAuthEmail { get; set; }
+
         public string? OAuthClientId { get; set; }
         public string? OAuthClientSecret { get; set; }
+
+        /// <summary>Optional Drive folder id that anchors the connection; empty means My Drive.</summary>
+        public string? RootFolderId { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -92,7 +99,8 @@ public class EditModel : PageModel
                 Kind = (int)entity.Kind,
                 AuthMode = (int)entity.AuthMode,
                 Provider = (int)entity.Provider,
-                Username = entity.Username,
+                Username = entity.AuthMode == ConnectionAuthMode.OAuth2 ? null : entity.Username,
+                OAuthEmail = entity.AuthMode == ConnectionAuthMode.OAuth2 ? entity.Username : null,
                 Domain = entity.Domain,
                 OAuthClientId = entity.OAuthClientId
                 // Password + client secret intentionally left blank.
@@ -104,6 +112,12 @@ public class EditModel : PageModel
                     var smb = TaskSettingsJson.Read<SmbEndpoint>(entity.SettingsJson);
                     Input.Host = smb.Host;
                     Input.Share = smb.Share;
+                    break;
+                case ConnectionKind.GoogleDrive:
+                    var drive = TaskSettingsJson.Read<GoogleDriveEndpoint>(entity.SettingsJson);
+                    Input.RootFolderId = drive.RootFolderId;
+                    break;
+                case ConnectionKind.OneDrive:
                     break;
                 default:
                     var mail = TaskSettingsJson.Read<MailEndpoint>(entity.SettingsJson);
@@ -232,43 +246,76 @@ public class EditModel : PageModel
             ModelState.AddModelError("Input.AuthMode", _l["SMB does not support OAuth."]);
         }
 
+        var isCloud = kind is ConnectionKind.GoogleDrive or ConnectionKind.OneDrive;
+        if (isCloud && authMode != ConnectionAuthMode.OAuth2)
+        {
+            ModelState.AddModelError("Input.AuthMode", _l["Cloud drives require OAuth."]);
+        }
+
+        if (kind == ConnectionKind.GoogleDrive && authMode == ConnectionAuthMode.OAuth2 && provider != OAuthProvider.Google)
+        {
+            ModelState.AddModelError("Input.Provider", _l["Google Drive needs the Google provider."]);
+        }
+        if (kind == ConnectionKind.OneDrive && authMode == ConnectionAuthMode.OAuth2 && provider != OAuthProvider.Microsoft)
+        {
+            ModelState.AddModelError("Input.Provider", _l["OneDrive needs the Microsoft provider."]);
+        }
+
         if (authMode == ConnectionAuthMode.OAuth2 && provider == OAuthProvider.None)
         {
             ModelState.AddModelError("Input.Provider", _l["Choose a provider."]);
         }
 
-        if (string.IsNullOrWhiteSpace(Input.Username))
+        // The account identity comes from a different field per mode, so the two never collide on
+        // one posted name (an OAuth email and a password username are separate inputs).
+        var accountName = (authMode == ConnectionAuthMode.OAuth2 ? Input.OAuthEmail : Input.Username)?.Trim();
+        if (string.IsNullOrWhiteSpace(accountName))
         {
-            ModelState.AddModelError("Input.Username", authMode == ConnectionAuthMode.OAuth2
-                ? _l["The account e-mail address is required."]
-                : _l["Username is required."]);
+            ModelState.AddModelError(
+                authMode == ConnectionAuthMode.OAuth2 ? "Input.OAuthEmail" : "Input.Username",
+                authMode == ConnectionAuthMode.OAuth2
+                    ? _l["The account e-mail address is required."]
+                    : _l["Username is required."]);
         }
 
         string settingsJson;
-        if (kind == ConnectionKind.Smb)
+        switch (kind)
         {
-            if (string.IsNullOrWhiteSpace(Input.Host) || string.IsNullOrWhiteSpace(Input.Share))
-            {
-                ModelState.AddModelError("Input.Host", _l["Host and share are required."]);
-            }
-            settingsJson = TaskSettingsJson.Write(new SmbEndpoint
-            {
-                Host = Input.Host?.Trim() ?? string.Empty,
-                Share = Input.Share?.Trim() ?? string.Empty
-            });
-        }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(Input.Host))
-            {
-                ModelState.AddModelError("Input.Host", _l["Host is required."]);
-            }
-            settingsJson = TaskSettingsJson.Write(new MailEndpoint
-            {
-                Host = Input.Host?.Trim() ?? string.Empty,
-                Port = Input.Port <= 0 ? 993 : Input.Port,
-                UseSsl = Input.UseSsl
-            });
+            case ConnectionKind.Smb:
+                if (string.IsNullOrWhiteSpace(Input.Host) || string.IsNullOrWhiteSpace(Input.Share))
+                {
+                    ModelState.AddModelError("Input.Host", _l["Host and share are required."]);
+                }
+                settingsJson = TaskSettingsJson.Write(new SmbEndpoint
+                {
+                    Host = Input.Host?.Trim() ?? string.Empty,
+                    Share = Input.Share?.Trim() ?? string.Empty
+                });
+                break;
+
+            case ConnectionKind.GoogleDrive:
+                settingsJson = TaskSettingsJson.Write(new GoogleDriveEndpoint
+                {
+                    RootFolderId = string.IsNullOrWhiteSpace(Input.RootFolderId) ? null : Input.RootFolderId.Trim()
+                });
+                break;
+
+            case ConnectionKind.OneDrive:
+                settingsJson = TaskSettingsJson.Write(new OneDriveEndpoint());
+                break;
+
+            default:
+                if (string.IsNullOrWhiteSpace(Input.Host))
+                {
+                    ModelState.AddModelError("Input.Host", _l["Host is required."]);
+                }
+                settingsJson = TaskSettingsJson.Write(new MailEndpoint
+                {
+                    Host = Input.Host?.Trim() ?? string.Empty,
+                    Port = Input.Port <= 0 ? 993 : Input.Port,
+                    UseSsl = Input.UseSsl
+                });
+                break;
         }
 
         if (authMode == ConnectionAuthMode.Password && !IsEdit && string.IsNullOrEmpty(Input.Password))
@@ -320,7 +367,7 @@ public class EditModel : PageModel
         entity.AuthMode = authMode;
         entity.Provider = provider;
         entity.SettingsJson = settingsJson;
-        entity.Username = Input.Username?.Trim();
+        entity.Username = accountName;
         entity.Domain = kind == ConnectionKind.Smb ? (string.IsNullOrWhiteSpace(Input.Domain) ? null : Input.Domain.Trim()) : null;
 
         if (authMode == ConnectionAuthMode.Password)

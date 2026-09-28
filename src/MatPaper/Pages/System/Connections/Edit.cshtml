@@ -17,6 +17,8 @@
             <option value="1">IMAP</option>
             <option value="2">POP3</option>
             <option value="0">@L["SMB / CIFS network share"]</option>
+            <option value="3">Google Drive</option>
+            <option value="4">OneDrive</option>
         </mp-field>
 
         <mp-field asp-for="Input.AuthMode" kind="select" label='@L["Sign-in"]'>
@@ -28,7 +30,9 @@
     <section class="form-section">
         <h2 class="form-section__title">@L["Endpoint"]</h2>
 
-        <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="imap.gmail.com" />
+        <div data-show-when-field="Input.Kind" data-show-when-value="0,1,2">
+            <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="imap.gmail.com" />
+        </div>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="0">
             <mp-field asp-for="Input.Share" label='@L["SMB share"]' placeholder="documents" />
@@ -39,6 +43,15 @@
             <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
             <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL/TLS"]' />
             <p class="form-help">@L["Gmail: imap.gmail.com:993. Office 365: outlook.office365.com:993."]</p>
+        </div>
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="3">
+            <mp-field asp-for="Input.RootFolderId" label='@L["Root folder ID"]'
+                      help='@L["Optional. Leave empty for the whole My Drive; otherwise a Drive folder ID. Storage locations pick a sub-folder within it."]' />
+        </div>
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="3,4">
+            <p class="form-help">@L["Cloud drives sign in with OAuth. Choose OAuth below, then Save and press Connect."]</p>
         </div>
     </section>
 
@@ -57,7 +70,7 @@
             <option value="2">Microsoft</option>
         </mp-field>
 
-        <mp-field asp-for="Input.Username" label='@L["Account e-mail address"]' placeholder="name@gmail.com" />
+        <mp-field asp-for="Input.OAuthEmail" label='@L["Account e-mail address"]' placeholder="name@gmail.com" />
         <mp-field asp-for="Input.OAuthClientId" label='@L["Client ID"]' autocomplete="off" />
         <mp-field asp-for="Input.OAuthClientSecret" kind="password" label='@L["Client secret"]'
                   help='@(Model.IsEdit ? L["Leave blank to keep the stored secret."].Value : null)' />

@@ -57,11 +57,15 @@ public sealed class DocumentStorageService
 
     private readonly IServiceScopeFactory _scopes;
     private readonly SecretProtector _secrets;
+    private readonly OAuthService _oauth;
+    private readonly IHttpClientFactory _httpClients;
 
-    public DocumentStorageService(IServiceScopeFactory scopes, SecretProtector secrets, AppConfig config)
+    public DocumentStorageService(IServiceScopeFactory scopes, SecretProtector secrets, AppConfig config, OAuthService oauth, IHttpClientFactory httpClients)
     {
         _scopes = scopes;
         _secrets = secrets;
+        _oauth = oauth;
+        _httpClients = httpClients;
 
         var dataDir = Environment.GetEnvironmentVariable("MATPAPER_DATA") ?? "/data";
         StagingRoot = config.ResolveInboxPath(dataDir);
@@ -548,13 +552,60 @@ public sealed class DocumentStorageService
 
     private async Task<IStorageBackend> GetBackendAsync(StorageLocation loc, CancellationToken ct)
     {
-        if (loc.Kind == StorageKind.Smb)
+        switch (loc.Kind)
         {
-            var (connection, basePath) = await ResolveSmbConnectionAsync(loc, ct).ConfigureAwait(false);
-            return new SmbBackend(connection, basePath);
+            case StorageKind.Smb:
+            {
+                var (connection, basePath) = await ResolveSmbConnectionAsync(loc, ct).ConfigureAwait(false);
+                return new SmbBackend(connection, basePath);
+            }
+
+            case StorageKind.Cloud:
+                return await GetCloudBackendAsync(loc, ct).ConfigureAwait(false);
+
+            default:
+                return new LocalBackend(LocalBackend.RootFullPath(loc));
+        }
+    }
+
+    /// <summary>
+    /// Builds a cloud backend (Google Drive today, OneDrive later) from the location's
+    /// <see cref="Connection"/>: an OAuth access token drives the REST calls, and the location's
+    /// <see cref="StorageLocation.BasePath"/> is the folder within the drive that acts as its root.
+    /// </summary>
+    private async Task<IStorageBackend> GetCloudBackendAsync(StorageLocation loc, CancellationToken ct)
+    {
+        var connection = loc.Connection;
+        if (connection is null && loc.ConnectionId is long connectionId)
+        {
+            using var scope = _scopes.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            connection = await db.Connections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == connectionId && c.UpdateState != UpdateState.Deleted, ct)
+                .ConfigureAwait(false);
         }
 
-        return new LocalBackend(LocalBackend.RootFullPath(loc));
+        if (connection is null)
+        {
+            throw new InvalidOperationException($"Storage location '{loc.Name}' has no cloud connection.");
+        }
+
+        switch (connection.Kind)
+        {
+            case ConnectionKind.GoogleDrive:
+            {
+                var accessToken = await _oauth.GetAccessTokenAsync(connection, ct).ConfigureAwait(false);
+                var endpoint = TaskSettingsJson.Read<GoogleDriveEndpoint>(connection.SettingsJson);
+                var http = _httpClients.CreateClient();
+                http.Timeout = TimeSpan.FromMinutes(5);
+                return new GoogleDriveBackend(http, accessToken, endpoint.RootFolderId, loc.BasePath);
+            }
+
+            default:
+                throw new InvalidOperationException(
+                    $"Connection '{connection.Name}' is a {connection.Kind} connection and cannot back a storage location yet.");
+        }
     }
 
     /// <summary>

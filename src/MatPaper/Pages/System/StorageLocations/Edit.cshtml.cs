@@ -37,22 +37,32 @@ public class EditModel : PageModel
 
     public List<SelectListItem> SmbConnectionOptions { get; private set; } = new();
 
+    public List<SelectListItem> CloudConnectionOptions { get; private set; } = new();
+
     public List<SelectListItem> OwnerOptions { get; private set; } = new();
 
     public class InputModel
     {
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>0 = local folder, 1 = SMB share (int so the select binds/selects plainly).</summary>
+        /// <summary>0 = local folder, 1 = SMB share, 2 = cloud drive (int so the select binds/selects plainly).</summary>
         public int Kind { get; set; }
 
         public string? RootPath { get; set; }
 
-        /// <summary>The SMB (or cloud) connection that provides this location's endpoint and sign-in.</summary>
+        /// <summary>The SMB connection that provides this location's endpoint and sign-in.</summary>
         public long? ConnectionId { get; set; }
 
-        /// <summary>Sub-folder within the connection that acts as this location's root.</summary>
+        /// <summary>Sub-folder within the SMB share that acts as this location's root.</summary>
         public string? BasePath { get; set; }
+
+        /// <summary>The cloud connection (Google Drive, OneDrive) backing this location.</summary>
+        /// <remarks>Separate from <see cref="ConnectionId"/> so the SMB and cloud dropdowns never
+        /// collide on one posted field name.</remarks>
+        public long? CloudConnectionId { get; set; }
+
+        /// <summary>Folder within the cloud drive that acts as this location's root.</summary>
+        public string? CloudBasePath { get; set; }
 
         public string PathTemplate { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
@@ -88,8 +98,10 @@ public class EditModel : PageModel
                 Name = entity.Name,
                 Kind = (int)entity.Kind,
                 RootPath = entity.RootPath,
-                ConnectionId = entity.ConnectionId,
-                BasePath = entity.BasePath,
+                ConnectionId = entity.Kind == StorageKind.Smb ? entity.ConnectionId : null,
+                BasePath = entity.Kind == StorageKind.Smb ? entity.BasePath : null,
+                CloudConnectionId = entity.Kind == StorageKind.Cloud ? entity.ConnectionId : null,
+                CloudBasePath = entity.Kind == StorageKind.Cloud ? entity.BasePath : null,
                 PathTemplate = entity.PathTemplate,
                 IsDefault = entity.IsDefault,
                 DefaultOwnerId = entity.DefaultOwnerId,
@@ -208,7 +220,7 @@ public class EditModel : PageModel
             return Page();
         }
 
-        if (draft.Kind == StorageKind.Smb && draft.ConnectionId is long connectionId)
+        if (draft.Kind is StorageKind.Smb or StorageKind.Cloud && draft.ConnectionId is long connectionId)
         {
             draft.Connection = await _db.Connections
                 .AsNoTracking()
@@ -220,9 +232,9 @@ public class EditModel : PageModel
         try
         {
             await _storage.TestAsync(draft, HttpContext.RequestAborted);
-            this.NotifyNow(draft.Kind == StorageKind.Smb
-                ? _l["Connected to {0}.", draft.DisplayRoot].Value
-                : _l["Folder {0} is available.", draft.RootPath].Value);
+            this.NotifyNow(draft.Kind == StorageKind.Local
+                ? _l["Folder {0} is available.", draft.RootPath].Value
+                : _l["Connected to {0}.", draft.DisplayRoot].Value);
         }
         catch (OperationCanceledException)
         {
@@ -262,7 +274,12 @@ public class EditModel : PageModel
     /// <summary>Trims the input into an unsaved entity; kind-specific fields of the other kind are cleared.</summary>
     private StorageLocation BuildDraft()
     {
-        var kind = Input.Kind == (int)StorageKind.Smb ? StorageKind.Smb : StorageKind.Local;
+        var kind = Input.Kind switch
+        {
+            (int)StorageKind.Smb => StorageKind.Smb,
+            (int)StorageKind.Cloud => StorageKind.Cloud,
+            _ => StorageKind.Local
+        };
 
         return new StorageLocation
         {
@@ -270,8 +287,18 @@ public class EditModel : PageModel
             Name = (Input.Name ?? string.Empty).Trim(),
             Kind = kind,
             RootPath = kind == StorageKind.Local ? (Input.RootPath ?? string.Empty).Trim() : string.Empty,
-            ConnectionId = kind == StorageKind.Smb ? Input.ConnectionId : null,
-            BasePath = kind == StorageKind.Smb ? NullIfEmpty(Input.BasePath) : null,
+            ConnectionId = kind switch
+            {
+                StorageKind.Smb => Input.ConnectionId,
+                StorageKind.Cloud => Input.CloudConnectionId,
+                _ => null
+            },
+            BasePath = kind switch
+            {
+                StorageKind.Smb => NullIfEmpty(Input.BasePath),
+                StorageKind.Cloud => NullIfEmpty(Input.CloudBasePath),
+                _ => null
+            },
             PathTemplate = (Input.PathTemplate ?? string.Empty).Trim(),
             IsDefault = Input.IsDefault,
             DefaultOwnerId = Input.DefaultOwnerId,
@@ -350,21 +377,37 @@ public class EditModel : PageModel
 
         var connections = await _db.Connections
             .AsNoTracking()
-            .Where(c => c.UpdateState != UpdateState.Deleted && c.Kind == ConnectionKind.Smb)
+            .Where(c => c.UpdateState != UpdateState.Deleted
+                && (c.Kind == ConnectionKind.Smb || c.Kind == ConnectionKind.GoogleDrive || c.Kind == ConnectionKind.OneDrive))
             .OrderBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name })
+            .Select(c => new { c.Id, c.Name, c.Kind })
             .ToListAsync();
 
         SmbConnectionOptions = new List<SelectListItem>
         {
             new() { Value = string.Empty, Text = _l["— Select —"].Value, Selected = Input.ConnectionId is null }
         };
-        SmbConnectionOptions.AddRange(connections.Select(c => new SelectListItem
+        SmbConnectionOptions.AddRange(connections
+            .Where(c => c.Kind == ConnectionKind.Smb)
+            .Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.Name,
+                Selected = Input.ConnectionId == c.Id
+            }));
+
+        CloudConnectionOptions = new List<SelectListItem>
         {
-            Value = c.Id.ToString(),
-            Text = c.Name,
-            Selected = Input.ConnectionId == c.Id
-        }));
+            new() { Value = string.Empty, Text = _l["— Select —"].Value, Selected = Input.CloudConnectionId is null }
+        };
+        CloudConnectionOptions.AddRange(connections
+            .Where(c => c.Kind == ConnectionKind.GoogleDrive || c.Kind == ConnectionKind.OneDrive)
+            .Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = c.Kind == ConnectionKind.GoogleDrive ? $"{c.Name} (Google Drive)" : $"{c.Name} (OneDrive)",
+                Selected = Input.CloudConnectionId == c.Id
+            }));
     }
 
     private static string? NullIfEmpty(string? value)

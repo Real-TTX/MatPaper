@@ -57,7 +57,10 @@ public enum StorageKind
     Local = 0,
 
     /// <summary>An SMB/CIFS network share reached directly over the network.</summary>
-    Smb = 1
+    Smb = 1,
+
+    /// <summary>A cloud drive (Google Drive, OneDrive) reached through a saved <see cref="Connection"/>.</summary>
+    Cloud = 2
 }
 
 /// <summary>Which protocol or service a <see cref="Connection"/> speaks.</summary>

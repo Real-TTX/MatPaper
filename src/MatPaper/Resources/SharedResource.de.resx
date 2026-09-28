@@ -703,4 +703,14 @@
   <data name="You cannot delete your own account." xml:space="preserve"><value>Das eigene Konto kann nicht gelöscht werden.</value></data>
   <data name="You do not have permission to view this page." xml:space="preserve"><value>Keine Berechtigung für diese Seite.</value></data>
   <data name="Your account may not open this page." xml:space="preserve"><value>Dieses Konto darf diese Seite nicht öffnen.</value></data>
+  <data name="Cloud drive (Google Drive, OneDrive)" xml:space="preserve"><value>Cloud-Speicher (Google Drive, OneDrive)</value></data>
+  <data name="Folder in drive" xml:space="preserve"><value>Ordner im Cloud-Speicher</value></data>
+  <data name="MatPaper/Archive (optional)" xml:space="preserve"><value>MatPaper/Archiv (optional)</value></data>
+  <data name="Manage cloud connections under System, Connections." xml:space="preserve"><value>Cloud-Verbindungen unter System, Verbindungen verwalten.</value></data>
+  <data name="Cloud drives require OAuth." xml:space="preserve"><value>Cloud-Speicher benötigen OAuth.</value></data>
+  <data name="Google Drive needs the Google provider." xml:space="preserve"><value>Google Drive benötigt den Anbieter Google.</value></data>
+  <data name="OneDrive needs the Microsoft provider." xml:space="preserve"><value>OneDrive benötigt den Anbieter Microsoft.</value></data>
+  <data name="Root folder ID" xml:space="preserve"><value>Stammordner-ID</value></data>
+  <data name="Optional. Leave empty for the whole My Drive; otherwise a Drive folder ID. Storage locations pick a sub-folder within it." xml:space="preserve"><value>Optional. Leer lassen für die gesamte Ablage („My Drive“); sonst eine Drive-Ordner-ID. Speicherorte wählen darin einen Unterordner.</value></data>
+  <data name="Cloud drives sign in with OAuth. Choose OAuth below, then Save and press Connect." xml:space="preserve"><value>Cloud-Speicher melden sich per OAuth an. Unten OAuth wählen, dann speichern und auf Verbinden drücken.</value></data>
 </root>

@@ -9,9 +9,18 @@
     // an unknown segment (e.g. a document title) simply passes through.
     var breadcrumbRaw = ViewData["Breadcrumb"] as string ?? "";
     var breadcrumbLiteral = ViewData["BreadcrumbLiteral"] is true;
-    var breadcrumb = string.IsNullOrEmpty(breadcrumbRaw) || breadcrumbLiteral
-        ? breadcrumbRaw
-        : string.Join(" / ", breadcrumbRaw.Split('/', StringSplitOptions.RemoveEmptyEntries).Select(s => L[s.Trim()].Value));
+    var breadcrumbParts = breadcrumbRaw
+        .Split('/', StringSplitOptions.RemoveEmptyEntries)
+        .Select(s => breadcrumbLiteral ? s.Trim() : L[s.Trim()].Value)
+        .ToList();
+    var breadcrumb = string.Join(" / ", breadcrumbParts);
+
+    // The crumbs mirror the URL, so each one but the last can lead back. Only when both
+    // have the same number of segments, otherwise the mapping would be a guess.
+    var pathParts = (Context.Request.Path.Value ?? "")
+        .Split('/', StringSplitOptions.RemoveEmptyEntries)
+        .ToList();
+    var breadcrumbLinkable = pathParts.Count == breadcrumbParts.Count && breadcrumbParts.Count > 1;
     var accountName = CurrentUser.DisplayName ?? CurrentUser.Username ?? "Account";
     var avatarLetter = string.IsNullOrEmpty(accountName) ? "?" : accountName.Substring(0, 1).ToUpperInvariant();
 
@@ -197,7 +206,22 @@
                     </svg>
                 </button>
                 <nav class="breadcrumb" aria-label='@L["Breadcrumb"]'>
-                    <span class="breadcrumb__current">@breadcrumb</span>
+                    @for (var i = 0; i < breadcrumbParts.Count; i++)
+                    {
+                        if (i > 0)
+                        {
+                            <span class="breadcrumb__sep" aria-hidden="true">/</span>
+                        }
+
+                        if (breadcrumbLinkable && i < breadcrumbParts.Count - 1)
+                        {
+                            <a class="breadcrumb__link" href="/@string.Join("/", pathParts.Take(i + 1))">@breadcrumbParts[i]</a>
+                        }
+                        else
+                        {
+                            <span class="@(i == breadcrumbParts.Count - 1 ? "breadcrumb__current" : "")">@breadcrumbParts[i]</span>
+                        }
+                    }
                 </nav>
             </header>
 

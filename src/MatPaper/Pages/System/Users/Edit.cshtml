@@ -28,11 +28,7 @@
         <span class="field-error" asp-validation-for="Input.Email"></span>
     </div>
 
-    <div class="form-row">
-        <label asp-for="Input.RoleId">@L["Role"]</label>
-        <select class="form-control" asp-for="Input.RoleId" asp-items="Model.RoleOptions"></select>
-        <span class="field-error" asp-validation-for="Input.RoleId"></span>
-    </div>
+    <mp-field asp-for="Input.RoleId" kind="select" label='@L["Role"]' asp-items="Model.RoleOptions" />
 
     <div class="form-check">
         <input type="checkbox" asp-for="Input.IsActive" />

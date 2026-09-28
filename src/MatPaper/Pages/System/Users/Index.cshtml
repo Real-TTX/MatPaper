@@ -4,31 +4,19 @@
     ViewData["Breadcrumb"] = $"{L["System"].Value} / {L["Users"].Value}";
 }
 
-<form class="toolbar" method="get">
-    <div class="toolbar__group toolbar__search">
-        <label for="Search">@L["Search"]</label>
-        <input class="form-control" type="text" id="Search" name="Search" value="@Model.Search" placeholder='@L["Username, display name or email"]' />
-    </div>
-    <div class="toolbar__group toolbar__filter">
-        <label for="Role">@L["Role"]</label>
-        <select class="form-control" id="Role" name="Role">
-            <option value="All" selected="@(Model.Role == "All")">@L["All"]</option>
-            <option value="Admin" selected="@(Model.Role == "Admin")">@L["Admin"]</option>
-            <option value="User" selected="@(Model.Role == "User")">@L["User"]</option>
-            <option value="Anonymous" selected="@(Model.Role == "Anonymous")">@L["Anonymous"]</option>
-        </select>
-    </div>
-    <div class="toolbar__group toolbar__filter">
-        <label for="Sort">@L["Sort"]</label>
-        <select class="form-control" id="Sort" name="Sort">
-            <option value="username_asc" selected="@(Model.Sort == "username_asc")">@L["Username (A–Z)"]</option>
-            <option value="username_desc" selected="@(Model.Sort == "username_desc")">@L["Username (Z–A)"]</option>
-        </select>
-    </div>
-    <div class="toolbar__group">
-        <button class="btn btn--secondary" type="submit">@L["Filter"]</button>
-    </div>
-</form>
+<mp-toolbar count="Model.TotalCount">
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Username, display name or email"]' />
+    <mp-toolbar-select name="Role" label='@L["Role"]' value="@Model.Role">
+        <option value="All">@L["All"]</option>
+        <option value="Admin">@L["Admin"]</option>
+        <option value="User">@L["User"]</option>
+        <option value="Anonymous">@L["Anonymous"]</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="username_asc">@L["Username (A–Z)"]</option>
+        <option value="username_desc">@L["Username (Z–A)"]</option>
+    </mp-toolbar-select>
+</mp-toolbar>
 
 @{
     var roleLabel = Model.Role == "All" ? null : L[Model.Role].Value;
@@ -38,70 +26,58 @@
 }
 <partial name="_FilterChips" model="activeFilters" />
 
-@if (Model.Users.Count == 0)
-{
-    <div class="empty-state">@L["No users match your criteria."]</div>
-}
-else
-{
-    <div class="data-table-wrap">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>@L["Username"]</th>
-                <th>@L["Display name"]</th>
-                <th>@L["Email"]</th>
-                <th>@L["Role"]</th>
-                <th>@L["Active"]</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in Model.Users)
+<mp-table item-count="Model.Users.Count" empty-text='@L["No users match your criteria."]'>
+    <thead>
+        <tr>
+            <th>@L["Username"]</th>
+            <th>@L["Display name"]</th>
+            <th>@L["Email"]</th>
+            <th>@L["Role"]</th>
+            <th>@L["Active"]</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.Users)
+        {
+            var roleName = user.Role?.Name ?? "";
+            var roleBadge = roleName switch
             {
-                var roleName = user.Role?.Name ?? "";
-                var roleBadge = roleName switch
-                {
-                    "Admin" => "badge--admin",
-                    "User" => "badge--user",
-                    _ => "badge--muted"
-                };
-                <tr data-row-href="/System/Users/Edit?id=@user.Id" tabindex="0">
-                    <td>@user.Username</td>
-                    <td>@user.DisplayName</td>
-                    <td>@user.Email</td>
-                    <td><span class="badge @roleBadge">@(string.IsNullOrEmpty(roleName) ? "—" : roleName)</span></td>
-                    <td>
-                        @if (user.IsActive)
-                        {
-                            <span class="badge badge--ok">@L["Active"]</span>
-                        }
-                        else
-                        {
-                            <span class="badge badge--off">@L["Inactive"]</span>
-                        }
-                    </td>
-                    <td class="is-actions">
-                        <a href="/System/Users/Edit?id=@user.Id">@L["Edit"]</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    </div>
-}
+                "Admin" => "badge--admin",
+                "User" => "badge--user",
+                _ => "badge--muted"
+            };
+            <tr data-row-href="/System/Users/Edit?id=@user.Id" tabindex="0">
+                <td>@user.Username</td>
+                <td>@user.DisplayName</td>
+                <td>@(string.IsNullOrWhiteSpace(user.Email) ? "—" : user.Email)</td>
+                <td><span class="badge @roleBadge">@(string.IsNullOrEmpty(roleName) ? "—" : L[roleName].Value)</span></td>
+                <td>
+                    @if (user.IsActive)
+                    {
+                        <span class="badge badge--ok">@L["Active"]</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge--warn">@L["Inactive"]</span>
+                    }
+                </td>
+                <td class="is-actions">
+                    <span class="icon-actions">
+                        <a class="icon-btn" href="/System/Users/Edit?id=@user.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                            </svg>
+                        </a>
+                    </span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/System/Users/Edit">@L["New user"]</a>
 </div>
 
-@if (Model.TotalCount > Model.PageSizeValue)
-{
-    <nav class="pagination">
-        @for (var p = 1; p <= Model.TotalPages; p++)
-        {
-            <a class="pagination__link @(p == Model.PageNumber ? "is-active" : "")"
-               href="?Search=@Model.Search&Role=@Model.Role&Sort=@Model.Sort&PageNumber=@p">@p</a>
-        }
-    </nav>
-}
+<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

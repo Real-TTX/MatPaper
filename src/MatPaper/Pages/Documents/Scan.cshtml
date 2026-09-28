@@ -27,27 +27,11 @@
         <input class="form-control" type="text" id="Title" name="Title" value="@Model.Title" placeholder='@L["Optional"]' />
     </div>
 
-    <div class="form-row">
-        <label for="CorrespondentId">@L["Correspondent"]</label>
-        <select class="form-control" id="CorrespondentId" name="CorrespondentId">
-            <option value="">@L["— Auto-detect —"]</option>
-            @foreach (var c in Model.Correspondents)
-            {
-                <option value="@c.Id" selected="@(c.Id == Model.CorrespondentId)">@c.Name</option>
-            }
-        </select>
-    </div>
+    <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
+               value="@(Model.CorrespondentId?.ToString())" placeholder='@L["— Auto-detect —"]' />
 
-    <div class="form-row">
-        <label for="DocumentTypeId">@L["Document type"]</label>
-        <select class="form-control" id="DocumentTypeId" name="DocumentTypeId">
-            <option value="">@L["— Auto-detect —"]</option>
-            @foreach (var t in Model.DocumentTypes)
-            {
-                <option value="@t.Id" selected="@(t.Id == Model.DocumentTypeId)">@t.Name</option>
-            }
-        </select>
-    </div>
+    <mp-picker asp-for="DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions"
+               value="@(Model.DocumentTypeId?.ToString())" placeholder='@L["— Auto-detect —"]' />
 
     <div class="form-row">
         <label for="Images">@L["Photos"]</label>

@@ -135,21 +135,29 @@
 }
 
 .form label {
-    font-size: 13.5px;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--color-text);
 }
 
 .form-control {
     width: 100%;
+    min-height: var(--control-height);
     font: inherit;
-    font-size: 14.5px;
+    font-size: var(--font-size-md);
+    /* 1.25 x 14.5px + 20px padding + 2px border lands exactly on the control height. */
+    line-height: 1.25;
     color: var(--color-text);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     padding: 10px 12px;
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Several lines of prose want the normal reading rhythm back. */
+textarea.form-control {
+    line-height: 1.5;
 }
 
 .form-control::placeholder {
@@ -233,8 +241,9 @@ select.form-control {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    min-height: var(--control-height);
     font: inherit;
-    font-size: 14.5px;
+    font-size: var(--font-size-md);
     font-weight: 600;
     line-height: 1;
     padding: 10px 18px;
@@ -357,10 +366,11 @@ select.form-control {
     min-width: 0;
 }
 
-/* Uniform control height across inputs, selects, pickers and the Apply button. */
+/* The toolbar pins the height exactly; elsewhere it is a minimum so a textarea
+   can still grow. */
 .toolbar .form-control,
 .toolbar .mp-picker__trigger {
-    height: 40px;
+    height: var(--control-height);
     width: 100%;
 }
 
@@ -374,7 +384,7 @@ select.form-control {
 }
 
 .toolbar > .toolbar__group:last-child .btn {
-    height: 40px;
+    height: var(--control-height);
 }
 
 /* ==========================================================================
@@ -544,6 +554,27 @@ select.form-control {
 }
 
 /* ==========================================================================
+   Panel: the one boxed surface. Everything that needs a card uses it, so
+   border, radius and padding are defined once.
+   ========================================================================== */
+.panel,
+.form-section,
+.inbox-item,
+.doc-preview {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.15rem;
+}
+
+.panel__title,
+.form-section__title {
+    margin: 0 0 0.9rem;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+/* ==========================================================================
    List actions (below a table)
    ========================================================================== */
 .list-actions {
@@ -699,7 +730,7 @@ a.link-card:hover {
 /* Colour picker field: compact swatch instead of a full-width text box. */
 input[type="color"].form-control {
     width: 56px;
-    height: 40px;
+    height: var(--control-height);
     padding: 4px;
     cursor: pointer;
 }
@@ -817,7 +848,7 @@ input[type="color"].form-control {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: color-mix(in srgb, var(--color-surface) 82%, transparent);
     color: var(--color-primary);
     opacity: 0;

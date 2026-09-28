@@ -48,6 +48,13 @@ public class ScanModel : PageModel
     public IReadOnlyList<Correspondent> Correspondents { get; private set; } = Array.Empty<Correspondent>();
     public IReadOnlyList<DocumentType> DocumentTypes { get; private set; } = Array.Empty<DocumentType>();
 
+    /// <summary>The same option lists, in the shape the picker control expects.</summary>
+    public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> CorrespondentOptions =>
+        Correspondents.Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(c.Name, c.Id.ToString())).ToList();
+
+    public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> DocumentTypeOptions =>
+        DocumentTypes.Select(t => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(t.Name, t.Id.ToString())).ToList();
+
     public List<string> Messages { get; } = new();
 
     public async Task OnGetAsync()

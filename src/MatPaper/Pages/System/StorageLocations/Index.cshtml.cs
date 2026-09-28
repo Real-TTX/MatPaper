@@ -56,6 +56,7 @@ public class IndexModel : PageModel
 
         IQueryable<StorageLocation> query = _db.StorageLocations
             .AsNoTracking()
+            .Include(s => s.Connection)
             .Where(s => s.UpdateState != UpdateState.Deleted);
 
         if (!string.IsNullOrWhiteSpace(Search))

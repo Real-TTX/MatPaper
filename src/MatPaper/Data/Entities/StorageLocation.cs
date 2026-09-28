@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace MatPaper.Data;
 
 /// <summary>
@@ -89,9 +91,30 @@ public class StorageLocation : BaseEntity
                 return RootPath;
             }
 
-            var root = "\\\\" + (SmbHost ?? "?") + "\\" + (SmbShare ?? "?");
-            var sub = (SmbPath ?? string.Empty).Trim().Trim('/', '\\').Replace('/', '\\');
-            return sub.Length == 0 ? root : root + "\\" + sub;
+            // Connection-backed locations keep host/share in the connection and the sub-folder
+            // in BasePath; older ones still carry the inline fields.
+            var host = SmbHost;
+            var share = SmbShare;
+            var sub = SmbPath;
+            if (Connection is not null)
+            {
+                try
+                {
+                    var endpoint = JsonSerializer.Deserialize<SmbEndpoint>(Connection.SettingsJson);
+                    host = endpoint?.Host;
+                    share = endpoint?.Share;
+                }
+                catch (JsonException)
+                {
+                    // fall back to whatever the legacy fields hold
+                }
+
+                sub = BasePath;
+            }
+
+            var root = "\\\\" + (string.IsNullOrWhiteSpace(host) ? "?" : host) + "\\" + (string.IsNullOrWhiteSpace(share) ? "?" : share);
+            var cleaned = (sub ?? string.Empty).Trim().Trim('/', '\\').Replace('/', '\\');
+            return cleaned.Length == 0 ? root : root + "\\" + cleaned;
         }
     }
 }

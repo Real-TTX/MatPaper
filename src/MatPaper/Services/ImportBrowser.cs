@@ -48,12 +48,14 @@ public sealed class ImportBrowser
 
     private readonly AppDbContext _db;
     private readonly SecretProtector _secrets;
+    private readonly ConnectionService _connections;
     private readonly ILogger<ImportBrowser> _logger;
 
-    public ImportBrowser(AppDbContext db, SecretProtector secrets, ILogger<ImportBrowser> logger)
+    public ImportBrowser(AppDbContext db, SecretProtector secrets, ConnectionService connections, ILogger<ImportBrowser> logger)
     {
         _db = db;
         _secrets = secrets;
+        _connections = connections;
         _logger = logger;
     }
 
@@ -65,13 +67,13 @@ public sealed class ImportBrowser
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var (user, password) = await ResolveMailLoginAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
+        var mail = await ResolveMailAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
 
         using var client = new ImapClient { Timeout = MailTimeoutMs };
         try
         {
-            await client.ConnectAsync(settings.Host, settings.Port, ImportRunner.SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-            await client.AuthenticateAsync(user, password, ct).ConfigureAwait(false);
+            await client.ConnectAsync(mail.Host, mail.Port, ImportRunner.SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
             var root = client.PersonalNamespaces.Count > 0
                 ? client.GetFolders(client.PersonalNamespaces[0], false, ct)
@@ -121,14 +123,14 @@ public sealed class ImportBrowser
 
         try
         {
-            var (user, password) = await ResolveMailLoginAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
+            var mail = await ResolveMailAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
             var extensions = ImportRunner.ParseExtensions(settings.AttachmentExtensions);
             var senderRegex = ImportRunner.CompileRegex(settings.SenderRegex);
             var subjectRegex = ImportRunner.CompileRegex(settings.SubjectRegex);
 
             return isPop3
-                ? await PreviewPop3Async(settings, user, password, extensions, senderRegex, subjectRegex, ct).ConfigureAwait(false)
-                : await PreviewImapAsync(settings, user, password, extensions, senderRegex, subjectRegex, ct).ConfigureAwait(false);
+                ? await PreviewPop3Async(settings, mail, extensions, senderRegex, subjectRegex, ct).ConfigureAwait(false)
+                : await PreviewImapAsync(settings, mail, extensions, senderRegex, subjectRegex, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -141,14 +143,14 @@ public sealed class ImportBrowser
     }
 
     private async Task<PreviewResult> PreviewImapAsync(
-        MailImportSettings settings, string user, string password,
+        MailImportSettings settings, ResolvedMail mail,
         IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, CancellationToken ct)
     {
         using var client = new ImapClient { Timeout = MailTimeoutMs };
         try
         {
-            await client.ConnectAsync(settings.Host, settings.Port, ImportRunner.SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-            await client.AuthenticateAsync(user, password, ct).ConfigureAwait(false);
+            await client.ConnectAsync(mail.Host, mail.Port, ImportRunner.SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
             var folder = string.IsNullOrWhiteSpace(settings.Folder) || settings.Folder.Equals("INBOX", StringComparison.OrdinalIgnoreCase)
                 ? client.Inbox
@@ -226,14 +228,14 @@ public sealed class ImportBrowser
     }
 
     private async Task<PreviewResult> PreviewPop3Async(
-        MailImportSettings settings, string user, string password,
+        MailImportSettings settings, ResolvedMail mail,
         IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, CancellationToken ct)
     {
         using var client = new Pop3Client { Timeout = MailTimeoutMs };
         try
         {
-            await client.ConnectAsync(settings.Host, settings.Port, ImportRunner.SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-            await client.AuthenticateAsync(user, password, ct).ConfigureAwait(false);
+            await client.ConnectAsync(mail.Host, mail.Port, ImportRunner.SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
             var items = new List<PreviewItem>();
             var matches = 0;
@@ -331,26 +333,20 @@ public sealed class ImportBrowser
     }
 
     /// <summary>
-    /// Same precedence the runner uses: a saved credential wins over anything typed into
-    /// the task, so the preview signs in exactly like the import will.
+    /// Resolves the mailbox exactly as the runner will, so browse and preview sign in the same
+    /// way the import will: a connection (password or OAuth) wins, else the legacy inline login,
+    /// with a freshly typed password allowed to stand in for an unsaved legacy task.
     /// </summary>
-    private async Task<(string User, string Password)> ResolveMailLoginAsync(
+    private async Task<ResolvedMail> ResolveMailAsync(
         MailImportSettings settings, string? plaintextPassword, CancellationToken ct)
     {
-        if (settings.CredentialId is long id)
+        var mail = await _connections.ResolveMailAsync(settings, ct).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(plaintextPassword) && mail.Connection is null)
         {
-            var cred = await LoadCredentialAsync(id, ct).ConfigureAwait(false);
-            if (cred is not null)
-            {
-                return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword));
-            }
+            mail = mail with { Password = plaintextPassword };
         }
 
-        var password = string.IsNullOrEmpty(plaintextPassword)
-            ? _secrets.Unprotect(settings.ProtectedPassword)
-            : plaintextPassword;
-
-        return (settings.Username, password);
+        return mail;
     }
 
     // ----- SMB --------------------------------------------------------------

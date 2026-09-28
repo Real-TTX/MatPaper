@@ -42,11 +42,32 @@ public class DisplayConfig
     public string Culture { get; set; } = "de-DE";
 }
 
+public class OAuthConfig
+{
+    /// <summary>
+    /// The public base URL under which this instance is reachable, e.g.
+    /// "https://papers.example.com". The OAuth redirect URI is this plus
+    /// "/System/Connections/OAuthCallback" and must be registered verbatim with Google
+    /// and Microsoft. Behind a reverse proxy the app cannot discover it reliably, so it
+    /// is configured here. The environment variable MATPAPER_PUBLIC_URL overrides it.
+    /// </summary>
+    public string? PublicBaseUrl { get; set; }
+}
+
 public class AppConfig
 {
     public DatabaseConfig Database { get; set; } = new();
     public StorageConfig Storage { get; set; } = new();
     public DisplayConfig Display { get; set; } = new();
+    public OAuthConfig OAuth { get; set; } = new();
+
+    /// <summary>Effective public base URL: env MATPAPER_PUBLIC_URL → config → null.</summary>
+    public string? ResolvePublicBaseUrl()
+    {
+        var fromEnv = Environment.GetEnvironmentVariable("MATPAPER_PUBLIC_URL");
+        var value = !string.IsNullOrWhiteSpace(fromEnv) ? fromEnv : OAuth?.PublicBaseUrl;
+        return string.IsNullOrWhiteSpace(value) ? null : value.TrimEnd('/');
+    }
 
     /// <summary>Effective inbox staging folder: env MATPAPER_INBOX → config → {dataDir}/inbox.</summary>
     public string ResolveInboxPath(string dataDir)

@@ -94,6 +94,7 @@
   <data name="30 days" xml:space="preserve"><value>30 Tage</value></data>
   <data name="7 days" xml:space="preserve"><value>7 Tage</value></data>
   <data name="90 days" xml:space="preserve"><value>90 Tage</value></data>
+  <data name="A connection with that name already exists." xml:space="preserve"><value>Eine Verbindung mit diesem Namen gibt es bereits.</value></data>
   <data name="A correspondent with that name already exists." xml:space="preserve"><value>Ein Korrespondent mit diesem Namen existiert bereits.</value></data>
   <data name="A credential with that name already exists." xml:space="preserve"><value>Zugangsdaten mit diesem Namen existieren bereits.</value></data>
   <data name="A document that is still in the staging area cannot be ignored — take it over or delete it." xml:space="preserve"><value>Ein Dokument im Zwischenspeicher kann nicht ignoriert werden — übernehmen oder löschen.</value></data>
@@ -102,6 +103,7 @@
   <data name="A folder inside the container, e.g. a scanner drop." xml:space="preserve"><value>Ein Ordner im Container, z. B. die Ablage des Scanners.</value></data>
   <data name="A move target path is required for the move action." xml:space="preserve"><value>Für die Aktion „Verschieben“ ist ein Zielpfad erforderlich.</value></data>
   <data name="A NAS share, reached directly over the network." xml:space="preserve"><value>Eine NAS-Freigabe, direkt über das Netzwerk erreicht.</value></data>
+  <data name="A password is required for a new connection." xml:space="preserve"><value>Für eine neue Verbindung ist ein Passwort nötig.</value></data>
   <data name="A password is required for a new credential." xml:space="preserve"><value>Für neue Zugangsdaten ist ein Passwort erforderlich.</value></data>
   <data name="A password is required." xml:space="preserve"><value>Ein Passwort ist erforderlich.</value></data>
   <data name="A search for this location is already running." xml:space="preserve"><value>Für diesen Speicherort läuft bereits eine Suche.</value></data>
@@ -111,6 +113,9 @@
   <data name="A valid role is required." xml:space="preserve"><value>Eine gültige Rolle ist erforderlich.</value></data>
   <data name="Absolute path inside the container, e.g. a mounted backup folder" xml:space="preserve"><value>Absoluter Pfad im Container, z. B. ein eingebundener Sicherungsordner</value></data>
   <data name="Access denied" xml:space="preserve"><value>Zugriff verweigert</value></data>
+  <data name="Account" xml:space="preserve"><value>Konto</value></data>
+  <data name="Account connected." xml:space="preserve"><value>Konto verbunden.</value></data>
+  <data name="Account e-mail address" xml:space="preserve"><value>E-Mail-Adresse des Kontos</value></data>
   <data name="Active" xml:space="preserve"><value>Aktiv</value></data>
   <data name="Active filters:" xml:space="preserve"><value>Aktive Filter:</value></data>
   <data name="Add documents" xml:space="preserve"><value>Dokumente hinzufügen</value></data>
@@ -158,10 +163,13 @@
   <data name="can edit" xml:space="preserve"><value>darf bearbeiten</value></data>
   <data name="can edit documents" xml:space="preserve"><value>kann Dokumente bearbeiten</value></data>
   <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="Choose a provider." xml:space="preserve"><value>Anbieter wählen.</value></data>
   <data name="Choose a saved credential." xml:space="preserve"><value>Gespeicherte Zugangsdaten auswählen.</value></data>
   <data name="Choose a user…" xml:space="preserve"><value>Benutzer wählen…</value></data>
   <data name="choose files" xml:space="preserve"><value>Dateien auswählen</value></data>
   <data name="Clear all" xml:space="preserve"><value>Alle entfernen</value></data>
+  <data name="Client ID" xml:space="preserve"><value>Client-ID</value></data>
+  <data name="Client secret" xml:space="preserve"><value>Client-Geheimnis</value></data>
   <data name="Close" xml:space="preserve"><value>Schließen</value></data>
   <data name="Colour" xml:space="preserve"><value>Farbe</value></data>
   <data name="Coming soon" xml:space="preserve"><value>Demnächst verfügbar</value></data>
@@ -174,8 +182,14 @@
   <data name="Confirm" xml:space="preserve"><value>Bestätigen</value></data>
   <data name="Confirm all" xml:space="preserve"><value>Alle bestätigen</value></data>
   <data name="Confirm password" xml:space="preserve"><value>Passwort bestätigen</value></data>
+  <data name="Connect" xml:space="preserve"><value>Verbinden</value></data>
+  <data name="Connected" xml:space="preserve"><value>Verbunden</value></data>
+  <data name="Connected as {0}" xml:space="preserve"><value>Verbunden als {0}</value></data>
   <data name="Connected to {0}." xml:space="preserve"><value>Verbunden mit {0}.</value></data>
+  <data name="Connecting failed: {0}" xml:space="preserve"><value>Verbinden fehlgeschlagen: {0}</value></data>
+  <data name="Connecting only applies to OAuth connections." xml:space="preserve"><value>Verbinden gilt nur für OAuth-Verbindungen.</value></data>
   <data name="Connection" xml:space="preserve"><value>Verbindung</value></data>
+  <data name="Connections" xml:space="preserve"><value>Verbindungen</value></data>
   <data name="Content hash" xml:space="preserve"><value>Inhalts-Hash</value></data>
   <data name="Correspondent" xml:space="preserve"><value>Korrespondent</value></data>
   <data name="Correspondents" xml:space="preserve"><value>Korrespondenten</value></data>
@@ -198,6 +212,7 @@
   <data name="Default location" xml:space="preserve"><value>Standard-Speicherort</value></data>
   <data name="Default owner for found files" xml:space="preserve"><value>Eigentümer für gefundene Dateien</value></data>
   <data name="Delete" xml:space="preserve"><value>Löschen</value></data>
+  <data name="Delete this connection? Storage locations and import tasks using it will stop working." xml:space="preserve"><value>Diese Verbindung löschen? Speicherorte und Import-Regeln, die sie nutzen, funktionieren dann nicht mehr.</value></data>
   <data name="Delete this correspondent? This cannot be undone." xml:space="preserve"><value>Diesen Korrespondenten löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this credential? Import tasks using it will fall back to their own username/password." xml:space="preserve"><value>Diese Zugangsdaten löschen? Import-Regeln, die sie nutzen, greifen auf ihren eigenen Benutzernamen bzw. ihr eigenes Passwort zurück.</value></data>
   <data name="Delete this document type? This cannot be undone." xml:space="preserve"><value>Diesen Dokumenttyp löschen? Das kann nicht rückgängig gemacht werden.</value></data>
@@ -235,6 +250,7 @@
   <data name="E-mail" xml:space="preserve"><value>E-Mail</value></data>
   <data name="e.g. Archive" xml:space="preserve"><value>z. B. Archiv</value></data>
   <data name="e.g. Finanzamt" xml:space="preserve"><value>z. B. Finanzamt</value></data>
+  <data name="e.g. Gmail archive" xml:space="preserve"><value>z. B. Gmail-Archiv</value></data>
   <data name="e.g. Invoice" xml:space="preserve"><value>z. B. Rechnung</value></data>
   <data name="e.g. NAS account" xml:space="preserve"><value>z. B. NAS-Konto</value></data>
   <data name="e.g. Nightly backup" xml:space="preserve"><value>z. B. Nächtliche Sicherung</value></data>
@@ -247,6 +263,7 @@
   <data name="Empty file." xml:space="preserve"><value>Leere Datei.</value></data>
   <data name="Empty: the administrator who starts the search." xml:space="preserve"><value>Leer: wer die Suche startet.</value></data>
   <data name="Enabled" xml:space="preserve"><value>Aktiv</value></data>
+  <data name="Endpoint" xml:space="preserve"><value>Endpunkt</value></data>
   <data name="Enter your credentials to continue." xml:space="preserve"><value>Zugangsdaten eingeben, um fortzufahren.</value></data>
   <data name="Every {0} at {1}" xml:space="preserve"><value>Jeden {0} um {1}</value></data>
   <data name="Every day at {0}" xml:space="preserve"><value>Täglich um {0}</value></data>
@@ -273,13 +290,16 @@
   <data name="Folder {0} is available." xml:space="preserve"><value>Ordner {0} ist verfügbar.</value></data>
   <data name="Folder in share" xml:space="preserve"><value>Ordner in der Freigabe</value></data>
   <data name="Folders" xml:space="preserve"><value>Ordner</value></data>
+  <data name="For Gmail, use an app password." xml:space="preserve"><value>Für Gmail ein App-Passwort verwenden.</value></data>
   <data name="Found" xml:space="preserve"><value>Gefunden</value></data>
   <data name="Found in storage" xml:space="preserve"><value>Im Speicher gefunden</value></data>
   <data name="Friday" xml:space="preserve"><value>Freitag</value></data>
   <data name="From" xml:space="preserve"><value>Von</value></data>
   <data name="From contains" xml:space="preserve"><value>Von enthält</value></data>
   <data name="Full-text search" xml:space="preserve"><value>Volltextsuche</value></data>
+  <data name="Gmail: imap.gmail.com:993. Office 365: outlook.office365.com:993." xml:space="preserve"><value>Gmail: imap.gmail.com:993. Office 365: outlook.office365.com:993.</value></data>
   <data name="Host" xml:space="preserve"><value>Host</value></data>
+  <data name="Host and share are required." xml:space="preserve"><value>Host und Freigabe sind erforderlich.</value></data>
   <data name="Host is required." xml:space="preserve"><value>Host ist erforderlich.</value></data>
   <data name="Hourly" xml:space="preserve"><value>Stündlich</value></data>
   <data name="How does it sign in?" xml:space="preserve"><value>Wie wird angemeldet?</value></data>
@@ -318,6 +338,7 @@
   <data name="Last searched" xml:space="preserve"><value>Zuletzt durchsucht</value></data>
   <data name="Leave blank to keep current" xml:space="preserve"><value>Leer lassen, um das gespeicherte zu behalten</value></data>
   <data name="Leave blank to keep the stored password." xml:space="preserve"><value>Leer lassen, um das gespeicherte Passwort zu behalten.</value></data>
+  <data name="Leave blank to keep the stored secret." xml:space="preserve"><value>Leer lassen, um das gespeicherte Geheimnis zu behalten.</value></data>
   <data name="Leave on server" xml:space="preserve"><value>Auf dem Server belassen</value></data>
   <data name="Leave on share" xml:space="preserve"><value>Auf der Freigabe belassen</value></data>
   <data name="Light" xml:space="preserve"><value>Hell</value></data>
@@ -359,6 +380,7 @@
   <data name="Network share (SMB)" xml:space="preserve"><value>Netzwerkfreigabe (SMB)</value></data>
   <data name="Never" xml:space="preserve"><value>Nie</value></data>
   <data name="New" xml:space="preserve"><value>Neu</value></data>
+  <data name="New connection" xml:space="preserve"><value>Neue Verbindung</value></data>
   <data name="New correspondent" xml:space="preserve"><value>Neuer Korrespondent</value></data>
   <data name="New credential" xml:space="preserve"><value>Neue Zugangsdaten</value></data>
   <data name="New document type" xml:space="preserve"><value>Neuer Dokumenttyp</value></data>
@@ -371,6 +393,7 @@
   <data name="Next" xml:space="preserve"><value>Weiter</value></data>
   <data name="next:" xml:space="preserve"><value>nächster:</value></data>
   <data name="No access" xml:space="preserve"><value>Kein Zugriff</value></data>
+  <data name="No connections yet." xml:space="preserve"><value>Noch keine Verbindungen.</value></data>
   <data name="No correspondents match your criteria." xml:space="preserve"><value>Keine Korrespondenten entsprechen den Kriterien.</value></data>
   <data name="No credentials yet." xml:space="preserve"><value>Noch keine Zugangsdaten vorhanden.</value></data>
   <data name="No document matches your filter." xml:space="preserve"><value>Kein Dokument passt zum Filter.</value></data>
@@ -382,6 +405,7 @@
   <data name="No import tasks match your criteria." xml:space="preserve"><value>Keine Import-Regeln entsprechen den Kriterien.</value></data>
   <data name="No items match the current rules." xml:space="preserve"><value>Keine Treffer für die aktuellen Regeln.</value></data>
   <data name="No projects match your criteria." xml:space="preserve"><value>Keine Projekte entsprechen den Kriterien.</value></data>
+  <data name="No public base URL is configured." xml:space="preserve"><value>Es ist keine öffentliche Basis-URL konfiguriert.</value></data>
   <data name="No records found." xml:space="preserve"><value>Keine Einträge gefunden.</value></data>
   <data name="No share links yet." xml:space="preserve"><value>Noch keine Freigabe-Links.</value></data>
   <data name="No storage location configured — documents can't be filed yet." xml:space="preserve"><value>Kein Speicherort eingerichtet — Dokumente können noch nicht abgelegt werden.</value></data>
@@ -393,6 +417,8 @@
   <data name="No text extracted yet." xml:space="preserve"><value>Noch kein Text extrahiert.</value></data>
   <data name="No users match your criteria." xml:space="preserve"><value>Keine Benutzer entsprechen den Kriterien.</value></data>
   <data name="Not analyzed yet" xml:space="preserve"><value>Noch nicht analysiert</value></data>
+  <data name="Not connected" xml:space="preserve"><value>Nicht verbunden</value></data>
+  <data name="Not connected yet. Save, then press Connect." xml:space="preserve"><value>Noch nicht verbunden. Speichern, dann Verbinden drücken.</value></data>
   <data name="Not filed yet" xml:space="preserve"><value>Noch nicht abgelegt</value></data>
   <data name="Not shared" xml:space="preserve"><value>Nicht freigegeben</value></data>
   <data name="Not shared with any user yet." xml:space="preserve"><value>Noch für keinen Benutzer freigegeben.</value></data>
@@ -401,6 +427,8 @@
   <data name="Nothing found." xml:space="preserve"><value>Nichts gefunden.</value></data>
   <data name="Nothing ignored" xml:space="preserve"><value>Nichts ignoriert</value></data>
   <data name="Nothing was selected." xml:space="preserve"><value>Es wurde nichts ausgewählt.</value></data>
+  <data name="OAuth" xml:space="preserve"><value>OAuth</value></data>
+  <data name="OAuth (Google, Microsoft)" xml:space="preserve"><value>OAuth (Google, Microsoft)</value></data>
   <data name="OCR failed" xml:space="preserve"><value>OCR fehlgeschlagen</value></data>
   <data name="OCR status" xml:space="preserve"><value>OCR-Status</value></data>
   <data name="Oldest first" xml:space="preserve"><value>Älteste zuerst</value></data>
@@ -420,6 +448,7 @@
   <data name="Page not found" xml:space="preserve"><value>Seite nicht gefunden</value></data>
   <data name="Pages" xml:space="preserve"><value>Seiten</value></data>
   <data name="Password" xml:space="preserve"><value>Passwort</value></data>
+  <data name="Password / app password" xml:space="preserve"><value>Passwort / App-Passwort</value></data>
   <data name="Password must be at least {0} characters." xml:space="preserve"><value>Das Passwort muss mindestens {0} Zeichen lang sein.</value></data>
   <data name="Passwords do not match." xml:space="preserve"><value>Die Passwörter stimmen nicht überein.</value></data>
   <data name="Path" xml:space="preserve"><value>Pfad</value></data>
@@ -446,6 +475,7 @@
   <data name="Projects" xml:space="preserve"><value>Projekte</value></data>
   <data name="Projects / Edit" xml:space="preserve"><value>Projekte / Bearbeiten</value></data>
   <data name="Projects / New" xml:space="preserve"><value>Projekte / Neu</value></data>
+  <data name="Provider" xml:space="preserve"><value>Anbieter</value></data>
   <data name="Put found files in the common area" xml:space="preserve"><value>Gefundene Dateien in den gemeinsamen Bereich legen</value></data>
   <data name="Re-analyze" xml:space="preserve"><value>Neu analysieren</value></data>
   <data name="Re-analyzed from the document text." xml:space="preserve"><value>Neu analysiert aus dem Dokumenttext.</value></data>
@@ -453,6 +483,9 @@
   <data name="Re-file by template" xml:space="preserve"><value>Nach Vorlage neu ablegen</value></data>
   <data name="Recent documents" xml:space="preserve"><value>Neueste Dokumente</value></data>
   <data name="Recently added" xml:space="preserve"><value>Zuletzt hinzugefügt</value></data>
+  <data name="Reconnect" xml:space="preserve"><value>Neu verbinden</value></data>
+  <data name="Redirect URI" xml:space="preserve"><value>Weiterleitungs-URI</value></data>
+  <data name="Register this exact URI with your Google Cloud / Azure app." xml:space="preserve"><value>Genau diese URI in der eigenen Google-Cloud- bzw. Azure-App eintragen.</value></data>
   <data name="reload to see the suggestions." xml:space="preserve"><value>neu laden, um die Vorschläge zu sehen.</value></data>
   <data name="Remember me" xml:space="preserve"><value>Angemeldet bleiben</value></data>
   <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
@@ -463,6 +496,7 @@
   <data name="Retention" xml:space="preserve"><value>Aufbewahrung</value></data>
   <data name="Retention must be at least 1." xml:space="preserve"><value>Aufbewahrung muss mindestens 1 betragen.</value></data>
   <data name="Reusable access credentials for import tasks (mailboxes and SMB/CIFS shares). Passwords are stored encrypted." xml:space="preserve"><value>Wiederverwendbare Zugangsdaten für Import-Regeln (Postfächer und SMB-/CIFS-Freigaben). Passwörter werden verschlüsselt gespeichert.</value></data>
+  <data name="Reusable connections for mailboxes, shares and cloud drives" xml:space="preserve"><value>Wiederverwendbare Verbindungen für Postfächer, Freigaben und Cloud-Speicher</value></data>
   <data name="Reusable logins for mailbox and SMB imports" xml:space="preserve"><value>Wiederverwendbare Zugangsdaten für Postfach- und SMB-Importe</value></data>
   <data name="Review" xml:space="preserve"><value>Prüfung</value></data>
   <data name="Review them in your inbox →" xml:space="preserve"><value>Im Posteingang prüfen →</value></data>
@@ -479,8 +513,10 @@
   <data name="Saturday" xml:space="preserve"><value>Samstag</value></data>
   <data name="Save" xml:space="preserve"><value>Speichern</value></data>
   <data name="Save &amp; confirm" xml:space="preserve"><value>Speichern &amp; bestätigen</value></data>
+  <data name="Save the connection first, then a Connect button appears here." xml:space="preserve"><value>Zuerst speichern, dann erscheint hier ein Verbinden-Knopf.</value></data>
   <data name="Save the task before running it." xml:space="preserve"><value>Import-Regel vor dem Ausführen speichern.</value></data>
   <data name="Saved credential" xml:space="preserve"><value>Gespeicherte Zugangsdaten</value></data>
+  <data name="Saved. Now press Connect to authorize the account." xml:space="preserve"><value>Gespeichert. Jetzt Verbinden drücken, um das Konto zu autorisieren.</value></data>
   <data name="Scan" xml:space="preserve"><value>Scannen</value></data>
   <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
   <data name="Schedule" xml:space="preserve"><value>Zeitplan</value></data>
@@ -498,6 +534,8 @@
   <data name="Select all on this page" xml:space="preserve"><value>Alle auf dieser Seite auswählen</value></data>
   <data name="Select at most {0} documents at once." xml:space="preserve"><value>Höchstens {0} Dokumente auf einmal auswählen.</value></data>
   <data name="Sender regex (advanced)" xml:space="preserve"><value>Absender-Regex (erweitert)</value></data>
+  <data name="Set the public base URL in /data/config/app.json (or MATPAPER_PUBLIC_URL) so a redirect URI can be shown." xml:space="preserve"><value>Die öffentliche Basis-URL in /data/config/app.json (oder MATPAPER_PUBLIC_URL) setzen, damit eine Weiterleitungs-URI angezeigt werden kann.</value></data>
+  <data name="Set the public base URL in the configuration before connecting." xml:space="preserve"><value>Vor dem Verbinden die öffentliche Basis-URL in der Konfiguration setzen.</value></data>
   <data name="Settings" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="Share" xml:space="preserve"><value>Freigeben</value></data>
   <data name="Share is required." xml:space="preserve"><value>Freigabe ist erforderlich.</value></data>
@@ -518,10 +556,12 @@
   <data name="showing the first {0}" xml:space="preserve"><value>die ersten {0} angezeigt</value></data>
   <data name="Sign in" xml:space="preserve"><value>Anmelden</value></data>
   <data name="Sign out" xml:space="preserve"><value>Abmelden</value></data>
+  <data name="Sign-in" xml:space="preserve"><value>Anmeldung</value></data>
   <data name="Simple mailbox without folders." xml:space="preserve"><value>Einfaches Postfach ohne Ordner.</value></data>
   <data name="Size" xml:space="preserve"><value>Größe</value></data>
   <data name="Skip inbox (mark imported documents as reviewed)" xml:space="preserve"><value>Posteingang überspringen (importierte Dokumente als geprüft markieren)</value></data>
   <data name="SMB / CIFS network share" xml:space="preserve"><value>SMB-/CIFS-Netzwerkfreigabe</value></data>
+  <data name="SMB does not support OAuth." xml:space="preserve"><value>SMB unterstützt kein OAuth.</value></data>
   <data name="SMB share" xml:space="preserve"><value>Freigabe</value></data>
   <data name="Something went wrong" xml:space="preserve"><value>Da ist etwas schiefgelaufen</value></data>
   <data name="Sort" xml:space="preserve"><value>Sortierung</value></data>
@@ -544,6 +584,9 @@
   <data name="Success" xml:space="preserve"><value>Erfolgreich</value></data>
   <data name="Sunday" xml:space="preserve"><value>Sonntag</value></data>
   <data name="System" xml:space="preserve"><value>System</value></data>
+  <data name="System / Connections" xml:space="preserve"><value>System / Verbindungen</value></data>
+  <data name="System / Connections / Edit" xml:space="preserve"><value>System / Verbindungen / Bearbeiten</value></data>
+  <data name="System / Connections / New" xml:space="preserve"><value>System / Verbindungen / Neu</value></data>
   <data name="System / Credentials" xml:space="preserve"><value>System / Zugangsdaten</value></data>
   <data name="System / Credentials / Edit" xml:space="preserve"><value>System / Zugangsdaten / Bearbeiten</value></data>
   <data name="System / Credentials / New" xml:space="preserve"><value>System / Zugangsdaten / Neu</value></data>
@@ -578,7 +621,13 @@
   <data name="That username is already in use." xml:space="preserve"><value>Dieser Benutzername wird bereits verwendet.</value></data>
   <data name="The {0} field is not a valid e-mail address." xml:space="preserve"><value>{0} ist keine gültige E-Mail-Adresse.</value></data>
   <data name="The {0} field is required." xml:space="preserve"><value>{0} ist erforderlich.</value></data>
+  <data name="The account e-mail address is required." xml:space="preserve"><value>Die E-Mail-Adresse des Kontos ist erforderlich.</value></data>
   <data name="The action could not be completed. The details are in the server log." xml:space="preserve"><value>Die Aktion konnte nicht abgeschlossen werden. Einzelheiten stehen im Server-Protokoll.</value></data>
+  <data name="The authorization could not be verified. Please try again." xml:space="preserve"><value>Die Autorisierung konnte nicht geprüft werden. Bitte erneut versuchen.</value></data>
+  <data name="The authorization response was incomplete." xml:space="preserve"><value>Die Antwort der Autorisierung war unvollständig.</value></data>
+  <data name="The client id is required." xml:space="preserve"><value>Die Client-ID ist erforderlich.</value></data>
+  <data name="The client secret is required." xml:space="preserve"><value>Das Client-Geheimnis ist erforderlich.</value></data>
+  <data name="The connection no longer exists." xml:space="preserve"><value>Die Verbindung gibt es nicht mehr.</value></data>
   <data name="The document file could not be moved: {0} No changes were saved." xml:space="preserve"><value>Die Dokumentdatei konnte nicht verschoben werden: {0} Es wurden keine Änderungen gespeichert.</value></data>
   <data name="The document is still being processed — try confirming again in a moment." xml:space="preserve"><value>Das Dokument wird noch verarbeitet — bitte gleich erneut bestätigen.</value></data>
   <data name="The field {0} must be a string or array type with a minimum length of '{1}'." xml:space="preserve"><value>{0} muss mindestens {1} Zeichen lang sein.</value></data>
@@ -591,6 +640,8 @@
   <data name="The password must be at least 8 characters long." xml:space="preserve"><value>Das Passwort muss mindestens 8 Zeichen lang sein.</value></data>
   <data name="The passwords do not match." xml:space="preserve"><value>Die Passwörter stimmen nicht überein.</value></data>
   <data name="The photos could not be converted into a PDF. Please try again with different images." xml:space="preserve"><value>Die Fotos konnten nicht in ein PDF umgewandelt werden. Bitte mit anderen Bildern erneut versuchen.</value></data>
+  <data name="The provider declined the authorization: {0}" xml:space="preserve"><value>Der Anbieter hat die Autorisierung abgelehnt: {0}</value></data>
+  <data name="The provider returned no refresh token. Remove the app's access and connect again." xml:space="preserve"><value>Der Anbieter hat kein Aktualisierungstoken geliefert. Den Zugriff der App entfernen und erneut verbinden.</value></data>
   <data name="The request failed — please reload the page." xml:space="preserve"><value>Die Anfrage ist fehlgeschlagen — bitte die Seite neu laden.</value></data>
   <data name="The scan could not be stored." xml:space="preserve"><value>Der Scan konnte nicht gespeichert werden.</value></data>
   <data name="The schedule is not a valid cron expression." xml:space="preserve"><value>Der Zeitplan ist kein gültiger Cron-Ausdruck.</value></data>
@@ -614,6 +665,7 @@
   <data name="Upload your first document" xml:space="preserve"><value>Erstes Dokument hochladen</value></data>
   <data name="Uploading…" xml:space="preserve"><value>Wird hochgeladen…</value></data>
   <data name="Use SSL" xml:space="preserve"><value>SSL verwenden</value></data>
+  <data name="Use SSL/TLS" xml:space="preserve"><value>SSL/TLS verwenden</value></data>
   <data name="Use this folder" xml:space="preserve"><value>Diesen Ordner verwenden</value></data>
   <data name="User" xml:space="preserve"><value>Benutzer</value></data>
   <data name="Username" xml:space="preserve"><value>Benutzername</value></data>

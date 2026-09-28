@@ -1,0 +1,117 @@
+@page "/System/Connections/Edit"
+@model MatPaper.Pages.System.Connections.EditModel
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Connections / Edit"].Value : L["System / Connections / New"].Value;
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All" class="form-summary"></div>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Connection"]</h2>
+
+        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Gmail archive"]' />
+
+        <mp-field asp-for="Input.Kind" kind="select" label='@L["Type"]'>
+            <option value="1">IMAP</option>
+            <option value="2">POP3</option>
+            <option value="0">@L["SMB / CIFS network share"]</option>
+        </mp-field>
+
+        <mp-field asp-for="Input.AuthMode" kind="select" label='@L["Sign-in"]'>
+            <option value="0">@L["Password / app password"]</option>
+            <option value="1">@L["OAuth (Google, Microsoft)"]</option>
+        </mp-field>
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Endpoint"]</h2>
+
+        <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="imap.gmail.com" />
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="0">
+            <mp-field asp-for="Input.Share" label='@L["SMB share"]' placeholder="documents" />
+            <mp-field asp-for="Input.Domain" label='@L["Domain"]' help='@L["Optional (Windows domain or workgroup)."]' />
+        </div>
+
+        <div data-show-when-field="Input.Kind" data-show-when-value="1,2">
+            <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
+            <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL/TLS"]' />
+            <p class="form-help">@L["Gmail: imap.gmail.com:993. Office 365: outlook.office365.com:993."]</p>
+        </div>
+    </section>
+
+    <section class="form-section" data-show-when-field="Input.AuthMode" data-show-when-value="0">
+        <h2 class="form-section__title">@L["Sign-in"]</h2>
+        <mp-field asp-for="Input.Username" label='@L["Username"]' placeholder='@L["e.g. scan-user"]' />
+        <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]'
+                  help='@(Model.IsEdit ? L["Leave blank to keep the stored password."].Value : L["For Gmail, use an app password."].Value)' />
+    </section>
+
+    <section class="form-section" data-show-when-field="Input.AuthMode" data-show-when-value="1">
+        <h2 class="form-section__title">@L["OAuth"]</h2>
+
+        <mp-field asp-for="Input.Provider" kind="select" label='@L["Provider"]'>
+            <option value="1">Google</option>
+            <option value="2">Microsoft</option>
+        </mp-field>
+
+        <mp-field asp-for="Input.Username" label='@L["Account e-mail address"]' placeholder="name@gmail.com" />
+        <mp-field asp-for="Input.OAuthClientId" label='@L["Client ID"]' autocomplete="off" />
+        <mp-field asp-for="Input.OAuthClientSecret" kind="password" label='@L["Client secret"]'
+                  help='@(Model.IsEdit ? L["Leave blank to keep the stored secret."].Value : null)' />
+
+        <div class="form-row">
+            <label>@L["Redirect URI"]</label>
+            @if (string.IsNullOrEmpty(Model.RedirectUri))
+            {
+                <p class="notice notice--warn" style="margin:0">
+                    @L["Set the public base URL in /data/config/app.json (or MATPAPER_PUBLIC_URL) so a redirect URI can be shown."]
+                </p>
+            }
+            else
+            {
+                <input class="form-control" type="text" value="@Model.RedirectUri" readonly onclick="this.select()" />
+                <p class="form-help">@L["Register this exact URI with your Google Cloud / Azure app."]</p>
+            }
+        </div>
+
+        @if (Model.IsEdit)
+        {
+            <div class="form-row">
+                @if (Model.IsConnected)
+                {
+                    <p class="notice notice--ok" style="margin:0">
+                        @L["Connected as {0}", Model.ConnectedAccount ?? "—"]@(Model.ConnectedUtc.HasValue ? " · " + Fmt.Date(Model.ConnectedUtc) : "")
+                    </p>
+                }
+                else
+                {
+                    <p class="form-help" style="margin:0">@L["Not connected yet. Save, then press Connect."]</p>
+                }
+                <div style="margin-top:0.6rem">
+                    <button class="btn btn--secondary" type="submit" asp-page-handler="Connect"
+                            disabled="@string.IsNullOrEmpty(Model.RedirectUri)">
+                        @(Model.IsConnected ? L["Reconnect"].Value : L["Connect"].Value)
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="form-help">@L["Save the connection first, then a Connect button appears here."]</p>
+        }
+    </section>
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/Connections">@L["Back"]</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete"
+                       confirm='@L["Delete this connection? Storage locations and import tasks using it will stop working."]'>@L["Delete"]</mp-button>
+        }
+    </mp-button-row>
+</form>

@@ -21,6 +21,7 @@ public sealed class ImportRunner
     private readonly DocumentIngestService _ingest;
     private readonly SecretProtector _secrets;
     private readonly HtmlToPdfConverter _htmlToPdf;
+    private readonly ConnectionService _connections;
     private readonly ILogger<ImportRunner> _logger;
 
     public ImportRunner(
@@ -28,12 +29,14 @@ public sealed class ImportRunner
         DocumentIngestService ingest,
         SecretProtector secrets,
         HtmlToPdfConverter htmlToPdf,
+        ConnectionService connections,
         ILogger<ImportRunner> logger)
     {
         _db = db;
         _ingest = ingest;
         _secrets = secrets;
         _htmlToPdf = htmlToPdf;
+        _connections = connections;
         _logger = logger;
     }
 
@@ -420,13 +423,7 @@ public sealed class ImportRunner
             return new RunReport(false, 0, "No storage location configured (required when skipping the inbox)");
         }
 
-        var password = _secrets.Unprotect(settings.ProtectedPassword);
-        var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
-        if (cred is not null)
-        {
-            settings.Username = cred.Value.User;
-            password = cred.Value.Password;
-        }
+        var mail = await _connections.ResolveMailAsync(settings, ct).ConfigureAwait(false);
         var extensions = ParseExtensions(settings.AttachmentExtensions);
         var senderRegex = CompileRegex(settings.SenderRegex);
         var subjectRegex = CompileRegex(settings.SubjectRegex);
@@ -437,8 +434,8 @@ public sealed class ImportRunner
         try
         {
             count = isPop3
-                ? await RunPop3Async(settings, password, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false)
-                : await RunImapAsync(settings, password, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false);
+                ? await RunPop3Async(settings, mail, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false)
+                : await RunImapAsync(settings, mail, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -456,7 +453,7 @@ public sealed class ImportRunner
 
     private async Task<int> RunImapAsync(
         MailImportSettings settings,
-        string password,
+        ResolvedMail mail,
         IReadOnlyCollection<string> extensions,
         Regex? senderRegex,
         Regex? subjectRegex,
@@ -470,8 +467,8 @@ public sealed class ImportRunner
         using var client = new ImapClient();
         try
         {
-            await client.ConnectAsync(settings.Host, settings.Port, SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-            await client.AuthenticateAsync(settings.Username, password, ct).ConfigureAwait(false);
+            await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
             var folderName = string.IsNullOrWhiteSpace(settings.Folder) ? "INBOX" : settings.Folder;
             var folder = string.Equals(folderName, "INBOX", StringComparison.OrdinalIgnoreCase)
@@ -537,7 +534,7 @@ public sealed class ImportRunner
 
     private async Task<int> RunPop3Async(
         MailImportSettings settings,
-        string password,
+        ResolvedMail mail,
         IReadOnlyCollection<string> extensions,
         Regex? senderRegex,
         Regex? subjectRegex,
@@ -551,8 +548,8 @@ public sealed class ImportRunner
         using var client = new Pop3Client();
         try
         {
-            await client.ConnectAsync(settings.Host, settings.Port, SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-            await client.AuthenticateAsync(settings.Username, password, ct).ConfigureAwait(false);
+            await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
             var postAction = settings.PostAction?.ToLowerInvariant();
             var total = client.Count;
@@ -737,18 +734,10 @@ public sealed class ImportRunner
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var password = string.IsNullOrEmpty(plaintextPasswordOverride)
-            ? _secrets.Unprotect(settings.ProtectedPassword)
-            : plaintextPasswordOverride;
-
-        if (string.IsNullOrEmpty(plaintextPasswordOverride))
+        var mail = await _connections.ResolveMailAsync(settings, ct).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(plaintextPasswordOverride) && mail.Connection is null)
         {
-            var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
-            if (cred is not null)
-            {
-                settings.Username = cred.Value.User;
-                password = cred.Value.Password;
-            }
+            mail = mail with { Password = plaintextPasswordOverride };
         }
 
         if (isPop3)
@@ -756,8 +745,8 @@ public sealed class ImportRunner
             using var client = new Pop3Client();
             try
             {
-                await client.ConnectAsync(settings.Host, settings.Port, SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-                await client.AuthenticateAsync(settings.Username, password, ct).ConfigureAwait(false);
+                await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+                await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
                 return (true, "Connected and authenticated.");
             }
             catch (Exception ex)
@@ -776,8 +765,8 @@ public sealed class ImportRunner
         using var imap = new ImapClient();
         try
         {
-            await imap.ConnectAsync(settings.Host, settings.Port, SecureOption(settings.UseSsl), ct).ConfigureAwait(false);
-            await imap.AuthenticateAsync(settings.Username, password, ct).ConfigureAwait(false);
+            await imap.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(imap, mail, ct).ConfigureAwait(false);
             return (true, "Connected and authenticated.");
         }
         catch (Exception ex)

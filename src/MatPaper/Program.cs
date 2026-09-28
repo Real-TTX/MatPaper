@@ -59,6 +59,7 @@ builder.Services.AddSingleton<ThumbnailService>();
 builder.Services.AddScoped<DocumentIngestService>();
 builder.Services.AddScoped<DocumentFilingService>();
 builder.Services.AddScoped<StorageScanService>();
+builder.Services.AddScoped<ConnectionBackfillService>();
 builder.Services.AddSingleton<InvoiceDataExtractor>();
 builder.Services.AddScoped<DocumentAnalysisService>();
 builder.Services.AddHostedService<DocumentProcessingService>();
@@ -156,6 +157,11 @@ for (var attempt = 1; attempt <= maxAttempts; attempt++)
         app.Logger.LogInformation("Applying database migrations (attempt {Attempt}/{MaxAttempts}).", attempt, maxAttempts);
         db.Database.Migrate();
         app.Logger.LogInformation("Database migrations applied successfully.");
+
+        // Fold any legacy credentials/SMB locations into the new Connection model before the
+        // app serves requests. Idempotent, so a restart just no-ops.
+        scope.ServiceProvider.GetRequiredService<ConnectionBackfillService>()
+            .RunAsync().GetAwaiter().GetResult();
         break;
     }
     catch (Exception ex)

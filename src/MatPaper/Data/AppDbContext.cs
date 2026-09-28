@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
     public DbSet<Credential> Credentials => Set<Credential>();
+    public DbSet<Connection> Connections => Set<Connection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +51,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
         modelBuilder.Entity<ShareLink>().ToTable("ShareLink");
         modelBuilder.Entity<Credential>().ToTable("Credential");
+        modelBuilder.Entity<Connection>().ToTable("Connection");
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
@@ -125,6 +127,12 @@ public class AppDbContext : DbContext
             .HasOne(s => s.Credential)
             .WithMany()
             .HasForeignKey(s => s.CredentialId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<StorageLocation>()
+            .HasOne(s => s.Connection)
+            .WithMany()
+            .HasForeignKey(s => s.ConnectionId)
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<StorageLocation>()

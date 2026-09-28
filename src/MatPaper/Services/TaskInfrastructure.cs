@@ -52,7 +52,11 @@ public class MailImportSettings
     public string ProtectedPassword { get; set; } = "";
 
     /// <summary>Optional reference to a reusable Credential; overrides Username/ProtectedPassword when set.</summary>
+    /// <remarks>Legacy: superseded by <see cref="ConnectionId"/>.</remarks>
     public long? CredentialId { get; set; }
+
+    /// <summary>The connection that provides the mailbox endpoint and sign-in.</summary>
+    public long? ConnectionId { get; set; }
 
     public string Folder { get; set; } = "INBOX";
 
@@ -106,7 +110,11 @@ public class SmbImportSettings
     public string ProtectedPassword { get; set; } = "";
 
     /// <summary>Optional reference to a reusable Credential; overrides Username/Domain/ProtectedPassword when set.</summary>
+    /// <remarks>Legacy: superseded by <see cref="ConnectionId"/>.</remarks>
     public long? CredentialId { get; set; }
+
+    /// <summary>The connection that provides the share endpoint and sign-in.</summary>
+    public long? ConnectionId { get; set; }
 
     public string Pattern { get; set; } = "*";
     public bool Recursive { get; set; }

@@ -24,7 +24,20 @@ public class StorageLocation : BaseEntity
     public string? SmbPath { get; set; }
 
     /// <summary>Saved credential used to sign in to the share (SMB locations only).</summary>
+    /// <remarks>Legacy: superseded by <see cref="ConnectionId"/>; kept until the cleanup migration.</remarks>
     public long? CredentialId { get; set; }
+
+    /// <summary>
+    /// The connection that provides this locations endpoint and sign-in (SMB, Drive, OneDrive).
+    /// Null for a local folder. Replaces the inline SMB host/share/credential fields.
+    /// </summary>
+    public long? ConnectionId { get; set; }
+
+    /// <summary>
+    /// Folder within the connection that acts as this locations root: the sub-path in an SMB
+    /// share, or a Drive/OneDrive folder. Empty means the connections own root.
+    /// </summary>
+    public string? BasePath { get; set; }
 
     public string PathTemplate { get; set; } = string.Empty;
     public bool IsDefault { get; set; }
@@ -61,6 +74,8 @@ public class StorageLocation : BaseEntity
     public string? LastScanError { get; set; }
 
     public Credential? Credential { get; set; }
+
+    public Connection? Connection { get; set; }
 
     public User? DefaultOwner { get; set; }
 

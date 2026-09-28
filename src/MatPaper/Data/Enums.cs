@@ -60,6 +60,31 @@ public enum StorageKind
     Smb = 1
 }
 
+/// <summary>Which protocol or service a <see cref="Connection"/> speaks.</summary>
+public enum ConnectionKind
+{
+    Smb = 0,
+    Imap = 1,
+    Pop3 = 2,
+    GoogleDrive = 3,
+    OneDrive = 4
+}
+
+/// <summary>How a <see cref="Connection"/> signs in.</summary>
+public enum ConnectionAuthMode
+{
+    Password = 0,
+    OAuth2 = 1
+}
+
+/// <summary>The OAuth identity provider behind an OAuth2 connection.</summary>
+public enum OAuthProvider
+{
+    None = 0,
+    Google = 1,
+    Microsoft = 2
+}
+
 public enum ImportTaskType
 {
     Imap = 0,

@@ -65,6 +65,7 @@
 
   <data name="— Auto-detect —" xml:space="preserve"><value>— Automatisch erkennen —</value></data>
   <data name="— None —" xml:space="preserve"><value>— Keine —</value></data>
+  <data name="— Select —" xml:space="preserve"><value>— Auswählen —</value></data>
   <data name="— Unchanged —" xml:space="preserve"><value>— Unverändert —</value></data>
   <data name="&quot;{0}&quot; cannot be restored: its file was deleted with it." xml:space="preserve"><value>„{0}“ lässt sich nicht wiederherstellen: die Datei wurde mitgelöscht.</value></data>
   <data name="&quot;{0}&quot; could not be stored." xml:space="preserve"><value>„{0}“ konnte nicht gespeichert werden.</value></data>
@@ -163,6 +164,7 @@
   <data name="can edit" xml:space="preserve"><value>darf bearbeiten</value></data>
   <data name="can edit documents" xml:space="preserve"><value>kann Dokumente bearbeiten</value></data>
   <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="Choose a connection." xml:space="preserve"><value>Verbindung wählen.</value></data>
   <data name="Choose a provider." xml:space="preserve"><value>Anbieter wählen.</value></data>
   <data name="Choose a saved credential." xml:space="preserve"><value>Gespeicherte Zugangsdaten auswählen.</value></data>
   <data name="Choose a user…" xml:space="preserve"><value>Benutzer wählen…</value></data>
@@ -352,6 +354,7 @@
   <data name="Mailbox folder" xml:space="preserve"><value>Postfach-Ordner</value></data>
   <data name="Main navigation" xml:space="preserve"><value>Hauptnavigation</value></data>
   <data name="Manage local accounts and roles" xml:space="preserve"><value>Lokale Konten und Rollen verwalten</value></data>
+  <data name="Manage SMB connections under System, Connections." xml:space="preserve"><value>SMB-Verbindungen unter System, Verbindungen verwalten.</value></data>
   <data name="Manage storage locations and search them for files" xml:space="preserve"><value>Speicherorte verwalten und nach Dateien durchsuchen</value></data>
   <data name="Manage the document type vocabulary" xml:space="preserve"><value>Vokabular der Dokumenttypen verwalten</value></data>
   <data name="Manual only" xml:space="preserve"><value>Nur manuell</value></data>

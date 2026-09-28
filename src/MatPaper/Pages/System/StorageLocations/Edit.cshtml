@@ -31,10 +31,9 @@
         </div>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="1">
-            <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
-            <mp-field asp-for="Input.SmbShare" label='@L["SMB share"]' placeholder="documents" />
-            <mp-field asp-for="Input.SmbPath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]' />
-            <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Credential"]' asp-items="Model.CredentialOptions" />
+            <mp-field asp-for="Input.ConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.SmbConnectionOptions" />
+            <mp-field asp-for="Input.BasePath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]' />
+            <p class="form-help">@L["Manage SMB connections under System, Connections."]</p>
         </div>
 
         <mp-field asp-for="Input.PathTemplate" label='@L["Path template"]'

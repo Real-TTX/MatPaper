@@ -35,7 +35,7 @@ public class EditModel : PageModel
 
     public bool IsEdit => Id != 0;
 
-    public List<SelectListItem> CredentialOptions { get; private set; } = new();
+    public List<SelectListItem> SmbConnectionOptions { get; private set; } = new();
 
     public List<SelectListItem> OwnerOptions { get; private set; } = new();
 
@@ -47,10 +47,13 @@ public class EditModel : PageModel
         public int Kind { get; set; }
 
         public string? RootPath { get; set; }
-        public string? SmbHost { get; set; }
-        public string? SmbShare { get; set; }
-        public string? SmbPath { get; set; }
-        public long? CredentialId { get; set; }
+
+        /// <summary>The SMB (or cloud) connection that provides this location's endpoint and sign-in.</summary>
+        public long? ConnectionId { get; set; }
+
+        /// <summary>Sub-folder within the connection that acts as this location's root.</summary>
+        public string? BasePath { get; set; }
+
         public string PathTemplate { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
 
@@ -85,10 +88,8 @@ public class EditModel : PageModel
                 Name = entity.Name,
                 Kind = (int)entity.Kind,
                 RootPath = entity.RootPath,
-                SmbHost = entity.SmbHost,
-                SmbShare = entity.SmbShare,
-                SmbPath = entity.SmbPath,
-                CredentialId = entity.CredentialId,
+                ConnectionId = entity.ConnectionId,
+                BasePath = entity.BasePath,
                 PathTemplate = entity.PathTemplate,
                 IsDefault = entity.IsDefault,
                 DefaultOwnerId = entity.DefaultOwnerId,
@@ -144,10 +145,13 @@ public class EditModel : PageModel
             existing.Name = draft.Name;
             existing.Kind = draft.Kind;
             existing.RootPath = draft.RootPath;
-            existing.SmbHost = draft.SmbHost;
-            existing.SmbShare = draft.SmbShare;
-            existing.SmbPath = draft.SmbPath;
-            existing.CredentialId = draft.CredentialId;
+            existing.ConnectionId = draft.ConnectionId;
+            existing.BasePath = draft.BasePath;
+            // Clear the legacy inline SMB fields; the connection carries them now.
+            existing.SmbHost = null;
+            existing.SmbShare = null;
+            existing.SmbPath = null;
+            existing.CredentialId = null;
             existing.PathTemplate = draft.PathTemplate;
             existing.IsDefault = draft.IsDefault;
             existing.DefaultOwnerId = draft.DefaultOwnerId;
@@ -204,17 +208,13 @@ public class EditModel : PageModel
             return Page();
         }
 
-        if (draft.Kind == StorageKind.Smb && draft.CredentialId is long credentialId)
+        if (draft.Kind == StorageKind.Smb && draft.ConnectionId is long connectionId)
         {
-            draft.Credential = await _db.Credentials
+            draft.Connection = await _db.Connections
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == credentialId && c.UpdateState != UpdateState.Deleted);
-
-            // Testing signs in to whatever host was typed into the form, so leave a trail
-            // of which credential was offered to which server.
+                .FirstOrDefaultAsync(c => c.Id == connectionId && c.UpdateState != UpdateState.Deleted);
             _logger.LogInformation(
-                "User {UserId} tested credential '{Credential}' against SMB host {Host}, share {Share}.",
-                _currentUser.UserId, draft.Credential?.Name ?? $"#{credentialId}", draft.SmbHost, draft.SmbShare);
+                "User {UserId} tested storage connection {ConnectionId}.", _currentUser.UserId, connectionId);
         }
 
         try
@@ -270,10 +270,8 @@ public class EditModel : PageModel
             Name = (Input.Name ?? string.Empty).Trim(),
             Kind = kind,
             RootPath = kind == StorageKind.Local ? (Input.RootPath ?? string.Empty).Trim() : string.Empty,
-            SmbHost = kind == StorageKind.Smb ? NullIfEmpty(Input.SmbHost) : null,
-            SmbShare = kind == StorageKind.Smb ? NullIfEmpty(Input.SmbShare) : null,
-            SmbPath = kind == StorageKind.Smb ? NullIfEmpty(Input.SmbPath) : null,
-            CredentialId = kind == StorageKind.Smb ? Input.CredentialId : null,
+            ConnectionId = kind == StorageKind.Smb ? Input.ConnectionId : null,
+            BasePath = kind == StorageKind.Smb ? NullIfEmpty(Input.BasePath) : null,
             PathTemplate = (Input.PathTemplate ?? string.Empty).Trim(),
             IsDefault = Input.IsDefault,
             DefaultOwnerId = Input.DefaultOwnerId,
@@ -304,17 +302,9 @@ public class EditModel : PageModel
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(draft.SmbHost))
+            if (draft.ConnectionId is null)
             {
-                ModelState.AddModelError("Input.SmbHost", _l["Host is required."]);
-            }
-            if (string.IsNullOrWhiteSpace(draft.SmbShare))
-            {
-                ModelState.AddModelError("Input.SmbShare", _l["Share is required."]);
-            }
-            if (draft.CredentialId is null)
-            {
-                ModelState.AddModelError("Input.CredentialId", _l["Choose a saved credential."]);
+                ModelState.AddModelError("Input.ConnectionId", _l["Choose a connection."]);
             }
         }
 
@@ -358,22 +348,22 @@ public class EditModel : PageModel
             Selected = Input.DefaultOwnerId == u.Id
         }));
 
-        var credentials = await _db.Credentials
+        var connections = await _db.Connections
             .AsNoTracking()
-            .Where(c => c.UpdateState != UpdateState.Deleted)
+            .Where(c => c.UpdateState != UpdateState.Deleted && c.Kind == ConnectionKind.Smb)
             .OrderBy(c => c.Name)
             .Select(c => new { c.Id, c.Name })
             .ToListAsync();
 
-        CredentialOptions = new List<SelectListItem>
+        SmbConnectionOptions = new List<SelectListItem>
         {
-            new() { Value = string.Empty, Text = "— Select —", Selected = Input.CredentialId is null }
+            new() { Value = string.Empty, Text = _l["— Select —"].Value, Selected = Input.ConnectionId is null }
         };
-        CredentialOptions.AddRange(credentials.Select(c => new SelectListItem
+        SmbConnectionOptions.AddRange(connections.Select(c => new SelectListItem
         {
             Value = c.Id.ToString(),
             Text = c.Name,
-            Selected = Input.CredentialId == c.Id
+            Selected = Input.ConnectionId == c.Id
         }));
     }
 

@@ -86,13 +86,21 @@
         <h2 class="wizard__title">@L["Where does it connect to?"]</h2>
 
         <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
+            <mp-field asp-for="Input.SmbConnectionId" kind="select" label='@L["Saved connection"]'
+                      asp-items="Model.SmbConnectionOptions" />
+            <div data-show-when-field="Input.SmbConnectionId" data-show-when-value="">
+                <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
+            </div>
         </div>
 
         <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" />
-            <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL"]' />
-            <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
+            <mp-field asp-for="Input.MailConnectionId" kind="select" label='@L["Saved connection"]'
+                      asp-items="Model.MailConnectionOptions" />
+            <div data-show-when-field="Input.MailConnectionId" data-show-when-value="">
+                <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" />
+                <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL"]' />
+                <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
+            </div>
         </div>
     </section>
 
@@ -100,20 +108,27 @@
     <section class="wizard__panel" data-step="3" data-for-type="0,1,3">
         <h2 class="wizard__title">@L["How does it sign in?"]</h2>
 
-        <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Saved credential"]'
-                  asp-items="Model.CredentialOptions" />
-
-        <div data-show-when-field="Input.CredentialId" data-show-when-value="">
-            <div data-show-when-field="Input.Type" data-show-when-value="3">
-                <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
-                <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
-                <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]'
-                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+        @* SMB: manual sign-in only when no saved connection is chosen. *@
+        <div data-show-when-field="Input.Type" data-show-when-value="3">
+            <div data-show-when-field="Input.SmbConnectionId" data-show-when-value="">
+                <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Saved credential"]'
+                          asp-items="Model.CredentialOptions" />
+                <div data-show-when-field="Input.CredentialId" data-show-when-value="">
+                    <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
+                    <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
+                    <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]'
+                              placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+                </div>
             </div>
-            <div data-show-when-field="Input.Type" data-show-when-value="0,1">
+        </div>
+
+        @* Mail: manual sign-in only when no saved connection is chosen. *@
+        <div data-show-when-field="Input.Type" data-show-when-value="0,1">
+            <div data-show-when-field="Input.MailConnectionId" data-show-when-value="">
                 <mp-field asp-for="Input.Username" label='@L["Username"]' />
                 <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]'
                           placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+                <p class="form-help">@L["Prefer a saved connection above for Gmail or Office 365 (OAuth)."]</p>
             </div>
         </div>
 

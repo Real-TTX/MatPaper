@@ -466,6 +466,7 @@
   <data name="POP3 has no folders — the whole mailbox is checked." xml:space="preserve"><value>POP3 kennt keine Ordner — es wird das ganze Postfach geprüft.</value></data>
   <data name="POP3 mailbox" xml:space="preserve"><value>POP3-Postfach</value></data>
   <data name="Port" xml:space="preserve"><value>Port</value></data>
+  <data name="Prefer a saved connection above for Gmail or Office 365 (OAuth)." xml:space="preserve"><value>Für Gmail oder Office 365 (OAuth) besser oben eine gespeicherte Verbindung wählen.</value></data>
   <data name="Preset metadata" xml:space="preserve"><value>Vorgaben für die Dokumente</value></data>
   <data name="Preview" xml:space="preserve"><value>Vorschau</value></data>
   <data name="Processed" xml:space="preserve"><value>Verarbeitet</value></data>
@@ -515,6 +516,7 @@
   <data name="Save &amp; confirm" xml:space="preserve"><value>Speichern &amp; bestätigen</value></data>
   <data name="Save the connection first, then a Connect button appears here." xml:space="preserve"><value>Zuerst speichern, dann erscheint hier ein Verbinden-Knopf.</value></data>
   <data name="Save the task before running it." xml:space="preserve"><value>Import-Regel vor dem Ausführen speichern.</value></data>
+  <data name="Saved connection" xml:space="preserve"><value>Gespeicherte Verbindung</value></data>
   <data name="Saved credential" xml:space="preserve"><value>Gespeicherte Zugangsdaten</value></data>
   <data name="Saved. Now press Connect to authorize the account." xml:space="preserve"><value>Gespeichert. Jetzt Verbinden drücken, um das Konto zu autorisieren.</value></data>
   <data name="Scan" xml:space="preserve"><value>Scannen</value></data>

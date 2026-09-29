@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +78,13 @@ public class EditModel : PageModel
 
         /// <summary>Optional Drive folder id that anchors the connection; empty means My Drive.</summary>
         public string? RootFolderId { get; set; }
+
+        /// <summary>Optional OneDrive drive id (another drive, e.g. a SharePoint library); empty means the account's own OneDrive.</summary>
+        /// <remarks>Separate from <see cref="RootFolderId"/> so the Drive and OneDrive fields never share a posted name.</remarks>
+        public string? OneDriveDriveId { get; set; }
+
+        /// <summary>Optional OneDrive folder id that anchors the connection; empty means the drive's root.</summary>
+        public string? OneDriveRootItemId { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -118,6 +126,9 @@ public class EditModel : PageModel
                     Input.RootFolderId = drive.RootFolderId;
                     break;
                 case ConnectionKind.OneDrive:
+                    var oneDrive = TaskSettingsJson.Read<OneDriveEndpoint>(entity.SettingsJson);
+                    Input.OneDriveDriveId = oneDrive.DriveId;
+                    Input.OneDriveRootItemId = oneDrive.RootItemId;
                     break;
                 default:
                     var mail = TaskSettingsJson.Read<MailEndpoint>(entity.SettingsJson);
@@ -301,7 +312,11 @@ public class EditModel : PageModel
                 break;
 
             case ConnectionKind.OneDrive:
-                settingsJson = TaskSettingsJson.Write(new OneDriveEndpoint());
+                settingsJson = TaskSettingsJson.Write(new OneDriveEndpoint
+                {
+                    DriveId = NormalizeGraphId(Input.OneDriveDriveId, "Input.OneDriveDriveId"),
+                    RootItemId = NormalizeGraphId(Input.OneDriveRootItemId, "Input.OneDriveRootItemId")
+                });
                 break;
 
             default:
@@ -400,6 +415,38 @@ public class EditModel : PageModel
         Id = entity.Id;
         return entity;
     }
+
+    /// <summary>
+    /// Cleans an optional Microsoft Graph drive/item id: decodes a value copied URL-encoded from
+    /// the OneDrive address bar (<c>%21</c> → <c>!</c>) and trims it. The id ends up in Graph URL
+    /// paths unescaped, so anything beyond Graph's id alphabet is rejected on the field.
+    /// </summary>
+    private string? NormalizeGraphId(string? value, string field)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string id;
+        try
+        {
+            id = Uri.UnescapeDataString(value.Trim()).Trim();
+        }
+        catch (UriFormatException)
+        {
+            id = value.Trim();
+        }
+
+        if (id.Length > 256 || !GraphIdPattern.IsMatch(id))
+        {
+            ModelState.AddModelError(field, _l["IDs may only contain letters, digits and ! - _ ."]);
+        }
+
+        return id;
+    }
+
+    private static readonly Regex GraphIdPattern = new("^[A-Za-z0-9!_.-]+$", RegexOptions.Compiled);
 
     private async Task ReloadStatusAsync()
     {

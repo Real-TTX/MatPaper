@@ -702,4 +702,8 @@
   <data name="Root folder ID" xml:space="preserve"><value>Stammordner-ID</value></data>
   <data name="Optional. Leave empty for the whole My Drive; otherwise a Drive folder ID. Storage locations pick a sub-folder within it." xml:space="preserve"><value>Optional. Leer lassen für die gesamte Ablage („My Drive“); sonst eine Drive-Ordner-ID. Speicherorte wählen darin einen Unterordner.</value></data>
   <data name="Cloud drives sign in with OAuth. Choose OAuth below, then Save and press Connect." xml:space="preserve"><value>Cloud-Speicher melden sich per OAuth an. Unten OAuth wählen, dann speichern und auf Verbinden drücken.</value></data>
+  <data name="Drive ID" xml:space="preserve"><value>Laufwerks-ID</value></data>
+  <data name="Optional. Leave empty for your own OneDrive; set it to use another drive, e.g. a SharePoint document library." xml:space="preserve"><value>Optional. Leer lassen für das eigene OneDrive; sonst die ID eines anderen Laufwerks, z. B. einer SharePoint-Dokumentbibliothek.</value></data>
+  <data name="Optional. Leave empty for the root of the drive; otherwise a folder ID. Storage locations pick a sub-folder within it." xml:space="preserve"><value>Optional. Leer lassen für die oberste Ebene des Laufwerks; sonst eine Ordner-ID. Speicherorte wählen darin einen Unterordner.</value></data>
+  <data name="IDs may only contain letters, digits and ! - _ ." xml:space="preserve"><value>IDs dürfen nur Buchstaben, Ziffern und ! - _ . enthalten.</value></data>
 </root>

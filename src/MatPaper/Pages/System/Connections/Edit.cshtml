@@ -50,6 +50,13 @@
                       help='@L["Optional. Leave empty for the whole My Drive; otherwise a Drive folder ID. Storage locations pick a sub-folder within it."]' />
         </div>
 
+        <div data-show-when-field="Input.Kind" data-show-when-value="4">
+            <mp-field asp-for="Input.OneDriveDriveId" label='@L["Drive ID"]' autocomplete="off"
+                      help='@L["Optional. Leave empty for your own OneDrive; set it to use another drive, e.g. a SharePoint document library."]' />
+            <mp-field asp-for="Input.OneDriveRootItemId" label='@L["Root folder ID"]' autocomplete="off"
+                      help='@L["Optional. Leave empty for the root of the drive; otherwise a folder ID. Storage locations pick a sub-folder within it."]' />
+        </div>
+
         <div data-show-when-field="Input.Kind" data-show-when-value="3,4">
             <p class="form-help">@L["Cloud drives sign in with OAuth. Choose OAuth below, then Save and press Connect."]</p>
         </div>

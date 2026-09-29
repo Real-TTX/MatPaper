@@ -46,15 +46,11 @@ public sealed class ImportBrowser
     /// </summary>
     private const int NetworkBudgetSeconds = 30;
 
-    private readonly AppDbContext _db;
-    private readonly SecretProtector _secrets;
     private readonly ConnectionService _connections;
     private readonly ILogger<ImportBrowser> _logger;
 
-    public ImportBrowser(AppDbContext db, SecretProtector secrets, ConnectionService connections, ILogger<ImportBrowser> logger)
+    public ImportBrowser(ConnectionService connections, ILogger<ImportBrowser> logger)
     {
-        _db = db;
-        _secrets = secrets;
         _connections = connections;
         _logger = logger;
     }
@@ -357,10 +353,10 @@ public sealed class ImportBrowser
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var login = await ResolveSmbLoginAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
+        var login = await _connections.ResolveSmbAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
 
         return await Task.Run(() => SmbSession
-            .ListShares(settings.Host, login.Domain, login.User, login.Password)
+            .ListShares(login.Host, login.Domain, login.Username, login.Password)
             .Select(s => new BrowseEntry(s, s, null, true))
             .ToList(), ct).WaitAsync(TimeSpan.FromSeconds(NetworkBudgetSeconds), ct).ConfigureAwait(false);
     }
@@ -371,13 +367,12 @@ public sealed class ImportBrowser
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var login = await ResolveSmbLoginAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
+        var share = await _connections.ResolveSmbAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
         var pattern = settings.Pattern;
 
         return await Task.Run(() =>
         {
-            using var session = SmbSession.Connect(
-                new SmbConnection(settings.Host, settings.Share, login.Domain, login.User, login.Password));
+            using var session = SmbSession.Connect(share);
 
             var basePath = SmbSession.Norm(path);
             return session.ListDirectories(basePath)
@@ -402,12 +397,11 @@ public sealed class ImportBrowser
 
         try
         {
-            var login = await ResolveSmbLoginAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
+            var share = await _connections.ResolveSmbAsync(settings, plaintextPassword, ct).ConfigureAwait(false);
 
             return await Task.Run(() =>
             {
-                using var session = SmbSession.Connect(
-                    new SmbConnection(settings.Host, settings.Share, login.Domain, login.User, login.Password));
+                using var session = SmbSession.Connect(share);
 
                 // Stop walking the share once the scan cap is reached — a deep archive
                 // must not be enumerated in full just to show the first rows.
@@ -432,26 +426,6 @@ public sealed class ImportBrowser
         {
             return new PreviewResult(false, ex.Message, 0, Array.Empty<PreviewItem>(), 0);
         }
-    }
-
-    /// <summary>Saved credential first, exactly like <see cref="ImportRunner"/> resolves it.</summary>
-    private async Task<(string User, string Password, string? Domain)> ResolveSmbLoginAsync(
-        SmbImportSettings settings, string? plaintextPassword, CancellationToken ct)
-    {
-        if (settings.CredentialId is long id)
-        {
-            var cred = await LoadCredentialAsync(id, ct).ConfigureAwait(false);
-            if (cred is not null)
-            {
-                return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword), cred.Domain);
-            }
-        }
-
-        var password = string.IsNullOrEmpty(plaintextPassword)
-            ? _secrets.Unprotect(settings.ProtectedPassword)
-            : plaintextPassword;
-
-        return (settings.Username, password, settings.Domain);
     }
 
     // ----- Local filesystem -------------------------------------------------
@@ -563,12 +537,6 @@ public sealed class ImportBrowser
     }
 
     // ----- Shared -----------------------------------------------------------
-
-    private async Task<Credential?> LoadCredentialAsync(long id, CancellationToken ct)
-        => await _db.Credentials
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id && c.UpdateState != UpdateState.Deleted, ct)
-            .ConfigureAwait(false);
 
     private static string FormatBytes(long bytes)
     {

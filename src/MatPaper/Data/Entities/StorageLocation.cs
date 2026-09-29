@@ -3,10 +3,11 @@ using System.Text.Json;
 namespace MatPaper.Data;
 
 /// <summary>
-/// A place where filed documents live: either a local folder (<see cref="StorageKind.Local"/>,
-/// <see cref="RootPath"/>) or an SMB/CIFS share (<see cref="StorageKind.Smb"/>: host, share,
-/// optional folder, plus a saved <see cref="Credential"/>). Documents in the review inbox are
-/// NOT stored here yet — they stay in the local staging area until they are confirmed and filed.
+/// A place where filed documents live: a local folder (<see cref="StorageKind.Local"/>,
+/// <see cref="RootPath"/>), or a <see cref="Connection"/>-backed remote — an SMB/CIFS share
+/// (<see cref="StorageKind.Smb"/>) or a cloud drive (<see cref="StorageKind.Cloud"/>) — with an
+/// optional <see cref="BasePath"/> sub-folder. Documents in the review inbox are NOT stored here
+/// yet — they stay in the local staging area until they are confirmed and filed.
 /// </summary>
 public class StorageLocation : BaseEntity
 {
@@ -16,22 +17,9 @@ public class StorageLocation : BaseEntity
     /// <summary>Absolute folder path (local locations only).</summary>
     public string RootPath { get; set; } = string.Empty;
 
-    /// <summary>SMB host name or IP (SMB locations only).</summary>
-    public string? SmbHost { get; set; }
-
-    /// <summary>SMB share name (SMB locations only).</summary>
-    public string? SmbShare { get; set; }
-
-    /// <summary>Optional folder inside the share that acts as the root (SMB locations only).</summary>
-    public string? SmbPath { get; set; }
-
-    /// <summary>Saved credential used to sign in to the share (SMB locations only).</summary>
-    /// <remarks>Legacy: superseded by <see cref="ConnectionId"/>; kept until the cleanup migration.</remarks>
-    public long? CredentialId { get; set; }
-
     /// <summary>
-    /// The connection that provides this locations endpoint and sign-in (SMB, Drive, OneDrive).
-    /// Null for a local folder. Replaces the inline SMB host/share/credential fields.
+    /// The connection that provides this location's endpoint and sign-in (SMB, Drive, OneDrive).
+    /// Null for a local folder.
     /// </summary>
     public long? ConnectionId { get; set; }
 
@@ -75,8 +63,6 @@ public class StorageLocation : BaseEntity
     /// <summary>Error of the last storage search, or null when it succeeded.</summary>
     public string? LastScanError { get; set; }
 
-    public Credential? Credential { get; set; }
-
     public Connection? Connection { get; set; }
 
     public User? DefaultOwner { get; set; }
@@ -98,11 +84,9 @@ public class StorageLocation : BaseEntity
                 return RootPath;
             }
 
-            // Connection-backed locations keep host/share in the connection and the sub-folder
-            // in BasePath; older ones still carry the inline fields.
-            var host = SmbHost;
-            var share = SmbShare;
-            var sub = SmbPath;
+            // Host and share live in the connection, the sub-folder in BasePath.
+            string? host = null;
+            string? share = null;
             if (Connection is not null)
             {
                 try
@@ -113,14 +97,12 @@ public class StorageLocation : BaseEntity
                 }
                 catch (JsonException)
                 {
-                    // fall back to whatever the legacy fields hold
+                    // unreadable endpoint: show placeholders
                 }
-
-                sub = BasePath;
             }
 
             var root = "\\\\" + (string.IsNullOrWhiteSpace(host) ? "?" : host) + "\\" + (string.IsNullOrWhiteSpace(share) ? "?" : share);
-            var cleaned = (sub ?? string.Empty).Trim().Trim('/', '\\').Replace('/', '\\');
+            var cleaned = (BasePath ?? string.Empty).Trim().Trim('/', '\\').Replace('/', '\\');
             return cleaned.Length == 0 ? root : root + "\\" + cleaned;
         }
     }

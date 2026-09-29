@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MatPaper.Services;
 
-/// <summary>A mailbox endpoint plus the means to sign in, resolved from a connection or legacy settings.</summary>
+/// <summary>A mailbox endpoint plus the means to sign in, resolved from a connection or inline settings.</summary>
 public sealed record ResolvedMail(
     string Host,
     int Port,
@@ -15,14 +15,12 @@ public sealed record ResolvedMail(
     string? Password,
     Connection? Connection);
 
-/// <summary>An SMB endpoint plus the sub-folder that acts as the root.</summary>
-public sealed record ResolvedSmb(SmbConnection Connection, string? BasePath);
-
 /// <summary>
-/// Turns a saved <see cref="Connection"/> (or the legacy inline settings/credential) into a
-/// usable endpoint and applies its sign-in. Every mail auth site goes through
-/// <see cref="AuthenticateAsync"/>, so password and OAuth2 (XOAUTH2) live in one place and the
-/// OAuth branch is reused by the import runner, the mailbox browser and the connection test.
+/// Turns a saved <see cref="Connection"/> (or a task's inline settings) into a usable endpoint and
+/// applies its sign-in. Every mail auth site goes through <see cref="AuthenticateAsync"/>, so
+/// password and OAuth2 (XOAUTH2) live in one place and the OAuth branch is reused by the import
+/// runner, the mailbox browser and the connection test. Every SMB import site goes through
+/// <see cref="ResolveSmbAsync"/>.
 /// </summary>
 public sealed class ConnectionService
 {
@@ -52,7 +50,7 @@ public sealed class ConnectionService
 
     /// <summary>
     /// Resolves a mailbox: prefers the connection referenced by <see cref="MailImportSettings.ConnectionId"/>,
-    /// else falls back to the legacy inline host/login (or its referenced credential).
+    /// else falls back to the task's inline host/login ("enter manually" in the wizard).
     /// </summary>
     public async Task<ResolvedMail> ResolveMailAsync(MailImportSettings s, CancellationToken ct)
     {
@@ -69,46 +67,36 @@ public sealed class ConnectionService
                 connection.AuthMode, password, connection);
         }
 
-        // Legacy: inline settings, optionally a referenced credential.
-        var user = s.Username;
-        var secret = _secrets.Unprotect(s.ProtectedPassword);
-        var cred = await LoadCredentialAsync(s.CredentialId, ct).ConfigureAwait(false);
-        if (cred is not null)
-        {
-            user = cred.Username;
-            secret = _secrets.Unprotect(cred.ProtectedPassword);
-        }
-
-        return new ResolvedMail(s.Host, s.Port, s.UseSsl, user, ConnectionAuthMode.Password, secret, null);
+        return new ResolvedMail(
+            s.Host, s.Port, s.UseSsl, s.Username,
+            ConnectionAuthMode.Password, _secrets.Unprotect(s.ProtectedPassword), null);
     }
 
-    /// <summary>Resolves an SMB share: connection first, else legacy inline/credential.</summary>
-    public async Task<ResolvedSmb> ResolveSmbAsync(SmbImportSettings s, CancellationToken ct)
+    /// <summary>
+    /// Resolves the share an SMB import reads from. With a saved connection, host and sign-in come
+    /// from the connection; the share is the task's own (the wizard browses shares on the
+    /// connection's host), falling back to the connection's share. Without one, everything is the
+    /// task's inline settings, and <paramref name="plaintextPassword"/> — a password typed into the
+    /// wizard but not saved yet — overrides the stored one for a test or browse.
+    /// </summary>
+    public async Task<SmbConnection> ResolveSmbAsync(SmbImportSettings s, string? plaintextPassword, CancellationToken ct)
     {
         var connection = await LoadAsync(s.ConnectionId, ct).ConfigureAwait(false);
         if (connection is not null)
         {
             var endpoint = TaskSettingsJson.Read<SmbEndpoint>(connection.SettingsJson);
-            return new ResolvedSmb(
-                new SmbConnection(
-                    endpoint.Host, endpoint.Share, connection.Domain,
-                    connection.Username ?? string.Empty,
-                    _secrets.Unprotect(connection.ProtectedPassword)),
-                s.Path);
+            return new SmbConnection(
+                endpoint.Host,
+                string.IsNullOrWhiteSpace(s.Share) ? endpoint.Share : s.Share,
+                connection.Domain,
+                connection.Username ?? string.Empty,
+                _secrets.Unprotect(connection.ProtectedPassword));
         }
 
-        var user = s.Username;
-        var domain = s.Domain;
-        var secret = _secrets.Unprotect(s.ProtectedPassword);
-        var cred = await LoadCredentialAsync(s.CredentialId, ct).ConfigureAwait(false);
-        if (cred is not null)
-        {
-            user = cred.Username;
-            domain = cred.Domain;
-            secret = _secrets.Unprotect(cred.ProtectedPassword);
-        }
-
-        return new ResolvedSmb(new SmbConnection(s.Host, s.Share, domain, user, secret), s.Path);
+        var password = string.IsNullOrEmpty(plaintextPassword)
+            ? _secrets.Unprotect(s.ProtectedPassword)
+            : plaintextPassword;
+        return new SmbConnection(s.Host, s.Share, s.Domain, s.Username, password);
     }
 
     /// <summary>Signs the (already connected) MailKit client in, using password or XOAUTH2.</summary>
@@ -122,18 +110,5 @@ public sealed class ConnectionService
         }
 
         await client.AuthenticateAsync(mail.Username, mail.Password ?? string.Empty, ct).ConfigureAwait(false);
-    }
-
-    private async Task<Credential?> LoadCredentialAsync(long? credentialId, CancellationToken ct)
-    {
-        if (credentialId is not long id)
-        {
-            return null;
-        }
-
-        return await _db.Credentials
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id && c.UpdateState != UpdateState.Deleted, ct)
-            .ConfigureAwait(false);
     }
 }

@@ -159,11 +159,6 @@ public class EditModel : PageModel
             existing.RootPath = draft.RootPath;
             existing.ConnectionId = draft.ConnectionId;
             existing.BasePath = draft.BasePath;
-            // Clear the legacy inline SMB fields; the connection carries them now.
-            existing.SmbHost = null;
-            existing.SmbShare = null;
-            existing.SmbPath = null;
-            existing.CredentialId = null;
             existing.PathTemplate = draft.PathTemplate;
             existing.IsDefault = draft.IsDefault;
             existing.DefaultOwnerId = draft.DefaultOwnerId;

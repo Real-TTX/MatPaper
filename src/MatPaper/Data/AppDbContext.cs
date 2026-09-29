@@ -25,7 +25,6 @@ public class AppDbContext : DbContext
     public DbSet<ExportTask> ExportTasks => Set<ExportTask>();
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
-    public DbSet<Credential> Credentials => Set<Credential>();
     public DbSet<Connection> Connections => Set<Connection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -50,7 +49,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ExportTask>().ToTable("ExportTask");
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
         modelBuilder.Entity<ShareLink>().ToTable("ShareLink");
-        modelBuilder.Entity<Credential>().ToTable("Credential");
         modelBuilder.Entity<Connection>().ToTable("Connection");
 
         modelBuilder.Entity<User>()
@@ -122,12 +120,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ProjectShare>()
             .HasIndex(s => new { s.ProjectId, s.UserId })
             .IsUnique();
-
-        modelBuilder.Entity<StorageLocation>()
-            .HasOne(s => s.Credential)
-            .WithMany()
-            .HasForeignKey(s => s.CredentialId)
-            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<StorageLocation>()
             .HasOne(s => s.Connection)

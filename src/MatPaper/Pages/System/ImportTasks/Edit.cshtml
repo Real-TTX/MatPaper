@@ -111,14 +111,10 @@
         @* SMB: manual sign-in only when no saved connection is chosen. *@
         <div data-show-when-field="Input.Type" data-show-when-value="3">
             <div data-show-when-field="Input.SmbConnectionId" data-show-when-value="">
-                <mp-field asp-for="Input.CredentialId" kind="select" label='@L["Saved credential"]'
-                          asp-items="Model.CredentialOptions" />
-                <div data-show-when-field="Input.CredentialId" data-show-when-value="">
-                    <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
-                    <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
-                    <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]'
-                              placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
-                </div>
+                <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
+                <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
+                <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]'
+                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
             </div>
         </div>
 

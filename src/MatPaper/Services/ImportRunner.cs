@@ -19,7 +19,6 @@ public sealed class ImportRunner
 {
     private readonly AppDbContext _db;
     private readonly DocumentIngestService _ingest;
-    private readonly SecretProtector _secrets;
     private readonly HtmlToPdfConverter _htmlToPdf;
     private readonly ConnectionService _connections;
     private readonly ILogger<ImportRunner> _logger;
@@ -27,14 +26,12 @@ public sealed class ImportRunner
     public ImportRunner(
         AppDbContext db,
         DocumentIngestService ingest,
-        SecretProtector secrets,
         HtmlToPdfConverter htmlToPdf,
         ConnectionService connections,
         ILogger<ImportRunner> logger)
     {
         _db = db;
         _ingest = ingest;
-        _secrets = secrets;
         _htmlToPdf = htmlToPdf;
         _connections = connections;
         _logger = logger;
@@ -65,7 +62,8 @@ public sealed class ImportRunner
     private async Task<RunReport> RunSmbAsync(ImportTask task, long? ownerId, CancellationToken ct)
     {
         var settings = TaskSettingsJson.Read<SmbImportSettings>(task.SettingsJson);
-        if (string.IsNullOrWhiteSpace(settings.Host) || string.IsNullOrWhiteSpace(settings.Share))
+        var share = await _connections.ResolveSmbAsync(settings, null, ct).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(share.Host) || string.IsNullOrWhiteSpace(share.Share))
         {
             return new RunReport(false, 0, "SMB host or share not configured");
         }
@@ -76,17 +74,6 @@ public sealed class ImportRunner
             return new RunReport(false, 0, "No storage location configured (required when skipping the inbox)");
         }
 
-        var username = settings.Username;
-        var password = _secrets.Unprotect(settings.ProtectedPassword);
-        var domain = settings.Domain;
-        var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
-        if (cred is not null)
-        {
-            username = cred.Value.User;
-            password = cred.Value.Password;
-            domain = cred.Value.Domain;
-        }
-
         var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
         var log = new StringBuilder();
         var count = 0;
@@ -94,7 +81,7 @@ public sealed class ImportRunner
         SmbSession session;
         try
         {
-            session = SmbSession.Connect(new SmbConnection(settings.Host, settings.Share, domain, username, password));
+            session = SmbSession.Connect(share);
         }
         catch (Exception ex)
         {
@@ -185,53 +172,20 @@ public sealed class ImportRunner
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var username = settings.Username;
-        var domain = settings.Domain;
-        var password = string.IsNullOrEmpty(plaintextPasswordOverride)
-            ? _secrets.Unprotect(settings.ProtectedPassword)
-            : plaintextPasswordOverride;
-
-        if (string.IsNullOrEmpty(plaintextPasswordOverride))
-        {
-            var cred = await ResolveCredentialAsync(settings.CredentialId, ct).ConfigureAwait(false);
-            if (cred is not null)
-            {
-                username = cred.Value.User;
-                password = cred.Value.Password;
-                domain = cred.Value.Domain;
-            }
-        }
-
         try
         {
-            using var session = SmbSession.Connect(
-                new SmbConnection(settings.Host, settings.Share, domain, username, password));
+            var share = await _connections.ResolveSmbAsync(settings, plaintextPasswordOverride, ct).ConfigureAwait(false);
+            using var session = SmbSession.Connect(share);
             return (true, "Connected to the share.");
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             return (false, ex.Message);
         }
-    }
-
-    /// <summary>Resolves a saved credential (username/password/domain) if one is referenced.</summary>
-    private async Task<(string User, string Password, string? Domain)?> ResolveCredentialAsync(long? credentialId, CancellationToken ct)
-    {
-        if (credentialId is not long id)
-        {
-            return null;
-        }
-
-        var cred = await _db.Credentials
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id && c.UpdateState != UpdateState.Deleted, ct)
-            .ConfigureAwait(false);
-        if (cred is null)
-        {
-            return null;
-        }
-
-        return (cred.Username, _secrets.Unprotect(cred.ProtectedPassword), cred.Domain);
     }
 
     private async Task<long?> ResolveOwnerIdAsync(ImportTask task, long? preferredUserId, CancellationToken ct)

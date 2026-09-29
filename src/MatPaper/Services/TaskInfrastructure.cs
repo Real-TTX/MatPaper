@@ -51,11 +51,7 @@ public class MailImportSettings
     public string Username { get; set; } = "";
     public string ProtectedPassword { get; set; } = "";
 
-    /// <summary>Optional reference to a reusable Credential; overrides Username/ProtectedPassword when set.</summary>
-    /// <remarks>Legacy: superseded by <see cref="ConnectionId"/>.</remarks>
-    public long? CredentialId { get; set; }
-
-    /// <summary>The connection that provides the mailbox endpoint and sign-in.</summary>
+    /// <summary>The connection that provides the mailbox endpoint and sign-in; null = the inline fields above.</summary>
     public long? ConnectionId { get; set; }
 
     public string Folder { get; set; } = "INBOX";
@@ -109,11 +105,10 @@ public class SmbImportSettings
     public string Username { get; set; } = "";
     public string ProtectedPassword { get; set; } = "";
 
-    /// <summary>Optional reference to a reusable Credential; overrides Username/Domain/ProtectedPassword when set.</summary>
-    /// <remarks>Legacy: superseded by <see cref="ConnectionId"/>.</remarks>
-    public long? CredentialId { get; set; }
-
-    /// <summary>The connection that provides the share endpoint and sign-in.</summary>
+    /// <summary>
+    /// The connection that provides the host and sign-in; null = the inline fields above.
+    /// <see cref="Share"/> and <see cref="Path"/> stay per task either way.
+    /// </summary>
     public long? ConnectionId { get; set; }
 
     public string Pattern { get; set; } = "*";

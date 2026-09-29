@@ -64,7 +64,6 @@ public class EditModel : PageModel
     public List<SelectListItem> CorrespondentOptions { get; private set; } = new();
     public List<SelectListItem> DocumentTypeOptions { get; private set; } = new();
     public List<SelectListItem> ProjectOptions { get; private set; } = new();
-    public List<SelectListItem> CredentialOptions { get; private set; } = new();
     public List<SelectListItem> MailConnectionOptions { get; private set; } = new();
     public List<SelectListItem> SmbConnectionOptions { get; private set; } = new();
     public List<SelectListItem> UserOptions { get; private set; } = new();
@@ -122,13 +121,10 @@ public class EditModel : PageModel
         public string SmbPostAction { get; set; } = "none";
         public string? SmbMoveToPath { get; set; }
 
-        // Optional saved credential (mail + SMB); overrides the typed username/password.
-        public long? CredentialId { get; set; }
-
         /// <summary>Saved connection for a mail task; when set, its endpoint and sign-in win.</summary>
         public long? MailConnectionId { get; set; }
 
-        /// <summary>Saved connection for an SMB task; when set, its endpoint and sign-in win.</summary>
+        /// <summary>Saved connection for an SMB task; when set, its host and sign-in win (share/folder stay per task).</summary>
         public long? SmbConnectionId { get; set; }
 
         // Common metadata defaults.
@@ -460,8 +456,8 @@ public class EditModel : PageModel
             {
                 ModelState.AddModelError("Input.SmbShare", _l["Share name is required."]);
             }
-            // A saved credential supplies user/password, so the manual fields stay empty.
-            if (Input.SmbConnectionId is null && Input.CredentialId is null && string.IsNullOrWhiteSpace(Input.SmbUsername))
+            // A saved connection supplies user/password, so the manual fields stay empty.
+            if (Input.SmbConnectionId is null && string.IsNullOrWhiteSpace(Input.SmbUsername))
             {
                 ModelState.AddModelError("Input.SmbUsername", _l["Username is required."]);
             }
@@ -472,7 +468,7 @@ public class EditModel : PageModel
             {
                 ModelState.AddModelError("Input.Host", _l["Host is required."]);
             }
-            if (Input.MailConnectionId is null && Input.CredentialId is null && string.IsNullOrWhiteSpace(Input.Username))
+            if (Input.MailConnectionId is null && string.IsNullOrWhiteSpace(Input.Username))
             {
                 ModelState.AddModelError("Input.Username", _l["Username is required."]);
             }
@@ -535,7 +531,6 @@ public class EditModel : PageModel
             Domain = string.IsNullOrWhiteSpace(Input.SmbDomain) ? null : Input.SmbDomain.Trim(),
             Username = (Input.SmbUsername ?? string.Empty).Trim(),
             ProtectedPassword = protectedPassword,
-            CredentialId = Input.CredentialId,
             ConnectionId = Input.SmbConnectionId,
             Pattern = string.IsNullOrWhiteSpace(Input.SmbPattern) ? "*" : Input.SmbPattern.Trim(),
             Recursive = Input.SmbRecursive,
@@ -562,7 +557,6 @@ public class EditModel : PageModel
             UseSsl = Input.UseSsl,
             Username = (Input.Username ?? string.Empty).Trim(),
             ProtectedPassword = protectedPassword,
-            CredentialId = Input.CredentialId,
             ConnectionId = Input.MailConnectionId,
             Folder = string.IsNullOrWhiteSpace(Input.Folder) ? "INBOX" : Input.Folder.Trim(),
             FromFilter = !useFilters || string.IsNullOrWhiteSpace(Input.FromFilter) ? null : Input.FromFilter.Trim(),
@@ -620,7 +614,6 @@ public class EditModel : PageModel
             Input.SmbDomain = smb.Domain;
             Input.SmbUsername = smb.Username;
             Input.SmbPassword = null;
-            Input.CredentialId = smb.CredentialId;
             Input.SmbConnectionId = smb.ConnectionId;
             Input.SmbPattern = string.IsNullOrWhiteSpace(smb.Pattern) ? "*" : smb.Pattern;
             Input.SmbRecursive = smb.Recursive;
@@ -644,7 +637,6 @@ public class EditModel : PageModel
             Input.Username = mail.Username;
             // Never surface the stored password.
             Input.Password = null;
-            Input.CredentialId = mail.CredentialId;
             Input.MailConnectionId = mail.ConnectionId;
             Input.Folder = string.IsNullOrWhiteSpace(mail.Folder) ? "INBOX" : mail.Folder;
             Input.FromFilter = mail.FromFilter;
@@ -717,13 +709,6 @@ public class EditModel : PageModel
             .Select(u => new { u.Id, Name = u.DisplayName ?? u.Username })
             .ToListAsync();
 
-        var credentials = await _db.Credentials
-            .AsNoTracking()
-            .Where(c => c.UpdateState != UpdateState.Deleted)
-            .OrderBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name })
-            .ToListAsync();
-
         StorageLocationOptions = BuildOptions(
             storageLocations.Select(s => (s.Id, s.Name)), Input.StorageLocationId, "— default —");
         CorrespondentOptions = BuildOptions(
@@ -732,8 +717,6 @@ public class EditModel : PageModel
             documentTypes.Select(t => (t.Id, t.Name)), Input.DocumentTypeId, "— None —");
         ProjectOptions = BuildOptions(
             projects.Select(p => (p.Id, p.Name)), Input.ProjectId, "— None —");
-        CredentialOptions = BuildOptions(
-            credentials.Select(c => (c.Id, c.Name)), Input.CredentialId, "— None (use fields below) —");
 
         var connections = await _db.Connections
             .AsNoTracking()

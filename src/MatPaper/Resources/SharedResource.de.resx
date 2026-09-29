@@ -97,7 +97,6 @@
   <data name="90 days" xml:space="preserve"><value>90 Tage</value></data>
   <data name="A connection with that name already exists." xml:space="preserve"><value>Eine Verbindung mit diesem Namen gibt es bereits.</value></data>
   <data name="A correspondent with that name already exists." xml:space="preserve"><value>Ein Korrespondent mit diesem Namen existiert bereits.</value></data>
-  <data name="A credential with that name already exists." xml:space="preserve"><value>Zugangsdaten mit diesem Namen existieren bereits.</value></data>
   <data name="A document that is still in the staging area cannot be ignored — take it over or delete it." xml:space="preserve"><value>Ein Dokument im Zwischenspeicher kann nicht ignoriert werden — übernehmen oder löschen.</value></data>
   <data name="A dry run: nothing is imported, moved, deleted or marked as read." xml:space="preserve"><value>Testlauf: es wird nichts importiert, verschoben, gelöscht oder als gelesen markiert.</value></data>
   <data name="A filesystem import has no connection to test." xml:space="preserve"><value>Ein Dateisystem-Import hat keine Verbindung zum Testen.</value></data>
@@ -105,7 +104,6 @@
   <data name="A move target path is required for the move action." xml:space="preserve"><value>Für die Aktion „Verschieben“ ist ein Zielpfad erforderlich.</value></data>
   <data name="A NAS share, reached directly over the network." xml:space="preserve"><value>Eine NAS-Freigabe, direkt über das Netzwerk erreicht.</value></data>
   <data name="A password is required for a new connection." xml:space="preserve"><value>Für eine neue Verbindung ist ein Passwort nötig.</value></data>
-  <data name="A password is required for a new credential." xml:space="preserve"><value>Für neue Zugangsdaten ist ein Passwort erforderlich.</value></data>
   <data name="A password is required." xml:space="preserve"><value>Ein Passwort ist erforderlich.</value></data>
   <data name="A search for this location is already running." xml:space="preserve"><value>Für diesen Speicherort läuft bereits eine Suche.</value></data>
   <data name="A storage location is required." xml:space="preserve"><value>Ein Speicherort ist erforderlich.</value></data>
@@ -216,7 +214,6 @@
   <data name="Delete" xml:space="preserve"><value>Löschen</value></data>
   <data name="Delete this connection? Storage locations and import tasks using it will stop working." xml:space="preserve"><value>Diese Verbindung löschen? Speicherorte und Import-Regeln, die sie nutzen, funktionieren dann nicht mehr.</value></data>
   <data name="Delete this correspondent? This cannot be undone." xml:space="preserve"><value>Diesen Korrespondenten löschen? Das kann nicht rückgängig gemacht werden.</value></data>
-  <data name="Delete this credential? Import tasks using it will fall back to their own username/password." xml:space="preserve"><value>Diese Zugangsdaten löschen? Import-Regeln, die sie nutzen, greifen auf ihren eigenen Benutzernamen bzw. ihr eigenes Passwort zurück.</value></data>
   <data name="Delete this document type? This cannot be undone." xml:space="preserve"><value>Diesen Dokumenttyp löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this document? It is removed from the inbox together with its file." xml:space="preserve"><value>Dieses Dokument löschen? Es wird samt Datei aus dem Posteingang entfernt.</value></data>
   <data name="Delete this document? The file in the staging area is deleted as well." xml:space="preserve"><value>Dieses Dokument löschen? Die Datei im Zwischenspeicher wird mitgelöscht.</value></data>
@@ -254,7 +251,6 @@
   <data name="e.g. Finanzamt" xml:space="preserve"><value>z. B. Finanzamt</value></data>
   <data name="e.g. Gmail archive" xml:space="preserve"><value>z. B. Gmail-Archiv</value></data>
   <data name="e.g. Invoice" xml:space="preserve"><value>z. B. Rechnung</value></data>
-  <data name="e.g. NAS account" xml:space="preserve"><value>z. B. NAS-Konto</value></data>
   <data name="e.g. Nightly backup" xml:space="preserve"><value>z. B. Nächtliche Sicherung</value></data>
   <data name="e.g. Rechnung" xml:space="preserve"><value>z. B. Rechnung</value></data>
   <data name="e.g. scan-user" xml:space="preserve"><value>z. B. scan-user</value></data>
@@ -385,7 +381,6 @@
   <data name="New" xml:space="preserve"><value>Neu</value></data>
   <data name="New connection" xml:space="preserve"><value>Neue Verbindung</value></data>
   <data name="New correspondent" xml:space="preserve"><value>Neuer Korrespondent</value></data>
-  <data name="New credential" xml:space="preserve"><value>Neue Zugangsdaten</value></data>
   <data name="New document type" xml:space="preserve"><value>Neuer Dokumenttyp</value></data>
   <data name="New export task" xml:space="preserve"><value>Neue Sicherung</value></data>
   <data name="New import task" xml:space="preserve"><value>Neue Import-Regel</value></data>
@@ -398,7 +393,6 @@
   <data name="No access" xml:space="preserve"><value>Kein Zugriff</value></data>
   <data name="No connections yet." xml:space="preserve"><value>Noch keine Verbindungen.</value></data>
   <data name="No correspondents match your criteria." xml:space="preserve"><value>Keine Korrespondenten entsprechen den Kriterien.</value></data>
-  <data name="No credentials yet." xml:space="preserve"><value>Noch keine Zugangsdaten vorhanden.</value></data>
   <data name="No document matches your filter." xml:space="preserve"><value>Kein Dokument passt zum Filter.</value></data>
   <data name="No document types match your criteria." xml:space="preserve"><value>Keine Dokumenttypen entsprechen den Kriterien.</value></data>
   <data name="No documents match your criteria." xml:space="preserve"><value>Keine Dokumente entsprechen den Kriterien.</value></data>
@@ -499,7 +493,6 @@
   <data name="Results and logs of import/export runs" xml:space="preserve"><value>Ergebnisse und Protokolle der Import- und Sicherungsläufe</value></data>
   <data name="Retention" xml:space="preserve"><value>Aufbewahrung</value></data>
   <data name="Retention must be at least 1." xml:space="preserve"><value>Aufbewahrung muss mindestens 1 betragen.</value></data>
-  <data name="Reusable access credentials for import tasks (mailboxes and SMB/CIFS shares). Passwords are stored encrypted." xml:space="preserve"><value>Wiederverwendbare Zugangsdaten für Import-Regeln (Postfächer und SMB-/CIFS-Freigaben). Passwörter werden verschlüsselt gespeichert.</value></data>
   <data name="Reusable connections for mailboxes, shares and cloud drives" xml:space="preserve"><value>Wiederverwendbare Verbindungen für Postfächer, Freigaben und Cloud-Speicher</value></data>
   <data name="Reusable logins for mailbox and SMB imports" xml:space="preserve"><value>Wiederverwendbare Zugangsdaten für Postfach- und SMB-Importe</value></data>
   <data name="Review" xml:space="preserve"><value>Prüfung</value></data>
@@ -520,7 +513,6 @@
   <data name="Save the connection first, then a Connect button appears here." xml:space="preserve"><value>Zuerst speichern, dann erscheint hier ein Verbinden-Knopf.</value></data>
   <data name="Save the task before running it." xml:space="preserve"><value>Import-Regel vor dem Ausführen speichern.</value></data>
   <data name="Saved connection" xml:space="preserve"><value>Gespeicherte Verbindung</value></data>
-  <data name="Saved credential" xml:space="preserve"><value>Gespeicherte Zugangsdaten</value></data>
   <data name="Saved. Now press Connect to authorize the account." xml:space="preserve"><value>Gespeichert. Jetzt Verbinden drücken, um das Konto zu autorisieren.</value></data>
   <data name="Scan" xml:space="preserve"><value>Scannen</value></data>
   <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
@@ -592,9 +584,6 @@
   <data name="System / Connections" xml:space="preserve"><value>System / Verbindungen</value></data>
   <data name="System / Connections / Edit" xml:space="preserve"><value>System / Verbindungen / Bearbeiten</value></data>
   <data name="System / Connections / New" xml:space="preserve"><value>System / Verbindungen / Neu</value></data>
-  <data name="System / Credentials" xml:space="preserve"><value>System / Zugangsdaten</value></data>
-  <data name="System / Credentials / Edit" xml:space="preserve"><value>System / Zugangsdaten / Bearbeiten</value></data>
-  <data name="System / Credentials / New" xml:space="preserve"><value>System / Zugangsdaten / Neu</value></data>
   <data name="System / Document types" xml:space="preserve"><value>System / Dokumenttypen</value></data>
   <data name="System / Document types / Edit" xml:space="preserve"><value>System / Dokumenttypen / Bearbeiten</value></data>
   <data name="System / Document types / New" xml:space="preserve"><value>System / Dokumenttypen / Neu</value></data>

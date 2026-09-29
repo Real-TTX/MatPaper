@@ -619,9 +619,8 @@ public sealed class DocumentStorageService
 
     /// <summary>
     /// Builds the SMB connection for a location from its <see cref="Connection"/> (endpoint in
-    /// the connection's settings JSON, sign-in in its columns). Falls back to the legacy inline
-    /// SMB fields for a location the backfill has not reached yet. Returns the connection and
-    /// the sub-folder within the share that acts as this location's root.
+    /// the connection's settings JSON, sign-in in its columns). Returns the connection and the
+    /// sub-folder within the share that acts as this location's root.
     /// </summary>
     private async Task<(SmbConnection Connection, string? BasePath)> ResolveSmbConnectionAsync(StorageLocation loc, CancellationToken ct)
     {
@@ -636,50 +635,23 @@ public sealed class DocumentStorageService
                 .ConfigureAwait(false);
         }
 
-        if (connection is not null)
-        {
-            var endpoint = TaskSettingsJson.Read<SmbEndpoint>(connection.SettingsJson);
-            if (string.IsNullOrWhiteSpace(endpoint.Host) || string.IsNullOrWhiteSpace(endpoint.Share))
-            {
-                throw new InvalidOperationException($"Connection '{connection.Name}' has no SMB host or share.");
-            }
-
-            return (new SmbConnection(
-                endpoint.Host.Trim(),
-                endpoint.Share.Trim(),
-                connection.Domain,
-                connection.Username ?? string.Empty,
-                _secrets.Unprotect(connection.ProtectedPassword)), loc.BasePath);
-        }
-
-        // Legacy path: an SMB location the backfill has not converted yet.
-        if (string.IsNullOrWhiteSpace(loc.SmbHost) || string.IsNullOrWhiteSpace(loc.SmbShare))
+        if (connection is null)
         {
             throw new InvalidOperationException($"Storage location '{loc.Name}' has no SMB connection.");
         }
 
-        var credential = loc.Credential;
-        if (credential is null && loc.CredentialId is long credId)
+        var endpoint = TaskSettingsJson.Read<SmbEndpoint>(connection.SettingsJson);
+        if (string.IsNullOrWhiteSpace(endpoint.Host) || string.IsNullOrWhiteSpace(endpoint.Share))
         {
-            using var scope = _scopes.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            credential = await db.Credentials
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == credId && c.UpdateState != UpdateState.Deleted, ct)
-                .ConfigureAwait(false);
-        }
-
-        if (credential is null)
-        {
-            throw new InvalidOperationException($"Storage location '{loc.Name}' has no saved credential.");
+            throw new InvalidOperationException($"Connection '{connection.Name}' has no SMB host or share.");
         }
 
         return (new SmbConnection(
-            loc.SmbHost.Trim(),
-            loc.SmbShare.Trim(),
-            credential.Domain,
-            credential.Username,
-            _secrets.Unprotect(credential.ProtectedPassword)), loc.SmbPath);
+            endpoint.Host.Trim(),
+            endpoint.Share.Trim(),
+            connection.Domain,
+            connection.Username ?? string.Empty,
+            _secrets.Unprotect(connection.ProtectedPassword)), loc.BasePath);
     }
 
     // ----- Sanitizing -------------------------------------------------------

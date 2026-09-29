@@ -2,8 +2,8 @@ namespace MatPaper.Data;
 
 /// <summary>
 /// A whole, reusable connection: what kind of endpoint, where it is, and how to sign in.
-/// Replaces the old auth-only <see cref="Credential"/>. One connection ("my NAS", "my Gmail")
-/// is referenced by storage locations and import tasks alike, so it is defined and tested once.
+/// One connection ("my NAS", "my Gmail") is referenced by storage locations and import tasks
+/// alike, so it is defined and tested once.
 /// <para>
 /// The endpoint (host, share, port, root folder) lives in <see cref="SettingsJson"/> because
 /// its shape differs per <see cref="Kind"/> and grows with new kinds. The authentication,

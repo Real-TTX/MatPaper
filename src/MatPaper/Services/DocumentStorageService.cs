@@ -602,6 +602,15 @@ public sealed class DocumentStorageService
                 return new GoogleDriveBackend(http, accessToken, endpoint.RootFolderId, loc.BasePath);
             }
 
+            case ConnectionKind.OneDrive:
+            {
+                var accessToken = await _oauth.GetAccessTokenAsync(connection, ct).ConfigureAwait(false);
+                var endpoint = TaskSettingsJson.Read<OneDriveEndpoint>(connection.SettingsJson);
+                var http = _httpClients.CreateClient();
+                http.Timeout = TimeSpan.FromMinutes(5);
+                return new OneDriveBackend(http, accessToken, endpoint.DriveId, endpoint.RootItemId, loc.BasePath);
+            }
+
             default:
                 throw new InvalidOperationException(
                     $"Connection '{connection.Name}' is a {connection.Kind} connection and cannot back a storage location yet.");

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Collections.Concurrent;
 using MatPaper.Configuration;
 using MatPaper.Data;
+using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Services;
 
@@ -62,11 +63,16 @@ public sealed class OAuthService
     private readonly AppConfig _config;
     private readonly ILogger<OAuthService> _logger;
 
+    // Messages are rendered in the current UI culture: the request's language for the editor's
+    // Test/Browse and the wizard, the process default (English keys) for background runs.
+    private readonly IStringLocalizer<SharedResource> _l;
+
     // access token cache keyed by connection id; refreshed shortly before expiry.
     private readonly ConcurrentDictionary<long, OAuthTokens> _accessCache = new();
 
-    public OAuthService(IHttpClientFactory httpFactory, SecretProtector secrets, AppConfig config, ILogger<OAuthService> logger)
+    public OAuthService(IHttpClientFactory httpFactory, SecretProtector secrets, AppConfig config, ILogger<OAuthService> logger, IStringLocalizer<SharedResource> l)
     {
+        _l = l;
         _httpFactory = httpFactory;
         _secrets = secrets;
         _config = config;
@@ -149,7 +155,7 @@ public sealed class OAuthService
         var refreshToken = _secrets.Unprotect(c.ProtectedRefreshToken);
         if (string.IsNullOrEmpty(refreshToken))
         {
-            throw new OAuthReconnectRequiredException($"Connection '{c.Name}' is not connected. Open it and press Connect.");
+            throw new OAuthReconnectRequiredException(_l["Connection '{0}' is not connected. Open it and press Connect.", c.Name].Value);
         }
 
         var form = new Dictionary<string, string>
@@ -189,14 +195,14 @@ public sealed class OAuthService
             var error = payload?.Error ?? response.StatusCode.ToString();
             if (string.Equals(error, "invalid_grant", StringComparison.OrdinalIgnoreCase))
             {
-                throw new OAuthReconnectRequiredException(
+                throw new OAuthReconnectRequiredException(_l[
                     "The saved authorization is no longer valid. Re-connect the account. " +
                     "For Google, the Cloud project must be published as \"In production\", " +
-                    "otherwise the authorization expires after seven days.");
+                    "otherwise the authorization expires after seven days."].Value);
             }
 
             _logger.LogWarning("OAuth token request to {Endpoint} failed: {Error}", endpoint, error);
-            throw new InvalidOperationException($"OAuth token request failed: {error}");
+            throw new InvalidOperationException(_l["OAuth token request failed: {0}", error].Value);
         }
 
         var expires = DateTime.UtcNow.AddSeconds(payload.ExpiresIn > 0 ? payload.ExpiresIn : 3600);

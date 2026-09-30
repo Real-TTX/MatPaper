@@ -136,6 +136,28 @@ internal sealed class OneDriveBackend : IStorageBackend
         }
     }
 
+    public async Task<IReadOnlyList<string>> ListFoldersAsync(string relativeDir, CancellationToken ct)
+    {
+        var names = new List<string>();
+        var url = ChildrenUrl(Qualify(relativeDir), "$select=name,folder&$top=200");
+        while (url is not null)
+        {
+            ct.ThrowIfCancellationRequested();
+            using var response = await GetAsync(url, ct).ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return Array.Empty<string>(); // folder does not exist yet
+            }
+            await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
+
+            var page = await response.Content.ReadFromJsonSafeAsync<ChildrenResponse>(ct).ConfigureAwait(false) ?? new ChildrenResponse();
+            names.AddRange((page.Value ?? new List<DriveItem>()).Where(i => i.IsFolder && i.Name.Length > 0).Select(i => i.Name));
+            url = page.NextLink;
+        }
+
+        return names;
+    }
+
     public async Task<bool> ExistsAsync(string relativePath, CancellationToken ct)
     {
         var qualified = Qualify(relativePath);

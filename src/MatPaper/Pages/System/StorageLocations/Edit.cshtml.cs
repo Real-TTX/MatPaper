@@ -15,14 +15,16 @@ public class EditModel : PageModel
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
     private readonly DocumentStorageService _storage;
+    private readonly ImportBrowser _browser;
     private readonly ILogger<EditModel> _logger;
     private readonly IStringLocalizer<SharedResource> _l;
 
-    public EditModel(AppDbContext db, CurrentUser currentUser, DocumentStorageService storage, ILogger<EditModel> logger, IStringLocalizer<SharedResource> l)
+    public EditModel(AppDbContext db, CurrentUser currentUser, DocumentStorageService storage, ImportBrowser browser, ILogger<EditModel> logger, IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
         _storage = storage;
+        _browser = browser;
         _logger = logger;
         _l = l;
     }
@@ -241,6 +243,60 @@ public class EditModel : PageModel
         }
 
         return Page();
+    }
+
+    /// <summary>
+    /// Lists subfolders for the folder pickers (JSON, read-only): the container's folders for a
+    /// local location; otherwise the folders of the chosen SMB/cloud connection, browsed from the
+    /// connection's root because the base path is exactly what is being picked.
+    /// </summary>
+    public async Task<IActionResult> OnPostBrowseAsync(string scope, string? path, CancellationToken ct)
+    {
+        try
+        {
+            if (scope == "local-folders")
+            {
+                var local = await _browser.ListLocalFoldersAsync(path, pattern: null, ct);
+                return new JsonResult(new
+                {
+                    ok = true,
+                    entries = local.Select(e => new { path = e.Path, name = e.Name, count = e.ItemCount, hasChildren = e.HasChildren })
+                });
+            }
+
+            var draft = BuildDraft();
+            if (draft.Kind == StorageKind.Local || draft.ConnectionId is not long connectionId)
+            {
+                return new JsonResult(new { ok = false, error = _l["Choose a connection."].Value });
+            }
+
+            draft.Connection = await _db.Connections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == connectionId && c.UpdateState != UpdateState.Deleted, ct);
+            if (draft.Connection is null)
+            {
+                return new JsonResult(new { ok = false, error = _l["Choose a connection."].Value });
+            }
+            draft.BasePath = null;
+
+            var dir = (path ?? string.Empty).Replace('\\', '/').Trim('/');
+            var names = await _storage.ListFoldersAsync(draft, dir, ct);
+            return new JsonResult(new
+            {
+                ok = true,
+                // Whether a folder has children would cost one more call per entry, so the
+                // picker offers "open" everywhere and shows "nothing found" when it is empty.
+                entries = names.Select(n => new { path = dir.Length == 0 ? n : dir + "/" + n, name = n, count = (int?)null, hasChildren = true })
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { ok = false, error = ex.Message });
+        }
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()

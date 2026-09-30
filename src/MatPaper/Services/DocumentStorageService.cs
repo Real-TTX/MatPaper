@@ -405,6 +405,25 @@ public sealed class DocumentStorageService
     }
 
     /// <summary>
+    /// Subfolder names of <paramref name="relativeDir"/> within <paramref name="loc"/>, sorted, for
+    /// the folder picker. Pass a location without a base path to browse from the connection's root.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> ListFoldersAsync(StorageLocation loc, string? relativeDir, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(loc);
+
+        var dir = (relativeDir ?? string.Empty).Replace('\\', '/').Trim('/');
+        if (dir.Split('/', StringSplitOptions.RemoveEmptyEntries).Any(s => s is "." or ".."))
+        {
+            throw new InvalidOperationException("The folder path must not contain '.' or '..'.");
+        }
+
+        var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
+        var names = await backend.ListFoldersAsync(dir, ct).ConfigureAwait(false);
+        return names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>
     /// SHA-256 for many files of one location in a single batch (remote backends reuse one
     /// connection for the whole run). Unreadable files are omitted from the result.
     /// </summary>
@@ -731,6 +750,11 @@ internal interface IStorageBackend
     Task<Stream> OpenReadAsync(string relativePath, CancellationToken ct);
     Task DeleteAsync(string relativePath, bool cleanupEmptyDirectories, CancellationToken ct);
     Task<IReadOnlyList<StorageEntry>> ListFilesAsync(CancellationToken ct);
+
+    /// <summary>Names of the immediate subfolders of <paramref name="relativeDir"/> (one level, for the folder picker).
+    /// A folder that does not exist yet yields an empty list.</summary>
+    Task<IReadOnlyList<string>> ListFoldersAsync(string relativeDir, CancellationToken ct);
+
     Task<IReadOnlyDictionary<string, string>> ComputeHashesAsync(IReadOnlyCollection<string> relativePaths, CancellationToken ct);
     Task TestAsync(CancellationToken ct);
 }
@@ -880,6 +904,22 @@ internal sealed class LocalBackend : IStorageBackend
         }
 
         return Task.FromResult<IReadOnlyList<StorageEntry>>(entries);
+    }
+
+    public Task<IReadOnlyList<string>> ListFoldersAsync(string relativeDir, CancellationToken ct)
+    {
+        var dir = ResolveWithinRoot(_root, relativeDir);
+        if (!Directory.Exists(dir))
+        {
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+        }
+
+        var names = Directory.EnumerateDirectories(dir)
+            .Select(Path.GetFileName)
+            .Where(name => !string.IsNullOrEmpty(name) && !name.StartsWith('.'))
+            .Select(name => name!)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<string>>(names);
     }
 
     public Task<IReadOnlyDictionary<string, string>> ComputeHashesAsync(IReadOnlyCollection<string> relativePaths, CancellationToken ct)
@@ -1061,6 +1101,19 @@ internal sealed class SmbBackend : IStorageBackend
         return session.ListEntries(_base, null, recursive: true)
             .Select(e => new StorageEntry(ToRelative(e.Path), e.Size, e.ModifiedUtc))
             .ToList();
+    }, ct);
+
+    public Task<IReadOnlyList<string>> ListFoldersAsync(string relativeDir, CancellationToken ct) => Task.Run<IReadOnlyList<string>>(() =>
+    {
+        using var session = SmbSession.Connect(_connection);
+        try
+        {
+            return session.ListDirectories(Full(relativeDir));
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return Array.Empty<string>();
+        }
     }, ct);
 
     /// <summary>One session for the whole batch — a scan must not re-handshake per file.</summary>

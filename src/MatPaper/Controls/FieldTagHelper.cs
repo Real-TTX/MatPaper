@@ -16,6 +16,8 @@ namespace MatPaper.Controls;
 /// For select, pass <c>asp-items</c> (a SelectList) or nested &lt;option&gt; children.
 /// Optional dependent visibility: <c>show-when-field</c> + <c>show-when-value</c> emit
 /// data-show-when-field / data-show-when-value on the wrapper (handled by app.js).
+/// Optional folder picker (text kind): <c>browse</c> names the scope and <c>browse-label</c> the
+/// button text; the button opens the shared picker dialog (browse-dialog.js) for this input.
 /// </summary>
 [HtmlTargetElement("mp-field", Attributes = ForAttributeName)]
 public sealed class FieldTagHelper : TagHelper
@@ -63,6 +65,18 @@ public sealed class FieldTagHelper : TagHelper
     /// <summary>Comma-separated controller values that reveal this field.</summary>
     [HtmlAttributeName("show-when-value")]
     public string? ShowWhenValue { get; set; }
+
+    /// <summary>Picker scope sent to the form's data-browse-url handler; adds a browse button (text kind only).</summary>
+    [HtmlAttributeName("browse")]
+    public string? Browse { get; set; }
+
+    /// <summary>Text of the browse button.</summary>
+    [HtmlAttributeName("browse-label")]
+    public string? BrowseLabel { get; set; }
+
+    /// <summary>Optional top of the picker tree, e.g. "/" for container folders.</summary>
+    [HtmlAttributeName("browse-root")]
+    public string? BrowseRoot { get; set; }
 
     [HtmlAttributeNotBound]
     [ViewContext]
@@ -127,8 +141,15 @@ public sealed class FieldTagHelper : TagHelper
                 inputAttrs["type"] = MapInputType(kind);
                 // Pass the model value explicitly: GenerateTextBox does NOT fall back to
                 // ModelExplorer.Model when value is null, so edit forms would render empty.
-                output.Content.AppendHtml(
-                    _generator.GenerateTextBox(ViewContext, For.ModelExplorer, For.Name, value: For.Model, format: null, inputAttrs));
+                TagBuilder textBox = _generator.GenerateTextBox(ViewContext, For.ModelExplorer, For.Name, value: For.Model, format: null, inputAttrs);
+                if (string.IsNullOrEmpty(Browse))
+                {
+                    output.Content.AppendHtml(textBox);
+                }
+                else
+                {
+                    AppendWithBrowseButton(output, textBox);
+                }
                 break;
         }
 
@@ -156,6 +177,30 @@ public sealed class FieldTagHelper : TagHelper
             $"<select class=\"form-control\" id=\"{HtmlEncoder.Default.Encode(id)}\" name=\"{HtmlEncoder.Default.Encode(fullName)}\">");
         output.Content.AppendHtml(optionsHtml);
         output.Content.AppendHtml("</select>");
+    }
+
+    /// <summary>Wraps the input with a browse button that targets it (see browse-dialog.js).</summary>
+    private void AppendWithBrowseButton(TagHelperOutput output, TagBuilder textBox)
+    {
+        string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
+        string id = TagBuilder.CreateSanitizedId(fullName, "_");
+
+        var button = new TagBuilder("button");
+        button.AddCssClass("btn");
+        button.AddCssClass("btn--secondary");
+        button.Attributes["type"] = "button";
+        button.Attributes["data-browse"] = Browse!;
+        button.Attributes["data-browse-target"] = id;
+        if (!string.IsNullOrEmpty(BrowseRoot))
+        {
+            button.Attributes["data-browse-root"] = BrowseRoot;
+        }
+        button.InnerHtml.Append(string.IsNullOrEmpty(BrowseLabel) ? "…" : BrowseLabel);
+
+        output.Content.AppendHtml("<div class=\"input-with-action\">");
+        output.Content.AppendHtml(textBox);
+        output.Content.AppendHtml(button);
+        output.Content.AppendHtml("</div>");
     }
 
     private Dictionary<string, object> BaseAttributes()

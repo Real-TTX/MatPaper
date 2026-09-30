@@ -143,7 +143,8 @@
                 <label asp-for="Input.SourcePath">@L["Folder"]</label>
                 <div class="input-with-action">
                     <input class="form-control" asp-for="Input.SourcePath" placeholder="/mnt/scan" />
-                    <button class="btn btn--secondary" type="button" data-browse="local-folders">@L["Browse…"]</button>
+                    <button class="btn btn--secondary" type="button" data-browse="local-folders"
+                            data-browse-target="Input_SourcePath" data-browse-root="/">@L["Browse…"]</button>
                 </div>
                 <span class="field-error" asp-validation-for="Input.SourcePath"></span>
             </div>
@@ -156,7 +157,8 @@
                 <label asp-for="Input.SmbShare">@L["SMB share"]</label>
                 <div class="input-with-action">
                     <input class="form-control" asp-for="Input.SmbShare" placeholder="documents" />
-                    <button class="btn btn--secondary" type="button" data-browse="smb-shares">@L["List shares"]</button>
+                    <button class="btn btn--secondary" type="button" data-browse="smb-shares"
+                            data-browse-target="Input_SmbShare" data-browse-flat data-browse-title='@L["Shares"]'>@L["List shares"]</button>
                 </div>
                 <span class="field-error" asp-validation-for="Input.SmbShare"></span>
             </div>
@@ -164,7 +166,8 @@
                 <label asp-for="Input.SmbPath">@L["Folder in share"]</label>
                 <div class="input-with-action">
                     <input class="form-control" asp-for="Input.SmbPath" placeholder="inbox/scans" />
-                    <button class="btn btn--secondary" type="button" data-browse="smb-folders">@L["Browse…"]</button>
+                    <button class="btn btn--secondary" type="button" data-browse="smb-folders"
+                            data-browse-target="Input_SmbPath">@L["Browse…"]</button>
                 </div>
                 <span class="field-error" asp-validation-for="Input.SmbPath"></span>
             </div>
@@ -177,7 +180,8 @@
                 <label asp-for="Input.Folder">@L["Mailbox folder"]</label>
                 <div class="input-with-action">
                     <input class="form-control" asp-for="Input.Folder" placeholder="INBOX" />
-                    <button class="btn btn--secondary" type="button" data-browse="mail-folders">@L["Show folders…"]</button>
+                    <button class="btn btn--secondary" type="button" data-browse="mail-folders"
+                            data-browse-target="Input_Folder" data-browse-flat>@L["Show folders…"]</button>
                 </div>
                 <span class="field-error" asp-validation-for="Input.Folder"></span>
             </div>
@@ -245,7 +249,7 @@
                 <div class="input-with-action">
                     <input class="form-control" asp-for="Input.MailMoveToFolder" placeholder="Archive/Imported" />
                     <button class="btn btn--secondary" type="button" data-browse="mail-folders"
-                            data-browse-target="Input_MailMoveToFolder">@L["Show folders…"]</button>
+                            data-browse-target="Input_MailMoveToFolder" data-browse-flat>@L["Show folders…"]</button>
                 </div>
             </div>
         </div>
@@ -319,18 +323,9 @@
 </form>
 
 @* Source picker, filled from the Browse handler. *@
-<dialog class="browse-dialog" id="browse-dialog">
-    <div class="browse-dialog__header">
-        <strong class="browse-dialog__title"></strong>
-        <button type="button" class="icon-btn browse-dialog__close" aria-label='@L["Close"]'>✕</button>
-    </div>
-    <div class="browse-dialog__path"></div>
-    <ul class="browse-dialog__list"></ul>
-    <div class="browse-dialog__footer">
-        <button type="button" class="btn btn--primary browse-dialog__use">@L["Use this folder"]</button>
-    </div>
-</dialog>
+<partial name="_BrowseDialog" />
 
 @section Scripts {
+    <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
     <script src="~/js/import-wizard.js" asp-append-version="true"></script>
 }

@@ -1,0 +1,13 @@
+@* Folder/share picker, driven by browse-dialog.js. Render once per page next to a form that
+   has data-browse-url, and load ~/js/browse-dialog.js in the page's Scripts section. *@
+<dialog class="browse-dialog" id="browse-dialog">
+    <div class="browse-dialog__header">
+        <strong class="browse-dialog__title"></strong>
+        <button type="button" class="icon-btn browse-dialog__close" aria-label='@L["Close"]'>✕</button>
+    </div>
+    <div class="browse-dialog__path"></div>
+    <ul class="browse-dialog__list"></ul>
+    <div class="browse-dialog__footer">
+        <button type="button" class="btn btn--primary browse-dialog__use">@L["Use this folder"]</button>
+    </div>
+</dialog>

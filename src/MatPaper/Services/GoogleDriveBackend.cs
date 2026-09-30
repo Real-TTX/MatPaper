@@ -92,6 +92,32 @@ internal sealed class GoogleDriveBackend : IStorageBackend
         while (pageToken is not null);
     }
 
+    public async Task<IReadOnlyList<string>> ListFoldersAsync(string relativeDir, CancellationToken ct)
+    {
+        var dir = (relativeDir ?? string.Empty).Replace('\\', '/').Trim('/');
+        var folderId = await ResolveFolderIdAsync(Qualify(dir), create: false, ct).ConfigureAwait(false);
+        if (folderId is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var names = new List<string>();
+        string? pageToken = null;
+        do
+        {
+            ct.ThrowIfCancellationRequested();
+            var q = $"'{folderId}' in parents and mimeType = '{FolderMime}' and trashed = false";
+            var url = $"{ApiBase}/files?q={Uri.EscapeDataString(q)}&fields=nextPageToken,files(name)&pageSize=1000"
+                + (pageToken is null ? "" : $"&pageToken={Uri.EscapeDataString(pageToken)}");
+            var list = await GetJsonAsync<FileList>(url, ct).ConfigureAwait(false);
+            names.AddRange((list.Files ?? new List<DriveFile>()).Select(f => f.Name).Where(n => n.Length > 0));
+            pageToken = list.NextPageToken;
+        }
+        while (pageToken is not null);
+
+        return names;
+    }
+
     public async Task<bool> ExistsAsync(string relativePath, CancellationToken ct)
         => (await FindFileAsync(relativePath, ct).ConfigureAwait(false)) is not null;
 

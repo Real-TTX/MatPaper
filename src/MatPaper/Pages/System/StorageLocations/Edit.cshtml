@@ -5,7 +5,10 @@
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
 }
 
-<form class="form" method="post">
+<form class="form" method="post"
+      data-browse-url="/System/StorageLocations/Edit?handler=Browse"
+      data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]' data-t-folders='@L["Folders"]'
+      data-t-up='@L["One level up"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
     <input type="hidden" asp-for="Id" />
 
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
@@ -28,18 +31,21 @@
         <h2 class="form-section__title">@L["Location"]</h2>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="0">
-            <mp-field asp-for="Input.RootPath" label='@L["Folder"]' placeholder="/storage" />
+            <mp-field asp-for="Input.RootPath" label='@L["Folder"]' placeholder="/storage"
+                      browse="local-folders" browse-root="/" browse-label='@L["Browse…"]' />
         </div>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="1">
             <mp-field asp-for="Input.ConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.SmbConnectionOptions" />
-            <mp-field asp-for="Input.BasePath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]' />
+            <mp-field asp-for="Input.BasePath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]'
+                      browse="remote-folders" browse-label='@L["Browse…"]' />
             <p class="form-help">@L["Manage SMB connections under System, Connections."]</p>
         </div>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="2">
             <mp-field asp-for="Input.CloudConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.CloudConnectionOptions" />
-            <mp-field asp-for="Input.CloudBasePath" label='@L["Folder in drive"]' placeholder='@L["MatPaper/Archive (optional)"]' />
+            <mp-field asp-for="Input.CloudBasePath" label='@L["Folder in drive"]' placeholder='@L["MatPaper/Archive (optional)"]'
+                      browse="remote-folders" browse-label='@L["Browse…"]' />
             <p class="form-help">@L["Manage cloud connections under System, Connections."]</p>
         </div>
 
@@ -75,3 +81,10 @@
         }
     </mp-button-row>
 </form>
+
+@* Folder picker for the three folder fields, filled from the Browse handler. *@
+<partial name="_BrowseDialog" />
+
+@section Scripts {
+    <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
+}

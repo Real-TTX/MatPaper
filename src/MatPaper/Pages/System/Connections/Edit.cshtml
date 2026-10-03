@@ -87,7 +87,8 @@
             @if (string.IsNullOrEmpty(Model.RedirectUri))
             {
                 <p class="notice notice--warn" style="margin:0">
-                    @L["Set the public base URL in /data/config/app.json (or MATPAPER_PUBLIC_URL) so a redirect URI can be shown."]
+                    @L["Set the public address under System, Settings so a redirect URI can be shown."]
+                    <a href="/System/Settings">@L["Open settings"]</a>
                 </p>
             }
             else

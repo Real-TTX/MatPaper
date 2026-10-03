@@ -172,7 +172,6 @@
   <data name="Client secret" xml:space="preserve"><value>Client-Geheimnis</value></data>
   <data name="Close" xml:space="preserve"><value>Schließen</value></data>
   <data name="Colour" xml:space="preserve"><value>Farbe</value></data>
-  <data name="Coming soon" xml:space="preserve"><value>Demnächst verfügbar</value></data>
   <data name="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too." xml:space="preserve"><value>Kommagetrennte alternative Namen oder ein regulärer Ausdruck, der gegen den Text eines Dokuments geprüft wird, um diesen Korrespondenten automatisch zuzuordnen. Der eigene Name des Korrespondenten wird immer mitgeprüft.</value></data>
   <data name="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this type — e.g. invoice, faktura." xml:space="preserve"><value>Kommagetrennte alternative Namen oder ein regulärer Ausdruck; wird mit dem Text eines Dokuments abgeglichen, um diesen Typ automatisch zuzuweisen — z. B. invoice, faktura.</value></data>
   <data name="Comma-separated extensions; empty means all files." xml:space="preserve"><value>Endungen mit Komma getrennt; leer bedeutet alle Dateien.</value></data>
@@ -531,8 +530,6 @@
   <data name="Select all on this page" xml:space="preserve"><value>Alle auf dieser Seite auswählen</value></data>
   <data name="Select at most {0} documents at once." xml:space="preserve"><value>Höchstens {0} Dokumente auf einmal auswählen.</value></data>
   <data name="Sender regex (advanced)" xml:space="preserve"><value>Absender-Regex (erweitert)</value></data>
-  <data name="Set the public base URL in /data/config/app.json (or MATPAPER_PUBLIC_URL) so a redirect URI can be shown." xml:space="preserve"><value>Die öffentliche Basis-URL in /data/config/app.json (oder MATPAPER_PUBLIC_URL) setzen, damit eine Weiterleitungs-URI angezeigt werden kann.</value></data>
-  <data name="Set the public base URL in the configuration before connecting." xml:space="preserve"><value>Vor dem Verbinden die öffentliche Basis-URL in der Konfiguration setzen.</value></data>
   <data name="Settings" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="Share" xml:space="preserve"><value>Freigeben</value></data>
   <data name="Share is required." xml:space="preserve"><value>Freigabe ist erforderlich.</value></data>
@@ -709,4 +706,31 @@
   <data name="Connection '{0}' is not connected. Open it and press Connect." xml:space="preserve"><value>Die Verbindung „{0}“ ist noch nicht verbunden. Verbindung öffnen und auf „Verbinden“ drücken.</value></data>
   <data name="The saved authorization is no longer valid. Re-connect the account. For Google, the Cloud project must be published as &quot;In production&quot;, otherwise the authorization expires after seven days." xml:space="preserve"><value>Die gespeicherte Autorisierung ist nicht mehr gültig. Konto neu verbinden. Bei Google muss das Cloud-Projekt auf „In production“ veröffentlicht sein, sonst läuft die Autorisierung nach sieben Tagen ab.</value></data>
   <data name="OAuth token request failed: {0}" xml:space="preserve"><value>OAuth-Token-Anfrage fehlgeschlagen: {0}</value></data>
+  <data name="System / Settings" xml:space="preserve"><value>System / Einstellungen</value></data>
+  <data name="Public address" xml:space="preserve"><value>Öffentliche Adresse</value></data>
+  <data name="Set by the environment variable {0}; change it there." xml:space="preserve"><value>Gesetzt über die Umgebungsvariable {0}; dort ändern.</value></data>
+  <data name="The address this instance is reachable under from the outside. Needed to sign in with Google and Microsoft (OAuth)." xml:space="preserve"><value>Die Adresse, unter der diese Instanz von außen erreichbar ist. Nötig für die Anmeldung bei Google und Microsoft (OAuth).</value></data>
+  <data name="Appears as soon as a public address is set." xml:space="preserve"><value>Erscheint, sobald eine öffentliche Adresse gesetzt ist.</value></data>
+  <data name="Display" xml:space="preserve"><value>Anzeige</value></data>
+  <data name="Time zone" xml:space="preserve"><value>Zeitzone</value></data>
+  <data name="Used for every date and time shown and for the schedules of tasks and storage searches." xml:space="preserve"><value>Gilt für alle angezeigten Daten und Uhrzeiten und für die Zeitpläne von Aufgaben und Speichersuchen.</value></data>
+  <data name="Default language" xml:space="preserve"><value>Standardsprache</value></data>
+  <data name="Applies to visitors who have not picked a language and whose browser prefers neither German nor English." xml:space="preserve"><value>Gilt für Besucher, die keine Sprache gewählt haben und deren Browser weder Deutsch noch Englisch bevorzugt.</value></data>
+  <data name="About this instance" xml:space="preserve"><value>Über diese Instanz</value></data>
+  <data name="Current time" xml:space="preserve"><value>Aktuelle Uhrzeit</value></data>
+  <data name="Data folder" xml:space="preserve"><value>Datenordner</value></data>
+  <data name="Configuration file" xml:space="preserve"><value>Konfigurationsdatei</value></data>
+  <data name="Inbox folder" xml:space="preserve"><value>Eingangsordner</value></data>
+  <data name="set by {0}" xml:space="preserve"><value>gesetzt über {0}</value></data>
+  <data name="Database" xml:space="preserve"><value>Datenbank</value></data>
+  <data name="These values are read at startup. Change them in the configuration file or via environment variables, then restart the container." xml:space="preserve"><value>Diese Werte werden beim Start gelesen. Zum Ändern die Konfigurationsdatei oder Umgebungsvariablen anpassen und den Container neu starten.</value></data>
+  <data name="Choose a time zone from the list." xml:space="preserve"><value>Bitte eine Zeitzone aus der Liste wählen.</value></data>
+  <data name="Choose a language from the list." xml:space="preserve"><value>Bitte eine Sprache aus der Liste wählen.</value></data>
+  <data name="The settings could not be saved: {0} is not writable. Nothing was changed." xml:space="preserve"><value>Die Einstellungen konnten nicht gespeichert werden: {0} ist nicht beschreibbar. Es wurde nichts geändert.</value></data>
+  <data name="Settings saved." xml:space="preserve"><value>Einstellungen gespeichert.</value></data>
+  <data name="Enter the full address starting with http:// or https://, without ? or #." xml:space="preserve"><value>Bitte die vollständige Adresse mit http:// oder https:// angeben, ohne ? und #.</value></data>
+  <data name="Public address, time zone and language" xml:space="preserve"><value>Öffentliche Adresse, Zeitzone und Sprache</value></data>
+  <data name="Set the public address under System, Settings so a redirect URI can be shown." xml:space="preserve"><value>Unter System, Einstellungen die öffentliche Adresse setzen, damit eine Weiterleitungs-URI angezeigt werden kann.</value></data>
+  <data name="Open settings" xml:space="preserve"><value>Einstellungen öffnen</value></data>
+  <data name="Set the public address under System, Settings before connecting." xml:space="preserve"><value>Vor dem Verbinden unter System, Einstellungen die öffentliche Adresse setzen.</value></data>
 </root>

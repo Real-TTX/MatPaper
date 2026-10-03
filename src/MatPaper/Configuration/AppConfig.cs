@@ -87,12 +87,41 @@ public static class AppConfigLoader
         WriteIndented = true
     };
 
+    private static readonly object SaveLock = new();
+
+    /// <summary>Full path of the config file inside <paramref name="dataDir"/>.</summary>
+    public static string ConfigPath(string dataDir) => Path.Combine(dataDir, "config", "app.json");
+
+    /// <summary>
+    /// Writes <paramref name="config"/> to app.json in the same format <see cref="Load"/> produces.
+    /// The file is replaced atomically (temp file + move), so a crash never leaves a half-written
+    /// config. Throws <see cref="IOException"/> or <see cref="UnauthorizedAccessException"/> when the
+    /// config folder is not writable (e.g. a read-only mount).
+    /// </summary>
+    public static void Save(string dataDir, AppConfig config)
+    {
+        var configPath = ConfigPath(dataDir);
+        var json = JsonSerializer.Serialize(config, SerializerOptions);
+
+        lock (SaveLock)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+            var temp = configPath + ".tmp";
+            File.WriteAllText(temp, json);
+            File.Move(temp, configPath, overwrite: true);
+        }
+    }
+
+    /// <summary>A detached deep copy, so changes can be validated and saved before the live config is touched.</summary>
+    public static AppConfig Clone(AppConfig config)
+        => JsonSerializer.Deserialize<AppConfig>(JsonSerializer.Serialize(config, SerializerOptions)) ?? new AppConfig();
+
     public static AppConfig Load(string dataDir)
     {
         var configDir = Path.Combine(dataDir, "config");
         Directory.CreateDirectory(configDir);
 
-        var configPath = Path.Combine(configDir, "app.json");
+        var configPath = ConfigPath(dataDir);
 
         if (!File.Exists(configPath))
         {

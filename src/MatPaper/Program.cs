@@ -29,8 +29,9 @@ var appConfig = AppConfigLoader.Load(dataDir);
 // Staging area for documents waiting in the review inbox (env MATPAPER_INBOX / config overrides).
 Directory.CreateDirectory(appConfig.ResolveInboxPath(dataDir));
 
-// App version for the footer.
+// App version for the footer; data directory for the settings page.
 AppInfo.Version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "local";
+AppInfo.DataDir = dataDir;
 
 // QuestPDF community licence (free below 1M USD annual revenue) — used for
 // camera-scan-to-PDF and mail-body-to-PDF generation.
@@ -134,13 +135,18 @@ builder.Services.Configure<MvcOptions>(o => o.SuppressImplicitRequiredAttributeF
 
 builder.Services.Configure<RequestLocalizationOptions>(o =>
 {
-    var supported = new[] { new CultureInfo("de-DE"), new CultureInfo("en-US") };
-    var configured = supported.FirstOrDefault(c =>
-        string.Equals(c.Name, appConfig.Display?.Culture, StringComparison.OrdinalIgnoreCase)) ?? supported[0];
+    var languages = new[] { new CultureInfo("de-DE"), new CultureInfo("en-US") };
+    var configured = languages.FirstOrDefault(c =>
+        string.Equals(c.Name, appConfig.Display?.Culture, StringComparison.OrdinalIgnoreCase)) ?? languages[0];
+
+    // The neutral parents ("de", "en") are listed as well: ASP.NET only falls back from a regional
+    // culture to its parent (de-AT → de), never from "de" to "de-DE". Without them a browser asking
+    // for just "de" (Firefox does) or "de-AT" would get the default language instead of German.
+    var matchable = languages.Concat(languages.Select(c => c.Parent)).ToList();
 
     o.DefaultRequestCulture = new RequestCulture(configured);
-    o.SupportedCultures = supported;
-    o.SupportedUICultures = supported;
+    o.SupportedCultures = matchable;
+    o.SupportedUICultures = matchable;
 
     // A cookie set by the language switch wins over the browser's Accept-Language.
     o.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider());

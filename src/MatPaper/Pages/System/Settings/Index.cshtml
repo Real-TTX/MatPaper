@@ -1,0 +1,105 @@
+@page "/System/Settings"
+@model MatPaper.Pages.System.Settings.IndexModel
+@{
+    ViewData["Breadcrumb"] = L["System / Settings"].Value;
+}
+
+<form class="form" method="post">
+    <div asp-validation-summary="All" class="form-summary"></div>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Public address"]</h2>
+
+        @if (Model.PublicUrlFromEnv is not null)
+        {
+            <div class="form-row">
+                <label for="locked-public-url">@L["Public address"]</label>
+                <input class="form-control" id="locked-public-url" type="text" value="@Model.PublicUrlFromEnv" disabled />
+                <p class="form-help">@L["Set by the environment variable {0}; change it there.", "MATPAPER_PUBLIC_URL"]</p>
+            </div>
+        }
+        else
+        {
+            <mp-field asp-for="Input.PublicBaseUrl" label='@L["Public address"]' placeholder="https://papers.example.com"
+                      autocomplete="off"
+                      help='@L["The address this instance is reachable under from the outside. Needed to sign in with Google and Microsoft (OAuth)."]' />
+        }
+
+        <div class="form-row">
+            <label for="redirect-uri">@L["Redirect URI"]</label>
+            @if (string.IsNullOrEmpty(Model.RedirectUri))
+            {
+                <p class="form-help" style="margin:0">@L["Appears as soon as a public address is set."]</p>
+            }
+            else
+            {
+                <input class="form-control" id="redirect-uri" type="text" value="@Model.RedirectUri" readonly onclick="this.select()" />
+                <p class="form-help">@L["Register this exact URI with your Google Cloud / Azure app."]</p>
+            }
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Display"]</h2>
+
+        @if (Model.TimeZoneFromEnv is not null)
+        {
+            <div class="form-row">
+                <label for="locked-time-zone">@L["Time zone"]</label>
+                <input class="form-control" id="locked-time-zone" type="text" value="@Model.TimeZoneFromEnv" disabled />
+                <p class="form-help">@L["Set by the environment variable {0}; change it there.", "MATPAPER_TZ"]</p>
+            </div>
+        }
+        else
+        {
+            <mp-picker asp-for="Input.TimeZone" asp-items="Model.TimeZoneOptions" value="@Model.Input.TimeZone"
+                       label='@L["Time zone"]'
+                       help='@L["Used for every date and time shown and for the schedules of tasks and storage searches."]' />
+        }
+
+        <mp-field asp-for="Input.Culture" kind="select" label='@L["Default language"]' asp-items="Model.CultureOptions"
+                  help='@L["Applies to visitors who have not picked a language and whose browser prefers neither German nor English."]' />
+    </section>
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System">@L["Back"]</mp-button>
+    </mp-button-row>
+</form>
+
+<section class="form-section">
+    <h2 class="form-section__title">@L["About this instance"]</h2>
+    <dl class="form">
+        <div>
+            <strong>@L["Version"]</strong>
+            <div>@Model.Version</div>
+        </div>
+        <div>
+            <strong>@L["Current time"]</strong>
+            <div>@Model.NowInZone (@Model.ActiveTimeZone)</div>
+        </div>
+        <div>
+            <strong>@L["Data folder"]</strong>
+            <div><code>@Model.DataDir</code></div>
+        </div>
+        <div>
+            <strong>@L["Configuration file"]</strong>
+            <div><code>@Model.ConfigPath</code></div>
+        </div>
+        <div>
+            <strong>@L["Inbox folder"]</strong>
+            <div>
+                <code>@Model.InboxPath</code>
+                @if (Model.InboxFromEnv is not null)
+                {
+                    <span class="form-help">· @L["set by {0}", "MATPAPER_INBOX"]</span>
+                }
+            </div>
+        </div>
+        <div>
+            <strong>@L["Database"]</strong>
+            <div><code>@Model.Database</code></div>
+        </div>
+    </dl>
+    <p class="form-help">@L["These values are read at startup. Change them in the configuration file or via environment variables, then restart the container."]</p>
+</section>

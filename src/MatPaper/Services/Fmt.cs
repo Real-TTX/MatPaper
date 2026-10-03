@@ -13,23 +13,60 @@ public sealed class Fmt
 {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("de-DE");
 
+    /// <summary>Environment variable that pins the zone; it wins over app.json and the settings page.</summary>
+    public const string TimeZoneEnvVar = "MATPAPER_TZ";
+
+    private TimeZoneInfo _timeZone;
+
     public Fmt(AppConfig config)
     {
-        var id = Environment.GetEnvironmentVariable("MATPAPER_TZ");
+        var id = Environment.GetEnvironmentVariable(TimeZoneEnvVar);
         if (string.IsNullOrWhiteSpace(id))
         {
             id = config.Display?.TimeZone;
         }
 
-        TimeZone = Resolve(id);
-        ZoneName = TimeZone.Id;
+        _timeZone = Resolve(id);
     }
 
     /// <summary>The zone every displayed time is converted to and schedules run in.</summary>
-    public TimeZoneInfo TimeZone { get; }
+    public TimeZoneInfo TimeZone => Volatile.Read(ref _timeZone);
 
     /// <summary>Short zone label for the UI, e.g. "Europe/Berlin".</summary>
-    public string ZoneName { get; }
+    public string ZoneName => TimeZone.Id;
+
+    /// <summary>
+    /// Switches the display/schedule zone at runtime (settings page). Ignored while
+    /// <see cref="TimeZoneEnvVar"/> is set, because the environment always wins.
+    /// </summary>
+    public void UseTimeZone(string? id)
+    {
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(TimeZoneEnvVar)))
+        {
+            return;
+        }
+
+        Volatile.Write(ref _timeZone, Resolve(id));
+    }
+
+    /// <summary>True when the system knows the IANA zone id.</summary>
+    public static bool IsKnownTimeZone(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return false;
+        }
+
+        try
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(id);
+            return true;
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            return false;
+        }
+    }
 
     private static TimeZoneInfo Resolve(string? id)
     {

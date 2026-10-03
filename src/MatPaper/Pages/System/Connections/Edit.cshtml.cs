@@ -194,7 +194,7 @@ public class EditModel : PageModel
         var redirectUri = _oauth.RedirectUri();
         if (string.IsNullOrEmpty(redirectUri))
         {
-            this.Notify(_l["Set the public base URL in the configuration before connecting."].Value, NoticeKind.Danger);
+            this.Notify(_l["Set the public address under System, Settings before connecting."].Value, NoticeKind.Danger);
             return RedirectToPage("Edit", new { id = entity.Id });
         }
 

@@ -285,8 +285,9 @@ public class EditModel : PageModel
     private async Task LoadRoleOptionsAsync()
     {
         var roles = await _db.Roles.AsNoTracking().OrderBy(r => r.Id).ToListAsync();
+        // Role names are stored in English ("Admin", "User"); show them translated like the list does.
         RoleOptions = roles
-            .Select(r => new SelectListItem(r.Name, r.Id.ToString()))
+            .Select(r => new SelectListItem(_l[r.Name].Value, r.Id.ToString()))
             .ToList();
     }
 

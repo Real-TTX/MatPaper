@@ -639,7 +639,7 @@
 
 .wizard__step.is-active .wizard__num {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-primary-contrast);
 }
 
 .wizard__step.is-done .wizard__num {

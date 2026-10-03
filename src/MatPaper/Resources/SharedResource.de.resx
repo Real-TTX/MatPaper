@@ -733,4 +733,30 @@
   <data name="Set the public address under System, Settings so a redirect URI can be shown." xml:space="preserve"><value>Unter System, Einstellungen die öffentliche Adresse setzen, damit eine Weiterleitungs-URI angezeigt werden kann.</value></data>
   <data name="Open settings" xml:space="preserve"><value>Einstellungen öffnen</value></data>
   <data name="Set the public address under System, Settings before connecting." xml:space="preserve"><value>Vor dem Verbinden unter System, Einstellungen die öffentliche Adresse setzen.</value></data>
+  <data name="Appearance" xml:space="preserve"><value>Erscheinungsbild</value></data>
+  <data name="Appearance saved." xml:space="preserve"><value>Erscheinungsbild gespeichert.</value></data>
+  <data name="Mode" xml:space="preserve"><value>Modus</value></data>
+  <data name="The mode can also be switched at the bottom of the menu." xml:space="preserve"><value>Der Modus lässt sich auch unten im Menü umschalten.</value></data>
+  <data name="Colour scheme" xml:space="preserve"><value>Farbschema</value></data>
+  <data name="Accent colour" xml:space="preserve"><value>Akzentfarbe</value></data>
+  <data name="Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="Paper" xml:space="preserve"><value>Papier</value></data>
+  <data name="Warm, paper-like tones." xml:space="preserve"><value>Warme, papierartige Töne.</value></data>
+  <data name="High contrast" xml:space="preserve"><value>Hoher Kontrast</value></data>
+  <data name="Strong borders and maximum text contrast." xml:space="preserve"><value>Kräftige Rahmen und maximaler Textkontrast.</value></data>
+  <data name="Black (OLED)" xml:space="preserve"><value>Schwarz (OLED)</value></data>
+  <data name="Pure black surfaces; only affects dark mode." xml:space="preserve"><value>Rein schwarze Flächen; wirkt nur im dunklen Modus.</value></data>
+  <data name="Green" xml:space="preserve"><value>Grün</value></data>
+  <data name="Blue" xml:space="preserve"><value>Blau</value></data>
+  <data name="Violet" xml:space="preserve"><value>Violett</value></data>
+  <data name="Petrol" xml:space="preserve"><value>Petrol</value></data>
+  <data name="Amber" xml:space="preserve"><value>Bernstein</value></data>
+  <data name="Rose" xml:space="preserve"><value>Rose</value></data>
+  <data name="Graphite" xml:space="preserve"><value>Graphit</value></data>
+  <data name="Choose an option from the list." xml:space="preserve"><value>Bitte eine Option aus der Liste wählen.</value></data>
+  <data name="Default mode" xml:space="preserve"><value>Standard-Modus</value></data>
+  <data name="Default colour scheme" xml:space="preserve"><value>Standard-Farbschema</value></data>
+  <data name="Default accent colour" xml:space="preserve"><value>Standard-Akzentfarbe</value></data>
+  <data name="Applies to the sign-in page and to every user who has not chosen their own look under Appearance." xml:space="preserve"><value>Gilt für die Anmeldeseite und für jeden Benutzer, der unter „Erscheinungsbild“ keinen eigenen Look gewählt hat.</value></data>
+  <data name="Instance default" xml:space="preserve"><value>Vorgabe der Instanz</value></data>
 </root>

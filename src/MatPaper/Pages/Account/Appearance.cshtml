@@ -1,0 +1,148 @@
+@page
+@model MatPaper.Pages.Account.AppearanceModel
+@using MatPaper.Services
+@{
+    // Account pages default to the sign-in layout; this one belongs in the app shell.
+    Layout = "_Layout";
+    ViewData["Breadcrumb"] = L["Appearance"].Value;
+    ViewData["BreadcrumbLiteral"] = true;
+
+    string LabelOf(IReadOnlyList<ThemeCatalog.Option> list, string id) => L[list.First(o => o.Id == id).Label].Value;
+}
+
+@* One mini window for the previews: sidebar strip, text, muted text, accent button.
+   It draws with the real CSS tokens of the data-* attributes it carries. *@
+@functions {
+    static Microsoft.AspNetCore.Html.IHtmlContent Mini(string mode, string scheme, string accent) =>
+        new Microsoft.AspNetCore.Html.HtmlString(
+            $"<span class=\"theme-mini\" data-mode=\"{mode}\" data-scheme=\"{scheme}\" data-accent=\"{accent}\" aria-hidden=\"true\">" +
+            "<span class=\"theme-mini__side\"></span>" +
+            "<span class=\"theme-mini__body\">" +
+            "<span class=\"theme-mini__line\"></span>" +
+            "<span class=\"theme-mini__line theme-mini__line--muted\"></span>" +
+            "<span class=\"theme-mini__button\"></span>" +
+            "</span></span>");
+}
+
+<form class="form" method="post" id="appearance-form">
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Mode"]</h2>
+        <div class="theme-options theme-options--compact" role="radiogroup" aria-label='@L["Mode"]'>
+            <label class="theme-option">
+                <input type="radio" name="Mode" value="" checked="@(string.IsNullOrEmpty(Model.Mode))"
+                       data-theme-part="mode" data-theme-default="@Model.InstanceDefault.Mode" />
+                <span class="theme-option__name">@L["Instance default"]</span>
+                <span class="theme-option__hint">@LabelOf(ThemeCatalog.Modes, Model.InstanceDefault.Mode)</span>
+            </label>
+            @foreach (var mode in ThemeCatalog.Modes)
+            {
+                <label class="theme-option">
+                    <input type="radio" name="Mode" value="@mode.Id" checked="@(Model.Mode == mode.Id)" data-theme-part="mode" />
+                    <span class="theme-option__name">@L[mode.Label]</span>
+                </label>
+            }
+        </div>
+        <p class="form-help">@L["The mode can also be switched at the bottom of the menu."]</p>
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Colour scheme"]</h2>
+        <div class="theme-options" role="radiogroup" aria-label='@L["Colour scheme"]'>
+            <label class="theme-option theme-option--card">
+                <input type="radio" name="Scheme" value="" checked="@(string.IsNullOrEmpty(Model.Scheme))"
+                       data-theme-part="scheme" data-theme-default="@Model.InstanceDefault.Scheme" />
+                <span class="theme-option__preview">
+                    @Mini("light", Model.InstanceDefault.Scheme, Model.Effective.Accent)
+                    @Mini("dark", Model.InstanceDefault.Scheme, Model.Effective.Accent)
+                </span>
+                <span class="theme-option__name">@L["Instance default"]</span>
+                <span class="theme-option__hint">@LabelOf(ThemeCatalog.Schemes, Model.InstanceDefault.Scheme)</span>
+            </label>
+            @foreach (var scheme in ThemeCatalog.Schemes)
+            {
+                <label class="theme-option theme-option--card">
+                    <input type="radio" name="Scheme" value="@scheme.Id" checked="@(Model.Scheme == scheme.Id)" data-theme-part="scheme" />
+                    <span class="theme-option__preview">
+                        @Mini("light", scheme.Id, Model.Effective.Accent)
+                        @Mini("dark", scheme.Id, Model.Effective.Accent)
+                    </span>
+                    <span class="theme-option__name">@L[scheme.Label]</span>
+                    @if (scheme.Hint is not null)
+                    {
+                        <span class="theme-option__hint">@L[scheme.Hint]</span>
+                    }
+                </label>
+            }
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Accent colour"]</h2>
+        <div class="theme-options theme-options--compact" role="radiogroup" aria-label='@L["Accent colour"]'>
+            <label class="theme-option">
+                <input type="radio" name="Accent" value="" checked="@(string.IsNullOrEmpty(Model.Accent))"
+                       data-theme-part="accent" data-theme-default="@Model.InstanceDefault.Accent" />
+                <span class="theme-swatch" aria-hidden="true">
+                    <span data-mode="light" data-accent="@Model.InstanceDefault.Accent"></span><span data-mode="dark" data-accent="@Model.InstanceDefault.Accent"></span>
+                </span>
+                <span class="theme-option__name">@L["Instance default"]</span>
+                <span class="theme-option__hint">@LabelOf(ThemeCatalog.Accents, Model.InstanceDefault.Accent)</span>
+            </label>
+            @foreach (var accent in ThemeCatalog.Accents)
+            {
+                <label class="theme-option">
+                    <input type="radio" name="Accent" value="@accent.Id" checked="@(Model.Accent == accent.Id)" data-theme-part="accent" />
+                    <span class="theme-swatch" aria-hidden="true">
+                        <span data-mode="light" data-accent="@accent.Id"></span><span data-mode="dark" data-accent="@accent.Id"></span>
+                    </span>
+                    <span class="theme-option__name">@L[accent.Label]</span>
+                </label>
+            }
+        </div>
+    </section>
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/">@L["Back"]</mp-button>
+    </mp-button-row>
+</form>
+
+@section Scripts {
+    <script>
+        // Live preview: every choice is applied to the page at once; Save stores it on the account.
+        // "Default" previews the instance default. The scheme previews follow the chosen accent.
+        (function () {
+            var form = document.getElementById("appearance-form");
+            if (!form || !window.MatPaperTheme) { return; }
+
+            function valueOf(input) {
+                return input.value || input.getAttribute("data-theme-default");
+            }
+
+            form.addEventListener("change", function (ev) {
+                var input = ev.target;
+                var part = input.getAttribute("data-theme-part");
+                if (!part) { return; }
+                var change = {};
+                change[part] = valueOf(input);
+                window.MatPaperTheme.apply(change);
+                if (part === "accent") {
+                    form.querySelectorAll(".theme-mini").forEach(function (mini) {
+                        mini.setAttribute("data-accent", change.accent);
+                    });
+                }
+            });
+
+            // Keep the browser's own memory (used on the sign-in page) in line with the account.
+            form.addEventListener("submit", function () {
+                var mode = form.querySelector('input[name="Mode"]:checked');
+                try {
+                    if (mode && mode.value) { localStorage.setItem("matpaper-theme", mode.value); }
+                    else { localStorage.removeItem("matpaper-theme"); }
+                } catch (e) { /* storage unavailable */ }
+            });
+        })();
+    </script>
+}

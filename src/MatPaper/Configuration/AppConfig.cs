@@ -40,6 +40,15 @@ public class DisplayConfig
     /// Untranslated strings always fall back to their English original.
     /// </summary>
     public string Culture { get; set; } = "de-DE";
+
+    /// <summary>Default theme mode for users who have not chosen one (and the sign-in page): system, light or dark.</summary>
+    public string ThemeMode { get; set; } = "system";
+
+    /// <summary>Default colour scheme: standard, paper, contrast or oled.</summary>
+    public string ThemeScheme { get; set; } = "standard";
+
+    /// <summary>Default accent colour: green, blue, violet, teal, amber, rose or graphite.</summary>
+    public string ThemeAccent { get; set; } = "green";
 }
 
 public class OAuthConfig

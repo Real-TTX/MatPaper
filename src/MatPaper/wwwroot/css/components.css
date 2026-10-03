@@ -1,11 +1,12 @@
 /* ==========================================================================
    MatPaper — reusable component styles (auth, forms, buttons, tables, badges…)
    Builds on the theme custom properties defined in app.css.
-   Works in both light (:root) and dark ([data-theme=dark] / system) themes.
+   Works in every mode/scheme/accent (see app.css and themes.css).
    ========================================================================== */
 
 /* Extra tokens layered on top of app.css variables. */
-:root {
+:root,
+[data-mode="light"] {
     --color-primary-soft: #dcf3e1;
     --color-primary-hover: #278a3b;
     --color-primary-text: #1b7030;
@@ -20,7 +21,7 @@
     --focus-ring: 0 0 0 3px rgba(47, 158, 68, 0.28);
 }
 
-[data-theme="dark"] {
+[data-mode="dark"] {
     --color-primary-soft: #1f3a2a;
     --color-primary-hover: #4fd066;
     --color-primary-text: #6bd47f;
@@ -33,23 +34,6 @@
     --color-warn-soft: #43301a;
     --color-warn-text: #f5b971;
     --focus-ring: 0 0 0 3px rgba(64, 192, 87, 0.35);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-        --color-primary-soft: #1f3a2a;
-        --color-primary-hover: #4fd066;
-        --color-primary-text: #6bd47f;
-        --color-danger-soft: #4a2a2a;
-        --color-danger-text: #e57373;
-        --color-ok: #57c98a;
-        --color-ok-soft: #1f3a2c;
-        --color-ok-text: #57c98a;
-        --color-warn: #f0a94a;
-        --color-warn-soft: #43301a;
-        --color-warn-text: #f5b971;
-        --focus-ring: 0 0 0 3px rgba(64, 192, 87, 0.35);
-    }
 }
 
 /* ==========================================================================

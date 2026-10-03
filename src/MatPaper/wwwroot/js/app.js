@@ -1,79 +1,144 @@
-// MatPaper — client shell controller: theme switching + mobile navigation.
+// MatPaper — client shell controller: theme (mode/scheme/accent) + mobile navigation.
 (function () {
     "use strict";
 
+    // ---- Theme --------------------------------------------------------------
+    // The server renders data-theme-mode, data-scheme and data-accent on <html>; the inline
+    // head script (_ThemeHead) has already turned "system" into data-mode before the first
+    // paint. Here: the sidebar mode switch, saving it to the account, following OS changes,
+    // and window.MatPaperTheme for the live preview on the appearance page.
     var STORAGE_KEY = "matpaper-theme";
-    var VALID_THEMES = ["system", "dark", "bright"];
+    var MODES = ["system", "light", "dark"];
     var root = document.documentElement;
     var media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
-    function getStoredTheme() {
-        var value = null;
-        try {
-            value = localStorage.getItem(STORAGE_KEY);
-        } catch (e) {
-            value = null;
+    function normalizeMode(value) {
+        if (value === "bright") {
+            return "light"; // stored by older versions
         }
-        return VALID_THEMES.indexOf(value) !== -1 ? value : "system";
+        return MODES.indexOf(value) !== -1 ? value : null;
     }
 
-    function storeTheme(theme) {
+    function getStoredMode() {
         try {
-            localStorage.setItem(STORAGE_KEY, theme);
+            return normalizeMode(localStorage.getItem(STORAGE_KEY));
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function storeMode(mode) {
+        try {
+            localStorage.setItem(STORAGE_KEY, mode);
         } catch (e) {
             /* storage unavailable — ignore */
         }
     }
 
-    // Apply the chosen theme by setting (or clearing) the data-theme attribute
-    // on <html>. "system" removes the attribute so CSS prefers-color-scheme
-    // takes over; "bright" maps to the light palette (no attribute needed for
-    // light, but we set it explicitly so it wins over the OS preference).
-    function applyTheme(theme) {
-        if (theme === "system") {
-            root.removeAttribute("data-theme");
-        } else if (theme === "dark") {
-            root.setAttribute("data-theme", "dark");
-        } else {
-            root.setAttribute("data-theme", "light");
-        }
-        updateThemeButtons(theme);
+    function currentMode() {
+        return normalizeMode(root.getAttribute("data-theme-mode")) || "system";
     }
 
-    function updateThemeButtons(theme) {
+    function effectiveMode(mode) {
+        return mode === "dark" || (mode === "system" && media && media.matches) ? "dark" : "light";
+    }
+
+    // The browser bar (mobile, installed PWA) follows the active accent.
+    function syncThemeColor() {
+        var meta = document.querySelector('meta[name="theme-color"]');
+        var accent = getComputedStyle(root).getPropertyValue("--color-primary").trim();
+        if (meta && accent) {
+            meta.setAttribute("content", accent);
+        }
+    }
+
+    function updateThemeButtons(mode) {
         var buttons = document.querySelectorAll(".theme-switch__btn");
         for (var i = 0; i < buttons.length; i++) {
             var btn = buttons[i];
-            var isActive = btn.getAttribute("data-theme-value") === theme;
+            var isActive = btn.getAttribute("data-theme-value") === mode;
             btn.classList.toggle("is-active", isActive);
             btn.setAttribute("aria-pressed", isActive ? "true" : "false");
         }
+    }
+
+    // Applies any of { mode, scheme, accent } to <html> right away (does not save).
+    function applyTheme(parts) {
+        if (parts.mode) {
+            root.setAttribute("data-theme-mode", parts.mode);
+            root.setAttribute("data-mode", effectiveMode(parts.mode));
+            updateThemeButtons(parts.mode);
+        }
+        if (parts.scheme) {
+            root.setAttribute("data-scheme", parts.scheme);
+        }
+        if (parts.accent) {
+            root.setAttribute("data-accent", parts.accent);
+        }
+        syncThemeColor();
+    }
+
+    window.MatPaperTheme = {
+        apply: applyTheme,
+        current: function () {
+            return {
+                mode: currentMode(),
+                scheme: root.getAttribute("data-scheme"),
+                accent: root.getAttribute("data-accent")
+            };
+        }
+    };
+
+    function antiforgeryToken() {
+        var el = document.querySelector('input[name="__RequestVerificationToken"]');
+        return el ? el.value : "";
+    }
+
+    // Signed-in pages carry data-theme-save: the mode then follows the account to every device.
+    function saveMode(mode) {
+        var url = root.getAttribute("data-theme-save");
+        if (!url || typeof fetch !== "function") {
+            return;
+        }
+        var data = new FormData();
+        data.append("mode", mode);
+        data.append("__RequestVerificationToken", antiforgeryToken());
+        fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "RequestVerificationToken": antiforgeryToken() },
+            body: data
+        }).then(function (r) {
+            if (r.ok) {
+                root.setAttribute("data-theme-source", "user");
+            }
+        }).catch(function () {
+            /* offline: the browser keeps the choice in localStorage */
+        });
     }
 
     function wireThemeButtons() {
         var buttons = document.querySelectorAll(".theme-switch__btn");
         for (var i = 0; i < buttons.length; i++) {
             buttons[i].addEventListener("click", function () {
-                var theme = this.getAttribute("data-theme-value");
-                if (VALID_THEMES.indexOf(theme) === -1) {
+                var mode = normalizeMode(this.getAttribute("data-theme-value"));
+                if (!mode) {
                     return;
                 }
-                storeTheme(theme);
-                applyTheme(theme);
+                storeMode(mode);
+                applyTheme({ mode: mode });
+                saveMode(mode);
             });
         }
     }
 
-    // When following the system preference there is nothing to toggle on
-    // <html> (CSS handles it), but we keep this listener so any future
-    // preference-dependent JS re-runs on OS theme changes.
     function wireSystemListener() {
         if (!media) {
             return;
         }
         var handler = function () {
-            if (getStoredTheme() === "system") {
-                applyTheme("system");
+            if (currentMode() === "system") {
+                applyTheme({ mode: "system" });
             }
         };
         if (typeof media.addEventListener === "function") {
@@ -81,6 +146,18 @@
         } else if (typeof media.addListener === "function") {
             media.addListener(handler);
         }
+    }
+
+    function initTheme() {
+        updateThemeButtons(currentMode());
+        syncThemeColor();
+        // One-time move: a mode picked before modes were saved per account goes to the account.
+        var stored = getStoredMode();
+        if (stored && root.getAttribute("data-theme-source") !== "user" && root.getAttribute("data-theme-save")) {
+            saveMode(stored);
+        }
+        wireThemeButtons();
+        wireSystemListener();
     }
 
     function wireSidebarToggle() {
@@ -189,13 +266,8 @@
         }
     }
 
-    // Apply stored theme as early as possible.
-    applyTheme(getStoredTheme());
-
     function init() {
-        applyTheme(getStoredTheme());
-        wireThemeButtons();
-        wireSystemListener();
+        initTheme();
         wireSidebarToggle();
         wireDependentFields();
         wireConfirmActions();

@@ -1,19 +1,20 @@
 /* ==========================================================================
    MatPaper — application shell styles
-   Theming via CSS custom properties.
-   :root            => light (default / "bright")
-   [data-theme=dark] => dark
-   prefers-color-scheme is honored when no explicit theme is set (system).
+   Theming via CSS custom properties. <html> carries data-mode (light|dark, resolved
+   from "system" by the inline head script), data-scheme and data-accent; this file holds
+   the standard scheme + green accent per mode, themes.css the other schemes/accents.
+   The light block also matches [data-mode="light"] so a nested preview can reset it.
    ========================================================================== */
 
-:root {
+:root,
+[data-mode="light"] {
     --color-bg: #f5f6f8;
     --color-surface: #ffffff;
     --color-surface-alt: #f0f1f4;
     --color-sidebar: #ffffff;
     --color-border: #e2e5ea;
     --color-text: #1c2430;
-    --color-text-muted: #6b7482;
+    --color-text-muted: #656e7c;
     --color-primary: #2f9e44;
     --color-primary-contrast: #ffffff;
     --color-hover: #eaf6ec;
@@ -42,7 +43,7 @@
     color-scheme: light;
 }
 
-[data-theme="dark"] {
+[data-mode="dark"] {
     --color-bg: #12151b;
     --color-surface: #1a1e26;
     --color-surface-alt: #212734;
@@ -59,28 +60,6 @@
     --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.5);
     --scrollbar-thumb: rgba(150, 160, 176, 0.4);
     color-scheme: dark;
-}
-
-/* System theme: follow OS preference when no explicit theme attribute set. */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-        --color-bg: #12151b;
-        --color-surface: #1a1e26;
-        --color-surface-alt: #212734;
-        --color-sidebar: #161a21;
-        --color-border: #2a303c;
-        --color-text: #e6e9ef;
-        --color-text-muted: #96a0b0;
-        --color-primary: #40c057;
-        --color-primary-contrast: #0d1017;
-        --color-hover: #1d2a21;
-        --color-active: #26382b;
-        --color-danger: #e57373;
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-        --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.5);
-        --scrollbar-thumb: rgba(150, 160, 176, 0.4);
-        color-scheme: dark;
-    }
 }
 
 * {

@@ -59,6 +59,10 @@
 
         <mp-field asp-for="Input.Culture" kind="select" label='@L["Default language"]' asp-items="Model.CultureOptions"
                   help='@L["Applies to visitors who have not picked a language and whose browser prefers neither German nor English."]' />
+        <mp-field asp-for="Input.ThemeMode" kind="select" label='@L["Default mode"]' asp-items="Model.ThemeModeOptions" />
+        <mp-field asp-for="Input.ThemeScheme" kind="select" label='@L["Default colour scheme"]' asp-items="Model.ThemeSchemeOptions" />
+        <mp-field asp-for="Input.ThemeAccent" kind="select" label='@L["Default accent colour"]' asp-items="Model.ThemeAccentOptions"
+                  help='@L["Applies to the sign-in page and to every user who has not chosen their own look under Appearance."]' />
     </section>
 
     <mp-button-row>

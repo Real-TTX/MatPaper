@@ -1,14 +1,18 @@
+@inject MatPaper.Services.ThemeService Themes
 @{
     var breadcrumb = ViewData["Breadcrumb"] as string ?? "";
+    // Sign-in, setup and share pages: the instance default (or a signed-in viewer's own theme).
+    var theme = await Themes.ResolveAsync();
 }
 <!DOCTYPE html>
-<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)">
+<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" data-theme-mode="@theme.Mode" data-mode="@(theme.Mode == "dark" ? "dark" : "light")" data-scheme="@theme.Scheme" data-accent="@theme.Accent" data-theme-source="@(theme.UserHasMode ? "user" : "default")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@(string.IsNullOrEmpty(breadcrumb) ? "MatPaper" : $"{breadcrumb} · MatPaper")</title>
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <partial name="_ThemeHead" model="theme" />
 </head>
 <body class="auth-page">
     <main class="auth-shell @(ViewData["ShellClass"] as string)">

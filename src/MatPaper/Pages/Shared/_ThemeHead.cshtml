@@ -1,0 +1,28 @@
+@model MatPaper.Services.ThemeChoice
+@* Theme bootstrap for both layouts. Render inside <head> AFTER the other stylesheets, so the
+   inline script below can read the resolved accent colour. The <html> element must carry
+   data-theme-mode, data-mode, data-scheme, data-accent and data-theme-source (see the layouts). *@
+<link rel="stylesheet" href="~/css/themes.css" asp-append-version="true" />
+<meta name="theme-color" content="#2f9e44" />
+<script>
+    // Runs before the first paint: turns the mode into data-mode="light|dark" so the page never
+    // flashes the wrong brightness. Without a saved account mode the browser's own choice
+    // (localStorage, also used on the sign-in page) wins over the instance default.
+    (function () {
+        var root = document.documentElement;
+        var mode = root.getAttribute("data-theme-mode") || "system";
+        if (root.getAttribute("data-theme-source") !== "user") {
+            try {
+                var stored = localStorage.getItem("matpaper-theme");
+                if (stored === "bright") { stored = "light"; }
+                if (stored === "system" || stored === "light" || stored === "dark") { mode = stored; }
+            } catch (e) { /* storage unavailable */ }
+        }
+        var dark = mode === "dark" || (mode === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        root.setAttribute("data-theme-mode", mode);
+        root.setAttribute("data-mode", dark ? "dark" : "light");
+        var meta = document.querySelector('meta[name="theme-color"]');
+        var accent = getComputedStyle(root).getPropertyValue("--color-primary").trim();
+        if (meta && accent) { meta.setAttribute("content", accent); }
+    })();
+</script>

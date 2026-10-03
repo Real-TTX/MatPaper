@@ -1,0 +1,327 @@
+/* ==========================================================================
+   MatPaper — colour schemes and accent colours
+   Loaded after app.css/components.css. <html> (or any preview element) carries
+   data-mode, data-scheme and data-accent; the ids match Services/ThemeCatalog.cs.
+
+   - The standard scheme and the green accent are the base blocks in app.css and
+     components.css ([data-mode="light"] / [data-mode="dark"]).
+   - A scheme only sets SURFACE tokens (backgrounds, borders, text); an accent only
+     sets ACCENT tokens. They never touch the same variable, so every combination
+     works and needs no extra rule. Each rule pairs one value with a mode, so the
+     specificity (0,2,0) always beats the base blocks.
+   - "oled" has no light variant on purpose: in light mode it is the standard scheme.
+   Contrast was checked for every mode x scheme x accent (text, muted text, accent
+   text, button text, navigation highlight).
+   ========================================================================== */
+
+/* ---- Schemes ------------------------------------------------------------ */
+
+/* Paper: warm, slightly yellowed tones. */
+[data-scheme="paper"][data-mode="light"] {
+    --color-bg: #f3eee3;
+    --color-surface: #fcf9f2;
+    --color-surface-alt: #f1ebdf;
+    --color-sidebar: #f8f3e8;
+    --color-border: #ded4c0;
+    --color-text: #2b2620;
+    --color-text-muted: #675d4f;
+}
+
+[data-scheme="paper"][data-mode="dark"] {
+    --color-bg: #1b1814;
+    --color-surface: #23201a;
+    --color-surface-alt: #2c2821;
+    --color-sidebar: #1f1c17;
+    --color-border: #3a342b;
+    --color-text: #ece4d6;
+    --color-text-muted: #ab9f8b;
+}
+
+/* High contrast: pure white/black, dark borders, near-black muted text. */
+[data-scheme="contrast"][data-mode="light"] {
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-alt: #f0f0f0;
+    --color-sidebar: #ffffff;
+    --color-border: #5c5c5c;
+    --color-text: #000000;
+    --color-text-muted: #333333;
+    --shadow-sm: none;
+    --shadow-md: 0 0 0 1px #5c5c5c;
+}
+
+[data-scheme="contrast"][data-mode="dark"] {
+    --color-bg: #000000;
+    --color-surface: #000000;
+    --color-surface-alt: #161616;
+    --color-sidebar: #000000;
+    --color-border: #9a9a9a;
+    --color-text: #ffffff;
+    --color-text-muted: #d6d6d6;
+    --shadow-sm: none;
+    --shadow-md: 0 0 0 1px #9a9a9a;
+}
+
+/* Black (OLED): true black surfaces, dark mode only. */
+[data-scheme="oled"][data-mode="dark"] {
+    --color-bg: #000000;
+    --color-surface: #0a0a0a;
+    --color-surface-alt: #161616;
+    --color-sidebar: #000000;
+    --color-border: #262626;
+    --color-text: #e8e8e8;
+    --color-text-muted: #9c9c9c;
+}
+
+/* ---- Accents (green is the base in app.css/components.css) -------------- */
+
+[data-accent="blue"][data-mode="light"] {
+    --color-primary: #2563eb;
+    --color-primary-contrast: #ffffff;
+    --color-primary-hover: #1d4ed8;
+    --color-primary-soft: #dce8fd;
+    --color-primary-text: #1d4ed8;
+    --color-hover: #edf3fe;
+    --color-active: #dce8fd;
+    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.28);
+}
+
+[data-accent="blue"][data-mode="dark"] {
+    --color-primary: #60a5fa;
+    --color-primary-contrast: #0d1017;
+    --color-primary-hover: #93c5fd;
+    --color-primary-soft: #1d2d47;
+    --color-primary-text: #7db5fb;
+    --color-hover: #1a2433;
+    --color-active: #213049;
+    --focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.35);
+}
+
+[data-accent="violet"][data-mode="light"] {
+    --color-primary: #7c3aed;
+    --color-primary-contrast: #ffffff;
+    --color-primary-hover: #6d28d9;
+    --color-primary-soft: #ece3fd;
+    --color-primary-text: #6d28d9;
+    --color-hover: #f4effe;
+    --color-active: #e9defd;
+    --focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.28);
+}
+
+[data-accent="violet"][data-mode="dark"] {
+    --color-primary: #a78bfa;
+    --color-primary-contrast: #0d1017;
+    --color-primary-hover: #c4b5fd;
+    --color-primary-soft: #2c2447;
+    --color-primary-text: #b9a3fb;
+    --color-hover: #221e31;
+    --color-active: #2c2643;
+    --focus-ring: 0 0 0 3px rgba(167, 139, 250, 0.35);
+}
+
+[data-accent="teal"][data-mode="light"] {
+    --color-primary: #0e7c86;
+    --color-primary-contrast: #ffffff;
+    --color-primary-hover: #0b6770;
+    --color-primary-soft: #d4eef0;
+    --color-primary-text: #0b6770;
+    --color-hover: #e8f5f6;
+    --color-active: #d2ecee;
+    --focus-ring: 0 0 0 3px rgba(14, 124, 134, 0.28);
+}
+
+[data-accent="teal"][data-mode="dark"] {
+    --color-primary: #3cc4cf;
+    --color-primary-contrast: #0d1017;
+    --color-primary-hover: #6ad7df;
+    --color-primary-soft: #163537;
+    --color-primary-text: #5fd0d8;
+    --color-hover: #16282a;
+    --color-active: #1c3537;
+    --focus-ring: 0 0 0 3px rgba(60, 196, 207, 0.35);
+}
+
+[data-accent="amber"][data-mode="light"] {
+    --color-primary: #b45309;
+    --color-primary-contrast: #ffffff;
+    --color-primary-hover: #92400e;
+    --color-primary-soft: #fcebd3;
+    --color-primary-text: #92400e;
+    --color-hover: #fdf5e8;
+    --color-active: #fbe8cc;
+    --focus-ring: 0 0 0 3px rgba(180, 83, 9, 0.28);
+}
+
+[data-accent="amber"][data-mode="dark"] {
+    --color-primary: #f59e0b;
+    --color-primary-contrast: #0d1017;
+    --color-primary-hover: #fbbf24;
+    --color-primary-soft: #42301a;
+    --color-primary-text: #f6b545;
+    --color-hover: #29211a;
+    --color-active: #392b1a;
+    --focus-ring: 0 0 0 3px rgba(245, 158, 11, 0.35);
+}
+
+[data-accent="rose"][data-mode="light"] {
+    --color-primary: #e11d48;
+    --color-primary-contrast: #ffffff;
+    --color-primary-hover: #be123c;
+    --color-primary-soft: #fde0e7;
+    --color-primary-text: #be123c;
+    --color-hover: #fff0f3;
+    --color-active: #ffdfe6;
+    --focus-ring: 0 0 0 3px rgba(225, 29, 72, 0.28);
+}
+
+[data-accent="rose"][data-mode="dark"] {
+    --color-primary: #fb7185;
+    --color-primary-contrast: #0d1017;
+    --color-primary-hover: #fda4af;
+    --color-primary-soft: #481e28;
+    --color-primary-text: #fb8a9b;
+    --color-hover: #2b1a1f;
+    --color-active: #3a2027;
+    --focus-ring: 0 0 0 3px rgba(251, 113, 133, 0.35);
+}
+
+[data-accent="graphite"][data-mode="light"] {
+    --color-primary: #475569;
+    --color-primary-contrast: #ffffff;
+    --color-primary-hover: #334155;
+    --color-primary-soft: #e2e8f0;
+    --color-primary-text: #334155;
+    --color-hover: #f1f5f9;
+    --color-active: #e2e8f0;
+    --focus-ring: 0 0 0 3px rgba(71, 85, 105, 0.28);
+}
+
+[data-accent="graphite"][data-mode="dark"] {
+    --color-primary: #94a3b8;
+    --color-primary-contrast: #0d1017;
+    --color-primary-hover: #cbd5e1;
+    --color-primary-soft: #29303b;
+    --color-primary-text: #b4c0cf;
+    --color-hover: #1e232b;
+    --color-active: #29303b;
+    --focus-ring: 0 0 0 3px rgba(148, 163, 184, 0.35);
+}
+
+/* ---- Appearance page: option cards and live mini previews --------------- */
+
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 0.75rem;
+}
+
+.theme-options--compact {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+
+.theme-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    cursor: pointer;
+}
+
+.theme-option:hover {
+    background: var(--color-hover);
+}
+
+.theme-option input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+}
+
+.theme-option:has(input:checked) {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+}
+
+.theme-option:has(input:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.theme-option__name {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+
+.theme-option__hint {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.theme-option__preview {
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* A mini window drawn with the real tokens of its own data-* attributes. */
+.theme-mini {
+    flex: 1;
+    display: flex;
+    height: 54px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    overflow: hidden;
+}
+
+.theme-mini__side {
+    width: 22%;
+    background: var(--color-sidebar);
+    border-right: 1px solid var(--color-border);
+}
+
+.theme-mini__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px;
+}
+
+.theme-mini__line {
+    height: 5px;
+    width: 80%;
+    border-radius: 3px;
+    background: var(--color-text);
+}
+
+.theme-mini__line--muted {
+    width: 55%;
+    background: var(--color-text-muted);
+}
+
+.theme-mini__button {
+    margin-top: auto;
+    height: 9px;
+    width: 38%;
+    border-radius: 3px;
+    background: var(--color-primary);
+}
+
+/* Accent swatch: light and dark tone side by side. */
+.theme-swatch {
+    display: flex;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.theme-swatch > span {
+    flex: 1;
+    background: var(--color-primary);
+}

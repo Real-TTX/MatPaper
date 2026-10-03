@@ -1,6 +1,7 @@
 @using MatPaper.Services
 @inject MatPaper.Services.CurrentUser CurrentUser
 @inject MatPaper.Data.AppDbContext Db
+@inject MatPaper.Services.ThemeService Themes
 @using MatPaper.Data
 @using Microsoft.EntityFrameworkCore
 @{
@@ -23,6 +24,9 @@
     var breadcrumbLinkable = pathParts.Count == breadcrumbParts.Count && breadcrumbParts.Count > 1;
     var accountName = CurrentUser.DisplayName ?? CurrentUser.Username ?? "Account";
     var avatarLetter = string.IsNullOrEmpty(accountName) ? "?" : accountName.Substring(0, 1).ToUpperInvariant();
+
+    // Resolved before any markup, so the first byte already carries the right colours.
+    var theme = await Themes.ResolveAsync();
 
     var pendingCount = 0;
     if (CurrentUser.UserId is long uid)
@@ -50,7 +54,7 @@
 }
 
 <!DOCTYPE html>
-<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)">
+<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" data-theme-mode="@theme.Mode" data-mode="@(theme.Mode == "dark" ? "dark" : "light")" data-scheme="@theme.Scheme" data-accent="@theme.Accent" data-theme-source="@(theme.UserHasMode ? "user" : "default")" data-theme-save="/Account/Appearance?handler=Mode">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -61,7 +65,7 @@
     <link rel="stylesheet" href="~/css/features.css" asp-append-version="true" />
     <link rel="manifest" href="~/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="~/icons/logo.svg" />
-    <meta name="theme-color" content="#2f9e44" />
+    <partial name="_ThemeHead" model="theme" />
     <link rel="apple-touch-icon" href="~/icons/icon-192.png" />
 </head>
 <body>
@@ -181,6 +185,7 @@
                     <button type="submit" name="culture" value="en-US"
                             class="lang-switch__btn@(uiCulture == "en" ? " is-active" : "")">EN</button>
                 </form>
+                <a class="lang-switch__btn" href="/Account/Appearance" style="text-align:center">@L["Appearance"]</a>
                 <div class="theme-switch" role="group" aria-label='@L["Theme"]'>
                     <button type="button" class="theme-switch__btn" data-theme-value="system">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
@@ -190,7 +195,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                         @L["Dark"]
                     </button>
-                    <button type="button" class="theme-switch__btn" data-theme-value="bright">
+                    <button type="button" class="theme-switch__btn" data-theme-value="light">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
                         @L["Light"]
                     </button>

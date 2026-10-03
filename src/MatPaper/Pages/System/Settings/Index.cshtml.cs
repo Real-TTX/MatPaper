@@ -53,10 +53,16 @@ public class IndexModel : PageModel
         public string? PublicBaseUrl { get; set; }
         public string? TimeZone { get; set; }
         public string? Culture { get; set; }
+        public string? ThemeMode { get; set; }
+        public string? ThemeScheme { get; set; }
+        public string? ThemeAccent { get; set; }
     }
 
     public List<SelectListItem> TimeZoneOptions { get; private set; } = new();
     public List<SelectListItem> CultureOptions { get; private set; } = new();
+    public List<SelectListItem> ThemeModeOptions => ThemeCatalog.Modes.Select(o => new SelectListItem(_l[o.Label].Value, o.Id)).ToList();
+    public List<SelectListItem> ThemeSchemeOptions => ThemeCatalog.Schemes.Select(o => new SelectListItem(_l[o.Label].Value, o.Id)).ToList();
+    public List<SelectListItem> ThemeAccentOptions => ThemeCatalog.Accents.Select(o => new SelectListItem(_l[o.Label].Value, o.Id)).ToList();
 
     /// <summary>Value of the environment variable that pins a field, or null when it is editable.</summary>
     public string? PublicUrlFromEnv { get; } = EnvValue(PublicUrlEnvVar);
@@ -81,6 +87,9 @@ public class IndexModel : PageModel
             PublicBaseUrl = _config.OAuth?.PublicBaseUrl,
             TimeZone = _config.Display?.TimeZone,
             Culture = _config.Display?.Culture,
+            ThemeMode = _config.Display?.ThemeMode,
+            ThemeScheme = _config.Display?.ThemeScheme,
+            ThemeAccent = _config.Display?.ThemeAccent,
         };
         BuildOptions();
     }
@@ -97,6 +106,10 @@ public class IndexModel : PageModel
         if (TimeZoneFromEnv is null && !Fmt.IsKnownTimeZone(timeZone))
         {
             ModelState.AddModelError("Input.TimeZone", _l["Choose a time zone from the list."]);
+        }
+        if (!ThemeCatalog.IsMode(Input.ThemeMode) || !ThemeCatalog.IsScheme(Input.ThemeScheme) || !ThemeCatalog.IsAccent(Input.ThemeAccent))
+        {
+            ModelState.AddModelError(string.Empty, _l["Choose an option from the list."]);
         }
         if (culture is null)
         {
@@ -117,6 +130,9 @@ public class IndexModel : PageModel
         updated.OAuth.PublicBaseUrl = publicUrl;
         updated.Display.TimeZone = timeZone!;
         updated.Display.Culture = culture!.Name;
+        updated.Display.ThemeMode = Input.ThemeMode!;
+        updated.Display.ThemeScheme = Input.ThemeScheme!;
+        updated.Display.ThemeAccent = Input.ThemeAccent!;
 
         try
         {
@@ -136,6 +152,9 @@ public class IndexModel : PageModel
         _config.OAuth.PublicBaseUrl = publicUrl;
         _config.Display.TimeZone = timeZone!;
         _config.Display.Culture = culture.Name;
+        _config.Display.ThemeMode = Input.ThemeMode!;
+        _config.Display.ThemeScheme = Input.ThemeScheme!;
+        _config.Display.ThemeAccent = Input.ThemeAccent!;
         _fmt.UseTimeZone(timeZone);
         _localization.DefaultRequestCulture = new RequestCulture(culture);
 

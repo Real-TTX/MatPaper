@@ -4,6 +4,34 @@ MatPaper is a self-hosted, Dockerized document management system (DMS) — a lig
 alternative to [Paperless-NGX](https://github.com/paperless-ngx/paperless-ngx) built on a
 modern .NET stack.
 
+## Screenshots
+
+Taken from a demo instance with made-up documents (German UI; English is built in).
+
+| | |
+|---|---|
+| ![Documents](docs/images/documents.png) | ![Inbox](docs/images/inbox.png) |
+| **Documents** — thumbnails, full-text search and filters | **Inbox** — everything not yet filed, taken over with one click |
+| ![Document detail](docs/images/document-detail.png) | ![Connections](docs/images/connections.png) |
+| **Detail** — preview, metadata, sharing | **Connections** — NAS, mailboxes and cloud drives, defined once |
+
+**Themes.** Light, dark or system, five colour schemes and seven accent colours — every
+combination is checked for readable contrast. Each user picks their own look (it follows the
+account to every device); the administrator sets the default for everyone else and for the
+sign-in page.
+
+| | |
+|---|---|
+| ![Paper, amber](docs/images/theme-paper-amber.png) | ![Black (OLED), violet](docs/images/theme-oled-violet.png) |
+| **Paper** with amber | **Black (OLED)** with violet |
+| ![High contrast, petrol](docs/images/theme-contrast-teal.png) | ![Dark, blue](docs/images/theme-dark-blue.png) |
+| **High contrast** with petrol | **Dark** with blue |
+
+<p>
+  <img src="docs/images/appearance.png" alt="Appearance settings" width="49%" />
+  <img src="docs/images/mobile-documents.png" alt="Mobile view" width="22%" />
+</p>
+
 ## Tech stack
 
 - **.NET 10** (ASP.NET Core **Razor Pages**)
@@ -15,9 +43,15 @@ modern .NET stack.
 - Document storage with correspondents, tags, projects and document types
 - One inbox: everything that is not in the archive yet waits there — uploads, mail and
   folder imports, and files a storage search found — and is taken over with one click
-- Storage locations on local folders **or SMB/CIFS shares** (no host mount needed)
+- Storage locations on local folders, **SMB/CIFS shares**, **Google Drive** or **OneDrive** —
+  no host mount needed; every location has a folder picker
+- **Connections** (System → Connections): a NAS, a mailbox or a cloud drive is defined once
+  — with a password / app password or **OAuth** (Gmail, Office 365, Google Drive, OneDrive) —
+  and reused by storage locations and import tasks
 - Full-text search over title and OCR text
 - Import (IMAP / POP3 / filesystem / SMB) and export/backup tasks
+- Themes per user, instance settings page (public address, time zone, default language),
+  German and English UI
 - Per-user ownership, sharing and a common area; cookie-based authentication with roles
 
 See [PLAN.md](PLAN.md) for the full roadmap and phase breakdown.
@@ -73,10 +107,40 @@ through the "Deleted" filter on the document list, and can be restored as long a
 still exists.
 
 **Storage locations** (System → Storage locations) hold the filed documents. A location is
-either a local folder (such as the `/storage` volume or a mounted share) or an SMB/CIFS
-share reached over the network with a saved credential. Files are placed by the location's
+a local folder (such as the `/storage` volume or a mounted share), an SMB/CIFS share reached
+over the network, or a Google Drive / OneDrive folder — the last two through a saved
+[connection](#connections-and-oauth). Files are placed by the location's
 path template, e.g. `{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}`. Import
 tasks that skip the inbox file directly into their configured location. The search icon on
 a location looks through it for files MatPaper does not know yet; which extensions it picks
 up, who owns the finds, whether they go to the common area and how often the search runs is
 configured per location.
+
+## Connections and OAuth
+
+**Connections** (System → Connections) hold *where* something is and *how to sign in*:
+SMB shares, IMAP/POP3 mailboxes, Google Drive and OneDrive. Storage locations and import tasks
+pick a saved connection instead of carrying their own host and password. Secrets are encrypted
+with ASP.NET Data Protection (keys in `/data/keys`) and never shown again.
+
+Gmail, Office 365, Google Drive and OneDrive sign in with **OAuth**. There is no shared
+MatPaper app — you register your own with Google Cloud or Azure, enter its client ID and
+secret in the connection and press *Connect*:
+
+1. Set the **public address** of your instance under System → Settings (or with
+   `MATPAPER_PUBLIC_URL`). The page then shows the **redirect URI**
+   (`<address>/System/Connections/OAuthCallback`); register exactly that with Google/Azure.
+2. Google: publish the Cloud project as *In production*, otherwise the authorization expires
+   after seven days. Scopes: `https://mail.google.com/` (mail) or `…/auth/drive` (Drive).
+3. Microsoft: delegated `Files.ReadWrite.All` (OneDrive) or the IMAP/POP scopes (mail),
+   plus `offline_access`.
+
+Where an app password is simpler (e.g. Gmail with 2-factor), choose the password sign-in.
+
+## Settings
+
+System → Settings edits the public address, the time zone (used for every displayed time and
+for task schedules) and the default language/theme, and shows version, data folder and
+database. Changes are written to `/data/config/app.json` and apply immediately. A value pinned
+by an environment variable (`MATPAPER_PUBLIC_URL`, `MATPAPER_TZ`) is shown locked.
+Database, data folder and inbox folder are read at startup.

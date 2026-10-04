@@ -489,6 +489,27 @@ select.form-control {
     flex: 0 0 auto;
 }
 
+/* A project is a folder of documents, a tag is a pill: different shape, not just a different
+   word. The folder takes the project colour; the label stays plain text. */
+.project-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.project-label__icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
+a.project-label:hover {
+    color: var(--color-primary-text);
+}
+
 /* ==========================================================================
    Badges
    ========================================================================== */

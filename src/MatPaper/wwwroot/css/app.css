@@ -341,6 +341,29 @@ button.account__logout {
     box-shadow: var(--shadow-sm);
 }
 
+.appearance-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+
+.appearance-link:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+}
+
+.appearance-link svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
 /* On the sign-in screen the switch is a small centred control under the card. */
 .lang-switch--auth {
     width: 120px;
@@ -602,5 +625,87 @@ button.account__logout {
 
     .hamburger {
         display: inline-flex;
+    }
+}
+
+/* Phones: the footer becomes one compact row. Language and mode show only their ACTIVE
+   symbol; tapping it switches to the next one (see app.js). Labels give way to icons. */
+@media (max-width: 768px) {
+    .sidebar__footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    /* Row 1: account + sign-out. Row 2: language, appearance, mode. */
+    .account {
+        flex: 1 1 calc(100% - 56px);
+        min-width: 0;
+    }
+
+    .account__name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .account__body {
+        min-width: 0;
+    }
+
+    .account__logout-form {
+        flex: 0 0 auto;
+    }
+
+    .account__logout-label,
+    .theme-switch__label,
+    .appearance-link__label {
+        display: none;
+    }
+
+    .account__logout {
+        padding: 8px;
+        min-width: 40px;
+        justify-content: center;
+    }
+
+    /* One symbol = one control: drop the grey track so it is not framed twice. */
+    .lang-switch,
+    .theme-switch {
+        margin: 0;
+        padding: 0;
+        background: none;
+        flex: 0 0 auto;
+    }
+
+    .lang-switch .lang-switch__btn.is-active,
+    .theme-switch .theme-switch__btn.is-active,
+    .appearance-link {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        box-shadow: none;
+    }
+
+    /* only the active segment stays visible */
+    .lang-switch .lang-switch__btn:not(.is-active),
+    .theme-switch .theme-switch__btn:not(.is-active) {
+        display: none;
+    }
+
+    .lang-switch__btn,
+    .theme-switch__btn,
+    .appearance-link {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .theme-switch__btn svg {
+        width: 18px;
+        height: 18px;
     }
 }

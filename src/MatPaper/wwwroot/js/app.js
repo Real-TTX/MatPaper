@@ -117,11 +117,35 @@
         });
     }
 
+    // Phone footer shows only the active symbol (CSS); tapping it moves on to the next one.
+    function isCompactFooter() {
+        return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+    }
+
+    function wireLangSwitch() {
+        var buttons = document.querySelectorAll(".sidebar .lang-switch__btn");
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].addEventListener("click", function (ev) {
+                if (!isCompactFooter() || !this.classList.contains("is-active")) {
+                    return;
+                }
+                var other = this.parentElement.querySelector(".lang-switch__btn:not(.is-active)");
+                if (other) {
+                    ev.preventDefault();
+                    other.click();
+                }
+            });
+        }
+    }
+
     function wireThemeButtons() {
         var buttons = document.querySelectorAll(".theme-switch__btn");
         for (var i = 0; i < buttons.length; i++) {
             buttons[i].addEventListener("click", function () {
                 var mode = normalizeMode(this.getAttribute("data-theme-value"));
+                if (isCompactFooter() && mode === currentMode()) {
+                    mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+                }
                 if (!mode) {
                     return;
                 }
@@ -157,6 +181,7 @@
             saveMode(stored);
         }
         wireThemeButtons();
+        wireLangSwitch();
         wireSystemListener();
     }
 

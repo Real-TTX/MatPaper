@@ -585,6 +585,7 @@ a.project-label:hover {
 .list-actions {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     margin-top: 16px;
 }
@@ -1142,4 +1143,59 @@ tr[data-row-href]:hover {
 tr[data-row-href]:focus-visible {
     outline: none;
     box-shadow: inset var(--focus-ring);
+}
+
+/* Phones: a filter bar shows only the search and a "Filter (n)" button; the rest unfolds on
+   demand (see wireToolbars in app.js). Open, the fields sit two per row. */
+.toolbar__toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .toolbar {
+        gap: 10px 12px;
+        padding: 12px;
+    }
+
+    .toolbar__group,
+    .toolbar .form-row {
+        min-width: 0;
+        flex: 1 1 calc(50% - 6px);
+    }
+
+    .toolbar__search {
+        flex: 1 1 0;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .toolbar__toggle {
+        display: flex;
+        flex: 0 0 auto;
+    }
+
+    .toolbar__toggle .btn {
+        height: var(--control-height);
+        white-space: nowrap;
+    }
+
+    .toolbar--collapsible:not(.is-open) .toolbar__collapsible,
+    .toolbar--collapsible:not(.is-open) .toolbar__apply,
+    .toolbar--collapsible:not(.is-open) .toolbar__count {
+        display: none;
+    }
+
+    .toolbar--collapsible .toolbar__count,
+    .toolbar--collapsible .toolbar__apply {
+        flex: 1 1 100%;
+    }
+
+    .toolbar--collapsible .toolbar__apply .btn {
+        width: 100%;
+    }
+
+    code,
+    .form-help {
+        overflow-wrap: anywhere;
+    }
 }

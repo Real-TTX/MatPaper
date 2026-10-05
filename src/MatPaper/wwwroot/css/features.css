@@ -242,6 +242,7 @@
 
 .dash-recent__body {
     min-width: 0;
+    flex: 1 1 0;
 }
 
 .dash-recent__title {
@@ -670,6 +671,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
     margin-top: 1rem;
 }
 
@@ -1129,6 +1131,12 @@
     .doc-preview {
         position: static;
     }
+
+    /* The page scrolls past the preview to reach the metadata, so keep it modest. */
+    .doc-preview__frame {
+        height: 50vh;
+        min-height: 300px;
+    }
 }
 .doc-reanalyze {
     display: flex;
@@ -1196,4 +1204,20 @@
     border-radius: var(--radius-sm);
     padding: 10px;
     margin: 0;
+}
+
+/* Phones: wizard steps shrink to their numbers; only the current step keeps its name. */
+@media (max-width: 560px) {
+    .wizard__step:not(.is-active) .wizard__label {
+        display: none;
+    }
+
+    .wizard__step:not(.is-active) {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .dash-recent__title {
+        display: block;
+    }
 }

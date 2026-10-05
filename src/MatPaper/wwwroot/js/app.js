@@ -185,6 +185,61 @@
         wireSystemListener();
     }
 
+    // Filter bars: on phones only the search stays visible plus a "Filter (n)" toggle that
+    // unfolds the remaining fields. n counts the filters that currently narrow the list.
+    function wireToolbars() {
+        var bars = document.querySelectorAll("form.toolbar");
+        for (var i = 0; i < bars.length; i++) {
+            (function (bar) {
+                var kids = Array.prototype.slice.call(bar.children);
+                var apply = kids[kids.length - 1];
+                var search = null;
+                var filters = [];
+                kids.forEach(function (el) {
+                    if (el === apply) { return; }
+                    if (el.classList.contains("toolbar__search")) { search = el; }
+                    else if (el.classList.contains("toolbar__count") || el.classList.contains("toolbar__spacer")) { return; }
+                    else { filters.push(el); }
+                });
+                var button = apply && apply.querySelector("button[type=submit]");
+                if (filters.length < 3 || !button) { return; }
+
+                bar.classList.add("toolbar--collapsible");
+                apply.classList.add("toolbar__apply");
+                filters.forEach(function (el) { el.classList.add("toolbar__collapsible"); });
+
+                function activeCount() {
+                    var n = 0;
+                    filters.forEach(function (el) {
+                        var picker = el.querySelector(".mp-picker");
+                        var field = el.querySelector("select, input:not([type=hidden])");
+                        if (picker) {
+                            if ((picker.getAttribute("data-selected") || "") !== "") { n++; }
+                        } else if (field && field.name !== "Sort") {
+                            if (field.tagName === "SELECT" ? field.selectedIndex > 0 : field.value !== "") { n++; }
+                        }
+                    });
+                    return n;
+                }
+
+                var wrap = document.createElement("div");
+                wrap.className = "toolbar__group toolbar__toggle";
+                var toggle = document.createElement("button");
+                toggle.type = "button";
+                toggle.className = "btn btn--secondary";
+                toggle.setAttribute("aria-expanded", "false");
+                var n = activeCount();
+                toggle.textContent = button.textContent.trim() + (n ? " (" + n + ")" : "") + " ▾";
+                toggle.addEventListener("click", function () {
+                    var open = bar.classList.toggle("is-open");
+                    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+                });
+                wrap.appendChild(toggle);
+                if (search) { search.insertAdjacentElement("afterend", wrap); } else { bar.insertBefore(wrap, bar.firstChild); }
+            })(bars[i]);
+        }
+    }
+
     function wireSidebarToggle() {
         var shell = document.querySelector(".app-shell");
         var toggle = document.getElementById("sidebar-toggle");
@@ -294,6 +349,7 @@
     function init() {
         initTheme();
         wireSidebarToggle();
+        wireToolbars();
         wireDependentFields();
         wireConfirmActions();
         wireBusyForms();

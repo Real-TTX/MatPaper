@@ -163,8 +163,9 @@ public sealed class DocumentProcessingService : BackgroundService
             var analysis = sp.GetRequiredService<DocumentAnalysisService>();
             await analysis.AnalyzeAsync(document, new AnalysisOptions(), actingUserId: null, ct);
 
+            // What the analysis found may change the path the template gives a filed document.
             document.UpdateDate = DateTime.UtcNow;
-            await db.SaveChangesAsync(ct);
+            await sp.GetRequiredService<DocumentFilingService>().RefileAndSaveAsync(document, ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

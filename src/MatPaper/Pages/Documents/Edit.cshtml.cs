@@ -509,6 +509,8 @@ public class EditModel : PageModel
         // Move / relocate the physical file of a FILED document to match the new
         // metadata. Staged files stay in the inbox area until confirmed. A missing or
         // locked source file must not surface as a 500 — fail the save cleanly.
+        StorageLocation? movedFromLoc = null;
+        string? movedFromPath = null;
         if (!document.IsStaged && newLoc != null && !string.IsNullOrEmpty(document.RelativePath))
         {
             var oldLoc = document.StorageLocationId is long oldId
@@ -528,9 +530,15 @@ public class EditModel : PageModel
 
                 try
                 {
+                    var pathBefore = document.RelativePath;
                     document.RelativePath = locationChanged
                         ? await _storage.RelocateAsync(oldLoc, document.RelativePath, newLoc, desiredRelativePath, HttpContext.RequestAborted, cleanupEmptyDirectories: !keepFolders)
                         : await _storage.MoveAsync(oldLoc, document.RelativePath, desiredRelativePath, HttpContext.RequestAborted, cleanupEmptyDirectories: !keepFolders);
+                    if (document.RelativePath != pathBefore)
+                    {
+                        movedFromLoc = oldLoc;
+                        movedFromPath = pathBefore;
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -561,7 +569,27 @@ public class EditModel : PageModel
         // Sync tags to the selected set.
         SyncTags(document, now);
 
-        await _db.SaveChangesAsync();
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch
+        {
+            // The file already moved: put it back so file and database keep agreeing.
+            if (movedFromLoc != null && movedFromPath != null && newLoc != null)
+            {
+                try
+                {
+                    await _storage.RelocateAsync(newLoc, document.RelativePath, movedFromLoc, movedFromPath, CancellationToken.None, cleanupEmptyDirectories: false);
+                }
+                catch
+                {
+                    // nothing more to do here; the original error is what gets reported
+                }
+            }
+
+            throw;
+        }
 
         if (confirm)
         {
@@ -620,7 +648,7 @@ public class EditModel : PageModel
             document.UpdateState = UpdateState.Updated;
             document.UpdateDate = DateTime.UtcNow;
             document.UpdateUserId = _currentUser.UserId;
-            await _db.SaveChangesAsync();
+            await _filing.RefileAndSaveAsync(document, HttpContext.RequestAborted);
             this.Notify(result.UsedInvoiceData
                 ? _l["Re-analyzed from the structured e-invoice (XRechnung/ZUGFeRD)."].Value
                 : _l["Re-analyzed from the document text."].Value);

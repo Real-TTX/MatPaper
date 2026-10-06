@@ -158,6 +158,91 @@ public sealed class DocumentFilingService(
         return FilingResult.Ok();
     }
 
+    /// <summary>
+    /// Keeps a filed document's file where its metadata says it belongs: after something changed
+    /// type, correspondent, date or title (text analysis, a re-analysis), the file moves to the path
+    /// the location's template now produces, and everything pending on the document is saved. If the
+    /// move succeeded but the save fails, the file is moved back so file and database never disagree.
+    /// A move that cannot happen (file missing, share offline) is logged and leaves the file where it
+    /// is; the metadata is still saved. Staged documents and files found where they lay are only saved.
+    /// Returns true when the file was moved.
+    /// </summary>
+    public async Task<bool> RefileAndSaveAsync(Document document, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        StorageLocation? location = null;
+        string? oldPath = null;
+        var moved = false;
+
+        if (!document.IsStaged
+            && document.Origin != DocumentOrigin.StorageScan
+            && !string.IsNullOrEmpty(document.RelativePath)
+            && document.StorageLocationId is long locationId)
+        {
+            location = await db.StorageLocations.Include(s => s.Connection)
+                .FirstOrDefaultAsync(s => s.Id == locationId, ct).ConfigureAwait(false);
+        }
+
+        if (location is not null)
+        {
+            try
+            {
+                var correspondentName = document.CorrespondentId is long cid
+                    ? await db.Correspondents.AsNoTracking().Where(c => c.Id == cid).Select(c => c.Name).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+                    : null;
+                var typeName = document.DocumentTypeId is long tid
+                    ? await db.DocumentTypes.AsNoTracking().Where(t => t.Id == tid).Select(t => t.Name).FirstOrDefaultAsync(ct).ConfigureAwait(false)
+                    : null;
+
+                var desired = storage.BuildRelativePath(
+                    location, document.Title,
+                    document.DocumentDate ?? document.FileModifiedUtc ?? document.CreateDate,
+                    correspondentName, typeName, document.OriginalFileName);
+
+                oldPath = document.RelativePath;
+                var newPath = await storage.MoveAsync(location, oldPath, desired, ct, cleanupEmptyDirectories: true).ConfigureAwait(false);
+                if (!string.Equals(newPath, oldPath, StringComparison.Ordinal))
+                {
+                    document.RelativePath = newPath;
+                    moved = true;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not move document {DocumentId} to match its metadata; it stays where it is.", document.Id);
+            }
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            if (moved && location is not null && oldPath is not null)
+            {
+                try
+                {
+                    await storage.MoveAsync(location, document.RelativePath, oldPath, CancellationToken.None, cleanupEmptyDirectories: false).ConfigureAwait(false);
+                    document.RelativePath = oldPath;
+                }
+                catch (Exception undo)
+                {
+                    logger.LogError(undo, "Saving document {DocumentId} failed after its file was moved, and the move could not be undone.", document.Id);
+                }
+            }
+
+            throw;
+        }
+
+        return moved;
+    }
+
     private static void MarkReviewed(Document document, long? actingUserId)
     {
         var now = DateTime.UtcNow;

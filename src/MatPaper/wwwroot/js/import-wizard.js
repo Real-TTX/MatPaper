@@ -115,11 +115,11 @@
         function syncPostAction() {
             if (!postAction) { return; }
             var isPop3 = currentType() === "1";
-            ["markseen", "move"].forEach(function (value) {
+            ["move"].forEach(function (value) {
                 var option = postAction.querySelector('option[value="' + value + '"]');
                 if (option) { option.hidden = isPop3; option.disabled = isPop3; }
             });
-            if (isPop3 && (postAction.value === "markseen" || postAction.value === "move")) {
+            if (isPop3 && postAction.value === "move") {
                 postAction.value = "none";
                 postAction.dispatchEvent(new Event("change", { bubbles: true }));
             }

@@ -154,7 +154,8 @@ public class DetailsModel : PageModel
             "date" => _l["From {0}", lookbackDate is { } d ? _fmt.Date(d) : none].Value,
             _ => _l["Everything"].Value
         }));
-        Source.Add((_l["After import"].Value, postAction switch
+        var isMail = task.Type is ImportTaskType.Imap or ImportTaskType.Pop3;
+        Source.Add((_l["After import"].Value, isMail ? DescribeMailPost(postAction, task.Type) : postAction switch
         {
             "delete" => _l["Delete at the source"].Value,
             "move" => _l["Move at the source"].Value,
@@ -189,6 +190,20 @@ public class DetailsModel : PageModel
             var owner = await _db.Users.AsNoTracking().Where(x => x.Id == oid).Select(x => x.Username).FirstOrDefaultAsync();
             if (owner is not null) { Filing.Add((_l["Owner"].Value, owner)); }
         }
+    }
+
+    private string DescribeMailPost(string postAction, ImportTaskType type)
+    {
+        var p = MailPostActions.Parse(postAction);
+        var parts = new List<string>();
+        if (type == ImportTaskType.Imap)
+        {
+            if (p.MarkSeen) { parts.Add(_l["Mark as read"].Value); }
+            if (p.Flag) { parts.Add(_l["Mark as important (star)"].Value); }
+            if (p.Move) { parts.Add(_l["Move at the source"].Value); }
+        }
+        if (p.Delete) { parts.Add(_l["Delete at the source"].Value); }
+        return parts.Count == 0 ? _l["Leave untouched"].Value : string.Join(", ", parts);
     }
 
     private static void AddIfSet(List<(string, string)> list, string label, string? value)

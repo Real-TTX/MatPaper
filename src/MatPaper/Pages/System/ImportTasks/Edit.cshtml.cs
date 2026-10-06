@@ -109,7 +109,11 @@ public class EditModel : PageModel
         public string MailFilterWhere { get; set; } = "auto";
         public string AttachmentExtensions { get; set; } = DefaultAttachmentExtensions;
         public bool ImportBodyAsPdf { get; set; }
-        public string MailPostAction { get; set; } = "markseen";
+        public bool MailMarkSeen { get; set; } = true;
+        public bool MailMarkFlagged { get; set; }
+
+        /// <summary>What happens after the marks: none | move | delete.</summary>
+        public string MailPostAction { get; set; } = "none";
         public string? MailMoveToFolder { get; set; }
 
         /// <summary>UI-only toggle: "all" imports everything, "filter" reveals the filter fields.</summary>
@@ -625,7 +629,9 @@ public class EditModel : PageModel
                 : Input.AttachmentExtensions.Trim(),
             ImportBodyAsPdf = Input.ImportBodyAsPdf,
             FilterWhere = Input.MailFilterWhere is "server" or "local" ? Input.MailFilterWhere : "auto",
-            PostAction = Input.MailPostAction,
+            PostAction = new MailPostActions(
+                Input.MailMarkSeen, Input.MailMarkFlagged,
+                Input.MailPostAction == "move", Input.MailPostAction == "delete").Format(),
             MoveToFolder = string.IsNullOrWhiteSpace(Input.MailMoveToFolder) ? null : Input.MailMoveToFolder.Trim(),
             StorageLocationId = Input.StorageLocationId,
             CorrespondentId = Input.CorrespondentId,
@@ -726,7 +732,10 @@ public class EditModel : PageModel
                 : mail.AttachmentExtensions;
             Input.ImportBodyAsPdf = mail.ImportBodyAsPdf;
             Input.MailFilterWhere = mail.FilterWhere;
-            Input.MailPostAction = mail.PostAction;
+            var post = MailPostActions.Parse(mail.PostAction);
+            Input.MailMarkSeen = post.MarkSeen;
+            Input.MailMarkFlagged = post.Flag;
+            Input.MailPostAction = post.Delete ? "delete" : post.Move ? "move" : "none";
             Input.MailMoveToFolder = mail.MoveToFolder;
             Input.StorageLocationId = mail.StorageLocationId;
             Input.CorrespondentId = mail.CorrespondentId;

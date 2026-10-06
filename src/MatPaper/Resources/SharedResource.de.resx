@@ -782,4 +782,14 @@
   <data name="Automatic (the server; Gmail: here)" xml:space="preserve"><value>Automatisch (Server; bei Gmail hier)</value></data>
   <data name="The mail server (fast, finds whole words on Gmail)" xml:space="preserve"><value>Mail-Server (schnell; bei Gmail nur ganze Wörter)</value></data>
   <data name="Here (reads every header, exact but slow)" xml:space="preserve"><value>Hier (liest alle Kopfzeilen, genau aber langsam)</value></data>
+  <data name="Mark as important (star)" xml:space="preserve"><value>Als wichtig markieren (Stern)</value></data>
+  <data name="Then" xml:space="preserve"><value>Danach</value></data>
+  <data name="Profile" xml:space="preserve"><value>Profil</value></data>
+  <data name="Change password" xml:space="preserve"><value>Passwort ändern</value></data>
+  <data name="Current password" xml:space="preserve"><value>Aktuelles Passwort</value></data>
+  <data name="New password" xml:space="preserve"><value>Neues Passwort</value></data>
+  <data name="Enter a valid e-mail address." xml:space="preserve"><value>Bitte eine gültige E-Mail-Adresse eingeben.</value></data>
+  <data name="The current password is wrong." xml:space="preserve"><value>Das aktuelle Passwort ist falsch.</value></data>
+  <data name="Password changed." xml:space="preserve"><value>Passwort geändert.</value></data>
+  <data name="Saved" xml:space="preserve"><value>Gespeichert</value></data>
 </root>

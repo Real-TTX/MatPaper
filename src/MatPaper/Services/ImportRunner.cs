@@ -551,8 +551,8 @@ public sealed class ImportRunner
                 log.AppendLine($"Read headers of {Math.Min(i + 200, uids.Count)} of {uids.Count} message(s): {wanted.Count} match.");
             }
 
-            var postAction = settings.PostAction?.ToLowerInvariant();
-            var moveDest = postAction == "move" ? GetOrCreateFolder(client, settings.MoveToFolder) : null;
+            var post = MailPostActions.Parse(settings.PostAction);
+            var moveDest = post.Move ? GetOrCreateFolder(client, settings.MoveToFolder) : null;
 
             // The position only advances past messages that were fully handled, so one that
             // fails is tried again next time; it is saved even when the run is cut short.
@@ -587,22 +587,18 @@ public sealed class ImportRunner
                         count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, task.Id, log, ct).ConfigureAwait(false);
                     }
 
-                    switch (postAction)
+                    var flags = MessageFlags.None;
+                    if (post.MarkSeen) { flags |= MessageFlags.Seen; }
+                    if (post.Flag) { flags |= MessageFlags.Flagged; }
+                    if (post.Delete) { flags |= MessageFlags.Deleted; }
+                    if (flags != MessageFlags.None)
                     {
-                        case "delete":
-                            await folder.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, ct).ConfigureAwait(false);
-                            break;
-                        case "move":
-                            if (moveDest is not null)
-                            {
-                                await folder.MoveToAsync(uid, moveDest, ct).ConfigureAwait(false);
-                            }
-                            break;
-                        case "none":
-                            break;
-                        default: // "markseen"
-                            await folder.AddFlagsAsync(uid, MessageFlags.Seen, silent: true, ct).ConfigureAwait(false);
-                            break;
+                        await folder.AddFlagsAsync(uid, flags, silent: true, ct).ConfigureAwait(false);
+                    }
+
+                    if (moveDest is not null)
+                    {
+                        await folder.MoveToAsync(uid, moveDest, ct).ConfigureAwait(false);
                     }
 
                     lastDone = Math.Max(lastDone, uid.Id);
@@ -618,7 +614,7 @@ public sealed class ImportRunner
                 }
             }
 
-            if (postAction == "delete")
+            if (post.Delete)
             {
                 await folder.ExpungeAsync(ct).ConfigureAwait(false);
             }
@@ -654,7 +650,7 @@ public sealed class ImportRunner
             await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
             await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
-            var postAction = settings.PostAction?.ToLowerInvariant();
+            var post = MailPostActions.Parse(settings.PostAction);
             var total = client.Count;
 
             // POP3 has no folder positions, but every message has a stable UIDL: remember the
@@ -706,7 +702,7 @@ public sealed class ImportRunner
                         count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, task.Id, log, ct).ConfigureAwait(false);
                     }
 
-                    if (postAction == "delete")
+                    if (post.Delete)
                     {
                         await client.DeleteMessageAsync(index, ct).ConfigureAwait(false);
                     }

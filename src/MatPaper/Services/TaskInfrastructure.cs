@@ -78,7 +78,11 @@ public class MailImportSettings
     /// <summary>Also render the e-mail body itself into an archival PDF and import it.</summary>
     public bool ImportBodyAsPdf { get; set; } = false;
 
-    /// <summary>markseen|delete|none|move (move is IMAP-only, into <see cref="MoveToFolder"/>).</summary>
+    /// <summary>
+    /// What happens to a handled message: comma-separated, e.g. "markseen,flag,move". Tokens: markseen,
+    /// flag (IMAP star), then at most one of move (IMAP, into <see cref="MoveToFolder"/>) or delete; "none" = nothing.
+    /// An empty value means "markseen". See <see cref="MailPostActions"/>.
+    /// </summary>
     public string PostAction { get; set; } = "markseen";
 
     /// <summary>Target IMAP folder for the "move" post-action.</summary>
@@ -281,5 +285,36 @@ public class SecretProtector
         {
             return "";
         }
+    }
+}
+
+/// <summary>The parsed form of <see cref="MailImportSettings.PostAction"/>: what to do with a handled mail.</summary>
+public readonly record struct MailPostActions(bool MarkSeen, bool Flag, bool Move, bool Delete)
+{
+    public static MailPostActions Parse(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return new MailPostActions(true, false, false, false); // the historic default
+        }
+
+        var tokens = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(t => t.ToLowerInvariant()).ToHashSet();
+        var delete = tokens.Contains("delete");
+        return new MailPostActions(
+            tokens.Contains("markseen") && !delete,
+            tokens.Contains("flag") && !delete,
+            tokens.Contains("move") && !delete,
+            delete);
+    }
+
+    public string Format()
+    {
+        var tokens = new List<string>();
+        if (MarkSeen) { tokens.Add("markseen"); }
+        if (Flag) { tokens.Add("flag"); }
+        if (Move) { tokens.Add("move"); }
+        if (Delete) { tokens.Add("delete"); }
+        return tokens.Count == 0 ? "none" : string.Join(',', tokens);
     }
 }

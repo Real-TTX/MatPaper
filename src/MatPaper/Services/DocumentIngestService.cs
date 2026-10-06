@@ -46,7 +46,11 @@ public sealed class IngestResult
 public sealed class DocumentIngestService(
     AppDbContext db,
     DocumentStorageService storage,
-    DocumentProcessingQueue queue)
+    DocumentProcessingQueue queue,
+    InvoiceDataExtractor invoices,
+    InvoicePdfRenderer invoiceRenderer,
+    DocumentSidecarService sidecars,
+    MatPaper.Configuration.AppConfig config)
 {
     public async Task<IngestResult> IngestAsync(
         Stream content,
@@ -61,7 +65,8 @@ public sealed class DocumentIngestService(
         ReviewState reviewState = ReviewState.Pending,
         bool isCommon = false,
         DocumentOrigin origin = DocumentOrigin.Upload,
-        long? importTaskId = null)
+        long? importTaskId = null,
+        DocumentSidecar? sidecar = null)
     {
         ArgumentNullException.ThrowIfNull(content);
 
@@ -74,6 +79,24 @@ public sealed class DocumentIngestService(
         var fileSize = buffer.Length;
         var contentHash = await ComputeHashAsync(buffer, ct).ConfigureAwait(false);
         buffer.Position = 0;
+
+        // A bare XRechnung (XML without a PDF) becomes a readable PDF so it fits the archive; the XML
+        // is kept next to it as a companion file. The hash stays that of the XML, so importing the
+        // same invoice again is still recognised (the generated PDF differs on every rendering).
+        byte[]? invoiceXml = null;
+        if (string.Equals(Path.GetExtension(originalFileName ?? string.Empty), ".xml", StringComparison.OrdinalIgnoreCase))
+        {
+            var xmlBytes = buffer.ToArray();
+            var parsed = invoices.TryExtractFromXml(xmlBytes);
+            if (parsed is not null)
+            {
+                var german = !string.Equals(config.Display?.Culture, "en-US", StringComparison.OrdinalIgnoreCase);
+                invoiceXml = xmlBytes;
+                buffer = new MemoryStream(invoiceRenderer.Render(parsed, german));
+                fileSize = buffer.Length;
+                originalFileName = Path.GetFileNameWithoutExtension(originalFileName) + ".pdf";
+            }
+        }
 
         // Dedupe within the owner's own documents (plus the common area) so two
         // users can each hold their own copy of the same file.
@@ -199,6 +222,8 @@ public sealed class DocumentIngestService(
             OriginalFileName = safeFileName,
             FileSize = fileSize,
             ContentHash = contentHash,
+            IsEInvoice = invoiceXml is not null,
+            HasEInvoiceXml = invoiceXml is not null,
             OwnerId = actingUserId,
             IsCommon = isCommon,
             Origin = origin,
@@ -225,6 +250,35 @@ public sealed class DocumentIngestService(
                     UpdateDate = now,
                     UpdateUserId = actingUserId
                 });
+            }
+        }
+
+        // A metadata file that came with the file (another MatPaper's archive) restores what was known.
+        if (sidecar is not null)
+        {
+            await sidecars.ApplyAsync(document, sidecar, actingUserId, ct).ConfigureAwait(false);
+        }
+
+        if (invoiceXml is not null)
+        {
+            try
+            {
+                if (stage)
+                {
+                    await storage.StageCompanionAsync(actualRelativePath, DocumentStorageService.XmlCompanion, invoiceXml, ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    await storage.WriteCompanionAsync(location!, actualRelativePath, DocumentStorageService.XmlCompanion, invoiceXml, ct).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                document.HasEInvoiceXml = false; // the PDF alone is still a usable document
             }
         }
 

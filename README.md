@@ -135,6 +135,10 @@ sign-in page.
   — with a password / app password or **OAuth** (Gmail, Office 365, Google Drive, OneDrive) —
   and reused by storage locations and import tasks
 - Full-text search over title and OCR text
+- **E-invoices** (XRechnung, ZUGFeRD, Factur-X): amounts, due date, VAT ID, IBAN and buyer are read from
+  the structured data; a bare XRechnung XML becomes a readable PDF with the XML kept next to it
+- **Metadata files** (`.matpaper.json`) next to the documents, so an archive can be read back into a
+  fresh database
 - Import (IMAP / POP3 / filesystem / SMB) and export/backup tasks
 - Themes per user, instance settings page (public address, time zone, default language),
   German and English UI
@@ -196,6 +200,23 @@ IMAP the server does that filtering, so an old mailbox is not fetched at all. Th
 the wizard looks at the newest 200 to 5000 items (POP3: at most 500, as it has to download
 each message) and shows 25 at a time; it ignores the remembered position so it always shows
 what the filters would catch.
+
+**E-invoices.** A PDF with embedded invoice data (ZUGFeRD, Factur-X) and a standalone XRechnung
+`.xml` are recognised everywhere a file comes in (upload, import tasks, storage search). The invoice
+facts - gross, net and VAT amount, due date, VAT ID, IBAN, buyer, buyer reference - are stored with
+the document, shown in its detail view and marked with an *E-invoice* badge. A bare XML is rendered
+into an A4 PDF so it behaves like any other document; the original is saved next to it as
+`{file}.pdf.xml` and can be downloaded from the document. To collect e-invoices from a mailbox or
+folder add `.xml` to the task's attachment extensions.
+
+**Metadata files.** A storage location can write a `{file}.matpaper.json` next to every filed
+document (System → Storage locations → *Write metadata files*). It holds title, date, type,
+correspondent, project, tags, invoice data and the review state - by name, not by id. Whatever
+moves, renames or deletes the document takes this file and an `.xml` companion along. Import tasks
+(folder, SMB) and the storage search read the file back, so pointing MatPaper at an archive restores
+everything it knew; missing types, correspondents and tags are created by name. Empty folder
+placeholders follow the instance language (*Unsortiert* / *Ohne Typ* / *Ohne Titel* or *Unsorted* /
+*Unfiled* / *Untitled*).
 
 ## Connections and OAuth
 

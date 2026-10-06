@@ -17,15 +17,18 @@ public sealed class StorageScanService
 
     private readonly AppDbContext _db;
     private readonly DocumentStorageService _storage;
+    private readonly DocumentSidecarService _sidecars;
     private readonly ILogger<StorageScanService> _logger;
 
     public StorageScanService(
         AppDbContext db,
         DocumentStorageService storage,
+        DocumentSidecarService sidecars,
         ILogger<StorageScanService> logger)
     {
         _db = db;
         _storage = storage;
+        _sidecars = sidecars;
         _logger = logger;
     }
 
@@ -89,6 +92,10 @@ public sealed class StorageScanService
         var extensions = ParseExtensions(loc.ScanExtensions);
         var ownerId = await ResolveOwnerIdAsync(loc, actingUserId, ct);
 
+        // Companion files (a metadata file, the XML of an imported XRechnung) belong to the file
+        // they are named after and are never documents of their own.
+        var allPaths = new HashSet<string>(entries.Select(e => e.RelativePath), StringComparer.Ordinal);
+
         var now = DateTime.UtcNow;
         int scanned = 0, skipped = 0, added = 0;
         var batch = new List<Document>(ChunkSize);
@@ -97,7 +104,8 @@ public sealed class StorageScanService
         {
             ct.ThrowIfCancellationRequested();
 
-            if (HasHiddenSegment(entry.RelativePath) || !Wanted(entry.RelativePath, extensions))
+            if (HasHiddenSegment(entry.RelativePath) || !Wanted(entry.RelativePath, extensions)
+                || IsCompanion(entry.RelativePath, allPaths))
             {
                 continue;
             }
@@ -113,7 +121,7 @@ public sealed class StorageScanService
             var fileName = Path.GetFileName(entry.RelativePath);
             var title = Path.GetFileNameWithoutExtension(fileName);
 
-            batch.Add(new Document
+            var found = new Document
             {
                 Token = Guid.NewGuid(),
                 Title = string.IsNullOrWhiteSpace(title) ? fileName : title,
@@ -135,7 +143,19 @@ public sealed class StorageScanService
                 UpdateDate = now,
                 CreateUserId = actingUserId,
                 UpdateUserId = actingUserId
-            });
+            };
+
+            found.HasEInvoiceXml = allPaths.Contains(entry.RelativePath + DocumentStorageService.XmlCompanion);
+
+            // A metadata file next to it carries the document's type, correspondent, tags ... from an
+            // earlier life (another instance, a rebuilt database): use it instead of starting blank.
+            if (allPaths.Contains(entry.RelativePath + DocumentStorageService.MetadataCompanion)
+                && await _sidecars.ReadAsync(loc, entry.RelativePath, ct) is { } sidecar)
+            {
+                await _sidecars.ApplyAsync(found, sidecar, actingUserId, ct);
+            }
+
+            batch.Add(found);
 
             added++;
 
@@ -153,6 +173,18 @@ public sealed class StorageScanService
 
         await FinishAsync(loc, added, null, ct);
         return new ScanResult(scanned, added, skipped, false, null);
+    }
+
+    internal static bool IsCompanion(string relativePath, HashSet<string> allPaths)
+    {
+        if (relativePath.EndsWith(DocumentStorageService.MetadataCompanion, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // "invoice.pdf.xml" next to "invoice.pdf"
+        return relativePath.EndsWith(DocumentStorageService.XmlCompanion, StringComparison.OrdinalIgnoreCase)
+            && allPaths.Contains(relativePath[..^DocumentStorageService.XmlCompanion.Length]);
     }
 
     private async Task FlushAsync(List<Document> batch, CancellationToken ct)

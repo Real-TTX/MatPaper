@@ -57,6 +57,23 @@ public class Document : BaseEntity
     /// <summary>Invoice number extracted from a structured e-invoice (XRechnung/ZUGFeRD), if any.</summary>
     public string? InvoiceNumber { get; set; }
 
+    /// <summary>True when the document carries structured invoice data (XRechnung, ZUGFeRD, Factur-X).</summary>
+    public bool IsEInvoice { get; set; }
+
+    /// <summary>True when the original invoice XML is stored next to the file (<c>{path}.xml</c>), as for an imported XRechnung.</summary>
+    public bool HasEInvoiceXml { get; set; }
+
+    // Invoice facts read from the structured data; null for everything else.
+    public decimal? NetAmount { get; set; }
+    public decimal? TaxAmount { get; set; }
+    public decimal? GrossAmount { get; set; }
+    public string? Currency { get; set; }
+    public DateTime? DueDate { get; set; }
+    public string? SellerVatId { get; set; }
+    public string? SellerIban { get; set; }
+    public string? BuyerName { get; set; }
+    public string? BuyerReference { get; set; }
+
     public string? OcrText { get; set; }
     public string? ThumbnailPath { get; set; }
     public int PageCount { get; set; }

@@ -150,6 +150,10 @@ else
                         {
                             <span class="doc-card__type">@d.DocumentType.Name</span>
                         }
+                        @if (d.IsEInvoice)
+                        {
+                            <span class="badge badge--muted" title="@L["Structured invoice data (XRechnung / ZUGFeRD)"]">@L["E-invoice"]</span>
+                        }
                         <span class="doc-card__date"><svg class="doc-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>@displayDate</span>
                     </div>
                     @if (d.Project != null)

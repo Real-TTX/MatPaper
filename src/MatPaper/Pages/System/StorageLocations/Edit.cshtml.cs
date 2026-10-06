@@ -92,6 +92,9 @@ public class EditModel : PageModel
 
         /// <summary>Cron expression for an automatic search; empty = only on demand.</summary>
         public string? ScanCron { get; set; }
+
+        /// <summary>Write a metadata file (.matpaper.json) next to every filed document.</summary>
+        public bool WriteMetadataFiles { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -122,7 +125,8 @@ public class EditModel : PageModel
                 DefaultOwnerId = entity.DefaultOwnerId,
                 DefaultIsCommon = entity.DefaultIsCommon,
                 ScanExtensions = entity.ScanExtensions,
-                ScanCron = entity.ScanCron
+                ScanCron = entity.ScanCron,
+                WriteMetadataFiles = entity.WriteMetadataFiles
             };
         }
         else
@@ -134,6 +138,59 @@ public class EditModel : PageModel
 
         await BuildOptionListsAsync();
         return Page();
+    }
+
+    /// <summary>
+    /// Writes the metadata file of every filed document of this location (after the option was
+    /// switched on for a location that already holds documents). Runs in the background: a large
+    /// archive takes a while, and the page should not wait for it.
+    /// </summary>
+    public async Task<IActionResult> OnPostWriteMetadataFilesAsync(CancellationToken ct)
+    {
+        var location = await _db.StorageLocations.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == Id && s.UpdateState != UpdateState.Deleted, ct);
+        if (location is null)
+        {
+            return NotFound();
+        }
+
+        if (!location.WriteMetadataFiles)
+        {
+            this.Notify(_l["Switch on \"Write metadata files\" and save first."].Value, NoticeKind.Warn);
+            return RedirectToPage("Edit", new { id = Id });
+        }
+
+        var scopes = HttpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+        var locationId = Id;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = scopes.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var sidecars = scope.ServiceProvider.GetRequiredService<DocumentSidecarService>();
+                var ids = await db.Documents.AsNoTracking()
+                    .Where(d => d.StorageLocationId == locationId && !d.IsStaged && d.UpdateState != UpdateState.Deleted && d.RelativePath != "")
+                    .Select(d => d.Id).ToListAsync();
+                foreach (var chunk in ids.Chunk(200))
+                {
+                    var docs = await db.Documents.AsNoTracking().Where(d => chunk.Contains(d.Id)).ToListAsync();
+                    foreach (var doc in docs)
+                    {
+                        await sidecars.WriteAsync(doc, CancellationToken.None);
+                    }
+                }
+
+                _logger.LogInformation("Wrote metadata files for {Count} document(s) of location {LocationId}.", ids.Count, locationId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Writing the metadata files of location {LocationId} failed.", locationId);
+            }
+        });
+
+        this.Notify(_l["Writing the metadata files in the background."].Value);
+        return RedirectToPage("Edit", new { id = Id });
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -180,6 +237,7 @@ public class EditModel : PageModel
             existing.DefaultIsCommon = draft.DefaultIsCommon;
             existing.ScanExtensions = draft.ScanExtensions;
             existing.ScanCron = draft.ScanCron;
+            existing.WriteMetadataFiles = draft.WriteMetadataFiles;
             existing.UpdateState = UpdateState.Updated;
             existing.UpdateDate = now;
             existing.UpdateUserId = _currentUser.UserId;
@@ -368,7 +426,8 @@ public class EditModel : PageModel
             DefaultOwnerId = Input.DefaultOwnerId,
             DefaultIsCommon = Input.DefaultIsCommon,
             ScanExtensions = (Input.ScanExtensions ?? string.Empty).Trim(),
-            ScanCron = NullIfEmpty(Input.ScanCron)
+            ScanCron = NullIfEmpty(Input.ScanCron),
+            WriteMetadataFiles = Input.WriteMetadataFiles
         };
     }
 

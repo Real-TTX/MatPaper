@@ -57,6 +57,17 @@
     </section>
 
     <section class="form-section">
+        <h2 class="form-section__title">@L["Metadata files"]</h2>
+
+        <mp-field asp-for="Input.WriteMetadataFiles" kind="checkbox" label='@L["Write metadata files"]'
+                  help='@L["Next to every filed document a .matpaper.json file holds its type, correspondent, tags and invoice data, and follows it when it moves. Import tasks and the storage search read it back."]' />
+        @if (Model.IsEdit && Model.Input.WriteMetadataFiles)
+        {
+            <mp-button variant="secondary" type="submit" handler="WriteMetadataFiles">@L["Write for all documents now"]</mp-button>
+        }
+    </section>
+
+    <section class="form-section">
         <h2 class="form-section__title">@L["Storage search"]</h2>
 
         <mp-field asp-for="Input.ScanExtensions" label='@L["File types to search for"]'

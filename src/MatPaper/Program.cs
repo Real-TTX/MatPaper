@@ -59,8 +59,10 @@ builder.Services.AddSingleton<DocumentTextExtractor>();
 builder.Services.AddSingleton<ThumbnailService>();
 builder.Services.AddScoped<DocumentIngestService>();
 builder.Services.AddScoped<DocumentFilingService>();
+builder.Services.AddScoped<DocumentSidecarService>();
 builder.Services.AddScoped<StorageScanService>();
 builder.Services.AddSingleton<InvoiceDataExtractor>();
+builder.Services.AddSingleton<InvoicePdfRenderer>();
 builder.Services.AddScoped<DocumentAnalysisService>();
 builder.Services.AddHostedService<DocumentProcessingService>();
 

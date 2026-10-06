@@ -125,6 +125,14 @@ public sealed class ImportRunner
                 var file = entry.Path;
                 var fileName = file.Contains('\\') ? file[(file.LastIndexOf('\\') + 1)..] : file;
 
+                // Metadata files and the XML of an XRechnung PDF belong to the file they are named after.
+                if (file.EndsWith(DocumentStorageService.MetadataCompanion, StringComparison.OrdinalIgnoreCase)
+                    || (file.EndsWith(DocumentStorageService.XmlCompanion, StringComparison.OrdinalIgnoreCase)
+                        && session.FileExists(file[..^DocumentStorageService.XmlCompanion.Length])))
+                {
+                    continue;
+                }
+
                 if (cutoff is DateTime since && entry.ModifiedUtc < since)
                 {
                     skipped++;
@@ -142,12 +150,15 @@ public sealed class ImportRunner
                 try
                 {
                     var bytes = session.ReadAllBytes(file);
+                    var sidecar = session.FileExists(file + DocumentStorageService.MetadataCompanion)
+                        ? DocumentSidecar.TryParse(session.ReadAllBytes(file + DocumentStorageService.MetadataCompanion))
+                        : null;
                     await using var stream = new MemoryStream(bytes);
                     var result = await _ingest.IngestAsync(
                         stream, fileName, locationId,
                         settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
                         settings.TagIds ?? new List<long>(), ownerId, ct, reviewState, settings.IsCommon,
-                        origin: DocumentOrigin.ImportFolder, importTaskId: task.Id).ConfigureAwait(false);
+                        origin: DocumentOrigin.ImportFolder, importTaskId: task.Id, sidecar: sidecar).ConfigureAwait(false);
 
                     switch (result.Status)
                     {
@@ -192,6 +203,24 @@ public sealed class ImportRunner
 
     private static void ApplySmbPostAction(SmbSession session, SmbImportSettings settings, string file, StringBuilder log)
     {
+        // The companions of a file (metadata, XRechnung XML) follow it.
+        foreach (var suffix in new[] { DocumentStorageService.MetadataCompanion, DocumentStorageService.XmlCompanion })
+        {
+            if (settings.PostAction is not ("delete" or "move") || !session.FileExists(file + suffix))
+            {
+                continue;
+            }
+
+            if (settings.PostAction == "delete")
+            {
+                session.TryDelete(file + suffix);
+            }
+            else if (!string.IsNullOrWhiteSpace(settings.MoveToPath))
+            {
+                session.TryMove(file + suffix, settings.MoveToPath!, out _);
+            }
+        }
+
         if (settings.PostAction == "delete")
         {
             if (!session.TryDelete(file))
@@ -311,6 +340,13 @@ public sealed class ImportRunner
             ct.ThrowIfCancellationRequested();
 
             var fileName = Path.GetFileName(file);
+            if (file.EndsWith(DocumentStorageService.MetadataCompanion, StringComparison.OrdinalIgnoreCase)
+                || (file.EndsWith(DocumentStorageService.XmlCompanion, StringComparison.OrdinalIgnoreCase)
+                    && File.Exists(file[..^DocumentStorageService.XmlCompanion.Length])))
+            {
+                continue; // belongs to the file it is named after
+            }
+
             try
             {
                 // Unchanged since a run that handled it: skip without reading it again.
@@ -329,6 +365,9 @@ public sealed class ImportRunner
                     continue;
                 }
 
+                var sidecarFile = file + DocumentStorageService.MetadataCompanion;
+                var sidecar = File.Exists(sidecarFile) ? DocumentSidecar.TryParse(await File.ReadAllBytesAsync(sidecarFile, ct).ConfigureAwait(false)) : null;
+
                 IngestResult result;
                 await using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
@@ -344,7 +383,7 @@ public sealed class ImportRunner
                         ct,
                         reviewState: settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending,
                         isCommon: settings.IsCommon,
-                        origin: DocumentOrigin.ImportFolder, importTaskId: task.Id).ConfigureAwait(false);
+                        origin: DocumentOrigin.ImportFolder, importTaskId: task.Id, sidecar: sidecar).ConfigureAwait(false);
                 }
 
                 switch (result.Status)
@@ -391,6 +430,25 @@ public sealed class ImportRunner
     {
         try
         {
+            // The companions of a file (metadata, XRechnung XML) follow it.
+            foreach (var suffix in new[] { DocumentStorageService.MetadataCompanion, DocumentStorageService.XmlCompanion })
+            {
+                if (!File.Exists(file + suffix))
+                {
+                    continue;
+                }
+
+                switch (settings.PostAction?.ToLowerInvariant())
+                {
+                    case "delete":
+                        File.Delete(file + suffix);
+                        break;
+                    case "move" when !string.IsNullOrWhiteSpace(settings.MoveToPath):
+                        MoveFile(file + suffix, settings.MoveToPath, log);
+                        break;
+                }
+            }
+
             switch (settings.PostAction?.ToLowerInvariant())
             {
                 case "delete":

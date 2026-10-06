@@ -33,6 +33,7 @@ public sealed record FilingResult(bool Success, string? Error)
 public sealed class DocumentFilingService(
     AppDbContext db,
     DocumentStorageService storage,
+    DocumentSidecarService sidecars,
     Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l,
     ILogger<DocumentFilingService> logger)
 {
@@ -155,6 +156,7 @@ public sealed class DocumentFilingService(
         MarkReviewed(document, actingUserId);
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await sidecars.WriteAsync(document, ct).ConfigureAwait(false);
         return FilingResult.Ok();
     }
 
@@ -182,6 +184,13 @@ public sealed class DocumentFilingService(
         {
             location = await db.StorageLocations.Include(s => s.Connection)
                 .FirstOrDefaultAsync(s => s.Id == locationId, ct).ConfigureAwait(false);
+        }
+
+        // Metadata first: a correspondent the analysis just created only has its id after a save,
+        // and the path is built from what is stored.
+        if (db.ChangeTracker.HasChanges())
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
         }
 
         if (location is not null)
@@ -240,8 +249,12 @@ public sealed class DocumentFilingService(
             throw;
         }
 
+        await sidecars.WriteAsync(document, ct).ConfigureAwait(false);
         return moved;
     }
+
+    /// <summary>Writes the metadata file of a filed document if its location asks for one (best effort).</summary>
+    public Task WriteMetadataFileAsync(Document document, CancellationToken ct) => sidecars.WriteAsync(document, ct);
 
     private static void MarkReviewed(Document document, long? actingUserId)
     {

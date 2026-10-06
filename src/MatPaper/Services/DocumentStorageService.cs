@@ -59,9 +59,11 @@ public sealed class DocumentStorageService
     private readonly SecretProtector _secrets;
     private readonly OAuthService _oauth;
     private readonly IHttpClientFactory _httpClients;
+    private readonly AppConfig _config;
 
     public DocumentStorageService(IServiceScopeFactory scopes, SecretProtector secrets, AppConfig config, OAuthService oauth, IHttpClientFactory httpClients)
     {
+        _config = config;
         _scopes = scopes;
         _secrets = secrets;
         _oauth = oauth;
@@ -175,18 +177,22 @@ public sealed class DocumentStorageService
 
         var extension = Path.GetExtension(originalFileName ?? string.Empty).ToLowerInvariant();
 
+        // Words for a missing value follow the instance language (System, Settings), not the request.
+        var german = !string.Equals(_config.Display?.Culture, "en-US", StringComparison.OrdinalIgnoreCase);
+        var (noCorrespondent, noType, noTitle) = german ? ("Unsortiert", "Ohne Typ", "Ohne Titel") : ("Unsorted", "Unfiled", "Untitled");
+
         var titleValue = string.IsNullOrWhiteSpace(title)
             ? Path.GetFileNameWithoutExtension(originalFileName ?? string.Empty)
             : title;
 
         var tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["{Correspondent}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(correspondentName) ? "Unsorted" : correspondentName),
+            ["{Correspondent}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(correspondentName) ? noCorrespondent : correspondentName),
             ["{Year}"] = date.ToString("yyyy"),
             ["{Month}"] = date.ToString("MM"),
-            ["{DocumentType}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(documentTypeName) ? "Unfiled" : documentTypeName),
+            ["{DocumentType}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(documentTypeName) ? noType : documentTypeName),
             ["{Date}"] = date.ToString("yyyy-MM-dd"),
-            ["{Title}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(titleValue) ? "Untitled" : titleValue),
+            ["{Title}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(titleValue) ? noTitle : titleValue),
             // Keep the leading dot; only strip separators/invalid chars.
             ["{Ext}"] = SanitizeTokenValue(extension)
         };
@@ -213,7 +219,7 @@ public sealed class DocumentStorageService
 
         if (segments.Count == 0)
         {
-            segments.Add(SanitizeSegment($"Untitled{extension}"));
+            segments.Add(SanitizeSegment($"{noTitle}{extension}"));
         }
 
         return string.Join('/', segments);
@@ -255,6 +261,15 @@ public sealed class DocumentStorageService
         try
         {
             var absolute = GetStagedAbsolutePath(relativePath);
+            foreach (var suffix in CompanionSuffixes)
+            {
+                var companion = GetStagedAbsolutePath(relativePath + suffix);
+                if (File.Exists(companion))
+                {
+                    File.Delete(companion);
+                }
+            }
+
             if (File.Exists(absolute))
             {
                 File.Delete(absolute);
@@ -293,19 +308,134 @@ public sealed class DocumentStorageService
         }
 
         var backend = await GetBackendAsync(target, ct).ConfigureAwait(false);
+        string actual;
         if (backend is LocalBackend local)
         {
-            return local.MoveIn(source, desiredRelativePath);
+            actual = local.MoveIn(source, desiredRelativePath);
         }
-
-        string actual;
-        await using (var stream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true))
+        else
         {
-            actual = await backend.SaveNewAsync(desiredRelativePath, stream, ct).ConfigureAwait(false);
+            await using (var stream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true))
+            {
+                actual = await backend.SaveNewAsync(desiredRelativePath, stream, ct).ConfigureAwait(false);
+            }
+
+            File.Delete(source);
         }
 
-        File.Delete(source);
+        foreach (var suffix in CompanionSuffixes)
+        {
+            var companion = source + suffix;
+            if (!File.Exists(companion))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (backend is LocalBackend localBackend)
+                {
+                    localBackend.MoveIn(companion, actual + suffix);
+                }
+                else
+                {
+                    await using var stream = new FileStream(companion, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                    await backend.SaveNewAsync(actual + suffix, stream, ct).ConfigureAwait(false);
+                    stream.Close();
+                    File.Delete(companion);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // best effort
+            }
+        }
+
         return actual;
+    }
+
+    // ----- Companion files ---------------------------------------------------
+    //
+    // A document can have files that belong to it and live next to it, named after it:
+    //   {file}.xml            the original e-invoice an imported XRechnung was rendered from
+    //   {file}.matpaper.json  the document's metadata (when the location writes them)
+    // Whatever moves, relocates, files or deletes the document takes them along; they are best
+    // effort and never make the operation on the main file fail.
+
+    public const string XmlCompanion = ".xml";
+    public const string MetadataCompanion = ".matpaper.json";
+    private static readonly string[] CompanionSuffixes = { XmlCompanion, MetadataCompanion };
+
+    private async Task MoveCompanionsAsync(IStorageBackend backend, string from, string to, CancellationToken ct)
+    {
+        foreach (var suffix in CompanionSuffixes)
+        {
+            try
+            {
+                if (await backend.ExistsAsync(from + suffix, ct).ConfigureAwait(false))
+                {
+                    await backend.MoveAsync(from + suffix, to + suffix, cleanupEmptyDirectories: false, ct).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // a companion that cannot follow is not worth failing the move
+            }
+        }
+    }
+
+    /// <summary>Writes (or replaces) <c>{relativePath}{suffix}</c> in a storage location.</summary>
+    public async Task WriteCompanionAsync(StorageLocation loc, string relativePath, string suffix, byte[] content, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(loc);
+        var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
+        var path = relativePath + suffix;
+        if (await backend.ExistsAsync(path, ct).ConfigureAwait(false))
+        {
+            await backend.DeleteAsync(path, cleanupEmptyDirectories: false, ct).ConfigureAwait(false);
+        }
+
+        using var stream = new MemoryStream(content);
+        await backend.SaveNewAsync(path, stream, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Reads <c>{relativePath}{suffix}</c> from a storage location; null when there is none.</summary>
+    public async Task<byte[]?> ReadCompanionAsync(StorageLocation loc, string relativePath, string suffix, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(loc);
+        var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
+        var path = relativePath + suffix;
+        if (!await backend.ExistsAsync(path, ct).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        await using var stream = await backend.OpenReadAsync(path, ct).ConfigureAwait(false);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, ct).ConfigureAwait(false);
+        return ms.ToArray();
+    }
+
+    /// <summary>Writes (or replaces) a companion of a file in the inbox staging area.</summary>
+    public async Task StageCompanionAsync(string stagedRelativePath, string suffix, byte[] content, CancellationToken ct = default)
+    {
+        var absolute = GetStagedAbsolutePath(stagedRelativePath + suffix);
+        await File.WriteAllBytesAsync(absolute, content, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Reads a companion of a staged file; null when there is none.</summary>
+    public async Task<byte[]?> ReadStagedCompanionAsync(string stagedRelativePath, string suffix, CancellationToken ct = default)
+    {
+        var absolute = GetStagedAbsolutePath(stagedRelativePath + suffix);
+        return File.Exists(absolute) ? await File.ReadAllBytesAsync(absolute, ct).ConfigureAwait(false) : null;
     }
 
     // ----- Storage location operations --------------------------------------
@@ -339,7 +469,13 @@ public sealed class DocumentStorageService
         }
 
         var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
-        return await backend.MoveAsync(currentRelativePath, desiredRelativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
+        var actual = await backend.MoveAsync(currentRelativePath, desiredRelativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
+        if (!string.Equals(actual, currentRelativePath, StringComparison.Ordinal))
+        {
+            await MoveCompanionsAsync(backend, currentRelativePath, actual, ct).ConfigureAwait(false);
+        }
+
+        return actual;
     }
 
     /// <summary>Moves a file between two locations (any kinds): copy, then delete the source.</summary>
@@ -367,6 +503,33 @@ public sealed class DocumentStorageService
         }
 
         await from.DeleteAsync(fromRelativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
+
+        foreach (var suffix in CompanionSuffixes)
+        {
+            try
+            {
+                if (!await from.ExistsAsync(fromRelativePath + suffix, ct).ConfigureAwait(false))
+                {
+                    continue;
+                }
+
+                await using (var companion = await from.OpenReadAsync(fromRelativePath + suffix, ct).ConfigureAwait(false))
+                {
+                    await to.SaveNewAsync(actual + suffix, companion, ct).ConfigureAwait(false);
+                }
+
+                await from.DeleteAsync(fromRelativePath + suffix, cleanupEmptyDirectories: false, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // best effort
+            }
+        }
+
         return actual;
     }
 
@@ -394,6 +557,25 @@ public sealed class DocumentStorageService
         ArgumentNullException.ThrowIfNull(loc);
         var backend = await GetBackendAsync(loc, ct).ConfigureAwait(false);
         await backend.DeleteAsync(relativePath, cleanupEmptyDirectories, ct).ConfigureAwait(false);
+
+        foreach (var suffix in CompanionSuffixes)
+        {
+            try
+            {
+                if (await backend.ExistsAsync(relativePath + suffix, ct).ConfigureAwait(false))
+                {
+                    await backend.DeleteAsync(relativePath + suffix, cleanupEmptyDirectories, ct).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // best effort
+            }
+        }
     }
 
     /// <summary>Lists every file under the location root. Throws <see cref="DirectoryNotFoundException"/> when the root is missing.</summary>

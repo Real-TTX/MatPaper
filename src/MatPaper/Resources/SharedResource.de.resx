@@ -793,4 +793,20 @@
   <data name="Password changed." xml:space="preserve"><value>Passwort geändert.</value></data>
   <data name="Saved" xml:space="preserve"><value>Gespeichert</value></data>
   <data name="Optional. Locations and import tasks using this connection start in this folder." xml:space="preserve"><value>Optional. Speicherorte und Import-Regeln mit dieser Verbindung beginnen in diesem Ordner.</value></data>
+  <data name="E-invoice" xml:space="preserve"><value>E-Rechnung</value></data>
+  <data name="Gross" xml:space="preserve"><value>Brutto</value></data>
+  <data name="Net" xml:space="preserve"><value>Netto</value></data>
+  <data name="VAT" xml:space="preserve"><value>USt</value></data>
+  <data name="Due date" xml:space="preserve"><value>Fällig am</value></data>
+  <data name="VAT ID" xml:space="preserve"><value>USt-IdNr.</value></data>
+  <data name="Buyer" xml:space="preserve"><value>Käufer</value></data>
+  <data name="Reference / Leitweg-ID" xml:space="preserve"><value>Referenz / Leitweg-ID</value></data>
+  <data name="Download the XML" xml:space="preserve"><value>XML herunterladen</value></data>
+  <data name="Structured invoice data (XRechnung / ZUGFeRD)" xml:space="preserve"><value>Strukturierte Rechnungsdaten (XRechnung / ZUGFeRD)</value></data>
+  <data name="Metadata files" xml:space="preserve"><value>Metadaten-Dateien</value></data>
+  <data name="Write metadata files" xml:space="preserve"><value>Metadaten-Dateien schreiben</value></data>
+  <data name="Next to every filed document a .matpaper.json file holds its type, correspondent, tags and invoice data, and follows it when it moves. Import tasks and the storage search read it back." xml:space="preserve"><value>Neben jedem abgelegten Dokument liegt eine .matpaper.json mit Typ, Korrespondent, Schlagwörtern und Rechnungsdaten; sie wandert mit, wenn das Dokument verschoben wird. Import-Regeln und die Speichersuche lesen sie wieder ein.</value></data>
+  <data name="Write for all documents now" xml:space="preserve"><value>Jetzt für alle Dokumente schreiben</value></data>
+  <data name="Switch on &quot;Write metadata files&quot; and save first." xml:space="preserve"><value>Erst „Metadaten-Dateien schreiben“ einschalten und speichern.</value></data>
+  <data name="Writing the metadata files in the background." xml:space="preserve"><value>Die Metadaten-Dateien werden im Hintergrund geschrieben.</value></data>
 </root>

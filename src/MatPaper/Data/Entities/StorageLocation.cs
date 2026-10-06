@@ -30,6 +30,9 @@ public class StorageLocation : BaseEntity
     public string? BasePath { get; set; }
 
     public string PathTemplate { get; set; } = string.Empty;
+
+    /// <summary>Write a <c>{file}.matpaper.json</c> with the document's metadata next to every filed file (and read it back when importing or searching).</summary>
+    public bool WriteMetadataFiles { get; set; }
     public bool IsDefault { get; set; }
     public UpdateState UpdateState { get; set; }
 

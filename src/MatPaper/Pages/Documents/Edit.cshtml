@@ -175,6 +175,28 @@
         </ul>
     </aside>
 
+    @if (Model.EInvoice is { } inv)
+    {
+        string Money(decimal? v) => v.HasValue ? v.Value.ToString("N2", global::System.Globalization.CultureInfo.CurrentCulture) + (string.IsNullOrEmpty(inv.Currency) ? "" : " " + inv.Currency) : "";
+        <aside class="doc-info">
+            <h3 class="doc-info__title">@L["E-invoice"]</h3>
+            <ul class="doc-facts">
+                @if (inv.GrossAmount.HasValue) { <li><span class="doc-facts__key">@L["Gross"]</span><span class="doc-facts__val">@Money(inv.GrossAmount)</span></li> }
+                @if (inv.NetAmount.HasValue) { <li><span class="doc-facts__key">@L["Net"]</span><span class="doc-facts__val">@Money(inv.NetAmount)</span></li> }
+                @if (inv.TaxAmount.HasValue) { <li><span class="doc-facts__key">@L["VAT"]</span><span class="doc-facts__val">@Money(inv.TaxAmount)</span></li> }
+                @if (inv.DueDate.HasValue) { <li><span class="doc-facts__key">@L["Due date"]</span><span class="doc-facts__val">@Fmt.Date(inv.DueDate)</span></li> }
+                @if (!string.IsNullOrEmpty(inv.SellerVatId)) { <li><span class="doc-facts__key">@L["VAT ID"]</span><span class="doc-facts__val">@inv.SellerVatId</span></li> }
+                @if (!string.IsNullOrEmpty(inv.SellerIban)) { <li><span class="doc-facts__key">IBAN</span><span class="doc-facts__val" style="word-break:break-all">@inv.SellerIban</span></li> }
+                @if (!string.IsNullOrEmpty(inv.BuyerName)) { <li><span class="doc-facts__key">@L["Buyer"]</span><span class="doc-facts__val">@inv.BuyerName</span></li> }
+                @if (!string.IsNullOrEmpty(inv.BuyerReference)) { <li><span class="doc-facts__key">@L["Reference / Leitweg-ID"]</span><span class="doc-facts__val">@inv.BuyerReference</span></li> }
+            </ul>
+            @if (inv.HasEInvoiceXml)
+            {
+                <p style="margin:.6rem 0 0"><a href="/Documents/@Model.Token/xml">@L["Download the XML"]</a></p>
+            }
+        </aside>
+    }
+
     <details class="doc-advanced">
         <summary>@L["Advanced"]</summary>
         <ul class="doc-facts">

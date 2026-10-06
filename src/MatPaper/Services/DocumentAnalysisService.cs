@@ -94,6 +94,9 @@ public sealed class DocumentAnalysisService
                 changedInvoiceNo = true;
             }
 
+            // The structured facts belong to the document whatever the user typed elsewhere.
+            changedInvoiceNo |= ApplyInvoiceFacts(document, invoice);
+
             AppendInvoiceSummary(document, invoice);
         }
         else
@@ -128,6 +131,26 @@ public sealed class DocumentAnalysisService
         return new AnalysisResult(invoice is not null, changedType, changedCorr, changedDate, changedInvoiceNo);
     }
 
+    private static bool ApplyInvoiceFacts(Document document, InvoiceData invoice)
+    {
+        var before = (document.IsEInvoice, document.NetAmount, document.TaxAmount, document.GrossAmount, document.Currency,
+            document.DueDate, document.SellerVatId, document.SellerIban, document.BuyerName, document.BuyerReference);
+
+        document.IsEInvoice = true;
+        document.NetAmount = invoice.NetAmount;
+        document.TaxAmount = invoice.TaxAmount;
+        document.GrossAmount = invoice.GrossAmount;
+        document.Currency = string.IsNullOrWhiteSpace(invoice.Currency) ? null : invoice.Currency;
+        document.DueDate = invoice.DueDate.HasValue ? DateTime.SpecifyKind(invoice.DueDate.Value, DateTimeKind.Utc) : null;
+        document.SellerVatId = invoice.SellerVatId;
+        document.SellerIban = invoice.SellerIban;
+        document.BuyerName = invoice.BuyerName;
+        document.BuyerReference = invoice.BuyerReference;
+
+        return before != (document.IsEInvoice, document.NetAmount, document.TaxAmount, document.GrossAmount, document.Currency,
+            document.DueDate, document.SellerVatId, document.SellerIban, document.BuyerName, document.BuyerReference);
+    }
+
     private async Task<InvoiceData?> TryExtractInvoiceAsync(Document document, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(document.RelativePath) || (!document.IsStaged && document.StorageLocation is null))
@@ -137,6 +160,30 @@ public sealed class DocumentAnalysisService
 
         try
         {
+            // An imported XRechnung: the XML next to the generated PDF is the source of truth.
+            if (document.HasEInvoiceXml)
+            {
+                byte[]? xml;
+                if (document.IsStaged)
+                {
+                    xml = await _storage.ReadStagedCompanionAsync(document.RelativePath, DocumentStorageService.XmlCompanion, ct);
+                }
+                else
+                {
+                    var location = document.StorageLocation
+                        ?? (document.StorageLocationId is long locId
+                            ? await _db.StorageLocations.Include(l => l.Connection).FirstOrDefaultAsync(l => l.Id == locId, ct)
+                            : null);
+                    xml = location is null ? null : await _storage.ReadCompanionAsync(location, document.RelativePath, DocumentStorageService.XmlCompanion, ct);
+                }
+
+                var fromXml = xml is null ? null : _invoices.TryExtractFromXml(xml);
+                if (fromXml is not null)
+                {
+                    return fromXml;
+                }
+            }
+
             using var local = await _storage.GetLocalCopyAsync(document, ct);
             var ext = Path.GetExtension(document.OriginalFileName);
             return _invoices.TryExtract(local.FilePath, ext);

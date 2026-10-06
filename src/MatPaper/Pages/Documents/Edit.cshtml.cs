@@ -53,6 +53,7 @@ public class EditModel : PageModel
     public List<ShareLink> ShareLinks { get; private set; } = new();
     public string ShareBaseUrl { get; private set; } = string.Empty;
     public string? InvoiceNumber { get; private set; }
+    public Document? EInvoice { get; private set; }
 
     // Ownership / sharing / review state for the current viewer.
     public bool IsOwner { get; private set; }
@@ -591,6 +592,8 @@ public class EditModel : PageModel
             throw;
         }
 
+        await _filing.WriteMetadataFileAsync(document, HttpContext.RequestAborted);
+
         if (confirm)
         {
             // Filing moves the staged file out from under the still-running OCR worker.
@@ -804,6 +807,7 @@ public class EditModel : PageModel
         OriginalFileName = document.OriginalFileName;
         AddedDate = document.CreateDate;
         InvoiceNumber = document.InvoiceNumber;
+        EInvoice = document.IsEInvoice ? document : null;
         OcrText = document.OcrText;
         ContentHash = document.ContentHash;
         RelativePath = document.RelativePath;

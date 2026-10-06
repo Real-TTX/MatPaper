@@ -176,7 +176,7 @@ public sealed class ImportBrowser
             // The same selection RunImapAsync starts from (all messages, within the chosen period),
             // newest first and capped at the window. The remembered position is NOT applied, so the
             // preview shows what the filters would catch, not only what is new since the last run.
-            var query = ImportRunner.ServerFilter(settings);
+            var query = ImportRunner.ServerFilter(settings, client);
             if (ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow) is DateTime since)
             {
                 query = query.And(MailKit.Search.SearchQuery.DeliveredAfter(since.Date));

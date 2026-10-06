@@ -44,9 +44,38 @@ public class TaskSchedulerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await CloseInterruptedRunsAsync(stoppingToken);
         var consumer = ConsumeAsync(stoppingToken);
         var scheduler = ScheduleAsync(stoppingToken);
         await Task.WhenAll(consumer, scheduler);
+    }
+
+    /// <summary>
+    /// A run that was still going when the application stopped never wrote its end. Close those
+    /// at startup, otherwise they stay "running" forever and block the next run of the task.
+    /// </summary>
+    private async Task CloseInterruptedRunsAsync(CancellationToken ct)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTime.UtcNow;
+            var closed = await db.TaskRuns
+                .Where(r => r.State == TaskRunState.Running)
+                .ExecuteUpdateAsync(u => u
+                    .SetProperty(r => r.State, TaskRunState.Failed)
+                    .SetProperty(r => r.FinishedAt, now)
+                    .SetProperty(r => r.UpdateDate, now), ct);
+            if (closed > 0)
+            {
+                _logger.LogWarning("Closed {Count} task run(s) left running by an earlier shutdown.", closed);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not close interrupted task runs.");
+        }
     }
 
     private async Task ConsumeAsync(CancellationToken ct)
@@ -145,7 +174,17 @@ public class TaskSchedulerService : BackgroundService
             if (importTask is not null)
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ImportRunner>();
-                report = await runner.RunAsync(importTask, ct);
+                using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var flusher = FlushProgressAsync(run.Id, runner, progress.Token);
+                try
+                {
+                    report = await runner.RunAsync(importTask, ct);
+                }
+                finally
+                {
+                    progress.Cancel();
+                    await flusher;
+                }
             }
             else if (exportTask is not null)
             {
@@ -177,6 +216,36 @@ public class TaskSchedulerService : BackgroundService
             run.FinishedAt = DateTime.UtcNow;
             run.UpdateDate = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
+        }
+    }
+
+    /// <summary>While an import runs, copies its log into the run every few seconds so the page can show progress.</summary>
+    private async Task FlushProgressAsync(long runId, ImportRunner runner, CancellationToken ct)
+    {
+        string? last = null;
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), ct);
+                var text = runner.LogSoFar();
+                if (text is null || text == last)
+                {
+                    continue;
+                }
+
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var snapshot = Truncate(text);
+                await db.TaskRuns.Where(r => r.Id == runId && r.State == TaskRunState.Running)
+                    .ExecuteUpdateAsync(u => u.SetProperty(r => r.Log, snapshot), CancellationToken.None);
+                last = text;
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not store the progress of run {RunId}.", runId);
         }
     }
 

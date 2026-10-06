@@ -37,6 +37,17 @@ public sealed class ImportRunner
         _logger = logger;
     }
 
+    private StringBuilder? _liveLog;
+
+    /// <summary>The run's log so far, readable while the run is still going (null before it starts).</summary>
+    public string? LogSoFar()
+    {
+        try { return _liveLog?.ToString(); }
+        catch (ArgumentOutOfRangeException) { return null; } // read while the run appended: next poll gets it
+    }
+
+    private StringBuilder StartLog() => _liveLog = new StringBuilder();
+
     public async Task<RunReport> RunAsync(ImportTask task, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(task);
@@ -75,7 +86,7 @@ public sealed class ImportRunner
         }
 
         var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
-        var log = new StringBuilder();
+        var log = StartLog();
         var count = 0;
 
         SmbSession session;
@@ -272,7 +283,7 @@ public sealed class ImportRunner
             return new RunReport(false, 0, "No storage location configured (required when skipping the inbox)");
         }
 
-        var log = new StringBuilder();
+        var log = StartLog();
         var count = 0;
 
         var searchOption = settings.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
@@ -446,7 +457,7 @@ public sealed class ImportRunner
         var senderRegex = CompileRegex(settings.SenderRegex);
         var subjectRegex = CompileRegex(settings.SubjectRegex);
 
-        var log = new StringBuilder();
+        var log = StartLog();
         var count = 0;
 
         try
@@ -501,7 +512,7 @@ public sealed class ImportRunner
             var resume = state.UidValidity == folder.UidValidity && state.LastUid > 0;
 
             // Only what is new: UIDs above the last one handled, and not older than the lookback.
-            var query = ServerFilter(settings);
+            var query = ServerFilter(settings, client);
             if (cutoff is DateTime since)
             {
                 query = query.And(SearchQuery.DeliveredAfter(since.Date));
@@ -513,11 +524,32 @@ public sealed class ImportRunner
 
             // "UID n:*" with n above the highest UID still returns the LAST message (RFC 3501 treats
             // the range as n:max in either order), so anything not above the stored UID is dropped.
+            log.AppendLine("Searching the mailbox ...");
             var found = await folder.SearchAsync(query, ct).ConfigureAwait(false);
             IList<UniqueId> uids = resume ? found.Where(u => u.Id > state.LastUid).ToList() : found;
             log.AppendLine(resume
                 ? $"Continuing after message {state.LastUid}: {uids.Count} new message(s)."
                 : $"No earlier position stored: {uids.Count} message(s) to check.");
+
+            // Headers first (envelope only, no body): a mailbox with thousands of mails should not
+            // be downloaded just to find the few that match.
+            var wanted = new HashSet<uint>();
+            for (var i = 0; i < uids.Count; i += 200)
+            {
+                ct.ThrowIfCancellationRequested();
+                var chunk = uids.Skip(i).Take(200).ToList();
+                var summaries = await folder.FetchAsync(chunk, MessageSummaryItems.Envelope, ct).ConfigureAwait(false);
+                foreach (var summary in summaries)
+                {
+                    var env = summary.Envelope;
+                    if (HeadersMatch(env?.From?.ToString() ?? string.Empty, env?.To?.ToString() ?? string.Empty,
+                        env?.Subject ?? string.Empty, settings, senderRegex, subjectRegex))
+                    {
+                        wanted.Add(summary.UniqueId.Id);
+                    }
+                }
+                log.AppendLine($"Read headers of {Math.Min(i + 200, uids.Count)} of {uids.Count} message(s): {wanted.Count} match.");
+            }
 
             var postAction = settings.PostAction?.ToLowerInvariant();
             var moveDest = postAction == "move" ? GetOrCreateFolder(client, settings.MoveToFolder) : null;
@@ -527,9 +559,20 @@ public sealed class ImportRunner
             long lastDone = resume ? state.LastUid : 0;
             try
             {
+                var checkedCount = 0;
                 foreach (var uid in uids)
                 {
                     ct.ThrowIfCancellationRequested();
+                    if (++checkedCount % 25 == 0)
+                    {
+                        log.AppendLine($"Checked {checkedCount} of {uids.Count} message(s) ...");
+                    }
+
+                    if (!wanted.Contains(uid.Id))
+                    {
+                        lastDone = Math.Max(lastDone, uid.Id);
+                        continue;
+                    }
 
                     var message = await folder.GetMessageAsync(uid, ct).ConfigureAwait(false);
                     if (!MessageMatches(message, settings, senderRegex, subjectRegex))
@@ -949,9 +992,17 @@ public sealed class ImportRunner
     /// alternatives (OR), the filters themselves must all hold (AND) - the same rule
     /// <see cref="HeadersMatch"/> applies afterwards as the safety net. Regex filters stay local.
     /// </summary>
-    internal static SearchQuery ServerFilter(MailImportSettings settings)
+    internal static SearchQuery ServerFilter(MailImportSettings settings, ImapClient client)
     {
         var query = SearchQuery.All;
+
+        // Gmail matches whole words only ("Rechnung" misses "Rechnungen", "vodafone" misses
+        // "x@kunde.vodafone.de"), so a server filter would drop mails the local check keeps.
+        if (client.Capabilities.HasFlag(ImapCapabilities.GMailExt1))
+        {
+            return query;
+        }
+
         query = AndAny(query, settings.FromFilter, SearchQuery.FromContains);
         query = AndAny(query, settings.ToFilter, SearchQuery.ToContains);
         query = AndAny(query, settings.SubjectFilter, SearchQuery.SubjectContains);

@@ -111,7 +111,7 @@
     }
 </section>
 
-@if (Model.LastRun is { } last && !string.IsNullOrWhiteSpace(last.Log))
+@if (Model.LastRun is { } last && (!string.IsNullOrWhiteSpace(last.Log) || Model.Runs.IsRunning))
 {
     <section class="task-card task-card--wide" data-live="log">
         <h3>@L["Log of the latest run"]</h3>

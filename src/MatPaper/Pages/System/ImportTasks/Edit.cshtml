@@ -8,6 +8,11 @@
 @* The wizard walks through type → connection → credentials → source → rules →
    preview → filing. Steps that do not apply to the chosen type hide themselves
    (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
+@if (Model.IsEdit && Model.Runs is not null)
+{
+    <partial name="_TaskRunsPanel" model="Model.Runs" />
+}
+
 <form class="form wizard" id="import-wizard" method="post"
       data-browse-url="/System/ImportTasks/Edit?handler=Browse"
       data-preview-url="/System/ImportTasks/Edit?handler=Preview"
@@ -331,12 +336,6 @@
         <a class="btn btn--secondary" href="/System/ImportTasks">@L["Cancel"]</a>
         @if (Model.IsEdit)
         {
-            <mp-button variant="secondary" type="submit" handler="Run">@L["Run now"]</mp-button>
-            @if (Model.HasSyncState)
-            {
-                <mp-button variant="secondary" type="submit" handler="ResetSync"
-                           confirm='@L["Forget where the task stopped? The next run checks everything again."]'>@L["Start over"]</mp-button>
-            }
             <mp-button variant="danger" type="submit" handler="Delete"
                        confirm='@L["Delete this import task? This cannot be undone."]'>@L["Delete"]</mp-button>
         }

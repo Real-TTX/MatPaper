@@ -31,6 +31,19 @@ public class EditModel : PageModel
 
     public bool IsEdit => Id != 0;
 
+    /// <summary>The "Runs" block: run now and latest runs. Null for a new task.</summary>
+    public TaskRunsPanel? Runs { get; private set; }
+
+    private async Task LoadRunsAsync()
+    {
+        if (IsEdit)
+        {
+            Runs = new TaskRunsPanel(
+                TaskRunKind.Export, Id, $"/System/ExportTasks/Edit?id={Id}&handler=Run", _l["Run now"].Value,
+                null, null, await TaskRunsPanel.LoadRunsAsync(_db, TaskRunKind.Export, Id));
+        }
+    }
+
     public List<SelectListItem> TypeOptions { get; } = new()
     {
         new SelectListItem("Backup", ((int)ExportTaskType.Backup).ToString())
@@ -79,6 +92,7 @@ public class EditModel : PageModel
             };
         }
 
+        await LoadRunsAsync();
         return Page();
     }
 
@@ -109,6 +123,7 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
+            await LoadRunsAsync();
             return Page();
         }
 

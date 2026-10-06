@@ -73,6 +73,12 @@
                     }
                 </td>
                 <td class="is-actions">
+                    <form method="post" action="/System/ExportTasks/Edit?id=@t.Id&handler=Run" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button class="icon-btn" type="submit" title='@L["Run now"]' aria-label='@L["Run now"]'>
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                        </button>
+                    </form>
                     <a href="/System/ExportTasks/Edit?id=@t.Id">@L["Edit"]</a>
                 </td>
             </tr>

@@ -1,0 +1,94 @@
+@model MatPaper.Services.TaskRunsPanel
+@using MatPaper.Data
+@* The runs block at the top of a task editor. Not a nested form: render it OUTSIDE the editor's
+   own <form>. While the newest run is still running the page reloads itself every few seconds. *@
+<section class="runs-panel" @(Model.IsRunning ? "data-running=true" : "")>
+    <div class="runs-panel__head">
+        <div class="runs-panel__title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+            <strong>@L["Runs"]</strong>
+            @if (Model.Memory is not null)
+            {
+                <span class="runs-panel__memory">@Model.Memory</span>
+            }
+        </div>
+        <div class="runs-panel__actions">
+            <form method="post" action="@Model.RunAction">
+                @Html.AntiForgeryToken()
+                <button class="btn btn--primary" type="submit" disabled="@Model.IsRunning">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                    @(Model.IsRunning ? L["Running"].Value : Model.RunLabel)
+                </button>
+            </form>
+            @if (Model.ResetAction is not null)
+            {
+                <form method="post" action="@Model.ResetAction">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn--secondary" type="submit"
+                            data-confirm='@L["Forget where the task stopped? The next run checks everything again."]'>@L["Start over"]</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (Model.Runs.Count == 0)
+    {
+        <p class="form-help runs-panel__empty">@L["No run yet."]</p>
+    }
+    else
+    {
+        <table class="data-table runs-panel__table">
+            <thead>
+                <tr>
+                    <th>@L["Started"]</th>
+                    <th>@L["State"]</th>
+                    <th>@L["Items"]</th>
+                    <th>@L["Duration"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Runs)
+                {
+                    <tr>
+                        <td><a href="/System/TaskRuns/Details?id=@r.Id">@Fmt.DateTime(r.StartedAt)</a></td>
+                        <td>
+                            @switch (r.State)
+                            {
+                                case TaskRunState.Success:
+                                    <span class="badge badge--ok">@L["Success"]</span>
+                                    break;
+                                case TaskRunState.Failed:
+                                    <span class="badge badge--off">@L["Failed"]</span>
+                                    break;
+                                default:
+                                    <span class="badge badge--muted">@L["Running"]</span>
+                                    break;
+                            }
+                        </td>
+                        <td>@r.ItemsProcessed</td>
+                        <td>
+                            @if (r.FinishedAt is DateTime finished)
+                            {
+                                var d = finished - r.StartedAt;
+                                @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="runs-panel__more"><a href="/System/TaskRuns?Kind=@Model.Kind.ToString().ToLowerInvariant()">@L["All runs"]</a></p>
+    }
+</section>
+
+<script>
+    // A run in progress: look again in a few seconds so the result shows up without a reload.
+    (function () {
+        var panel = document.querySelector(".runs-panel[data-running]");
+        if (panel) { setTimeout(function () { location.reload(); }, 3000); }
+    })();
+</script>

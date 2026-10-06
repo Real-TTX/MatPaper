@@ -37,6 +37,19 @@ public class EditModel : PageModel
 
     public bool IsEdit => Id != 0;
 
+    /// <summary>The "Runs" block for this location's storage searches. Null for a new location.</summary>
+    public TaskRunsPanel? Runs { get; private set; }
+
+    private async Task LoadRunsAsync()
+    {
+        if (IsEdit)
+        {
+            Runs = new TaskRunsPanel(
+                TaskRunKind.Scan, Id, $"/System/StorageLocations?handler=Scan&id={Id}", _l["Search now"].Value,
+                null, null, await TaskRunsPanel.LoadRunsAsync(_db, TaskRunKind.Scan, Id));
+        }
+    }
+
     public List<SelectListItem> SmbConnectionOptions { get; private set; } = new();
 
     public List<SelectListItem> CloudConnectionOptions { get; private set; } = new();
@@ -408,6 +421,8 @@ public class EditModel : PageModel
 
     private async Task BuildOptionListsAsync()
     {
+        await LoadRunsAsync();
+
         var users = await _db.Users
             .AsNoTracking()
             .Where(u => u.IsActive)

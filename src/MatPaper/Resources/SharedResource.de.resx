@@ -752,4 +752,11 @@
   <data name="Position forgotten. The next run checks everything again." xml:space="preserve"><value>Position vergessen. Der nächste Lauf prüft wieder alles.</value></data>
   <data name="Enter a number of days of 1 or more." xml:space="preserve"><value>Bitte eine Anzahl Tage ab 1 eingeben.</value></data>
   <data name="Choose a date." xml:space="preserve"><value>Bitte ein Datum wählen.</value></data>
+  <data name="Runs" xml:space="preserve"><value>Läufe</value></data>
+  <data name="Search now" xml:space="preserve"><value>Jetzt suchen</value></data>
+  <data name="No run yet." xml:space="preserve"><value>Noch kein Lauf.</value></data>
+  <data name="All runs" xml:space="preserve"><value>Alle Läufe</value></data>
+  <data name="Nothing remembered yet." xml:space="preserve"><value>Noch keine Position gemerkt.</value></data>
+  <data name="Remembers: up to message {0}." xml:space="preserve"><value>Merkt sich: bis Nachricht {0}.</value></data>
+  <data name="Remembers {0} handled item(s)." xml:space="preserve"><value>Merkt sich {0} bearbeitete Einträge.</value></data>
 </root>

@@ -62,6 +62,39 @@ public class EditModel : PageModel
     /// <summary>True when the task has a remembered position (see ImportSyncState).</summary>
     public bool HasSyncState { get; private set; }
 
+    /// <summary>The "Runs" block: run now, what the task remembers, latest runs. Null for a new task.</summary>
+    public TaskRunsPanel? Runs { get; private set; }
+
+    private async Task LoadRunsAsync()
+    {
+        if (!IsEdit)
+        {
+            return;
+        }
+
+        var syncJson = await _db.ImportTasks.AsNoTracking()
+            .Where(t => t.Id == Id)
+            .Select(t => t.SyncState)
+            .FirstOrDefaultAsync();
+        var state = ImportSync.Load(new ImportTask { SyncState = syncJson });
+
+        string? memory = null;
+        if (!string.IsNullOrWhiteSpace(syncJson))
+        {
+            memory = state.LastUid > 0
+                ? _l["Remembers: up to message {0}.", state.LastUid].Value
+                : state.Seen.Count > 0 ? _l["Remembers {0} handled item(s).", state.Seen.Count].Value : null;
+        }
+
+        Runs = new TaskRunsPanel(
+            TaskRunKind.Import, Id,
+            $"/System/ImportTasks/Edit?id={Id}&handler=Run",
+            _l["Run now"].Value,
+            memory ?? _l["Nothing remembered yet."].Value,
+            string.IsNullOrWhiteSpace(syncJson) ? null : $"/System/ImportTasks/Edit?id={Id}&handler=ResetSync",
+            await TaskRunsPanel.LoadRunsAsync(_db, TaskRunKind.Import, Id));
+    }
+
     public static readonly int[] PreviewWindows = { 200, 500, 1000, 2000, 5000 };
 
     // Option lists.
@@ -739,6 +772,8 @@ public class EditModel : PageModel
 
     private async Task BuildOptionListsAsync()
     {
+        await LoadRunsAsync();
+
         var storageLocations = await _db.StorageLocations
             .AsNoTracking()
             .Where(s => s.UpdateState != UpdateState.Deleted)

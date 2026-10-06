@@ -1249,3 +1249,66 @@
 .inbox-refresh .btn {
     margin-left: auto;
 }
+
+/* "Runs" block at the top of a task editor. */
+.runs-panel {
+    margin-bottom: 1rem;
+    padding: 0.9rem 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.runs-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.runs-panel__title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.runs-panel__title svg {
+    width: 20px;
+    height: 20px;
+    color: var(--color-primary-text);
+}
+
+.runs-panel__memory {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.runs-panel__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.runs-panel__actions .btn svg {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: -1px;
+}
+
+.runs-panel__table {
+    margin-top: 0.75rem;
+}
+
+.runs-panel__empty {
+    margin: 0.75rem 0 0;
+}
+
+.runs-panel__more {
+    margin: 0.5rem 0 0;
+    font-size: var(--font-size-sm);
+}

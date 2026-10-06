@@ -778,4 +778,8 @@
   <data name="Review inbox" xml:space="preserve"><value>Eingang</value></data>
   <data name="Skips the inbox" xml:space="preserve"><value>Überspringt den Eingang</value></data>
   <data name="Pattern" xml:space="preserve"><value>Muster</value></data>
+  <data name="Filter on" xml:space="preserve"><value>Filtern auf</value></data>
+  <data name="Automatic (the server; Gmail: here)" xml:space="preserve"><value>Automatisch (Server; bei Gmail hier)</value></data>
+  <data name="The mail server (fast, finds whole words on Gmail)" xml:space="preserve"><value>Mail-Server (schnell; bei Gmail nur ganze Wörter)</value></data>
+  <data name="Here (reads every header, exact but slow)" xml:space="preserve"><value>Hier (liest alle Kopfzeilen, genau aber langsam)</value></data>
 </root>

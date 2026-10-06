@@ -235,6 +235,13 @@
                 <mp-field asp-for="Input.FromFilter" label='@L["From contains"]' />
                 <mp-field asp-for="Input.ToFilter" label='@L["To contains"]' />
                 <mp-field asp-for="Input.SubjectFilter" label='@L["Subject contains"]' />
+                <div data-show-when-field="Input.Type" data-show-when-value="0">
+                    <mp-field asp-for="Input.MailFilterWhere" kind="select" label='@L["Filter on"]'>
+                        <option value="auto">@L["Automatic (the server; Gmail: here)"]</option>
+                        <option value="server">@L["The mail server (fast, finds whole words on Gmail)"]</option>
+                        <option value="local">@L["Here (reads every header, exact but slow)"]</option>
+                    </mp-field>
+                </div>
                 <mp-field asp-for="Input.SenderRegex" label='@L["Sender regex (advanced)"]' />
                 <mp-field asp-for="Input.SubjectRegex" label='@L["Subject regex (advanced)"]' />
             </div>

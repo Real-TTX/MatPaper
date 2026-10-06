@@ -66,6 +66,9 @@ public class MailImportSettings
     public string? ToFilter { get; set; }
     public string? SubjectFilter { get; set; }
 
+    /// <summary>Where the contains-filters run on IMAP: auto (the server, except Gmail) | server | local (headers are read and checked here).</summary>
+    public string FilterWhere { get; set; } = "auto";
+
     /// <summary>Optional advanced regex filters (applied in addition to the contains filters).</summary>
     public string? SenderRegex { get; set; }
     public string? SubjectRegex { get; set; }

@@ -106,6 +106,7 @@ public class EditModel : PageModel
         public string? SubjectFilter { get; set; }
         public string? SenderRegex { get; set; }
         public string? SubjectRegex { get; set; }
+        public string MailFilterWhere { get; set; } = "auto";
         public string AttachmentExtensions { get; set; } = DefaultAttachmentExtensions;
         public bool ImportBodyAsPdf { get; set; }
         public string MailPostAction { get; set; } = "markseen";
@@ -623,6 +624,7 @@ public class EditModel : PageModel
                 ? DefaultAttachmentExtensions
                 : Input.AttachmentExtensions.Trim(),
             ImportBodyAsPdf = Input.ImportBodyAsPdf,
+            FilterWhere = Input.MailFilterWhere is "server" or "local" ? Input.MailFilterWhere : "auto",
             PostAction = Input.MailPostAction,
             MoveToFolder = string.IsNullOrWhiteSpace(Input.MailMoveToFolder) ? null : Input.MailMoveToFolder.Trim(),
             StorageLocationId = Input.StorageLocationId,
@@ -723,6 +725,7 @@ public class EditModel : PageModel
                 ? DefaultAttachmentExtensions
                 : mail.AttachmentExtensions;
             Input.ImportBodyAsPdf = mail.ImportBodyAsPdf;
+            Input.MailFilterWhere = mail.FilterWhere;
             Input.MailPostAction = mail.PostAction;
             Input.MailMoveToFolder = mail.MoveToFolder;
             Input.StorageLocationId = mail.StorageLocationId;

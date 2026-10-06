@@ -998,7 +998,8 @@ public sealed class ImportRunner
 
         // Gmail matches whole words only ("Rechnung" misses "Rechnungen", "vodafone" misses
         // "x@kunde.vodafone.de"), so a server filter would drop mails the local check keeps.
-        if (client.Capabilities.HasFlag(ImapCapabilities.GMailExt1))
+        var where = settings.FilterWhere?.ToLowerInvariant();
+        if (where == "local" || (where != "server" && client.Capabilities.HasFlag(ImapCapabilities.GMailExt1)))
         {
             return query;
         }

@@ -46,6 +46,10 @@
             headers: { "RequestVerificationToken": token(form) },
             body: data,
             signal: controller ? controller.signal : undefined
+        }).catch(function () {
+            // The browser only says "Failed to fetch" when the connection broke or timed out.
+            if (timer) { clearTimeout(timer); }
+            throw new Error(text(form, "request-failed", "The request failed — please reload the page."));
         }).then(function (r) {
             if (timer) { clearTimeout(timer); }
             var type = r.headers.get("content-type") || "";

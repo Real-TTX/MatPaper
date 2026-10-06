@@ -46,6 +46,14 @@ public sealed class ImportBrowser
     /// </summary>
     private const int NetworkBudgetSeconds = 30;
 
+    /// <summary>
+    /// How long listing mailbox folders may spend asking for message counts. A mailbox such as
+    /// Gmail has dozens of labels and every count is its own round trip; without a limit the
+    /// answer takes so long that a proxy in front of the app drops the request. Folders reached
+    /// after the budget simply show no count.
+    /// </summary>
+    private static readonly TimeSpan FolderCountBudget = TimeSpan.FromSeconds(8);
+
     private readonly ConnectionService _connections;
     private readonly ILogger<ImportBrowser> _logger;
 
@@ -71,10 +79,11 @@ public sealed class ImportBrowser
             await client.ConnectAsync(mail.Host, mail.Port, ImportRunner.SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
             await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
 
-            var root = client.PersonalNamespaces.Count > 0
-                ? client.GetFolders(client.PersonalNamespaces[0], false, ct)
+            IList<IMailFolder> root = client.PersonalNamespaces.Count > 0
+                ? await client.GetFoldersAsync(client.PersonalNamespaces[0], false, ct).ConfigureAwait(false)
                 : new List<IMailFolder>();
 
+            var clock = System.Diagnostics.Stopwatch.StartNew();
             var entries = new List<BrowseEntry>();
             foreach (var folder in root)
             {
@@ -86,12 +95,19 @@ public sealed class ImportBrowser
                 }
 
                 int? count = null;
+                var selectable = (folder.Attributes & FolderAttributes.NoSelect) == 0;
+                if (!selectable || clock.Elapsed >= FolderCountBudget || !client.IsConnected)
+                {
+                    entries.Add(new BrowseEntry(folder.FullName, folder.Name, null, false));
+                    continue;
+                }
+
                 try
                 {
                     await folder.StatusAsync(StatusItems.Count, ct).ConfigureAwait(false);
                     count = folder.Count;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     // \NoSelect folders and servers without STATUS simply show no count.
                     _logger.LogDebug(ex, "No message count for IMAP folder {Folder}.", folder.FullName);

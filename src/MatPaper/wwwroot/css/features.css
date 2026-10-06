@@ -1221,3 +1221,31 @@
         display: block;
     }
 }
+
+/* Inbox: "processing finished" card, shown in the list area. */
+.inbox-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.85rem;
+    background: var(--color-primary-soft);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+}
+
+.inbox-refresh[hidden] {
+    display: none;
+}
+
+.inbox-refresh svg {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    color: var(--color-primary-text);
+}
+
+.inbox-refresh .btn {
+    margin-left: auto;
+}

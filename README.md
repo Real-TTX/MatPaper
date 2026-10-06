@@ -4,6 +4,92 @@ MatPaper is a self-hosted, Dockerized document management system (DMS) — a lig
 alternative to [Paperless-NGX](https://github.com/paperless-ngx/paperless-ngx) built on a
 modern .NET stack.
 
+## Quick start
+
+Ready-made images are published to the GitHub Container Registry:
+
+| Tag | Built from | Use it for |
+|---|---|---|
+| `ghcr.io/real-ttx/matpaper:latest` | `main` | releases |
+| `ghcr.io/real-ttx/matpaper:nightly` | `dev` | the newest features |
+
+### 1. Just run it
+
+Copy this into `docker-compose.yml` and start it – nothing else needed:
+
+```yaml
+services:
+  matpaper:
+    image: ghcr.io/real-ttx/matpaper:latest
+    restart: unless-stopped
+    ports:
+      - "4994:8080"
+    volumes:
+      - matpaper-data:/data
+      - matpaper-storage:/storage
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: matpaper
+      POSTGRES_DB: matpaper
+    volumes:
+      - matpaper-db:/var/lib/postgresql/data
+
+volumes:
+  matpaper-data:
+  matpaper-storage:
+  matpaper-db:
+```
+
+```bash
+docker compose up -d
+```
+
+Open **http://localhost:4994**. The first visit asks you to create the administrator account.
+The database is only reachable from inside the compose network, so its password needs no
+change for a default setup. The three volumes hold everything: `matpaper-data` the
+configuration, session keys and thumbnails, `matpaper-storage` the filed documents,
+`matpaper-db` the database. An update is `docker compose pull && docker compose up -d`; the
+database is migrated on start.
+
+Then, in the app: **System → Settings** for the public address and time zone,
+**System → Connections** for a NAS, mailbox or cloud drive, **System → Import tasks** to
+collect documents from a mailbox or folder.
+
+### 2. With the folders of your NAS
+
+Documents go to a *storage location*. To use a folder of your NAS instead of the Docker volume,
+mount it below `/storage` and add it once under **System → Storage locations**. A Synology
+keeps its shares under `/volume1`:
+
+```yaml
+  matpaper:
+    volumes:
+      - matpaper-data:/data
+      - /volume1/documents:/storage/documents   # left: the NAS, right: what MatPaper sees
+```
+
+In the app enter the path **inside the container**: `/storage/documents`. Shares of other
+systems work the same way (TrueNAS `/mnt/<pool>`, Unraid `/mnt/user`, plain Linux anywhere);
+only the left side of the colon changes. A network share needs no mount at all: add it under
+**System → Connections** as an SMB connection and use it as a storage location.
+
+To keep the review inbox off the container host, point `MATPAPER_INBOX` at a mounted folder
+(see [Data](#data)).
+
+### 3. From source
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+- **App:** http://localhost:4994
+- **pgAdmin:** http://localhost:4995 (login `admin@matpaper.example.com` / `matpaper`)
+
 ## Screenshots
 
 Taken from a demo instance with made-up documents (German UI; English is built in).
@@ -55,25 +141,6 @@ sign-in page.
 - Per-user ownership, sharing and a common area; cookie-based authentication with roles
 
 See [PLAN.md](PLAN.md) for the full roadmap and phase breakdown.
-
-## Running (development)
-
-```bash
-docker compose -f docker-compose.dev.yml up -d --build
-```
-
-Then open:
-
-- **App:** http://localhost:4994
-- **pgAdmin:** http://localhost:4995 (login `admin@matpaper.example.com` / `matpaper`)
-
-## Running (release)
-
-The release compose file pulls the prebuilt image from GHCR and omits pgAdmin:
-
-```bash
-docker compose -f docker-compose.release.yml up -d
-```
 
 ## Data
 

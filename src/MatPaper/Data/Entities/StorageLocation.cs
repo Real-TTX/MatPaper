@@ -87,6 +87,7 @@ public class StorageLocation : BaseEntity
             // Host and share live in the connection, the sub-folder in BasePath.
             string? host = null;
             string? share = null;
+            string? connectionFolder = null;
             if (Connection is not null)
             {
                 try
@@ -94,6 +95,7 @@ public class StorageLocation : BaseEntity
                     var endpoint = JsonSerializer.Deserialize<SmbEndpoint>(Connection.SettingsJson);
                     host = endpoint?.Host;
                     share = endpoint?.Share;
+                    connectionFolder = endpoint?.Path;
                 }
                 catch (JsonException)
                 {
@@ -102,7 +104,9 @@ public class StorageLocation : BaseEntity
             }
 
             var root = "\\\\" + (string.IsNullOrWhiteSpace(host) ? "?" : host) + "\\" + (string.IsNullOrWhiteSpace(share) ? "?" : share);
-            var cleaned = (BasePath ?? string.Empty).Trim().Trim('/', '\\').Replace('/', '\\');
+            var cleaned = string.Join("\\", new[] { connectionFolder, BasePath }
+                .Select(p => (p ?? string.Empty).Trim().Trim('/', '\\').Replace('/', '\\'))
+                .Where(p => p.Length > 0));
             return cleaned.Length == 0 ? root : root + "\\" + cleaned;
         }
     }

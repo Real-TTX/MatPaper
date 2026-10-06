@@ -670,7 +670,8 @@ public sealed class DocumentStorageService
             endpoint.Share.Trim(),
             connection.Domain,
             connection.Username ?? string.Empty,
-            _secrets.Unprotect(connection.ProtectedPassword)), loc.BasePath);
+            _secrets.Unprotect(connection.ProtectedPassword),
+            endpoint.Path ?? string.Empty), loc.BasePath);
     }
 
     // ----- Sanitizing -------------------------------------------------------

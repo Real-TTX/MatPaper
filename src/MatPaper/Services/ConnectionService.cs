@@ -85,12 +85,16 @@ public sealed class ConnectionService
         if (connection is not null)
         {
             var endpoint = TaskSettingsJson.Read<SmbEndpoint>(connection.SettingsJson);
+            // The connection's folder only applies to the connection's own share, not to another
+            // share the wizard picked on the same host.
+            var ownShare = string.IsNullOrWhiteSpace(s.Share) || string.Equals(s.Share, endpoint.Share, StringComparison.OrdinalIgnoreCase);
             return new SmbConnection(
                 endpoint.Host,
-                string.IsNullOrWhiteSpace(s.Share) ? endpoint.Share : s.Share,
+                ownShare ? endpoint.Share : s.Share,
                 connection.Domain,
                 connection.Username ?? string.Empty,
-                _secrets.Unprotect(connection.ProtectedPassword));
+                _secrets.Unprotect(connection.ProtectedPassword),
+                ownShare ? endpoint.Path ?? string.Empty : string.Empty);
         }
 
         var password = string.IsNullOrEmpty(plaintextPassword)

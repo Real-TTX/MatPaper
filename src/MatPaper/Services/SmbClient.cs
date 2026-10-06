@@ -5,7 +5,8 @@ using SMBLibrary.Client;
 namespace MatPaper.Services;
 
 /// <summary>Connection details for an SMB/CIFS share.</summary>
-public sealed record SmbConnection(string Host, string Share, string? Domain, string Username, string Password);
+/// <param name="Root">Optional folder inside the share that acts as the root: every path the session takes or returns is relative to it.</param>
+public sealed record SmbConnection(string Host, string Share, string? Domain, string Username, string Password, string Root = "");
 
 /// <summary>A file on a share: share-relative path (backslashes), size and last write time (UTC).</summary>
 public sealed record SmbEntry(string Path, long Size, DateTime ModifiedUtc);
@@ -20,13 +21,29 @@ public sealed class SmbSession : IDisposable
 {
     private readonly SMB2Client _client;
     private readonly ISMBFileStore _store;
+    private readonly string _root;
     private bool _disposed;
 
-    private SmbSession(SMB2Client client, ISMBFileStore store)
+    private SmbSession(SMB2Client client, ISMBFileStore store, string root)
     {
         _client = client;
         _store = store;
+        _root = root;
     }
+
+    /// <summary>Share-relative path including the connection's root folder (what goes to the server).</summary>
+    private string Abs(string? path)
+    {
+        var relative = Norm(path);
+        if (_root.Length == 0) { return relative; }
+        return relative.Length == 0 ? _root : _root + "\\" + relative;
+    }
+
+    /// <summary>The inverse of <see cref="Abs"/>: strips the root folder from a server path.</summary>
+    private string Rel(string absolute)
+        => _root.Length > 0 && absolute.StartsWith(_root + "\\", StringComparison.OrdinalIgnoreCase)
+            ? absolute[(_root.Length + 1)..]
+            : absolute;
 
     public int MaxReadSize => (int)Math.Min(_client.MaxReadSize, 1024 * 1024);
     public int MaxWriteSize => (int)Math.Min(_client.MaxWriteSize, 1024 * 1024);
@@ -68,7 +85,7 @@ public sealed class SmbSession : IDisposable
             throw new IOException($"Cannot connect to share '{c.Share}' ({treeStatus}).");
         }
 
-        return new SmbSession(client, store);
+        return new SmbSession(client, store, Norm(c.Root));
     }
 
     /// <summary>Normalises a path to share-relative backslash form without leading/trailing separators.</summary>
@@ -127,7 +144,7 @@ public sealed class SmbSession : IDisposable
     /// <summary>Immediate subfolder names of <paramref name="path"/> (one level, for the folder picker).</summary>
     public IReadOnlyList<string> ListDirectories(string? path)
     {
-        var dir = Norm(path);
+        var dir = Abs(path);
         var results = new List<string>();
 
         var status = _store.CreateFile(out var handle, out _, dir,
@@ -168,7 +185,7 @@ public sealed class SmbSession : IDisposable
     /// <summary>Number of files directly in <paramref name="path"/> that match the pattern (for the picker).</summary>
     public int CountFiles(string? path, string? pattern)
     {
-        var dir = Norm(path);
+        var dir = Abs(path);
         var count = 0;
 
         var status = _store.CreateFile(out var handle, out _, dir,
@@ -224,7 +241,7 @@ public sealed class SmbSession : IDisposable
         }
 
         var results = new List<SmbEntry>();
-        Walk(start, pattern, recursive, results, limit);
+        Walk(Abs(start), pattern, recursive, results, limit);
         return results;
     }
 
@@ -267,7 +284,7 @@ public sealed class SmbSession : IDisposable
                 }
                 else if (MatchPattern(name, pattern))
                 {
-                    results.Add(new SmbEntry(full, entry.EndOfFile, entry.LastWriteTime.ToUniversalTime()));
+                    results.Add(new SmbEntry(Rel(full), entry.EndOfFile, entry.LastWriteTime.ToUniversalTime()));
                     if (limit > 0 && results.Count >= limit)
                     {
                         return;
@@ -296,7 +313,7 @@ public sealed class SmbSession : IDisposable
 
     public bool DirectoryExists(string path)
     {
-        var status = _store.CreateFile(out var handle, out _, Norm(path),
+        var status = _store.CreateFile(out var handle, out _, Abs(path),
             AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
             ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN,
             CreateOptions.FILE_DIRECTORY_FILE, null);
@@ -311,7 +328,7 @@ public sealed class SmbSession : IDisposable
 
     public bool FileExists(string path)
     {
-        var status = _store.CreateFile(out var handle, out _, Norm(path),
+        var status = _store.CreateFile(out var handle, out _, Abs(path),
             AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Normal, ShareAccess.Read | ShareAccess.Write,
             CreateDisposition.FILE_OPEN, CreateOptions.FILE_NON_DIRECTORY_FILE, null);
         if (status != NTStatus.STATUS_SUCCESS)
@@ -339,7 +356,7 @@ public sealed class SmbSession : IDisposable
     /// </summary>
     public SmbReadStream OpenRead(string path, bool ownsSession)
     {
-        var status = _store.CreateFile(out var handle, out _, Norm(path),
+        var status = _store.CreateFile(out var handle, out _, Abs(path),
             AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Normal, ShareAccess.Read,
             CreateDisposition.FILE_OPEN, CreateOptions.FILE_NON_DIRECTORY_FILE, null);
         if (status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND || status == NTStatus.STATUS_OBJECT_PATH_NOT_FOUND)
@@ -402,7 +419,7 @@ public sealed class SmbSession : IDisposable
     /// <summary>Creates a NEW file (fails if it exists) and writes the stream into it.</summary>
     public void WriteFile(string path, Stream content)
     {
-        var status = _store.CreateFile(out var handle, out _, Norm(path),
+        var status = _store.CreateFile(out var handle, out _, Abs(path),
             AccessMask.GENERIC_WRITE, SMBLibrary.FileAttributes.Normal, ShareAccess.None,
             CreateDisposition.FILE_CREATE, CreateOptions.FILE_NON_DIRECTORY_FILE, null);
         if (status != NTStatus.STATUS_SUCCESS)
@@ -450,7 +467,7 @@ public sealed class SmbSession : IDisposable
 
         // Renaming only needs DELETE on the file (write permission on the folders);
         // asking for GENERIC_WRITE as well would fail on read-only files.
-        var status = _store.CreateFile(out var handle, out _, src,
+        var status = _store.CreateFile(out var handle, out _, Abs(src),
             AccessMask.DELETE, SMBLibrary.FileAttributes.Normal, ShareAccess.None,
             CreateDisposition.FILE_OPEN, CreateOptions.FILE_NON_DIRECTORY_FILE, null);
         if (status != NTStatus.STATUS_SUCCESS)
@@ -460,7 +477,7 @@ public sealed class SmbSession : IDisposable
 
         try
         {
-            var rename = new FileRenameInformationType2 { FileName = dst, ReplaceIfExists = false };
+            var rename = new FileRenameInformationType2 { FileName = Abs(dst), ReplaceIfExists = false };
             status = _store.SetFileInformation(handle, rename);
             if (status != NTStatus.STATUS_SUCCESS)
             {
@@ -475,7 +492,7 @@ public sealed class SmbSession : IDisposable
 
     public bool TryDelete(string path)
     {
-        var status = _store.CreateFile(out var handle, out _, Norm(path),
+        var status = _store.CreateFile(out var handle, out _, Abs(path),
             AccessMask.DELETE, SMBLibrary.FileAttributes.Normal, ShareAccess.None,
             CreateDisposition.FILE_OPEN, CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_DELETE_ON_CLOSE, null);
         if (status != NTStatus.STATUS_SUCCESS)
@@ -551,7 +568,7 @@ public sealed class SmbSession : IDisposable
         foreach (var part in target.Split('\\', StringSplitOptions.RemoveEmptyEntries))
         {
             current = string.IsNullOrEmpty(current) ? part : current + "\\" + part;
-            var status = _store.CreateFile(out var handle, out _, current,
+            var status = _store.CreateFile(out var handle, out _, Abs(current),
                 AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
                 ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN_IF,
                 CreateOptions.FILE_DIRECTORY_FILE, null);
@@ -565,12 +582,13 @@ public sealed class SmbSession : IDisposable
     /// <summary>Removes the folder when it is empty. Returns false when it is missing or not empty.</summary>
     public bool TryRemoveEmptyDirectory(string dir)
     {
-        var target = Norm(dir);
-        if (string.IsNullOrEmpty(target))
+        var relative = Norm(dir);
+        if (string.IsNullOrEmpty(relative))
         {
             return false;
         }
 
+        var target = Abs(relative);
         var status = _store.CreateFile(out var handle, out _, target,
             AccessMask.GENERIC_READ, SMBLibrary.FileAttributes.Directory,
             ShareAccess.Read | ShareAccess.Write, CreateDisposition.FILE_OPEN,

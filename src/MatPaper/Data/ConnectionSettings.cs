@@ -12,6 +12,9 @@ public sealed class SmbEndpoint
 
     /// <summary>The share name. One share is one connection; a NAS with three shares is three.</summary>
     public string Share { get; set; } = string.Empty;
+
+    /// <summary>Optional folder inside the share ("MatPaper" or "Archive/MatPaper"); everything that uses the connection lives below it.</summary>
+    public string? Path { get; set; }
 }
 
 /// <summary>Endpoint for an IMAP or POP3 mailbox.</summary>

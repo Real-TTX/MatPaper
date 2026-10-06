@@ -792,4 +792,5 @@
   <data name="The current password is wrong." xml:space="preserve"><value>Das aktuelle Passwort ist falsch.</value></data>
   <data name="Password changed." xml:space="preserve"><value>Passwort geändert.</value></data>
   <data name="Saved" xml:space="preserve"><value>Gespeichert</value></data>
+  <data name="Optional. Locations and import tasks using this connection start in this folder." xml:space="preserve"><value>Optional. Speicherorte und Import-Regeln mit dieser Verbindung beginnen in diesem Ordner.</value></data>
 </root>

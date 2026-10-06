@@ -36,6 +36,8 @@
 
         <div data-show-when-field="Input.Kind" data-show-when-value="0">
             <mp-field asp-for="Input.Share" label='@L["SMB share"]' placeholder="documents" />
+            <mp-field asp-for="Input.SmbPath" label='@L["Folder in share"]' placeholder="MatPaper"
+                      help='@L["Optional. Locations and import tasks using this connection start in this folder."]' />
             <mp-field asp-for="Input.Domain" label='@L["Domain"]' help='@L["Optional (Windows domain or workgroup)."]' />
         </div>
 

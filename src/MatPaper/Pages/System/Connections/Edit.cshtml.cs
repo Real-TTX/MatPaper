@@ -64,6 +64,7 @@ public class EditModel : PageModel
         public int Port { get; set; } = 993;
         public bool UseSsl { get; set; } = true;
         public string? Share { get; set; }
+        public string? SmbPath { get; set; }
         public string? Domain { get; set; }
 
         public string? Username { get; set; }
@@ -120,6 +121,7 @@ public class EditModel : PageModel
                     var smb = TaskSettingsJson.Read<SmbEndpoint>(entity.SettingsJson);
                     Input.Host = smb.Host;
                     Input.Share = smb.Share;
+                    Input.SmbPath = smb.Path;
                     break;
                 case ConnectionKind.GoogleDrive:
                     var drive = TaskSettingsJson.Read<GoogleDriveEndpoint>(entity.SettingsJson);
@@ -297,10 +299,17 @@ public class EditModel : PageModel
                 {
                     ModelState.AddModelError("Input.Host", _l["Host and share are required."]);
                 }
+                // "Documents/MatPaper" in the share field means share Documents, folder MatPaper.
+                var split = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
+                var shareParts = (Input.Share ?? string.Empty).Replace('\\', '/').Split('/', split);
+                var folderParts = shareParts.Skip(1)
+                    .Concat((Input.SmbPath ?? string.Empty).Replace('\\', '/').Split('/', split))
+                    .ToList();
                 settingsJson = TaskSettingsJson.Write(new SmbEndpoint
                 {
                     Host = Input.Host?.Trim() ?? string.Empty,
-                    Share = Input.Share?.Trim() ?? string.Empty
+                    Share = shareParts.FirstOrDefault() ?? string.Empty,
+                    Path = folderParts.Count > 0 ? string.Join("/", folderParts) : null
                 });
                 break;
 

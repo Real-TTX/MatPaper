@@ -72,80 +72,53 @@ else
             var displayDate = Fmt.Date(d.DocumentDate ?? d.CreateDate);
             var docTags = d.DocumentTags?.Where(t => t.Tag != null).Select(t => t.Tag!).ToList() ?? new List<MatPaper.Data.Tag>();
             <article class="doc-card @(Model.ShowingDeleted ? "doc-card--deleted" : string.Empty)">
-                @if (Model.ShowingDeleted)
-                {
-                    <span class="doc-card__thumb doc-card__thumb--static" aria-hidden="true">
-                        <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                            <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-                        </svg>
-                    </span>
-                }
-                else
-                {
-                    <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
-                        @if (d.ThumbnailPath != null)
-                        {
-                            <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
-                        }
-                        else
-                        {
-                            <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div class="doc-card__media">
+                    @if (Model.ShowingDeleted)
+                    {
+                        <span class="doc-card__thumb doc-card__thumb--static" aria-hidden="true">
+                            <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 3v4a1 1 0 0 0 1 1h4" />
                                 <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
                             </svg>
-                        }
-                        <span class="doc-card__zoom" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" /></svg>
                         </span>
-                    </button>
-                }
-                <div class="doc-card__body">
-                    @if (Model.ShowingDeleted)
-                    {
-                        <span class="doc-card__title" title="@d.Title">@d.Title</span>
                     }
                     else
                     {
-                        <a class="doc-card__title" href="/Documents/Edit?id=@d.Id" title="@d.Title">@d.Title</a>
-                    }
-                    <div class="doc-card__meta">
-                        <span>@(d.Correspondent?.Name ?? "—")</span>
-                        <span>@(d.DocumentType?.Name ?? "—")</span>
-                        <span>@displayDate</span>
-                        @if (d.Project != null)
-                        {
-                            <span class="project-label" title='@L["Project"]'>
-                                <svg class="project-label__icon" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>@d.Project.Name
-                            </span>
-                        }
-                    </div>
-                    @if (docTags.Count > 0)
-                    {
-                        <div class="doc-card__tags">
-                            @foreach (var t in docTags)
+                        <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
+                            @if (d.ThumbnailPath != null)
                             {
-                                <span class="tag-label"><span class="tag-label__dot" style="background:@(string.IsNullOrWhiteSpace(t.Color) ? "#808080" : t.Color)"></span>@t.Name</span>
+                                <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
                             }
-                        </div>
+                            else
+                            {
+                                <svg class="doc-card__thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                                </svg>
+                            }
+                            <span class="doc-card__zoom" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M11 8v6M8 11h6" /></svg>
+                            </span>
+                        </button>
                     }
-                    <div class="doc-card__footer">
-                        @if (Model.ShowingDeleted)
-                        {
-                            <span class="badge badge--warn">@L["Deleted"]</span>
-                        }
-                        else if (d.ReviewState == ReviewState.Pending)
-                        {
-                            <span class="badge badge--muted">@L["Needs review"]</span>
-                        }
-                        else if (d.ReviewState == ReviewState.Ignored)
-                        {
-                            <span class="badge badge--muted">@L["Ignored"]</span>
-                        }
-                        else
-                        {
-                            <span></span>
-                        }
+                    @if (Model.ShowingDeleted)
+                    {
+                        <span class="doc-card__status doc-card__status--warn">@L["Deleted"]</span>
+                    }
+                    else if (d.ReviewState == ReviewState.Pending)
+                    {
+                        <span class="doc-card__status doc-card__status--review">@L["Needs review"]</span>
+                    }
+                    else if (d.ReviewState == ReviewState.Ignored)
+                    {
+                        <span class="doc-card__status">@L["Ignored"]</span>
+                    }
+                </div>
+                <div class="doc-card__body">
+                    <div class="doc-card__head">
+                        <span class="doc-card__party @(d.Correspondent == null ? "is-empty" : string.Empty)" title="@(d.Correspondent?.Name)">
+                            <svg class="doc-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M20 21v-1a6 6 0 0 0-6-6h-4a6 6 0 0 0-6 6v1" /></svg><span>@(d.Correspondent?.Name ?? "—")</span>
+                        </span>
                         @if (Model.ShowingDeleted)
                         {
                             <form method="post" asp-page-handler="Restore" asp-route-Review="deleted" style="display:inline">
@@ -159,11 +132,41 @@ else
                         }
                         else
                         {
-                        <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
-                        </a>
+                            <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                            </a>
                         }
                     </div>
+                    @if (Model.ShowingDeleted)
+                    {
+                        <span class="doc-card__title" title="@d.Title">@d.Title</span>
+                    }
+                    else
+                    {
+                        <a class="doc-card__title" href="/Documents/Edit?id=@d.Id" title="@d.Title">@d.Title</a>
+                    }
+                    <div class="doc-card__meta">
+                        @if (d.DocumentType != null)
+                        {
+                            <span class="doc-card__type">@d.DocumentType.Name</span>
+                        }
+                        <span class="doc-card__date"><svg class="doc-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>@displayDate</span>
+                    </div>
+                    @if (d.Project != null)
+                    {
+                        <span class="project-label doc-card__project" title='@L["Project"]'>
+                            <svg class="project-label__icon" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>@d.Project.Name
+                        </span>
+                    }
+                    @if (docTags.Count > 0)
+                    {
+                        <div class="doc-card__tags">
+                            @foreach (var t in docTags)
+                            {
+                                <span class="tag-label"><span class="tag-label__dot" style="background:@(string.IsNullOrWhiteSpace(t.Color) ? "#808080" : t.Color)"></span>@t.Name</span>
+                            }
+                        </div>
+                    }
                 </div>
             </article>
         }

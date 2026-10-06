@@ -8,9 +8,9 @@
 @* The wizard walks through type → connection → credentials → source → rules →
    preview → filing. Steps that do not apply to the chosen type hide themselves
    (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
-@if (Model.IsEdit && Model.Runs is not null)
+@if (Model.IsEdit)
 {
-    <partial name="_TaskRunsPanel" model="Model.Runs" />
+    <p class="runs-panel__more" style="margin-top:0"><a href="/System/ImportTasks/Details?id=@Model.Id">← @L["Back to the task"]</a></p>
 }
 
 <form class="form wizard" id="import-wizard" method="post"

@@ -136,7 +136,7 @@ public sealed class ImportRunner
                         stream, fileName, locationId,
                         settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
                         settings.TagIds ?? new List<long>(), ownerId, ct, reviewState, settings.IsCommon,
-                        origin: DocumentOrigin.ImportFolder).ConfigureAwait(false);
+                        origin: DocumentOrigin.ImportFolder, importTaskId: task.Id).ConfigureAwait(false);
 
                     switch (result.Status)
                     {
@@ -333,7 +333,7 @@ public sealed class ImportRunner
                         ct,
                         reviewState: settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending,
                         isCommon: settings.IsCommon,
-                        origin: DocumentOrigin.ImportFolder).ConfigureAwait(false);
+                        origin: DocumentOrigin.ImportFolder, importTaskId: task.Id).ConfigureAwait(false);
                 }
 
                 switch (result.Status)
@@ -538,10 +538,10 @@ public sealed class ImportRunner
                         continue;
                     }
 
-                    count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                    count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, task.Id, log, ct).ConfigureAwait(false);
                     if (settings.ImportBodyAsPdf)
                     {
-                        count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                        count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, task.Id, log, ct).ConfigureAwait(false);
                     }
 
                     switch (postAction)
@@ -657,10 +657,10 @@ public sealed class ImportRunner
                         continue;
                     }
 
-                    count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                    count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, task.Id, log, ct).ConfigureAwait(false);
                     if (settings.ImportBodyAsPdf)
                     {
-                        count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                        count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, task.Id, log, ct).ConfigureAwait(false);
                     }
 
                     if (postAction == "delete")
@@ -698,6 +698,7 @@ public sealed class ImportRunner
         long? ownerId,
         ReviewState reviewState,
         bool isCommon,
+        long importTaskId,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -714,7 +715,7 @@ public sealed class ImportRunner
             await using var stream = new MemoryStream(pdf);
             var result = await _ingest.IngestAsync(
                 stream, fileName, locationId, null, null, null, Array.Empty<long>(), ownerId, ct, reviewState, isCommon,
-                origin: DocumentOrigin.Mail).ConfigureAwait(false);
+                origin: DocumentOrigin.Mail, importTaskId: importTaskId).ConfigureAwait(false);
 
             if (result.Status == IngestStatus.Created)
             {
@@ -748,6 +749,7 @@ public sealed class ImportRunner
         long? ownerId,
         ReviewState reviewState,
         bool isCommon,
+        long importTaskId,
         StringBuilder log,
         CancellationToken ct)
     {
@@ -799,7 +801,7 @@ public sealed class ImportRunner
                     ct,
                     reviewState: reviewState,
                     isCommon: isCommon,
-                    origin: DocumentOrigin.Mail).ConfigureAwait(false);
+                    origin: DocumentOrigin.Mail, importTaskId: importTaskId).ConfigureAwait(false);
 
                 switch (result.Status)
                 {

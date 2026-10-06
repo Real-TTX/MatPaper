@@ -27,6 +27,9 @@ public class Document : BaseEntity
     /// </summary>
     public bool IsStaged { get; set; }
 
+    /// <summary>The import task that brought the document in, if any. Plain id, no foreign key: the document outlives the task.</summary>
+    public long? ImportTaskId { get; set; }
+
     /// <summary>How the document entered MatPaper (upload, mail, import folder, camera, search).</summary>
     public DocumentOrigin Origin { get; set; }
 

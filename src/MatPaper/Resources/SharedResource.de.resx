@@ -759,4 +759,23 @@
   <data name="Nothing remembered yet." xml:space="preserve"><value>Noch keine Position gemerkt.</value></data>
   <data name="Remembers: up to message {0}." xml:space="preserve"><value>Merkt sich: bis Nachricht {0}.</value></data>
   <data name="Remembers {0} handled item(s)." xml:space="preserve"><value>Merkt sich {0} bearbeitete Einträge.</value></data>
+  <data name="System / Import tasks / View" xml:space="preserve"><value>System / Importregeln / Ansicht</value></data>
+  <data name="Back to the task" xml:space="preserve"><value>Zurück zur Regel</value></data>
+  <data name="Imported documents" xml:space="preserve"><value>Importierte Dokumente</value></data>
+  <data name="Nothing imported by this task yet." xml:space="preserve"><value>Diese Regel hat noch nichts importiert.</value></data>
+  <data name="The latest {0} of {1} are shown." xml:space="preserve"><value>Die neuesten {0} von {1} werden angezeigt.</value></data>
+  <data name="Log of the latest run" xml:space="preserve"><value>Protokoll des letzten Laufs</value></data>
+  <data name="Mailbox" xml:space="preserve"><value>Postfach</value></data>
+  <data name="Mail body as PDF" xml:space="preserve"><value>Mail-Text als PDF</value></data>
+  <data name="with subfolders" xml:space="preserve"><value>mit Unterordnern</value></data>
+  <data name="Last {0} days" xml:space="preserve"><value>Letzte {0} Tage</value></data>
+  <data name="From {0}" xml:space="preserve"><value>Ab {0}</value></data>
+  <data name="Delete at the source" xml:space="preserve"><value>An der Quelle löschen</value></data>
+  <data name="Move at the source" xml:space="preserve"><value>An der Quelle verschieben</value></data>
+  <data name="Mark as read" xml:space="preserve"><value>Als gelesen markieren</value></data>
+  <data name="Leave untouched" xml:space="preserve"><value>Unverändert lassen</value></data>
+  <data name="Lands in" xml:space="preserve"><value>Landet in</value></data>
+  <data name="Review inbox" xml:space="preserve"><value>Eingang</value></data>
+  <data name="Skips the inbox" xml:space="preserve"><value>Überspringt den Eingang</value></data>
+  <data name="Pattern" xml:space="preserve"><value>Muster</value></data>
 </root>

@@ -63,6 +63,9 @@ public class AppDbContext : DbContext
             .HasIndex(d => d.Token)
             .IsUnique();
 
+        modelBuilder.Entity<Document>()
+            .HasIndex(d => d.ImportTaskId);
+
         modelBuilder.Entity<ShareLink>()
             .HasIndex(s => s.Token)
             .IsUnique();

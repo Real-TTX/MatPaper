@@ -221,6 +221,21 @@
         </form>
     </dialog>
 
+    @if (Context.Request.Method == "POST")
+    {
+        @* A page answered by a handler button (Test, Preview, ...) keeps "?handler=..." in its address, and
+           the form without an action would post "Save" to that same handler. Drop it from the address. *@
+        <script>
+            (function () {
+                var url = new URL(location.href);
+                if (url.searchParams.has("handler")) {
+                    url.searchParams.delete("handler");
+                    history.replaceState(null, "", url.pathname + url.search + url.hash);
+                }
+            })();
+        </script>
+    }
+
     <script src="~/js/app.js" asp-append-version="true"></script>
     <script src="~/js/picker.js" asp-append-version="true"></script>
     <script src="~/js/schedule.js" asp-append-version="true"></script>

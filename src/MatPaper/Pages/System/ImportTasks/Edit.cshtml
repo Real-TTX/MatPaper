@@ -310,27 +310,25 @@
         <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
 
         <h3 class="wizard__subtitle">@L["Preset metadata"]</h3>
-        <mp-field asp-for="Input.CorrespondentId" kind="select" label='@L["Correspondent"]'
-                  asp-items="Model.CorrespondentOptions" />
-        <mp-field asp-for="Input.DocumentTypeId" kind="select" label='@L["Document type"]'
-                  asp-items="Model.DocumentTypeOptions" />
-        <mp-field asp-for="Input.ProjectId" kind="select" label='@L["Project"]'
-                  asp-items="Model.ProjectOptions" />
+        <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
+                   asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
+        <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]'
+                   asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
+        <mp-picker asp-for="Input.ProjectId" label='@L["Project"]'
+                   asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
 
-        @if (Model.TagOptions.Count > 0)
+        @if (Model.TagOptions.Count == 0)
         {
             <div class="form-row">
                 <label>@L["Tags"]</label>
-                <div class="checkbox-group">
-                    @foreach (var tag in Model.TagOptions)
-                    {
-                        <label class="form-check">
-                            <input type="checkbox" name="TagIds" value="@tag.Id" checked="@tag.Selected" />
-                            <span>@tag.Name</span>
-                        </label>
-                    }
-                </div>
+                <p class="form-help">@L["No tags defined yet."] <a href="/Tags/Edit">@L["New tag"]</a></p>
             </div>
+        }
+        else
+        {
+            <mp-picker asp-for="TagIds" label='@L["Tags"]' multiple="true" placeholder='@L["Add tags…"]'
+                       asp-items="Model.TagOptions.Select(t => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(t.Name, t.Id.ToString(), t.Selected))"
+                       help='@L["Every document this task imports gets these tags."]' />
         }
 
         <h3 class="wizard__subtitle">@L["When does it run?"]</h3>

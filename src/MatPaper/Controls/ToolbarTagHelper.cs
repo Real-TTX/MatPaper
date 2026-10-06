@@ -37,6 +37,10 @@ public sealed class ToolbarTagHelper : TagHelper
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("class", "toolbar");
         output.Attributes.SetAttribute("method", Method);
+        output.Attributes.SetAttribute("data-t-filters", _l["Filter"].Value);
+        output.Attributes.SetAttribute("data-t-reset", _l["Reset filters"].Value);
+        output.Attributes.SetAttribute("data-t-apply", _l["Apply"].Value);
+        output.Attributes.SetAttribute("data-t-close", _l["Close"].Value);
 
         TagHelperContent children = await output.GetChildContentAsync();
         output.Content.SetHtmlContent(children);

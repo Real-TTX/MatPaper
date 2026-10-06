@@ -809,4 +809,12 @@
   <data name="Write for all documents now" xml:space="preserve"><value>Jetzt für alle Dokumente schreiben</value></data>
   <data name="Switch on &quot;Write metadata files&quot; and save first." xml:space="preserve"><value>Erst „Metadaten-Dateien schreiben“ einschalten und speichern.</value></data>
   <data name="Writing the metadata files in the background." xml:space="preserve"><value>Die Metadaten-Dateien werden im Hintergrund geschrieben.</value></data>
+  <data name="Every document this task imports gets these tags." xml:space="preserve"><value>Jedes Dokument, das diese Regel importiert, bekommt diese Schlagwörter.</value></data>
+  <data name="No correspondent" xml:space="preserve"><value>Ohne Korrespondent</value></data>
+  <data name="No type" xml:space="preserve"><value>Ohne Typ</value></data>
+  <data name="No tags" xml:space="preserve"><value>Ohne Schlagwörter</value></data>
+  <data name="No project" xml:space="preserve"><value>Ohne Projekt</value></data>
+  <data name="None" xml:space="preserve"><value>Keine</value></data>
+  <data name="Reset filters" xml:space="preserve"><value>Zurücksetzen</value></data>
+  <data name="Apply" xml:space="preserve"><value>Anwenden</value></data>
 </root>

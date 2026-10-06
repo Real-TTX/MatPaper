@@ -154,19 +154,26 @@ public class IndexModel : PageModel
                 d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term)));
         }
 
+        // An id of 0 means "none": documents without a value in that field.
         if (CorrespondentIds.Length > 0)
         {
-            query = query.Where(d => d.CorrespondentId.HasValue && CorrespondentIds.Contains(d.CorrespondentId.Value));
+            var withNone = CorrespondentIds.Contains(0);
+            query = query.Where(d => (withNone && d.CorrespondentId == null)
+                || (d.CorrespondentId.HasValue && CorrespondentIds.Contains(d.CorrespondentId.Value)));
         }
 
         if (DocumentTypeIds.Length > 0)
         {
-            query = query.Where(d => d.DocumentTypeId.HasValue && DocumentTypeIds.Contains(d.DocumentTypeId.Value));
+            var withNone = DocumentTypeIds.Contains(0);
+            query = query.Where(d => (withNone && d.DocumentTypeId == null)
+                || (d.DocumentTypeId.HasValue && DocumentTypeIds.Contains(d.DocumentTypeId.Value)));
         }
 
         if (ProjectIds.Length > 0)
         {
-            query = query.Where(d => d.ProjectId.HasValue && ProjectIds.Contains(d.ProjectId.Value));
+            var withNone = ProjectIds.Contains(0);
+            query = query.Where(d => (withNone && d.ProjectId == null)
+                || (d.ProjectId.HasValue && ProjectIds.Contains(d.ProjectId.Value)));
         }
 
         if (StorageLocationIds.Length > 0)
@@ -176,7 +183,9 @@ public class IndexModel : PageModel
 
         if (TagIds.Length > 0)
         {
-            query = query.Where(d => d.DocumentTags.Any(dt => TagIds.Contains(dt.TagId)));
+            var withNone = TagIds.Contains(0);
+            query = query.Where(d => (withNone && !d.DocumentTags.Any())
+                || d.DocumentTags.Any(dt => TagIds.Contains(dt.TagId)));
         }
 
         if (DateFrom.HasValue)
@@ -258,22 +267,22 @@ public class IndexModel : PageModel
 
         foreach (var id in CorrespondentIds)
         {
-            var name = Correspondents.FirstOrDefault(c => c.Id == id)?.Name ?? id.ToString();
+            var name = id == 0 ? _l["None"].Value : Correspondents.FirstOrDefault(c => c.Id == id)?.Name ?? id.ToString();
             chips.Add(new FilterChip($"{_l["Correspondent"]}: {name}", FilterUrl.WithoutValue(req, "CorrespondentIds", id.ToString())));
         }
         foreach (var id in DocumentTypeIds)
         {
-            var name = DocumentTypes.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
+            var name = id == 0 ? _l["None"].Value : DocumentTypes.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
             chips.Add(new FilterChip($"{_l["Type"]}: {name}", FilterUrl.WithoutValue(req, "DocumentTypeIds", id.ToString())));
         }
         foreach (var id in TagIds)
         {
-            var name = Tags.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
+            var name = id == 0 ? _l["None"].Value : Tags.FirstOrDefault(t => t.Id == id)?.Name ?? id.ToString();
             chips.Add(new FilterChip($"{_l["Tag"]}: {name}", FilterUrl.WithoutValue(req, "TagIds", id.ToString())));
         }
         foreach (var id in ProjectIds)
         {
-            var name = Projects.FirstOrDefault(p => p.Id == id)?.Name ?? id.ToString();
+            var name = id == 0 ? _l["None"].Value : Projects.FirstOrDefault(p => p.Id == id)?.Name ?? id.ToString();
             chips.Add(new FilterChip($"{_l["Project"]}: {name}", FilterUrl.WithoutValue(req, "ProjectIds", id.ToString())));
         }
         foreach (var id in StorageLocationIds)

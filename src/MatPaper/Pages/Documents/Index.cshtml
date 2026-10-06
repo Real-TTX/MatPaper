@@ -10,16 +10,16 @@
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Full-text search"]' />
 
     <mp-picker asp-for="CorrespondentIds" label='@L["Correspondent"]' multiple="true" placeholder='@L["All"]'
-               asp-items="@Model.Correspondents.Select(c => new SelectListItem(c.Name, c.Id.ToString()))" />
+               asp-items="@(new[] { new SelectListItem(L["No correspondent"].Value, "0") }.Concat(Model.Correspondents.Select(c => new SelectListItem(c.Name, c.Id.ToString()))))" />
 
     <mp-picker asp-for="DocumentTypeIds" label='@L["Type"]' multiple="true" placeholder='@L["All"]'
-               asp-items="@Model.DocumentTypes.Select(t => new SelectListItem(t.Name, t.Id.ToString()))" />
+               asp-items="@(new[] { new SelectListItem(L["No type"].Value, "0") }.Concat(Model.DocumentTypes.Select(t => new SelectListItem(t.Name, t.Id.ToString()))))" />
 
     <mp-picker asp-for="TagIds" label='@L["Tag"]' multiple="true" placeholder='@L["All"]'
-               asp-items="@Model.Tags.Select(t => new SelectListItem(t.Name, t.Id.ToString()))" />
+               asp-items="@(new[] { new SelectListItem(L["No tags"].Value, "0") }.Concat(Model.Tags.Select(t => new SelectListItem(t.Name, t.Id.ToString()))))" />
 
     <mp-picker asp-for="ProjectIds" label='@L["Project"]' multiple="true" placeholder='@L["All"]'
-               asp-items="@Model.Projects.Select(p => new SelectListItem(p.Name, p.Id.ToString()))" />
+               asp-items="@(new[] { new SelectListItem(L["No project"].Value, "0") }.Concat(Model.Projects.Select(p => new SelectListItem(p.Name, p.Id.ToString()))))" />
 
     <mp-picker asp-for="StorageLocationIds" label='@L["Location"]' multiple="true" placeholder='@L["All"]'
                asp-items="@Model.StorageLocations.Select(s => new SelectListItem(s.Name, s.Id.ToString()))" />

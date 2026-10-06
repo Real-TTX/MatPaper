@@ -2,7 +2,7 @@
 @using MatPaper.Data
 @* The runs block at the top of a task editor. Not a nested form: render it OUTSIDE the editor's
    own <form>. While the newest run is still running the page reloads itself every few seconds. *@
-<section class="runs-panel" @(Model.IsRunning ? "data-running=true" : "")>
+<section class="runs-panel" data-live="runs" @(Model.IsRunning ? "data-running=true" : "")>
     <div class="runs-panel__head">
         <div class="runs-panel__title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
@@ -86,9 +86,25 @@
 </section>
 
 <script>
-    // A run in progress: look again in a few seconds so the result shows up without a reload.
+    // A run in progress: ask for the page in the background every few seconds and swap in the
+    // parts marked data-live, so the result shows up without a reload. Stops when the run ends.
     (function () {
-        var panel = document.querySelector(".runs-panel[data-running]");
-        if (panel) { setTimeout(function () { location.reload(); }, 3000); }
+        if (!document.querySelector(".runs-panel[data-running]")) { return; }
+        var tries = 0;
+        var timer = setInterval(function () {
+            if (++tries > 200) { clearInterval(timer); return; }
+            fetch(location.href, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } })
+                .then(function (r) { return r.ok ? r.text() : null; })
+                .then(function (html) {
+                    if (!html) { return; }
+                    var doc = new DOMParser().parseFromString(html, "text/html");
+                    document.querySelectorAll("[data-live]").forEach(function (el) {
+                        var fresh = doc.querySelector("[data-live=\"" + el.getAttribute("data-live") + "\"]");
+                        if (fresh) { el.replaceWith(fresh); }
+                    });
+                    if (!document.querySelector(".runs-panel[data-running]")) { clearInterval(timer); }
+                })
+                .catch(function () { });
+        }, 3000);
     })();
 </script>

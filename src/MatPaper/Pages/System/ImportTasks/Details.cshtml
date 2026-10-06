@@ -65,7 +65,7 @@
     </section>
 </div>
 
-<section class="task-card task-card--wide">
+<section class="task-card task-card--wide" data-live="docs">
     <h3>
         @L["Imported documents"]
         <span class="task-card__count">@Model.DocumentCount</span>
@@ -113,7 +113,7 @@
 
 @if (Model.LastRun is { } last && !string.IsNullOrWhiteSpace(last.Log))
 {
-    <section class="task-card task-card--wide">
+    <section class="task-card task-card--wide" data-live="log">
         <h3>@L["Log of the latest run"]</h3>
         <pre class="task-log">@last.Log</pre>
         <p class="runs-panel__more"><a href="/System/TaskRuns/Details?id=@last.Id">@Fmt.DateTimeSeconds(last.StartedAt)</a></p>

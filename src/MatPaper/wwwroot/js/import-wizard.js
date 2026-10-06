@@ -163,11 +163,23 @@
                 previewBtn.disabled = true;
 
                 postJson(previewUrl)
-                    .then(function (res) { previewBox.innerHTML = renderPreview(res); })
+                    .then(function (res) { previewBox.innerHTML = renderPreview(res); wireMore(); })
                     .catch(function (err) {
                         previewBox.innerHTML = '<div class="form-summary">' + escapeHtml(String(err)) + "</div>";
                     })
                     .finally(function () { previewBtn.disabled = false; });
+            });
+        }
+
+        // "Show more" reveals the next 25 rows of an already loaded preview.
+        function wireMore() {
+            var button = previewBox.querySelector("[data-preview-more]");
+            if (!button) { return; }
+            button.addEventListener("click", function () {
+                var hiddenRows = previewBox.querySelectorAll("tr[data-extra][hidden]");
+                for (var i = 0; i < hiddenRows.length && i < 25; i++) { hiddenRows[i].hidden = false; }
+                var left = previewBox.querySelectorAll("tr[data-extra][hidden]").length;
+                if (left === 0) { button.remove(); } else { button.textContent = t("show-more", "Show more") + " (" + left + ")"; }
             });
         }
 
@@ -202,14 +214,20 @@
                 return "<th>" + escapeHtml(c) + "</th>";
             }).join("") + "</tr></thead>";
 
-            var rows = res.items.map(function (item) {
-                return "<tr><td>" + escapeHtml(item.title) + "</td>" +
+            var PAGE = 25;
+            var rows = res.items.map(function (item, index) {
+                return "<tr" + (index >= PAGE ? ' hidden data-extra="1"' : "") + "><td>" + escapeHtml(item.title) + "</td>" +
                     "<td>" + escapeHtml(item.detail || "—") + "</td>" +
                     "<td>" + escapeHtml(item.date || "—") + "</td>" +
                     "<td>" + escapeHtml(item.extra || "—") + "</td></tr>";
             }).join("");
 
-            return head + '<div class="data-table-wrap"><table class="data-table">' + thead + "<tbody>" + rows + "</tbody></table></div>";
+            var more = res.items.length > PAGE
+                ? '<p><button type="button" class="btn btn--secondary" data-preview-more>' + escapeHtml(t("show-more", "Show more")) +
+                  " (" + (res.items.length - PAGE) + ")</button></p>"
+                : "";
+
+            return head + '<div class="data-table-wrap"><table class="data-table">' + thead + "<tbody>" + rows + "</tbody></table></div>" + more;
         }
     });
 })();

@@ -116,6 +116,20 @@ a location looks through it for files MatPaper does not know yet; which extensio
 up, who owns the finds, whether they go to the common area and how often the search runs is
 configured per location.
 
+**What an import remembers.** An import task does not read everything again on every run.
+IMAP tasks store the folder's position (UIDVALIDITY and the highest UID handled) and ask the
+server only for newer messages; POP3 tasks remember the UIDLs they handled; folder and SMB tasks
+remember path, size and modification time of the files they handled. If the server renumbers a
+folder, or the task's folder, filters or period change, the task starts over. "Start over" on
+the task does the same by hand. The content hash stays the safety net: a file that already
+exists is never filed twice.
+
+Under *Period* a task can be limited to the last N days or to items from a given date on — for
+IMAP the server does that filtering, so an old mailbox is not fetched at all. The preview in
+the wizard looks at the newest 200 to 5000 items (POP3: at most 500, as it has to download
+each message) and shows 25 at a time; it ignores the remembered position so it always shows
+what the filters would catch.
+
 ## Connections and OAuth
 
 **Connections** (System → Connections) hold *where* something is and *how to sign in*:

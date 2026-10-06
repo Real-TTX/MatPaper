@@ -232,6 +232,7 @@ public sealed class FieldTagHelper : TagHelper
         "email" => "email",
         "number" => "number",
         "color" => "color",
+        "date" => "date",
         _ => "text",
     };
 }

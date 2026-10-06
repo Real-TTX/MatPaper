@@ -740,4 +740,16 @@
   <data name="Taken over without text recognition." xml:space="preserve"><value>Ohne Texterkennung übernommen.</value></data>
   <data name="Search started for &quot;{0}&quot;." xml:space="preserve"><value>Suche für „{0}“ gestartet.</value></data>
   <data name="Search started for {0} storage location(s)." xml:space="preserve"><value>Suche für {0} Speicherort(e) gestartet.</value></data>
+  <data name="Period" xml:space="preserve"><value>Zeitraum</value></data>
+  <data name="Everything" xml:space="preserve"><value>Alles</value></data>
+  <data name="Only the last days" xml:space="preserve"><value>Nur die letzten Tage</value></data>
+  <data name="Only from a date on" xml:space="preserve"><value>Nur ab einem Datum</value></data>
+  <data name="Days" xml:space="preserve"><value>Tage</value></data>
+  <data name="Look at the newest" xml:space="preserve"><value>Die neuesten ansehen</value></data>
+  <data name="Show more" xml:space="preserve"><value>Mehr anzeigen</value></data>
+  <data name="Start over" xml:space="preserve"><value>Neu beginnen</value></data>
+  <data name="Forget where the task stopped? The next run checks everything again." xml:space="preserve"><value>Vergessen, wo die Regel aufgehört hat? Der nächste Lauf prüft wieder alles.</value></data>
+  <data name="Position forgotten. The next run checks everything again." xml:space="preserve"><value>Position vergessen. Der nächste Lauf prüft wieder alles.</value></data>
+  <data name="Enter a number of days of 1 or more." xml:space="preserve"><value>Bitte eine Anzahl Tage ab 1 eingeben.</value></data>
+  <data name="Choose a date." xml:space="preserve"><value>Bitte ein Datum wählen.</value></data>
 </root>

@@ -59,6 +59,11 @@ public class EditModel : PageModel
 
     public bool IsEdit => Id != 0;
 
+    /// <summary>True when the task has a remembered position (see ImportSyncState).</summary>
+    public bool HasSyncState { get; private set; }
+
+    public static readonly int[] PreviewWindows = { 200, 500, 1000, 2000, 5000 };
+
     // Option lists.
     public List<SelectListItem> StorageLocationOptions { get; private set; } = new();
     public List<SelectListItem> CorrespondentOptions { get; private set; } = new();
@@ -121,6 +126,17 @@ public class EditModel : PageModel
         public string SmbPostAction { get; set; } = "none";
         public string? SmbMoveToPath { get; set; }
 
+        /// <summary>Which items a run considers: all | days | date.</summary>
+        public string LookbackMode { get; set; } = "all";
+
+        public int LookbackDays { get; set; } = 30;
+
+        /// <summary>First day to consider, as yyyy-MM-dd (an HTML date input posts exactly that).</summary>
+        public string? LookbackDate { get; set; }
+
+        /// <summary>How many of the newest messages/files the preview looks at.</summary>
+        public int PreviewWindow { get; set; } = 200;
+
         /// <summary>Saved connection for a mail task; when set, its endpoint and sign-in win.</summary>
         public long? MailConnectionId { get; set; }
 
@@ -178,6 +194,7 @@ public class EditModel : PageModel
         var now = DateTime.UtcNow;
 
         ImportTask entity;
+        string? previousSignature = null;
         if (IsEdit)
         {
             var existing = await _db.ImportTasks
@@ -188,6 +205,7 @@ public class EditModel : PageModel
             }
             entity = existing;
             entity.UpdateState = UpdateState.Updated;
+            previousSignature = ImportSync.Signature(existing.Type, existing.SettingsJson);
         }
         else
         {
@@ -205,12 +223,31 @@ public class EditModel : PageModel
         entity.IsEnabled = Input.IsEnabled;
         entity.CronExpression = string.IsNullOrWhiteSpace(Input.CronExpression) ? null : Input.CronExpression.Trim();
         entity.SettingsJson = BuildSettingsJson(entity.SettingsJson);
+
+        // Another folder, other filters or a different period: the remembered position no longer fits.
+        if (previousSignature is not null && previousSignature != ImportSync.Signature(entity.Type, entity.SettingsJson))
+        {
+            entity.SyncState = null;
+        }
         entity.UpdateDate = now;
         entity.UpdateUserId = _currentUser.UserId;
 
         await _db.SaveChangesAsync();
 
         return RedirectToPage("Index");
+    }
+
+    /// <summary>Forgets where the task stopped; the next run starts over (within the chosen period).</summary>
+    public async Task<IActionResult> OnPostResetSyncAsync()
+    {
+        if (!IsEdit)
+        {
+            return RedirectToPage("Index");
+        }
+
+        await ImportSync.SaveAsync(_db, Id, null);
+        this.Notify(_l["Position forgotten. The next run checks everything again."].Value);
+        return RedirectToPage("Edit", new { id = Id });
     }
 
     public async Task<IActionResult> OnPostRunAsync()
@@ -279,13 +316,14 @@ public class EditModel : PageModel
     {
         PreviewResult result = Input.Type switch
         {
-            (int)ImportTaskType.Filesystem => await _browser.PreviewLocalAsync(BuildFilesystemSettings(), ct),
+            (int)ImportTaskType.Filesystem => await _browser.PreviewLocalAsync(BuildFilesystemSettings(), PreviewWindowSize(), ct),
             (int)ImportTaskType.Smb => await _browser.PreviewSmbAsync(
-                BuildSmbSettings(await StoredSmbPasswordAsync(ct)), PlaintextOrNull(Input.SmbPassword), ct),
+                BuildSmbSettings(await StoredSmbPasswordAsync(ct)), PlaintextOrNull(Input.SmbPassword), PreviewWindowSize(), ct),
             _ => await _browser.PreviewMailAsync(
                 BuildMailSettings(await StoredMailPasswordAsync(ct)),
                 Input.Type == (int)ImportTaskType.Pop3,
                 PlaintextOrNull(Input.Password),
+                PreviewWindowSize(),
                 ct)
         };
 
@@ -304,6 +342,8 @@ public class EditModel : PageModel
             })
         });
     }
+
+    private int PreviewWindowSize() => PreviewWindows.Contains(Input.PreviewWindow) ? Input.PreviewWindow : PreviewWindows[0];
 
     private static string? PlaintextOrNull(string? typed) => string.IsNullOrEmpty(typed) ? null : typed;
 
@@ -435,6 +475,15 @@ public class EditModel : PageModel
             ModelState.AddModelError("Input.CronExpression", _l["The schedule is not a valid cron expression."]);
         }
 
+        if (Input.LookbackMode == ImportSync.ModeDays && Input.LookbackDays < 1)
+        {
+            ModelState.AddModelError("Input.LookbackDays", _l["Enter a number of days of 1 or more."]);
+        }
+        if (Input.LookbackMode == ImportSync.ModeDate && ParseDay(Input.LookbackDate) is null)
+        {
+            ModelState.AddModelError("Input.LookbackDate", _l["Choose a date."]);
+        }
+
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
             if (string.IsNullOrWhiteSpace(Input.SourcePath))
@@ -517,6 +566,9 @@ public class EditModel : PageModel
             TagIds = TagIds.ToList(),
             SkipInbox = Input.SkipInbox,
             OwnerUserId = Input.OwnerUserId,
+            LookbackMode = ImportSync.IsMode(Input.LookbackMode) ? Input.LookbackMode : ImportSync.ModeAll,
+            LookbackDays = Input.LookbackDays > 0 ? Input.LookbackDays : 30,
+            LookbackDate = ParseDay(Input.LookbackDate),
             IsCommon = Input.IsCommon
         };
     }
@@ -543,6 +595,9 @@ public class EditModel : PageModel
             TagIds = TagIds.ToList(),
             SkipInbox = Input.SkipInbox,
             OwnerUserId = Input.OwnerUserId,
+            LookbackMode = ImportSync.IsMode(Input.LookbackMode) ? Input.LookbackMode : ImportSync.ModeAll,
+            LookbackDays = Input.LookbackDays > 0 ? Input.LookbackDays : 30,
+            LookbackDate = ParseDay(Input.LookbackDate),
             IsCommon = Input.IsCommon
         };
     }
@@ -577,12 +632,26 @@ public class EditModel : PageModel
             TagIds = TagIds.ToList(),
             SkipInbox = Input.SkipInbox,
             OwnerUserId = Input.OwnerUserId,
+            LookbackMode = ImportSync.IsMode(Input.LookbackMode) ? Input.LookbackMode : ImportSync.ModeAll,
+            LookbackDays = Input.LookbackDays > 0 ? Input.LookbackDays : 30,
+            LookbackDate = ParseDay(Input.LookbackDate),
             IsCommon = Input.IsCommon
         };
     }
 
+    private static DateTime? ParseDay(string? value)
+        => DateTime.TryParseExact(value, "yyyy-MM-dd", global::System.Globalization.CultureInfo.InvariantCulture, global::System.Globalization.DateTimeStyles.None, out var day) ? day : null;
+
+    private void LoadLookback(string? mode, int days, DateTime? date)
+    {
+        Input.LookbackMode = ImportSync.IsMode(mode) ? mode! : ImportSync.ModeAll;
+        Input.LookbackDays = days > 0 ? days : 30;
+        Input.LookbackDate = date?.ToString("yyyy-MM-dd");
+    }
+
     private void LoadFromEntity(ImportTask entity)
     {
+        HasSyncState = !string.IsNullOrWhiteSpace(entity.SyncState);
         Input.Name = entity.Name;
         Input.Type = (int)entity.Type;
         Input.IsEnabled = entity.IsEnabled;
@@ -603,6 +672,7 @@ public class EditModel : PageModel
             Input.SkipInbox = fs.SkipInbox;
             Input.OwnerUserId = fs.OwnerUserId;
             Input.IsCommon = fs.IsCommon;
+            LoadLookback(fs.LookbackMode, fs.LookbackDays, fs.LookbackDate);
             TagIds = fs.TagIds.ToArray();
         }
         else if (entity.Type == ImportTaskType.Smb)
@@ -626,6 +696,7 @@ public class EditModel : PageModel
             Input.SkipInbox = smb.SkipInbox;
             Input.OwnerUserId = smb.OwnerUserId;
             Input.IsCommon = smb.IsCommon;
+            LoadLookback(smb.LookbackMode, smb.LookbackDays, smb.LookbackDate);
             TagIds = smb.TagIds.ToArray();
         }
         else
@@ -661,6 +732,7 @@ public class EditModel : PageModel
             Input.SkipInbox = mail.SkipInbox;
             Input.OwnerUserId = mail.OwnerUserId;
             Input.IsCommon = mail.IsCommon;
+            LoadLookback(mail.LookbackMode, mail.LookbackDays, mail.LookbackDate);
             TagIds = mail.TagIds.ToArray();
         }
     }

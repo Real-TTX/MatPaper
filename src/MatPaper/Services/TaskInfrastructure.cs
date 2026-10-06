@@ -38,6 +38,11 @@ public class FilesystemImportSettings
 
     /// <summary>Put imported documents into the common area (visible to everyone).</summary>
     public bool IsCommon { get; set; }
+
+    /// <summary>Which items a run considers: all | days (the last N days) | date (from a given day on).</summary>
+    public string LookbackMode { get; set; } = "all";
+    public int LookbackDays { get; set; } = 30;
+    public DateTime? LookbackDate { get; set; }
 }
 
 /// <summary>
@@ -90,6 +95,11 @@ public class MailImportSettings
 
     /// <summary>Put imported documents into the common area (visible to everyone).</summary>
     public bool IsCommon { get; set; }
+
+    /// <summary>Which items a run considers: all | days (the last N days) | date (from a given day on).</summary>
+    public string LookbackMode { get; set; } = "all";
+    public int LookbackDays { get; set; } = 30;
+    public DateTime? LookbackDate { get; set; }
 }
 
 /// <summary>
@@ -134,6 +144,11 @@ public class SmbImportSettings
 
     /// <summary>Put imported documents into the common area (visible to everyone).</summary>
     public bool IsCommon { get; set; }
+
+    /// <summary>Which items a run considers: all | days (the last N days) | date (from a given day on).</summary>
+    public string LookbackMode { get; set; } = "all";
+    public int LookbackDays { get; set; } = 30;
+    public DateTime? LookbackDate { get; set; }
 }
 
 /// <summary>

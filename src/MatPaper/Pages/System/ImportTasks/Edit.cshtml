@@ -18,7 +18,7 @@
       data-t-showing='@L["showing the first {0}"]' data-t-more='@L["scan stopped at {0} — there may be more"]'
       data-t-col-subject='@L["Subject"]' data-t-col-from='@L["From"]' data-t-col-date='@L["Date"]' data-t-col-attachments='@L["Attachments"]'
       data-t-col-name='@L["Name"]' data-t-col-path='@L["Path"]' data-t-col-size='@L["Size"]'
-      data-t-up='@L["One level up"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
+      data-t-show-more='@L["Show more"]' data-t-up='@L["One level up"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 
@@ -252,12 +252,29 @@
                 </div>
             </div>
         </div>
+
+        <mp-field asp-for="Input.LookbackMode" kind="select" label='@L["Period"]'>
+            <option value="all">@L["Everything"]</option>
+            <option value="days">@L["Only the last days"]</option>
+            <option value="date">@L["Only from a date on"]</option>
+        </mp-field>
+        <mp-field asp-for="Input.LookbackDays" kind="number" label='@L["Days"]'
+                  show-when-field="Input.LookbackMode" show-when-value="days" />
+        <mp-field asp-for="Input.LookbackDate" kind="date" label='@L["From"]'
+                  show-when-field="Input.LookbackMode" show-when-value="date" />
     </section>
 
     @* ---------- 6 Preview ---------- *@
     <section class="wizard__panel" data-step="6">
         <h2 class="wizard__title">@L["What would be imported right now?"]</h2>
         <p class="form-help">@L["A dry run: nothing is imported, moved, deleted or marked as read."]</p>
+
+        <mp-field asp-for="Input.PreviewWindow" kind="select" label='@L["Look at the newest"]'>
+            @foreach (var window in MatPaper.Pages.System.ImportTasks.EditModel.PreviewWindows)
+            {
+                <option value="@window">@window</option>
+            }
+        </mp-field>
 
         <mp-button-row>
             <mp-button variant="secondary" type="button" id="preview-run">@L["Run preview"]</mp-button>
@@ -315,6 +332,11 @@
         @if (Model.IsEdit)
         {
             <mp-button variant="secondary" type="submit" handler="Run">@L["Run now"]</mp-button>
+            @if (Model.HasSyncState)
+            {
+                <mp-button variant="secondary" type="submit" handler="ResetSync"
+                           confirm='@L["Forget where the task stopped? The next run checks everything again."]'>@L["Start over"]</mp-button>
+            }
             <mp-button variant="danger" type="submit" handler="Delete"
                        confirm='@L["Delete this import task? This cannot be undone."]'>@L["Delete"]</mp-button>
         }

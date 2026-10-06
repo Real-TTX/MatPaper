@@ -90,21 +90,44 @@ public sealed class ImportRunner
 
         using (session)
         {
-            List<string> files;
+            IReadOnlyList<SmbEntry> files;
             try
             {
-                files = session.ListFiles(settings.Path, settings.Pattern, settings.Recursive).ToList();
+                files = session.ListEntries(settings.Path, settings.Pattern, settings.Recursive);
             }
             catch (Exception ex)
             {
                 return new RunReport(false, 0, "SMB listing failed: " + ex.Message);
             }
 
-            foreach (var file in files)
+            var cutoff = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
+            var state = ImportSync.Load(task);
+            var known = new HashSet<string>(state.Seen, StringComparer.Ordinal);
+            var keep = new HashSet<string>(StringComparer.Ordinal);
+            var skipped = 0;
+            var leavesFile = string.IsNullOrWhiteSpace(settings.PostAction) || settings.PostAction.Equals("none", StringComparison.OrdinalIgnoreCase);
+
+            foreach (var entry in files)
             {
                 ct.ThrowIfCancellationRequested();
 
+                var file = entry.Path;
                 var fileName = file.Contains('\\') ? file[(file.LastIndexOf('\\') + 1)..] : file;
+
+                if (cutoff is DateTime since && entry.ModifiedUtc < since)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var fingerprint = ImportSync.Fingerprint(file, entry.Size, entry.ModifiedUtc);
+                if (known.Contains(fingerprint))
+                {
+                    keep.Add(fingerprint);
+                    skipped++;
+                    continue;
+                }
+
                 try
                 {
                     var bytes = session.ReadAllBytes(file);
@@ -121,10 +144,12 @@ public sealed class ImportRunner
                             count++;
                             log.AppendLine($"Imported: {fileName}");
                             ApplySmbPostAction(session, settings, file, log);
+                            if (leavesFile) { keep.Add(fingerprint); }
                             break;
                         case IngestStatus.Duplicate:
                             log.AppendLine($"Skipped (duplicate): {fileName}");
                             ApplySmbPostAction(session, settings, file, log);
+                            if (leavesFile) { keep.Add(fingerprint); }
                             break;
                         case IngestStatus.NoStorage:
                             log.AppendLine($"Skipped (no storage): {fileName}");
@@ -140,6 +165,13 @@ public sealed class ImportRunner
                     _logger.LogWarning(ex, "Failed to import SMB file '{File}'.", file);
                     log.AppendLine($"Error ({fileName}): {ex.Message}");
                 }
+            }
+
+            state.Seen = keep.ToList();
+            await ImportSync.SaveAsync(_db, task.Id, state).ConfigureAwait(false);
+            if (skipped > 0)
+            {
+                log.AppendLine($"{skipped} file(s) skipped (unchanged since an earlier run or older than the chosen period).");
             }
         }
 
@@ -256,6 +288,13 @@ public sealed class ImportRunner
             return new RunReport(false, 0, $"Could not enumerate source folder: {ex.Message}");
         }
 
+        var cutoff = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
+        var state = ImportSync.Load(task);
+        var known = new HashSet<string>(state.Seen, StringComparer.Ordinal);
+        var keep = new HashSet<string>(StringComparer.Ordinal);
+        var skipped = 0;
+        var leavesFile = string.IsNullOrWhiteSpace(settings.PostAction) || settings.PostAction.Equals("none", StringComparison.OrdinalIgnoreCase);
+
         foreach (var file in files)
         {
             ct.ThrowIfCancellationRequested();
@@ -263,6 +302,22 @@ public sealed class ImportRunner
             var fileName = Path.GetFileName(file);
             try
             {
+                // Unchanged since a run that handled it: skip without reading it again.
+                var info = new FileInfo(file);
+                if (cutoff is DateTime since && info.LastWriteTimeUtc < since)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var fingerprint = ImportSync.Fingerprint(file, info.Length, info.LastWriteTimeUtc);
+                if (known.Contains(fingerprint))
+                {
+                    keep.Add(fingerprint);
+                    skipped++;
+                    continue;
+                }
+
                 IngestResult result;
                 await using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
@@ -287,10 +342,12 @@ public sealed class ImportRunner
                         count++;
                         log.AppendLine($"Imported: {fileName}");
                         ApplyFilesystemPostAction(settings, file, log);
+                        if (leavesFile) { keep.Add(fingerprint); }
                         break;
                     case IngestStatus.Duplicate:
                         log.AppendLine($"Skipped (duplicate): {fileName}");
                         ApplyFilesystemPostAction(settings, file, log);
+                        if (leavesFile) { keep.Add(fingerprint); }
                         break;
                     case IngestStatus.NoStorage:
                         log.AppendLine($"Skipped (no storage): {fileName}");
@@ -306,6 +363,13 @@ public sealed class ImportRunner
                 _logger.LogWarning(ex, "Failed to import file '{File}'.", file);
                 log.AppendLine($"Error ({fileName}): {ex.Message}");
             }
+        }
+
+        state.Seen = keep.ToList();
+        await ImportSync.SaveAsync(_db, task.Id, state).ConfigureAwait(false);
+        if (skipped > 0)
+        {
+            log.AppendLine($"{skipped} file(s) skipped (unchanged since an earlier run or older than the chosen period).");
         }
 
         log.AppendLine($"Done. {count} document(s) imported.");
@@ -388,8 +452,8 @@ public sealed class ImportRunner
         try
         {
             count = isPop3
-                ? await RunPop3Async(settings, mail, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false)
-                : await RunImapAsync(settings, mail, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false);
+                ? await RunPop3Async(task, settings, mail, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false)
+                : await RunImapAsync(task, settings, mail, extensions, senderRegex, subjectRegex, locationId, ownerId, log, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -406,6 +470,7 @@ public sealed class ImportRunner
     }
 
     private async Task<int> RunImapAsync(
+        ImportTask task,
         MailImportSettings settings,
         ResolvedMail mail,
         IReadOnlyCollection<string> extensions,
@@ -431,42 +496,82 @@ public sealed class ImportRunner
 
             await folder.OpenAsync(FolderAccess.ReadWrite, ct).ConfigureAwait(false);
 
-            var uids = await folder.SearchAsync(SearchQuery.All, ct).ConfigureAwait(false);
+            var cutoff = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
+            var state = ImportSync.Load(task);
+            var resume = state.UidValidity == folder.UidValidity && state.LastUid > 0;
+
+            // Only what is new: UIDs above the last one handled, and not older than the lookback.
+            var query = SearchQuery.All;
+            if (cutoff is DateTime since)
+            {
+                query = query.And(SearchQuery.DeliveredAfter(since.Date));
+            }
+            if (resume)
+            {
+                query = query.And(SearchQuery.Uids(new UniqueIdRange(new UniqueId((uint)(state.LastUid + 1)), UniqueId.MaxValue)));
+            }
+
+            // "UID n:*" with n above the highest UID still returns the LAST message (RFC 3501 treats
+            // the range as n:max in either order), so anything not above the stored UID is dropped.
+            var found = await folder.SearchAsync(query, ct).ConfigureAwait(false);
+            IList<UniqueId> uids = resume ? found.Where(u => u.Id > state.LastUid).ToList() : found;
+            log.AppendLine(resume
+                ? $"Continuing after message {state.LastUid}: {uids.Count} new message(s)."
+                : $"No earlier position stored: {uids.Count} message(s) to check.");
+
             var postAction = settings.PostAction?.ToLowerInvariant();
             var moveDest = postAction == "move" ? GetOrCreateFolder(client, settings.MoveToFolder) : null;
 
-            foreach (var uid in uids)
+            // The position only advances past messages that were fully handled, so one that
+            // fails is tried again next time; it is saved even when the run is cut short.
+            long lastDone = resume ? state.LastUid : 0;
+            try
             {
-                ct.ThrowIfCancellationRequested();
-
-                var message = await folder.GetMessageAsync(uid, ct).ConfigureAwait(false);
-                if (!MessageMatches(message, settings, senderRegex, subjectRegex))
+                foreach (var uid in uids)
                 {
-                    continue;
+                    ct.ThrowIfCancellationRequested();
+
+                    var message = await folder.GetMessageAsync(uid, ct).ConfigureAwait(false);
+                    if (!MessageMatches(message, settings, senderRegex, subjectRegex))
+                    {
+                        lastDone = Math.Max(lastDone, uid.Id);
+                        continue;
+                    }
+
+                    count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                    if (settings.ImportBodyAsPdf)
+                    {
+                        count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                    }
+
+                    switch (postAction)
+                    {
+                        case "delete":
+                            await folder.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, ct).ConfigureAwait(false);
+                            break;
+                        case "move":
+                            if (moveDest is not null)
+                            {
+                                await folder.MoveToAsync(uid, moveDest, ct).ConfigureAwait(false);
+                            }
+                            break;
+                        case "none":
+                            break;
+                        default: // "markseen"
+                            await folder.AddFlagsAsync(uid, MessageFlags.Seen, silent: true, ct).ConfigureAwait(false);
+                            break;
+                    }
+
+                    lastDone = Math.Max(lastDone, uid.Id);
                 }
-
-                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
-                if (settings.ImportBodyAsPdf)
+            }
+            finally
+            {
+                if (lastDone > 0)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
-                }
-
-                switch (postAction)
-                {
-                    case "delete":
-                        await folder.AddFlagsAsync(uid, MessageFlags.Deleted, silent: true, ct).ConfigureAwait(false);
-                        break;
-                    case "move":
-                        if (moveDest is not null)
-                        {
-                            await folder.MoveToAsync(uid, moveDest, ct).ConfigureAwait(false);
-                        }
-                        break;
-                    case "none":
-                        break;
-                    default: // "markseen"
-                        await folder.AddFlagsAsync(uid, MessageFlags.Seen, silent: true, ct).ConfigureAwait(false);
-                        break;
+                    state.UidValidity = folder.UidValidity;
+                    state.LastUid = lastDone;
+                    await ImportSync.SaveAsync(_db, task.Id, state).ConfigureAwait(false);
                 }
             }
 
@@ -487,6 +592,7 @@ public sealed class ImportRunner
     }
 
     private async Task<int> RunPop3Async(
+        ImportTask task,
         MailImportSettings settings,
         ResolvedMail mail,
         IReadOnlyCollection<string> extensions,
@@ -508,25 +614,70 @@ public sealed class ImportRunner
             var postAction = settings.PostAction?.ToLowerInvariant();
             var total = client.Count;
 
-            for (var index = 0; index < total; index++)
+            // POP3 has no folder positions, but every message has a stable UIDL: remember the
+            // ones already handled and skip them. Only UIDLs still on the server are kept.
+            var cutoff = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
+            var state = ImportSync.Load(task);
+            var known = new HashSet<string>(state.Seen, StringComparer.Ordinal);
+            var handled = new HashSet<string>(StringComparer.Ordinal);
+            var uidls = total > 0 ? await client.GetMessageUidsAsync(ct).ConfigureAwait(false) : new List<string>();
+            var skipped = 0;
+
+            try
             {
-                ct.ThrowIfCancellationRequested();
-
-                var message = await client.GetMessageAsync(index, ct).ConfigureAwait(false);
-                if (!MessageMatches(message, settings, senderRegex, subjectRegex))
+                for (var index = 0; index < total; index++)
                 {
-                    continue;
+                    ct.ThrowIfCancellationRequested();
+
+                    var id = index < uidls.Count ? uidls[index] : null;
+                    if (id is not null && known.Contains(id))
+                    {
+                        handled.Add(id);
+                        skipped++;
+                        continue;
+                    }
+
+                    if (cutoff is DateTime since)
+                    {
+                        // The headers alone are enough to see how old a message is.
+                        var headers = await client.GetMessageHeadersAsync(index, ct).ConfigureAwait(false);
+                        var dateText = headers[HeaderId.Date];
+                        if (dateText is not null && MimeKit.Utils.DateUtils.TryParse(dateText, out var sent) && sent.UtcDateTime < since)
+                        {
+                            if (id is not null) { handled.Add(id); }
+                            skipped++;
+                            continue;
+                        }
+                    }
+
+                    var message = await client.GetMessageAsync(index, ct).ConfigureAwait(false);
+                    if (!MessageMatches(message, settings, senderRegex, subjectRegex))
+                    {
+                        if (id is not null) { handled.Add(id); }
+                        continue;
+                    }
+
+                    count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                    if (settings.ImportBodyAsPdf)
+                    {
+                        count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
+                    }
+
+                    if (postAction == "delete")
+                    {
+                        await client.DeleteMessageAsync(index, ct).ConfigureAwait(false);
+                    }
+
+                    if (id is not null) { handled.Add(id); }
                 }
-
-                count += await ImportAttachmentsAsync(message, extensions, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
-                if (settings.ImportBodyAsPdf)
+            }
+            finally
+            {
+                state.Seen = handled.ToList();
+                await ImportSync.SaveAsync(_db, task.Id, state).ConfigureAwait(false);
+                if (skipped > 0)
                 {
-                    count += await ImportBodyAsPdfAsync(message, locationId, ownerId, reviewState, settings.IsCommon, log, ct).ConfigureAwait(false);
-                }
-
-                if (postAction == "delete")
-                {
-                    await client.DeleteMessageAsync(index, ct).ConfigureAwait(false);
+                    log.AppendLine($"{skipped} message(s) skipped (already handled or older than the chosen period).");
                 }
             }
         }

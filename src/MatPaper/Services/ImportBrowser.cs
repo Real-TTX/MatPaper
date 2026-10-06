@@ -31,8 +31,11 @@ public sealed record PreviewResult(bool Ok, string? Error, int TotalMatches, IRe
 /// </summary>
 public sealed class ImportBrowser
 {
-    private const int PreviewLimit = 25;
-    private const int ScanLimit = 200;
+    /// <summary>The most rows a preview returns; the page shows them in steps of 25.</summary>
+    private const int MaxPreviewItems = 200;
+
+    /// <summary>POP3 has to download every message it looks at, so its preview window stays small.</summary>
+    private const int Pop3PreviewMaxMessages = 500;
 
     /// <summary>Per-operation network timeout for the wizard (MailKit defaults to two minutes).</summary>
     private const int MailTimeoutMs = 20000;
@@ -129,7 +132,7 @@ public sealed class ImportBrowser
 
     /// <summary>Lists the messages an IMAP/POP3 import would pick up, without changing anything.</summary>
     public async Task<PreviewResult> PreviewMailAsync(
-        MailImportSettings settings, bool isPop3, string? plaintextPassword, CancellationToken ct)
+        MailImportSettings settings, bool isPop3, string? plaintextPassword, int window, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -141,8 +144,8 @@ public sealed class ImportBrowser
             var subjectRegex = ImportRunner.CompileRegex(settings.SubjectRegex);
 
             return isPop3
-                ? await PreviewPop3Async(settings, mail, extensions, senderRegex, subjectRegex, ct).ConfigureAwait(false)
-                : await PreviewImapAsync(settings, mail, extensions, senderRegex, subjectRegex, ct).ConfigureAwait(false);
+                ? await PreviewPop3Async(settings, mail, extensions, senderRegex, subjectRegex, window, ct).ConfigureAwait(false)
+                : await PreviewImapAsync(settings, mail, extensions, senderRegex, subjectRegex, window, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -156,7 +159,7 @@ public sealed class ImportBrowser
 
     private async Task<PreviewResult> PreviewImapAsync(
         MailImportSettings settings, ResolvedMail mail,
-        IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, CancellationToken ct)
+        IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, int window, CancellationToken ct)
     {
         using var client = new ImapClient { Timeout = MailTimeoutMs };
         try
@@ -170,20 +173,27 @@ public sealed class ImportBrowser
 
             await folder.OpenAsync(FolderAccess.ReadOnly, ct).ConfigureAwait(false);
 
-            // Exactly the selection RunImapAsync uses, so the preview cannot promise
-            // more or less than the import; newest first, capped at ScanLimit.
-            var uids = await folder.SearchAsync(MailKit.Search.SearchQuery.All, ct).ConfigureAwait(false);
-            var window = uids.Reverse().Take(ScanLimit).ToList();
+            // The same selection RunImapAsync starts from (all messages, within the chosen period),
+            // newest first and capped at the window. The remembered position is NOT applied, so the
+            // preview shows what the filters would catch, not only what is new since the last run.
+            var query = MailKit.Search.SearchQuery.All;
+            if (ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow) is DateTime since)
+            {
+                query = query.And(MailKit.Search.SearchQuery.DeliveredAfter(since.Date));
+            }
+
+            var uids = await folder.SearchAsync(query, ct).ConfigureAwait(false);
+            var newest = uids.Reverse().Take(window).ToList();
 
             var items = new List<PreviewItem>();
             var matches = 0;
 
-            if (window.Count > 0)
+            if (newest.Count > 0)
             {
                 // Envelope + structure only: downloading the body would set \Seen on the
                 // server, which the post-action "mark seen" is supposed to decide.
                 var summaries = await folder
-                    .FetchAsync(window, MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure, ct)
+                    .FetchAsync(newest, MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure, ct)
                     .ConfigureAwait(false);
 
                 foreach (var summary in summaries)
@@ -211,7 +221,7 @@ public sealed class ImportBrowser
                     }
 
                     matches++;
-                    if (items.Count < PreviewLimit)
+                    if (items.Count < MaxPreviewItems)
                     {
                         var extra = attachments.Count > 0 ? string.Join(", ", attachments) : null;
                         if (settings.ImportBodyAsPdf)
@@ -228,7 +238,7 @@ public sealed class ImportBrowser
                 }
             }
 
-            return new PreviewResult(true, null, matches, items, window.Count, uids.Count > window.Count);
+            return new PreviewResult(true, null, matches, items, newest.Count, uids.Count > newest.Count);
         }
         finally
         {
@@ -241,7 +251,7 @@ public sealed class ImportBrowser
 
     private async Task<PreviewResult> PreviewPop3Async(
         MailImportSettings settings, ResolvedMail mail,
-        IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, CancellationToken ct)
+        IReadOnlyCollection<string> extensions, Regex? senderRegex, Regex? subjectRegex, int window, CancellationToken ct)
     {
         using var client = new Pop3Client { Timeout = MailTimeoutMs };
         try
@@ -252,7 +262,8 @@ public sealed class ImportBrowser
             var items = new List<PreviewItem>();
             var matches = 0;
             var total = await client.GetMessageCountAsync(ct).ConfigureAwait(false);
-            var scanned = Math.Min(total, ScanLimit);
+            var scanned = Math.Min(total, Math.Min(window, Pop3PreviewMaxMessages));
+            var since = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
 
             // POP3 cannot fetch envelopes, so sizes decide what is worth downloading.
             IList<int> sizes;
@@ -266,13 +277,25 @@ public sealed class ImportBrowser
                 sizes = Array.Empty<int>();
             }
 
-            for (var i = 0; i < scanned; i++)
+            // Newest first: a POP3 mailbox lists its messages oldest first.
+            for (var k = 0; k < scanned; k++)
             {
                 ct.ThrowIfCancellationRequested();
 
+                var i = total - 1 - k;
                 if (i < sizes.Count && sizes[i] > Pop3PreviewMaxBytes)
                 {
                     continue;
+                }
+
+                if (since is DateTime cutoff)
+                {
+                    var headers = await client.GetMessageHeadersAsync(i, ct).ConfigureAwait(false);
+                    var dateText = headers[MimeKit.HeaderId.Date];
+                    if (dateText is not null && MimeKit.Utils.DateUtils.TryParse(dateText, out var sent) && sent.UtcDateTime < cutoff)
+                    {
+                        continue;
+                    }
                 }
 
                 var message = await client.GetMessageAsync(i, ct).ConfigureAwait(false);
@@ -288,7 +311,7 @@ public sealed class ImportBrowser
                 }
 
                 matches++;
-                if (items.Count < PreviewLimit)
+                if (items.Count < MaxPreviewItems)
                 {
                     items.Add(ToPreviewItem(message, attachments, settings.ImportBodyAsPdf));
                 }
@@ -407,7 +430,7 @@ public sealed class ImportBrowser
 
     /// <summary>Lists the files an SMB import would pick up right now.</summary>
     public async Task<PreviewResult> PreviewSmbAsync(
-        SmbImportSettings settings, string? plaintextPassword, CancellationToken ct)
+        SmbImportSettings settings, string? plaintextPassword, int window, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -421,9 +444,13 @@ public sealed class ImportBrowser
 
                 // Stop walking the share once the scan cap is reached — a deep archive
                 // must not be enumerated in full just to show the first rows.
-                var entries = session.ListEntries(settings.Path, settings.Pattern, settings.Recursive, ScanLimit);
+                var listed = session.ListEntries(settings.Path, settings.Pattern, settings.Recursive, window);
+                var since = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
+                var entries = (since is DateTime cutoff ? listed.Where(e => e.ModifiedUtc >= cutoff) : listed)
+                    .OrderByDescending(e => e.ModifiedUtc)
+                    .ToList();
                 var items = entries
-                    .Take(PreviewLimit)
+                    .Take(MaxPreviewItems)
                     .Select(e => new PreviewItem(
                         e.Path.Contains('\\') ? e.Path[(e.Path.LastIndexOf('\\') + 1)..] : e.Path,
                         e.Path.Replace('\\', '/'),
@@ -431,7 +458,7 @@ public sealed class ImportBrowser
                         FormatBytes(e.Size)))
                     .ToList();
 
-                return new PreviewResult(true, null, entries.Count, items, entries.Count, entries.Count >= ScanLimit);
+                return new PreviewResult(true, null, entries.Count, items, listed.Count, listed.Count >= window);
             }, ct).WaitAsync(TimeSpan.FromSeconds(NetworkBudgetSeconds), ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -490,7 +517,7 @@ public sealed class ImportBrowser
     }
 
     /// <summary>Lists the files a filesystem import would pick up right now.</summary>
-    public Task<PreviewResult> PreviewLocalAsync(FilesystemImportSettings settings, CancellationToken ct)
+    public Task<PreviewResult> PreviewLocalAsync(FilesystemImportSettings settings, int window, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -513,33 +540,35 @@ public sealed class ImportBrowser
 
                 // Walk lazily and stop at the scan cap: pointing a preview at a huge tree
                 // must not enumerate the whole container before showing the first rows.
-                var items = new List<PreviewItem>();
-                var found = 0;
+                var since = ImportSync.Cutoff(settings.LookbackMode, settings.LookbackDays, settings.LookbackDate, DateTime.UtcNow);
+                var matches = new List<PreviewItem>();
+                var scanned = 0;
                 foreach (var file in Directory.EnumerateFiles(settings.SourcePath, pattern, options))
                 {
                     ct.ThrowIfCancellationRequested();
-                    found++;
+                    scanned++;
 
-                    if (items.Count < PreviewLimit)
+                    try
                     {
-                        try
+                        var info = new FileInfo(file);
+                        if (since is not DateTime cutoff || info.LastWriteTimeUtc >= cutoff)
                         {
-                            var info = new FileInfo(file);
-                            items.Add(new PreviewItem(info.Name, file, info.LastWriteTimeUtc, FormatBytes(info.Length)));
-                        }
-                        catch (IOException)
-                        {
-                            // vanished mid-enumeration: skip
+                            matches.Add(new PreviewItem(info.Name, file, info.LastWriteTimeUtc, FormatBytes(info.Length)));
                         }
                     }
+                    catch (IOException)
+                    {
+                        // vanished mid-enumeration: skip
+                    }
 
-                    if (found >= ScanLimit)
+                    if (scanned >= window)
                     {
                         break;
                     }
                 }
 
-                return new PreviewResult(true, null, found, items, found, found >= ScanLimit);
+                var items = matches.OrderByDescending(i => i.Date).Take(MaxPreviewItems).ToList();
+                return new PreviewResult(true, null, matches.Count, items, scanned, scanned >= window);
             }
             catch (OperationCanceledException)
             {

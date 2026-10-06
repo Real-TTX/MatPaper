@@ -165,7 +165,7 @@
                 </a>
                 <form class="account__logout-form" method="post" action="/Account/Logout">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="account__logout">
+                    <button type="submit" class="account__logout" title='@L["Sign out"]' aria-label='@L["Sign out"]'>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                             <path d="M16 17l5-5-5-5M21 12H9" />
@@ -173,36 +173,6 @@
                         <span class="account__logout-label">@L["Sign out"]</span>
                     </button>
                 </form>
-                <form class="lang-switch" method="post" action="/Account/Language" role="group" aria-label='@L["Language"]'>
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                    @{
-                        @* Pages/System shadows the System namespace, hence global::. *@
-                        var uiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-                    }
-                    <button type="submit" name="culture" value="de-DE"
-                            class="lang-switch__btn@(uiCulture == "de" ? " is-active" : "")">DE</button>
-                    <button type="submit" name="culture" value="en-US"
-                            class="lang-switch__btn@(uiCulture == "en" ? " is-active" : "")">EN</button>
-                </form>
-                <a class="appearance-link" href="/Account/Appearance" title='@L["Appearance"]' aria-label='@L["Appearance"]'>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 1 0 0 20 2 2 0 0 0 2-2c0-.6-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.4a2 2 0 0 1 2-2h2.3A4.7 4.7 0 0 0 22 10.5C22 5.8 17.5 2 12 2z"/></svg>
-                    <span class="appearance-link__label">@L["Appearance"]</span>
-                </a>
-                <div class="theme-switch" role="group" aria-label='@L["Theme"]'>
-                    <button type="button" class="theme-switch__btn" data-theme-value="system">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
-                        <span class="theme-switch__label">@L["System"]</span>
-                    </button>
-                    <button type="button" class="theme-switch__btn" data-theme-value="dark">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-                        <span class="theme-switch__label">@L["Dark"]</span>
-                    </button>
-                    <button type="button" class="theme-switch__btn" data-theme-value="light">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
-                        <span class="theme-switch__label">@L["Light"]</span>
-                    </button>
-                </div>
             </div>
         </aside>
 

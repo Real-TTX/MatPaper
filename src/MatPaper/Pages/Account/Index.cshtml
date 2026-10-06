@@ -30,6 +30,19 @@
     </section>
 </form>
 
+<form class="form" method="post" action="/Account/Language">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="/Account" />
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Language"]</h2>
+        @{ var uiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; }
+        <div class="lang-switch lang-switch--inline" role="group" aria-label='@L["Language"]'>
+            <button type="submit" name="culture" value="de-DE" class="lang-switch__btn@(uiCulture == "de" ? " is-active" : "")">Deutsch</button>
+            <button type="submit" name="culture" value="en-US" class="lang-switch__btn@(uiCulture == "en" ? " is-active" : "")">English</button>
+        </div>
+    </section>
+</form>
+
 <form class="form" method="post" asp-page-handler="Password">
     @Html.AntiForgeryToken()
     <section class="form-section">

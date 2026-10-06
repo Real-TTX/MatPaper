@@ -202,8 +202,28 @@ a {
     border-top: 1px solid var(--color-border);
     padding: 14px 16px;
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar__footer .account {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sidebar__footer .account__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar__footer .account__body {
+    min-width: 0;
+}
+
+.sidebar__footer .account__logout-label {
+    display: none;
 }
 
 .account {
@@ -250,7 +270,10 @@ button.account__logout {
     border: none;
     background: transparent;
     font: inherit;
-    width: 100%;
+    width: auto;
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
     text-align: left;
     cursor: pointer;
 }
@@ -628,84 +651,9 @@ button.account__logout {
     }
 }
 
-/* Phones: the footer becomes one compact row. Language and mode show only their ACTIVE
-   symbol; tapping it switches to the next one (see app.js). Labels give way to icons. */
+/* Phones: the footer row stays tight - name gets ellipsis, sign-out is an icon. */
 @media (max-width: 768px) {
     .sidebar__footer {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
         padding: 10px 12px;
-    }
-
-    /* Row 1: account + sign-out. Row 2: language, appearance, mode. */
-    .account {
-        flex: 1 1 calc(100% - 56px);
-        min-width: 0;
-    }
-
-    .account__name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .account__body {
-        min-width: 0;
-    }
-
-    .account__logout-form {
-        flex: 0 0 auto;
-    }
-
-    .account__logout-label,
-    .theme-switch__label,
-    .appearance-link__label {
-        display: none;
-    }
-
-    .account__logout {
-        padding: 8px;
-        min-width: 40px;
-        justify-content: center;
-    }
-
-    /* One symbol = one control: drop the grey track so it is not framed twice. */
-    .lang-switch,
-    .theme-switch {
-        margin: 0;
-        padding: 0;
-        background: none;
-        flex: 0 0 auto;
-    }
-
-    .lang-switch .lang-switch__btn.is-active,
-    .theme-switch .theme-switch__btn.is-active,
-    .appearance-link {
-        background: var(--color-surface);
-        border: 1px solid var(--color-border);
-        box-shadow: none;
-    }
-
-    /* only the active segment stays visible */
-    .lang-switch .lang-switch__btn:not(.is-active),
-    .theme-switch .theme-switch__btn:not(.is-active) {
-        display: none;
-    }
-
-    .lang-switch__btn,
-    .theme-switch__btn,
-    .appearance-link {
-        min-width: 44px;
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .theme-switch__btn svg {
-        width: 18px;
-        height: 18px;
     }
 }

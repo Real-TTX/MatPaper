@@ -153,7 +153,7 @@
             </nav>
 
             <div class="sidebar__footer">
-                <div class="account">
+                <a class="account" href="/Account" title='@L["Account"]'>
                     <span class="account__avatar" aria-hidden="true">@avatarLetter</span>
                     <span class="account__body">
                         <span class="account__name">@accountName</span>
@@ -162,7 +162,7 @@
                             <span class="account__role">@CurrentUser.Role</span>
                         }
                     </span>
-                </div>
+                </a>
                 <form class="account__logout-form" method="post" action="/Account/Logout">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="account__logout">

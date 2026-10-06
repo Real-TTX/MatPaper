@@ -1,0 +1,6 @@
+@model string
+@* The tabs of the account area: own details, look. Language and sign-out stay in the sidebar. *@
+<nav class="account-tabs" aria-label='@L["Account"]'>
+    <a class="account-tabs__tab@(Model == "profile" ? " is-active" : "")" href="/Account" @(Model == "profile" ? "aria-current=page" : "")>@L["Profile"]</a>
+    <a class="account-tabs__tab@(Model == "appearance" ? " is-active" : "")" href="/Account/Appearance" @(Model == "appearance" ? "aria-current=page" : "")>@L["Appearance"]</a>
+</nav>

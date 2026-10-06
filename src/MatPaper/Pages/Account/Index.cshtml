@@ -1,0 +1,44 @@
+@page
+@model MatPaper.Pages.Account.IndexModel
+@{
+    // Account pages default to the sign-in layout; this one belongs in the app shell.
+    Layout = "_Layout";
+    ViewData["Breadcrumb"] = L["Account"].Value;
+    ViewData["BreadcrumbLiteral"] = true;
+}
+
+<partial name="_AccountTabs" model="@("profile")" />
+
+<form class="form" method="post" asp-page-handler="Profile">
+    @Html.AntiForgeryToken()
+    <section class="form-section">
+    <h2 class="form-section__title">@L["Profile"]</h2>
+    <dl class="task-facts">
+        <dt>@L["Username"]</dt>
+        <dd>@Model.Username</dd>
+        @if (!string.IsNullOrEmpty(Model.RoleName))
+        {
+            <dt>@L["Role"]</dt>
+            <dd>@Model.RoleName</dd>
+        }
+    </dl>
+    <mp-field asp-for="Profile.DisplayName" label='@L["Display name"]' autocomplete="name" />
+    <mp-field asp-for="Profile.Email" label='@L["Email"]' autocomplete="email" />
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+    </mp-button-row>
+    </section>
+</form>
+
+<form class="form" method="post" asp-page-handler="Password">
+    @Html.AntiForgeryToken()
+    <section class="form-section">
+    <h2 class="form-section__title">@L["Change password"]</h2>
+    <mp-field asp-for="Password.Current" kind="password" label='@L["Current password"]' autocomplete="current-password" />
+    <mp-field asp-for="Password.New" kind="password" label='@L["New password"]' autocomplete="new-password" placeholder='@L["At least 8 characters"]' />
+    <mp-field asp-for="Password.Confirm" kind="password" label='@L["Confirm password"]' autocomplete="new-password" />
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">@L["Change password"]</mp-button>
+    </mp-button-row>
+    </section>
+</form>

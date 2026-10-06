@@ -111,10 +111,7 @@ public sealed class DocumentAnalysisService
 
             if (CanSet(document.DocumentTypeId, options))
             {
-                changedType = await MatchInTextAsync<DocumentType>(matchText,
-                    () => _db.DocumentTypes.Where(t => t.UpdateState != UpdateState.Deleted),
-                    t => t.Name, t => t.MatchPattern,
-                    id => { document.DocumentTypeId = id; }, ct);
+                changedType = await MatchTypeAsync(document, ct);
             }
 
             if (CanSet(document.DocumentDate, options))
@@ -198,6 +195,78 @@ public sealed class DocumentAnalysisService
         _db.Correspondents.Add(created);
         document.Correspondent = created; // EF sets CorrespondentId on save
         return true;
+    }
+
+    /// <summary>
+    /// Picks the document type whose words fit best, not the first one that appears anywhere: a
+    /// contract that mentions "Rechnung" once in its payment terms is still a contract. Every
+    /// word of a type (its name and its keywords) scores per hit - the title and the file name
+    /// count most, the opening of the text next, the rest little and capped - and the highest
+    /// total wins. Ties go to the type that comes first in the list.
+    /// </summary>
+    private async Task<bool> MatchTypeAsync(Document document, CancellationToken ct)
+    {
+        var title = $"{document.Title} {document.OriginalFileName}";
+        var body = document.OcrText ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(body))
+        {
+            return false;
+        }
+
+        var types = await _db.DocumentTypes.Where(t => t.UpdateState != UpdateState.Deleted).OrderBy(t => t.Id).ToListAsync(ct);
+        var head = body.Length > 800 ? body[..800] : body;
+        var rest = body.Length > 800 ? body[800..] : string.Empty;
+
+        DocumentType? best = null;
+        var bestScore = 0;
+        foreach (var type in types)
+        {
+            var score = 0;
+            foreach (var word in TypeWords(type))
+            {
+                score += 10 * CountOf(title, word);
+                score += 4 * Math.Min(CountOf(head, word), 5);
+                score += Math.Min(CountOf(rest, word), 5);
+            }
+
+            if (score > bestScore)
+            {
+                best = type;
+                bestScore = score;
+            }
+        }
+
+        if (best is null || document.DocumentTypeId == best.Id)
+        {
+            return false;
+        }
+
+        document.DocumentTypeId = best.Id;
+        return true;
+    }
+
+    private static IEnumerable<string> TypeWords(DocumentType type)
+    {
+        yield return type.Name;
+        foreach (var part in (type.MatchPattern ?? string.Empty).Split(
+            new[] { ',', ';', '|', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (part.Length >= 3)
+            {
+                yield return part;
+            }
+        }
+    }
+
+    private static int CountOf(string text, string word)
+    {
+        var count = 0;
+        for (var i = text.IndexOf(word, StringComparison.OrdinalIgnoreCase); i >= 0;
+             i = text.IndexOf(word, i + word.Length, StringComparison.OrdinalIgnoreCase))
+        {
+            count++;
+        }
+        return count;
     }
 
     private async Task<bool> MatchInTextAsync<T>(

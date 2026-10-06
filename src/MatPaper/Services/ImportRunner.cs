@@ -501,7 +501,7 @@ public sealed class ImportRunner
             var resume = state.UidValidity == folder.UidValidity && state.LastUid > 0;
 
             // Only what is new: UIDs above the last one handled, and not older than the lookback.
-            var query = SearchQuery.All;
+            var query = ServerFilter(settings);
             if (cutoff is DateTime since)
             {
                 query = query.And(SearchQuery.DeliveredAfter(since.Date));
@@ -942,6 +942,31 @@ public sealed class ImportRunner
             message.To?.ToString() ?? string.Empty,
             message.Subject ?? string.Empty,
             settings, senderRegex, subjectRegex);
+
+    /// <summary>
+    /// The From/To/Subject "contains" filters as an IMAP SEARCH, so the server returns only the
+    /// candidates instead of every message in the folder. Several words in one filter are
+    /// alternatives (OR), the filters themselves must all hold (AND) - the same rule
+    /// <see cref="HeadersMatch"/> applies afterwards as the safety net. Regex filters stay local.
+    /// </summary>
+    internal static SearchQuery ServerFilter(MailImportSettings settings)
+    {
+        var query = SearchQuery.All;
+        query = AndAny(query, settings.FromFilter, SearchQuery.FromContains);
+        query = AndAny(query, settings.ToFilter, SearchQuery.ToContains);
+        query = AndAny(query, settings.SubjectFilter, SearchQuery.SubjectContains);
+        return query;
+    }
+
+    private static SearchQuery AndAny(SearchQuery query, string? filter, Func<string, SearchQuery> contains)
+    {
+        SearchQuery? any = null;
+        foreach (var word in (filter ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            any = any is null ? contains(word) : any.Or(contains(word));
+        }
+        return any is null ? query : query.And(any);
+    }
 
     /// <summary>
     /// The filter rules on their own, so the wizard preview can judge an IMAP summary

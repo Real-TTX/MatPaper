@@ -47,19 +47,16 @@
 
         <div data-show-when-field="Input.Kind" data-show-when-value="3">
             <mp-field asp-for="Input.RootFolderId" label='@L["Root folder ID"]'
-                      help='@L["Optional. Leave empty for the whole My Drive; otherwise a Drive folder ID. Storage locations pick a sub-folder within it."]' />
+                      help='@L["Optional: Drive folder ID. Empty means the whole My Drive."]' />
         </div>
 
         <div data-show-when-field="Input.Kind" data-show-when-value="4">
             <mp-field asp-for="Input.OneDriveDriveId" label='@L["Drive ID"]' autocomplete="off"
-                      help='@L["Optional. Leave empty for your own OneDrive; set it to use another drive, e.g. a SharePoint document library."]' />
+                      help='@L["Optional: ID of another drive, e.g. a SharePoint library. Empty means your OneDrive."]' />
             <mp-field asp-for="Input.OneDriveRootItemId" label='@L["Root folder ID"]' autocomplete="off"
-                      help='@L["Optional. Leave empty for the root of the drive; otherwise a folder ID. Storage locations pick a sub-folder within it."]' />
+                      help='@L["Optional: folder ID. Empty means the drive root."]' />
         </div>
 
-        <div data-show-when-field="Input.Kind" data-show-when-value="3,4">
-            <p class="form-help">@L["Cloud drives sign in with OAuth. Choose OAuth below, then Save and press Connect."]</p>
-        </div>
     </section>
 
     <section class="form-section" data-show-when-field="Input.AuthMode" data-show-when-value="0">
@@ -118,10 +115,6 @@
                     </button>
                 </div>
             </div>
-        }
-        else
-        {
-            <p class="form-help">@L["Save the connection first, then a Connect button appears here."]</p>
         }
     </section>
 

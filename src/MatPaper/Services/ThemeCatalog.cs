@@ -34,9 +34,9 @@ public static class ThemeCatalog
     public static readonly IReadOnlyList<Option> Schemes = new[]
     {
         new Option("standard", "Standard"),
-        new Option("paper", "Paper", "Warm, paper-like tones."),
-        new Option("contrast", "High contrast", "Strong borders and maximum text contrast."),
-        new Option("oled", "Black (OLED)", "Pure black surfaces; only affects dark mode."),
+        new Option("paper", "Paper"),
+        new Option("contrast", "High contrast"),
+        new Option("oled", "Black (OLED)", "Dark mode only."),
     };
 
     public static readonly IReadOnlyList<Option> Accents = new[]

@@ -15,7 +15,7 @@
         }
         @if (!Model.CanManage)
         {
-            <span class="form-help" style="margin:0">@L["Shared with you — you can work on its documents, but only the owner can change the project."]</span>
+            <span class="form-help" style="margin:0">@L["Shared with you."]</span>
         }
     </div>
 }
@@ -26,7 +26,7 @@
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
     <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Website relaunch"]' />
-    <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' help='@L["Optional. Defaults to grey when left unset."]' />
+    <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' />
 
     <mp-button-row>
         @if (Model.CanManage)

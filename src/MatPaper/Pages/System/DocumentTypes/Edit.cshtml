@@ -2,7 +2,7 @@
 @model MatPaper.Pages.System.DocumentTypes.EditModel
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Document types / Edit"].Value : L["System / Document types / New"].Value;
-    var matchPatternHelp = L["Comma-separated alternative names or a regex, matched against a document's text to auto-assign this type — e.g. invoice, faktura."].Value;
+    var matchPatternHelp = L["Alternative terms or a regex, comma-separated, e.g. invoice, faktura."].Value;
 }
 
 <form method="post" class="form">

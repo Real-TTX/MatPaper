@@ -110,7 +110,6 @@
   <data name="A storage location with that name already exists." xml:space="preserve"><value>Ein Speicherort mit diesem Namen existiert bereits.</value></data>
   <data name="A tag with that name already exists." xml:space="preserve"><value>Ein Schlagwort mit diesem Namen existiert bereits.</value></data>
   <data name="A valid role is required." xml:space="preserve"><value>Eine gültige Rolle ist erforderlich.</value></data>
-  <data name="Absolute path inside the container, e.g. a mounted backup folder" xml:space="preserve"><value>Absoluter Pfad im Container, z. B. ein eingebundener Sicherungsordner</value></data>
   <data name="Access denied" xml:space="preserve"><value>Zugriff verweigert</value></data>
   <data name="Account" xml:space="preserve"><value>Konto</value></data>
   <data name="Account connected." xml:space="preserve"><value>Konto verbunden.</value></data>
@@ -131,8 +130,6 @@
   <data name="All locations" xml:space="preserve"><value>Alle Speicherorte</value></data>
   <data name="All owners" xml:space="preserve"><value>Alle Eigentümer</value></data>
   <data name="Also import the mail body as a PDF" xml:space="preserve"><value>Mailtext zusätzlich als PDF importieren</value></data>
-  <data name="Also used for auto-matching when it appears in the document text." xml:space="preserve"><value>Wird ebenfalls für die automatische Zuordnung genutzt, wenn sie im Dokumenttext vorkommt.</value></data>
-  <data name="Also used for auto-matching: a document mentioning this address is assigned to this correspondent." xml:space="preserve"><value>Wird ebenfalls für die automatische Zuordnung genutzt: Ein Dokument, das diese Adresse enthält, wird diesem Korrespondenten zugeordnet.</value></data>
   <data name="Alternative names / keywords" xml:space="preserve"><value>Alternative Namen / Stichwörter</value></data>
   <data name="Analysis found nothing to change." xml:space="preserve"><value>Die Analyse hat keine Änderungen ergeben.</value></data>
   <data name="Analyze now" xml:space="preserve"><value>Jetzt analysieren</value></data>
@@ -164,7 +161,6 @@
   <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
   <data name="Choose a connection." xml:space="preserve"><value>Verbindung wählen.</value></data>
   <data name="Choose a provider." xml:space="preserve"><value>Anbieter wählen.</value></data>
-  <data name="Choose a saved credential." xml:space="preserve"><value>Gespeicherte Zugangsdaten auswählen.</value></data>
   <data name="Choose a user…" xml:space="preserve"><value>Benutzer wählen…</value></data>
   <data name="choose files" xml:space="preserve"><value>Dateien auswählen</value></data>
   <data name="Clear all" xml:space="preserve"><value>Alle entfernen</value></data>
@@ -172,8 +168,6 @@
   <data name="Client secret" xml:space="preserve"><value>Client-Geheimnis</value></data>
   <data name="Close" xml:space="preserve"><value>Schließen</value></data>
   <data name="Colour" xml:space="preserve"><value>Farbe</value></data>
-  <data name="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too." xml:space="preserve"><value>Kommagetrennte alternative Namen oder ein regulärer Ausdruck, der gegen den Text eines Dokuments geprüft wird, um diesen Korrespondenten automatisch zuzuordnen. Der eigene Name des Korrespondenten wird immer mitgeprüft.</value></data>
-  <data name="Comma-separated alternative names or a regex, matched against a document's text to auto-assign this type — e.g. invoice, faktura." xml:space="preserve"><value>Kommagetrennte alternative Namen oder ein regulärer Ausdruck; wird mit dem Text eines Dokuments abgeglichen, um diesen Typ automatisch zuzuweisen — z. B. invoice, faktura.</value></data>
   <data name="Comma-separated extensions; empty means all files." xml:space="preserve"><value>Endungen mit Komma getrennt; leer bedeutet alle Dateien.</value></data>
   <data name="Common" xml:space="preserve"><value>Gemeinsam</value></data>
   <data name="Common area" xml:space="preserve"><value>Gemeinsamer Bereich</value></data>
@@ -238,7 +232,6 @@
   <data name="Documents" xml:space="preserve"><value>Dokumente</value></data>
   <data name="Documents / Add" xml:space="preserve"><value>Dokumente / Hinzufügen</value></data>
   <data name="Documents / Edit" xml:space="preserve"><value>Dokumente / Bearbeiten</value></data>
-  <data name="Documents wait here until they are confirmed in the inbox (env MATPAPER_INBOX)" xml:space="preserve"><value>Dokumente warten hier, bis sie im Posteingang bestätigt werden (env MATPAPER_INBOX)</value></data>
   <data name="Domain" xml:space="preserve"><value>Domäne</value></data>
   <data name="Done" xml:space="preserve"><value>Fertig</value></data>
   <data name="Download" xml:space="preserve"><value>Herunterladen</value></data>
@@ -301,7 +294,6 @@
   <data name="Hourly" xml:space="preserve"><value>Stündlich</value></data>
   <data name="How does it sign in?" xml:space="preserve"><value>Wie wird angemeldet?</value></data>
   <data name="how many backups to keep" xml:space="preserve"><value>wie viele Sicherungen aufbewahrt werden</value></data>
-  <data name="How often the backup runs automatically. Choose Manual to run it only on demand." xml:space="preserve"><value>Wie oft die Sicherung automatisch läuft. Mit Manuell nur bei Bedarf ausführen.</value></data>
   <data name="Ignore" xml:space="preserve"><value>Ignorieren</value></data>
   <data name="Ignore {0} found file(s) in &quot;{1}&quot;? The files stay where they are." xml:space="preserve"><value>{0} gefundene Datei(en) in „{1}“ ignorieren? Die Dateien bleiben, wo sie sind.</value></data>
   <data name="Ignore all found files in this location" xml:space="preserve"><value>Alle gefundenen Dateien in diesem Speicherort ignorieren</value></data>
@@ -327,7 +319,6 @@
   <data name="Items" xml:space="preserve"><value>Elemente</value></data>
   <data name="Items processed" xml:space="preserve"><value>Verarbeitete Elemente</value></data>
   <data name="Keep in place" xml:space="preserve"><value>Am Ort belassen</value></data>
-  <data name="Keeping it in place leaves the file untouched; re-filing moves it into the template path." xml:space="preserve"><value>Am Ort belassen lässt die Datei unverändert; neu ablegen verschiebt sie in den Vorlagenpfad.</value></data>
   <data name="Kind" xml:space="preserve"><value>Art</value></data>
   <data name="Language" xml:space="preserve"><value>Sprache</value></data>
   <data name="Last document" xml:space="preserve"><value>Letztes Dokument</value></data>
@@ -349,7 +340,6 @@
   <data name="Mailbox folder" xml:space="preserve"><value>Postfach-Ordner</value></data>
   <data name="Main navigation" xml:space="preserve"><value>Hauptnavigation</value></data>
   <data name="Manage local accounts and roles" xml:space="preserve"><value>Lokale Konten und Rollen verwalten</value></data>
-  <data name="Manage SMB connections under System, Connections." xml:space="preserve"><value>SMB-Verbindungen unter System, Verbindungen verwalten.</value></data>
   <data name="Manage storage locations and search them for files" xml:space="preserve"><value>Speicherorte verwalten und nach Dateien durchsuchen</value></data>
   <data name="Manage the document type vocabulary" xml:space="preserve"><value>Vokabular der Dokumenttypen verwalten</value></data>
   <data name="Manual only" xml:space="preserve"><value>Nur manuell</value></data>
@@ -435,7 +425,6 @@
   <data name="Optional" xml:space="preserve"><value>Optional</value></data>
   <data name="Optional (Windows domain or workgroup)." xml:space="preserve"><value>Optional (Windows-Domäne oder Arbeitsgruppe).</value></data>
   <data name="Optional notes" xml:space="preserve"><value>Optionale Notizen</value></data>
-  <data name="Optional. Defaults to grey when left unset." xml:space="preserve"><value>Optional. Ohne Angabe wird Grau verwendet.</value></data>
   <data name="Origin" xml:space="preserve"><value>Herkunft</value></data>
   <data name="Original file" xml:space="preserve"><value>Originaldatei</value></data>
   <data name="Overview" xml:space="preserve"><value>Übersicht</value></data>
@@ -451,7 +440,6 @@
   <data name="Path inside the location" xml:space="preserve"><value>Pfad im Speicherort</value></data>
   <data name="Path template" xml:space="preserve"><value>Pfadvorlage</value></data>
   <data name="Path template is required." xml:space="preserve"><value>Pfadvorlage ist erforderlich.</value></data>
-  <data name="PDF or images. Files wait in your inbox until you confirm and file them." xml:space="preserve"><value>PDF oder Bilder. Dateien bleiben im Posteingang, bis sie bestätigt und abgelegt werden.</value></data>
   <data name="Pending" xml:space="preserve"><value>Ausstehend</value></data>
   <data name="Phone" xml:space="preserve"><value>Telefon</value></data>
   <data name="Photos" xml:space="preserve"><value>Fotos</value></data>
@@ -462,7 +450,6 @@
   <data name="POP3 has no folders — the whole mailbox is checked." xml:space="preserve"><value>POP3 kennt keine Ordner — es wird das ganze Postfach geprüft.</value></data>
   <data name="POP3 mailbox" xml:space="preserve"><value>POP3-Postfach</value></data>
   <data name="Port" xml:space="preserve"><value>Port</value></data>
-  <data name="Prefer a saved connection above for Gmail or Office 365 (OAuth)." xml:space="preserve"><value>Für Gmail oder Office 365 (OAuth) besser oben eine gespeicherte Verbindung wählen.</value></data>
   <data name="Preset metadata" xml:space="preserve"><value>Vorgaben für die Dokumente</value></data>
   <data name="Preview" xml:space="preserve"><value>Vorschau</value></data>
   <data name="Processed" xml:space="preserve"><value>Verarbeitet</value></data>
@@ -483,7 +470,6 @@
   <data name="Reconnect" xml:space="preserve"><value>Neu verbinden</value></data>
   <data name="Redirect URI" xml:space="preserve"><value>Weiterleitungs-URI</value></data>
   <data name="Register this exact URI with your Google Cloud / Azure app." xml:space="preserve"><value>Genau diese URI in der eigenen Google-Cloud- bzw. Azure-App eintragen.</value></data>
-  <data name="reload to see the suggestions." xml:space="preserve"><value>neu laden, um die Vorschläge zu sehen.</value></data>
   <data name="Remember me" xml:space="preserve"><value>Angemeldet bleiben</value></data>
   <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
   <data name="Remove filter" xml:space="preserve"><value>Filter entfernen</value></data>
@@ -493,7 +479,6 @@
   <data name="Retention" xml:space="preserve"><value>Aufbewahrung</value></data>
   <data name="Retention must be at least 1." xml:space="preserve"><value>Aufbewahrung muss mindestens 1 betragen.</value></data>
   <data name="Reusable connections for mailboxes, shares and cloud drives" xml:space="preserve"><value>Wiederverwendbare Verbindungen für Postfächer, Freigaben und Cloud-Speicher</value></data>
-  <data name="Reusable logins for mailbox and SMB imports" xml:space="preserve"><value>Wiederverwendbare Zugangsdaten für Postfach- und SMB-Importe</value></data>
   <data name="Review" xml:space="preserve"><value>Prüfung</value></data>
   <data name="Review them in your inbox →" xml:space="preserve"><value>Im Posteingang prüfen →</value></data>
   <data name="Reviewed" xml:space="preserve"><value>Geprüft</value></data>
@@ -509,7 +494,6 @@
   <data name="Saturday" xml:space="preserve"><value>Samstag</value></data>
   <data name="Save" xml:space="preserve"><value>Speichern</value></data>
   <data name="Save &amp; confirm" xml:space="preserve"><value>Speichern &amp; bestätigen</value></data>
-  <data name="Save the connection first, then a Connect button appears here." xml:space="preserve"><value>Zuerst speichern, dann erscheint hier ein Verbinden-Knopf.</value></data>
   <data name="Save the task before running it." xml:space="preserve"><value>Import-Regel vor dem Ausführen speichern.</value></data>
   <data name="Saved connection" xml:space="preserve"><value>Gespeicherte Verbindung</value></data>
   <data name="Saved. Now press Connect to authorize the account." xml:space="preserve"><value>Gespeichert. Jetzt Verbinden drücken, um das Konto zu autorisieren.</value></data>
@@ -522,8 +506,6 @@
   <data name="Search" xml:space="preserve"><value>Suche</value></data>
   <data name="Search all storage locations" xml:space="preserve"><value>Alle Speicherorte durchsuchen</value></data>
   <data name="Search running…" xml:space="preserve"><value>Suche läuft …</value></data>
-  <data name="Search started for &quot;{0}&quot; — found files appear in the inbox." xml:space="preserve"><value>Suche für „{0}“ gestartet — gefundene Dateien erscheinen im Eingang.</value></data>
-  <data name="Search started for {0} storage location(s) — found files appear in the inbox." xml:space="preserve"><value>Suche für {0} Speicherort(e) gestartet — gefundene Dateien erscheinen im Eingang.</value></data>
   <data name="Search storage for files" xml:space="preserve"><value>Speicher nach Dateien durchsuchen</value></data>
   <data name="Search…" xml:space="preserve"><value>Suchen…</value></data>
   <data name="Select &quot;{0}&quot;" xml:space="preserve"><value>„{0}“ auswählen</value></data>
@@ -532,14 +514,12 @@
   <data name="Sender regex (advanced)" xml:space="preserve"><value>Absender-Regex (erweitert)</value></data>
   <data name="Settings" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="Share" xml:space="preserve"><value>Freigeben</value></data>
-  <data name="Share is required." xml:space="preserve"><value>Freigabe ist erforderlich.</value></data>
   <data name="Share links" xml:space="preserve"><value>Freigabe-Links</value></data>
   <data name="Share name is required." xml:space="preserve"><value>Freigabename ist erforderlich.</value></data>
   <data name="Shared" xml:space="preserve"><value>Freigegeben</value></data>
   <data name="Shared with me" xml:space="preserve"><value>Für mich freigegeben</value></data>
   <data name="Shared with users" xml:space="preserve"><value>Für Benutzer freigegeben</value></data>
   <data name="Shared with you — read only." xml:space="preserve"><value>Freigegeben — nur Lesezugriff.</value></data>
-  <data name="Shared with you — you can work on its documents, but only the owner can change the project." xml:space="preserve"><value>Mit Ihnen geteilt — die Dokumente lassen sich bearbeiten, aber nur der Besitzer kann das Projekt ändern.</value></data>
   <data name="Shares" xml:space="preserve"><value>Freigaben</value></data>
   <data name="Sharing" xml:space="preserve"><value>Freigabe</value></data>
   <data name="Sharing a project gives the selected users access to every document in it." xml:space="preserve"><value>Eine Projektfreigabe gibt den ausgewählten Benutzern Zugriff auf alle Dokumente des Projekts.</value></data>
@@ -600,7 +580,6 @@
   <data name="Tags / Edit" xml:space="preserve"><value>Schlagwörter / Bearbeiten</value></data>
   <data name="Tags / New" xml:space="preserve"><value>Schlagwörter / Neu</value></data>
   <data name="Take into archive" xml:space="preserve"><value>Übernehmen</value></data>
-  <data name="Taken over without text recognition — start it separately if you need full-text search." xml:space="preserve"><value>Ohne Texterkennung übernommen — für die Volltextsuche separat starten.</value></data>
   <data name="Target path" xml:space="preserve"><value>Zielpfad</value></data>
   <data name="Target path is required." xml:space="preserve"><value>Zielpfad ist erforderlich.</value></data>
   <data name="Task" xml:space="preserve"><value>Aufgabe</value></data>
@@ -625,7 +604,6 @@
   <data name="The field {0} must be a string with a maximum length of {1}." xml:space="preserve"><value>{0} darf höchstens {1} Zeichen lang sein.</value></data>
   <data name="The field {0} must be between {1} and {2}." xml:space="preserve"><value>{0} muss zwischen {1} und {2} liegen.</value></data>
   <data name="The file could not be stored in &quot;{0}&quot;: {1}" xml:space="preserve"><value>Die Datei konnte nicht in „{0}“ abgelegt werden: {1}</value></data>
-  <data name="The file waits in the inbox area until you confirm; then it is filed into the chosen storage location." xml:space="preserve"><value>Die Datei bleibt im Posteingang, bis sie bestätigt wird; danach wird sie am gewählten Speicherort abgelegt.</value></data>
   <data name="The file was found in a storage location and stays where it is." xml:space="preserve"><value>Die Datei wurde in einem Speicherort gefunden und bleibt, wo sie ist.</value></data>
   <data name="The page you asked for does not exist (any more)." xml:space="preserve"><value>Die aufgerufene Seite gibt es nicht (mehr).</value></data>
   <data name="The password must be at least 8 characters long." xml:space="preserve"><value>Das Passwort muss mindestens 8 Zeichen lang sein.</value></data>
@@ -692,16 +670,11 @@
   <data name="Cloud drive (Google Drive, OneDrive)" xml:space="preserve"><value>Cloud-Speicher (Google Drive, OneDrive)</value></data>
   <data name="Folder in drive" xml:space="preserve"><value>Ordner im Cloud-Speicher</value></data>
   <data name="MatPaper/Archive (optional)" xml:space="preserve"><value>MatPaper/Archiv (optional)</value></data>
-  <data name="Manage cloud connections under System, Connections." xml:space="preserve"><value>Cloud-Verbindungen unter System, Verbindungen verwalten.</value></data>
   <data name="Cloud drives require OAuth." xml:space="preserve"><value>Cloud-Speicher benötigen OAuth.</value></data>
   <data name="Google Drive needs the Google provider." xml:space="preserve"><value>Google Drive benötigt den Anbieter Google.</value></data>
   <data name="OneDrive needs the Microsoft provider." xml:space="preserve"><value>OneDrive benötigt den Anbieter Microsoft.</value></data>
   <data name="Root folder ID" xml:space="preserve"><value>Stammordner-ID</value></data>
-  <data name="Optional. Leave empty for the whole My Drive; otherwise a Drive folder ID. Storage locations pick a sub-folder within it." xml:space="preserve"><value>Optional. Leer lassen für die gesamte Ablage („My Drive“); sonst eine Drive-Ordner-ID. Speicherorte wählen darin einen Unterordner.</value></data>
-  <data name="Cloud drives sign in with OAuth. Choose OAuth below, then Save and press Connect." xml:space="preserve"><value>Cloud-Speicher melden sich per OAuth an. Unten OAuth wählen, dann speichern und auf Verbinden drücken.</value></data>
   <data name="Drive ID" xml:space="preserve"><value>Laufwerks-ID</value></data>
-  <data name="Optional. Leave empty for your own OneDrive; set it to use another drive, e.g. a SharePoint document library." xml:space="preserve"><value>Optional. Leer lassen für das eigene OneDrive; sonst die ID eines anderen Laufwerks, z. B. einer SharePoint-Dokumentbibliothek.</value></data>
-  <data name="Optional. Leave empty for the root of the drive; otherwise a folder ID. Storage locations pick a sub-folder within it." xml:space="preserve"><value>Optional. Leer lassen für die oberste Ebene des Laufwerks; sonst eine Ordner-ID. Speicherorte wählen darin einen Unterordner.</value></data>
   <data name="IDs may only contain letters, digits and ! - _ ." xml:space="preserve"><value>IDs dürfen nur Buchstaben, Ziffern und ! - _ . enthalten.</value></data>
   <data name="Connection '{0}' is not connected. Open it and press Connect." xml:space="preserve"><value>Die Verbindung „{0}“ ist noch nicht verbunden. Verbindung öffnen und auf „Verbinden“ drücken.</value></data>
   <data name="The saved authorization is no longer valid. Re-connect the account. For Google, the Cloud project must be published as &quot;In production&quot;, otherwise the authorization expires after seven days." xml:space="preserve"><value>Die gespeicherte Autorisierung ist nicht mehr gültig. Konto neu verbinden. Bei Google muss das Cloud-Projekt auf „In production“ veröffentlicht sein, sonst läuft die Autorisierung nach sieben Tagen ab.</value></data>
@@ -709,13 +682,9 @@
   <data name="System / Settings" xml:space="preserve"><value>System / Einstellungen</value></data>
   <data name="Public address" xml:space="preserve"><value>Öffentliche Adresse</value></data>
   <data name="Set by the environment variable {0}; change it there." xml:space="preserve"><value>Gesetzt über die Umgebungsvariable {0}; dort ändern.</value></data>
-  <data name="The address this instance is reachable under from the outside. Needed to sign in with Google and Microsoft (OAuth)." xml:space="preserve"><value>Die Adresse, unter der diese Instanz von außen erreichbar ist. Nötig für die Anmeldung bei Google und Microsoft (OAuth).</value></data>
-  <data name="Appears as soon as a public address is set." xml:space="preserve"><value>Erscheint, sobald eine öffentliche Adresse gesetzt ist.</value></data>
   <data name="Display" xml:space="preserve"><value>Anzeige</value></data>
   <data name="Time zone" xml:space="preserve"><value>Zeitzone</value></data>
-  <data name="Used for every date and time shown and for the schedules of tasks and storage searches." xml:space="preserve"><value>Gilt für alle angezeigten Daten und Uhrzeiten und für die Zeitpläne von Aufgaben und Speichersuchen.</value></data>
   <data name="Default language" xml:space="preserve"><value>Standardsprache</value></data>
-  <data name="Applies to visitors who have not picked a language and whose browser prefers neither German nor English." xml:space="preserve"><value>Gilt für Besucher, die keine Sprache gewählt haben und deren Browser weder Deutsch noch Englisch bevorzugt.</value></data>
   <data name="About this instance" xml:space="preserve"><value>Über diese Instanz</value></data>
   <data name="Current time" xml:space="preserve"><value>Aktuelle Uhrzeit</value></data>
   <data name="Data folder" xml:space="preserve"><value>Datenordner</value></data>
@@ -723,7 +692,6 @@
   <data name="Inbox folder" xml:space="preserve"><value>Eingangsordner</value></data>
   <data name="set by {0}" xml:space="preserve"><value>gesetzt über {0}</value></data>
   <data name="Database" xml:space="preserve"><value>Datenbank</value></data>
-  <data name="These values are read at startup. Change them in the configuration file or via environment variables, then restart the container." xml:space="preserve"><value>Diese Werte werden beim Start gelesen. Zum Ändern die Konfigurationsdatei oder Umgebungsvariablen anpassen und den Container neu starten.</value></data>
   <data name="Choose a time zone from the list." xml:space="preserve"><value>Bitte eine Zeitzone aus der Liste wählen.</value></data>
   <data name="Choose a language from the list." xml:space="preserve"><value>Bitte eine Sprache aus der Liste wählen.</value></data>
   <data name="The settings could not be saved: {0} is not writable. Nothing was changed." xml:space="preserve"><value>Die Einstellungen konnten nicht gespeichert werden: {0} ist nicht beschreibbar. Es wurde nichts geändert.</value></data>
@@ -736,16 +704,12 @@
   <data name="Appearance" xml:space="preserve"><value>Erscheinungsbild</value></data>
   <data name="Appearance saved." xml:space="preserve"><value>Erscheinungsbild gespeichert.</value></data>
   <data name="Mode" xml:space="preserve"><value>Modus</value></data>
-  <data name="The mode can also be switched at the bottom of the menu." xml:space="preserve"><value>Der Modus lässt sich auch unten im Menü umschalten.</value></data>
   <data name="Colour scheme" xml:space="preserve"><value>Farbschema</value></data>
   <data name="Accent colour" xml:space="preserve"><value>Akzentfarbe</value></data>
   <data name="Standard" xml:space="preserve"><value>Standard</value></data>
   <data name="Paper" xml:space="preserve"><value>Papier</value></data>
-  <data name="Warm, paper-like tones." xml:space="preserve"><value>Warme, papierartige Töne.</value></data>
   <data name="High contrast" xml:space="preserve"><value>Hoher Kontrast</value></data>
-  <data name="Strong borders and maximum text contrast." xml:space="preserve"><value>Kräftige Rahmen und maximaler Textkontrast.</value></data>
   <data name="Black (OLED)" xml:space="preserve"><value>Schwarz (OLED)</value></data>
-  <data name="Pure black surfaces; only affects dark mode." xml:space="preserve"><value>Rein schwarze Flächen; wirkt nur im dunklen Modus.</value></data>
   <data name="Green" xml:space="preserve"><value>Grün</value></data>
   <data name="Blue" xml:space="preserve"><value>Blau</value></data>
   <data name="Violet" xml:space="preserve"><value>Violett</value></data>
@@ -757,6 +721,23 @@
   <data name="Default mode" xml:space="preserve"><value>Standard-Modus</value></data>
   <data name="Default colour scheme" xml:space="preserve"><value>Standard-Farbschema</value></data>
   <data name="Default accent colour" xml:space="preserve"><value>Standard-Akzentfarbe</value></data>
-  <data name="Applies to the sign-in page and to every user who has not chosen their own look under Appearance." xml:space="preserve"><value>Gilt für die Anmeldeseite und für jeden Benutzer, der unter „Erscheinungsbild“ keinen eigenen Look gewählt hat.</value></data>
   <data name="Instance default" xml:space="preserve"><value>Vorgabe der Instanz</value></data>
+  <data name="Reload" xml:space="preserve"><value>Neu laden</value></data>
+  <data name="Dark mode only." xml:space="preserve"><value>Nur im dunklen Modus.</value></data>
+  <data name="Also used for matching." xml:space="preserve"><value>Wird auch zum Zuordnen verwendet.</value></data>
+  <data name="Alternative names or a regex, comma-separated." xml:space="preserve"><value>Alternative Namen oder ein regulärer Ausdruck, kommagetrennt.</value></data>
+  <data name="Alternative terms or a regex, comma-separated, e.g. invoice, faktura." xml:space="preserve"><value>Alternative Begriffe oder ein regulärer Ausdruck, kommagetrennt, z. B. Rechnung, Faktura.</value></data>
+  <data name="Auto-assign type, correspondent and date" xml:space="preserve"><value>Typ, Korrespondent und Datum automatisch zuordnen</value></data>
+  <data name="PDF or images." xml:space="preserve"><value>PDF oder Bilder.</value></data>
+  <data name="Shared with you." xml:space="preserve"><value>Mit dir geteilt.</value></data>
+  <data name="Optional: Drive folder ID. Empty means the whole My Drive." xml:space="preserve"><value>Optional: Drive-Ordner-ID. Leer = ganzes „My Drive“.</value></data>
+  <data name="Optional: ID of another drive, e.g. a SharePoint library. Empty means your OneDrive." xml:space="preserve"><value>Optional: ID eines anderen Laufwerks, z. B. einer SharePoint-Bibliothek. Leer = dein OneDrive.</value></data>
+  <data name="Optional: folder ID. Empty means the drive root." xml:space="preserve"><value>Optional: Ordner-ID. Leer = oberste Ebene.</value></data>
+  <data name="Path inside the container, e.g. a mounted backup folder" xml:space="preserve"><value>Pfad im Container, z. B. ein eingebundener Sicherungsordner</value></data>
+  <data name="Needed for sign-in with Google and Microsoft (OAuth)." xml:space="preserve"><value>Nötig für die Anmeldung bei Google und Microsoft (OAuth).</value></data>
+  <data name="Used for the sign-in page and for users without their own choice." xml:space="preserve"><value>Gilt für die Anmeldeseite und für Benutzer ohne eigene Wahl.</value></data>
+  <data name="Changes to these values need a restart." xml:space="preserve"><value>Änderungen an diesen Werten brauchen einen Neustart.</value></data>
+  <data name="Taken over without text recognition." xml:space="preserve"><value>Ohne Texterkennung übernommen.</value></data>
+  <data name="Search started for &quot;{0}&quot;." xml:space="preserve"><value>Suche für „{0}“ gestartet.</value></data>
+  <data name="Search started for {0} storage location(s)." xml:space="preserve"><value>Suche für {0} Speicherort(e) gestartet.</value></data>
 </root>

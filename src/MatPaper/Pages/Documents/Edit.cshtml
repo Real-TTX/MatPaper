@@ -29,7 +29,7 @@
         <span class="badge badge--muted">@L["Needs review"]</span>
         @if (Model.IsStaged)
         {
-            <span class="badge badge--muted" title='@L["The file waits in the inbox area until you confirm; then it is filed into the chosen storage location."]'>@L["Not filed yet"]</span>
+            <span class="badge badge--muted">@L["Not filed yet"]</span>
         }
     }
     else if (Model.ReviewState == MatPaper.Data.ReviewState.Ignored)
@@ -62,7 +62,7 @@
                 <input type="checkbox" name="overwrite" value="true" /> @L["overwrite existing"]
             </label>
             <button class="btn btn--secondary" type="submit" asp-page-handler="Reanalyze"
-                    title='@L["Auto-assign type, correspondent and date (from XRechnung/ZUGFeRD data if present, else the text)"]'>
+                    title='@L["Auto-assign type, correspondent and date"]'>
                 @L["Re-analyze"]
             </button>
         </form>

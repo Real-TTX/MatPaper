@@ -14,15 +14,14 @@
         <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Nightly backup"]' />
         <mp-field asp-for="Input.Type" kind="select" label='@L["Type"]' asp-items="Model.TypeOptions" />
         <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
-        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]'
-                     help='@L["How often the backup runs automatically. Choose Manual to run it only on demand."]' />
+        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
     <section class="form-section">
         <h2 class="form-section__title">@L["Backup settings"]</h2>
         <mp-field asp-for="Input.TargetPath" label='@L["Target path"]'
                   placeholder="/backup"
-                  help='@L["Absolute path inside the container, e.g. a mounted backup folder"]' />
+                  help='@L["Path inside the container, e.g. a mounted backup folder"]' />
         <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label='@L["Include configuration"]' />
         <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label='@L["Include documents"]' />
         <mp-field asp-for="Input.Retention" kind="number" label='@L["Retention"]'

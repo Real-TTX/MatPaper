@@ -478,7 +478,7 @@ public class IndexModel : PageModel
         var message = string.Join(", ", parts) + ".";
         if (deferred > 0)
         {
-            message += " " + _l["Taken over without text recognition — start it separately if you need full-text search."].Value;
+            message += " " + _l["Taken over without text recognition."].Value;
         }
         if (firstError is not null)
         {

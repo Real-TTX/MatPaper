@@ -3,7 +3,7 @@
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Correspondents / Edit"].Value : L["Correspondents / New"].Value;
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
-    var matchPatternHelp = L["Comma-separated alternative names or a regex, matched against a document's text to auto-assign this correspondent. The correspondent's own name is always matched too."].Value;
+    var matchPatternHelp = L["Alternative names or a regex, comma-separated."].Value;
 }
 
 <form class="form" method="post">
@@ -17,10 +17,10 @@
               help="@matchPatternHelp" />
 
     <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]'
-              help='@L["Also used for auto-matching: a document mentioning this address is assigned to this correspondent."]' />
+              help='@L["Also used for matching."]' />
 
     <mp-field asp-for="Input.Phone" label='@L["Phone"]'
-              help='@L["Also used for auto-matching when it appears in the document text."]' />
+              help='@L["Also used for matching."]' />
 
     <mp-field asp-for="Input.Address" kind="textarea" rows="3" label='@L["Address"]' placeholder='@L["Street, ZIP, city"]' />
 

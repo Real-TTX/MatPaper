@@ -22,21 +22,17 @@
         {
             <mp-field asp-for="Input.PublicBaseUrl" label='@L["Public address"]' placeholder="https://papers.example.com"
                       autocomplete="off"
-                      help='@L["The address this instance is reachable under from the outside. Needed to sign in with Google and Microsoft (OAuth)."]' />
+                      help='@L["Needed for sign-in with Google and Microsoft (OAuth)."]' />
         }
 
-        <div class="form-row">
-            <label for="redirect-uri">@L["Redirect URI"]</label>
-            @if (string.IsNullOrEmpty(Model.RedirectUri))
-            {
-                <p class="form-help" style="margin:0">@L["Appears as soon as a public address is set."]</p>
-            }
-            else
-            {
+        @if (!string.IsNullOrEmpty(Model.RedirectUri))
+        {
+            <div class="form-row">
+                <label for="redirect-uri">@L["Redirect URI"]</label>
                 <input class="form-control" id="redirect-uri" type="text" value="@Model.RedirectUri" readonly onclick="this.select()" />
                 <p class="form-help">@L["Register this exact URI with your Google Cloud / Azure app."]</p>
-            }
-        </div>
+            </div>
+        }
     </section>
 
     <section class="form-section">
@@ -53,16 +49,14 @@
         else
         {
             <mp-picker asp-for="Input.TimeZone" asp-items="Model.TimeZoneOptions" value="@Model.Input.TimeZone"
-                       label='@L["Time zone"]'
-                       help='@L["Used for every date and time shown and for the schedules of tasks and storage searches."]' />
+                       label='@L["Time zone"]' />
         }
 
-        <mp-field asp-for="Input.Culture" kind="select" label='@L["Default language"]' asp-items="Model.CultureOptions"
-                  help='@L["Applies to visitors who have not picked a language and whose browser prefers neither German nor English."]' />
+        <mp-field asp-for="Input.Culture" kind="select" label='@L["Default language"]' asp-items="Model.CultureOptions" />
         <mp-field asp-for="Input.ThemeMode" kind="select" label='@L["Default mode"]' asp-items="Model.ThemeModeOptions" />
         <mp-field asp-for="Input.ThemeScheme" kind="select" label='@L["Default colour scheme"]' asp-items="Model.ThemeSchemeOptions" />
         <mp-field asp-for="Input.ThemeAccent" kind="select" label='@L["Default accent colour"]' asp-items="Model.ThemeAccentOptions"
-                  help='@L["Applies to the sign-in page and to every user who has not chosen their own look under Appearance."]' />
+                  help='@L["Used for the sign-in page and for users without their own choice."]' />
     </section>
 
     <mp-button-row>
@@ -105,5 +99,5 @@
             <div><code>@Model.Database</code></div>
         </div>
     </dl>
-    <p class="form-help">@L["These values are read at startup. Change them in the configuration file or via environment variables, then restart the container."]</p>
+    <p class="form-help">@L["Changes to these values need a restart."]</p>
 </section>

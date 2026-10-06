@@ -110,7 +110,7 @@ public class IndexModel : PageModel
             return RedirectBack();
         }
 
-        this.Notify(_l["Search started for \"{0}\" — found files appear in the inbox.", location.Name].Value);
+        this.Notify(_l["Search started for \"{0}\".", location.Name].Value);
         return RedirectBack();
     }
 
@@ -125,7 +125,7 @@ public class IndexModel : PageModel
 
         var started = locations.Count(id => _tasks.Enqueue(TaskRunKind.Scan, id, _currentUser.UserId));
 
-        this.Notify(_l["Search started for {0} storage location(s) — found files appear in the inbox.", started].Value);
+        this.Notify(_l["Search started for {0} storage location(s).", started].Value);
         return RedirectBack();
     }
 

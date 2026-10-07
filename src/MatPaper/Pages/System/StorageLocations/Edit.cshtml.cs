@@ -95,6 +95,8 @@ public class EditModel : PageModel
 
         /// <summary>Write a metadata file (.matpaper.json) next to every filed document.</summary>
         public bool WriteMetadataFiles { get; set; }
+
+        public bool IdInFileName { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -126,12 +128,14 @@ public class EditModel : PageModel
                 DefaultIsCommon = entity.DefaultIsCommon,
                 ScanExtensions = entity.ScanExtensions,
                 ScanCron = entity.ScanCron,
-                WriteMetadataFiles = entity.WriteMetadataFiles
+                WriteMetadataFiles = entity.WriteMetadataFiles,
+                IdInFileName = entity.IdInFileName
             };
         }
         else
         {
             Input.PathTemplate = DefaultPathTemplate;
+            Input.IdInFileName = true;
             Input.RootPath = "/storage";
             Input.ScanExtensions = new StorageLocation().ScanExtensions;
         }
@@ -238,6 +242,7 @@ public class EditModel : PageModel
             existing.ScanExtensions = draft.ScanExtensions;
             existing.ScanCron = draft.ScanCron;
             existing.WriteMetadataFiles = draft.WriteMetadataFiles;
+            existing.IdInFileName = draft.IdInFileName;
             existing.UpdateState = UpdateState.Updated;
             existing.UpdateDate = now;
             existing.UpdateUserId = _currentUser.UserId;
@@ -427,7 +432,8 @@ public class EditModel : PageModel
             DefaultIsCommon = Input.DefaultIsCommon,
             ScanExtensions = (Input.ScanExtensions ?? string.Empty).Trim(),
             ScanCron = NullIfEmpty(Input.ScanCron),
-            WriteMetadataFiles = Input.WriteMetadataFiles
+            WriteMetadataFiles = Input.WriteMetadataFiles,
+            IdInFileName = Input.IdInFileName
         };
     }
 

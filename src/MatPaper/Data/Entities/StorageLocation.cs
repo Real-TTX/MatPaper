@@ -33,6 +33,9 @@ public class StorageLocation : BaseEntity
 
     /// <summary>Write a <c>{file}.matpaper.json</c> with the document's metadata next to every filed file (and read it back when importing or searching).</summary>
     public bool WriteMetadataFiles { get; set; }
+
+    /// <summary>Put the document's short id into every file name (<c>Name [a1b2c3d4].pdf</c>): unique names, and a moved file can be recognised again.</summary>
+    public bool IdInFileName { get; set; }
     public bool IsDefault { get; set; }
     public UpdateState UpdateState { get; set; }
 

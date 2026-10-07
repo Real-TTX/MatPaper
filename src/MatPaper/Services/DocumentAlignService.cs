@@ -65,7 +65,7 @@ public sealed class DocumentAlignService
             .Where(d => d.StorageLocationId == locationId && !d.IsStaged && d.UpdateState != UpdateState.Deleted && d.RelativePath != "")
             .Select(d => new
             {
-                d.Id, d.Title, d.OriginalFileName, d.RelativePath, d.DocumentDate, d.FileModifiedUtc, d.CreateDate,
+                d.Id, d.Token, d.Title, d.OriginalFileName, d.RelativePath, d.DocumentDate, d.FileModifiedUtc, d.CreateDate,
                 d.CorrespondentId, d.DocumentTypeId, d.Origin
             })
             .ToListAsync(ct);
@@ -82,7 +82,7 @@ public sealed class DocumentAlignService
                 location, d.Title, d.DocumentDate ?? d.FileModifiedUtc ?? d.CreateDate,
                 d.CorrespondentId is long cid && correspondents.TryGetValue(cid, out var cn) ? cn : null,
                 d.DocumentTypeId is long tid && types.TryGetValue(tid, out var tn) ? tn : null,
-                d.OriginalFileName);
+                d.OriginalFileName, d.Token);
 
             if (string.Equals(desired, d.RelativePath, StringComparison.Ordinal))
             {

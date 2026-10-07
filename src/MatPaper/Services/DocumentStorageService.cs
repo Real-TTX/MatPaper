@@ -171,7 +171,8 @@ public sealed class DocumentStorageService
         DateTime date,
         string? correspondentName,
         string? documentTypeName,
-        string originalFileName)
+        string originalFileName,
+        Guid? documentToken = null)
     {
         ArgumentNullException.ThrowIfNull(loc);
 
@@ -196,6 +197,13 @@ public sealed class DocumentStorageService
             // Keep the leading dot; only strip separators/invalid chars.
             ["{Ext}"] = SanitizeTokenValue(extension)
         };
+
+        // The document's own id: {Id} is its first 8 hex digits, {Token} the whole thing.
+        if (documentToken is Guid id)
+        {
+            tokens["{Id}"] = ShortId(id);
+            tokens["{Token}"] = id.ToString("N");
+        }
 
         var template = string.IsNullOrWhiteSpace(loc.PathTemplate)
             ? "{Title}{Ext}"
@@ -222,7 +230,30 @@ public sealed class DocumentStorageService
             segments.Add(SanitizeSegment($"{noTitle}{extension}"));
         }
 
+        // The switch of the location: the id goes in front of the extension unless the template already has it.
+        if (loc.IdInFileName && documentToken is Guid withId
+            && !loc.PathTemplate.Contains("{Id}", StringComparison.OrdinalIgnoreCase)
+            && !loc.PathTemplate.Contains("{Token}", StringComparison.OrdinalIgnoreCase))
+        {
+            var last = segments[^1];
+            var ext = Path.GetExtension(last);
+            segments[^1] = Path.GetFileNameWithoutExtension(last) + " [" + ShortId(withId) + "]" + ext;
+        }
+
         return string.Join('/', segments);
+    }
+
+    /// <summary>The first 8 hex digits of a document token: short enough for a file name, still unique in practice.</summary>
+    public static string ShortId(Guid token) => token.ToString("N")[..8];
+
+    private static readonly System.Text.RegularExpressions.Regex IdInName =
+        new(@"\[([0-9a-f]{8})\](?=\.[^.\\/]*$|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>The short id found in a file name like <c>Name [a1b2c3d4].pdf</c>, or null.</summary>
+    public static string? ShortIdFromName(string relativePath)
+    {
+        var match = IdInName.Match(Path.GetFileName(relativePath));
+        return match.Success ? match.Groups[1].Value.ToLowerInvariant() : null;
     }
 
     // ----- Staging (review inbox) -------------------------------------------

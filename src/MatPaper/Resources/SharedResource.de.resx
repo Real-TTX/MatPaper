@@ -932,4 +932,7 @@
   <data name="— default —" xml:space="preserve"><value>— Standard —</value></data>
   <data name="— Task creator —" xml:space="preserve"><value>— Ersteller der Regel —</value></data>
   <data name="— Enter manually —" xml:space="preserve"><value>— Von Hand eintragen —</value></data>
+  <data name="Unique ID in the file name" xml:space="preserve"><value>Eindeutige ID im Dateinamen</value></data>
+  <data name="Name [a1b2c3d4].pdf: files with the same name stay apart, and a file that was moved by hand is recognised again by its ID. Existing files get the ID through Align to template." xml:space="preserve"><value>Name [a1b2c3d4].pdf: Dateien mit gleichem Namen bleiben auseinander, und eine von Hand verschobene Datei wird an ihrer ID wiedererkannt. Bestehende Dateien bekommen die ID über „An Vorlage ausrichten“.</value></data>
+  <data name="with the group" xml:space="preserve"><value>mit der Gruppe</value></data>
 </root>

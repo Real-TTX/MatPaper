@@ -1594,12 +1594,6 @@ html.has-scanner { overflow: hidden; }
 .group-add { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1rem; }
 .group-add__existing { display: flex; gap: 0.5rem; align-items: center; }
 .group-add__existing .form-control { width: auto; min-width: 12rem; }
-.import-group { margin-bottom: 1.25rem; }
-.import-group__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.7rem 0.9rem; background: var(--color-surface-alt); border: 1px solid var(--color-border); border-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; }
-.import-group__title { margin: 0; font-size: 1rem; }
-.import-group__meta { color: var(--color-text-muted); font-size: 0.85rem; flex: 1; }
-.import-group__table { margin: 0; }
-.import-group--singles .import-group__head { border-radius: var(--radius-md) var(--radius-md) 0 0; }
 
 /* ---------- Import rule editor: all sections on one page (editing), jump list on the left ---------- */
 .wizard[data-mode="sections"] #wizard-back,
@@ -1659,3 +1653,18 @@ html.has-scanner { overflow: hidden; }
     .wizard[data-mode="sections"] .wizard__nav > .btn, .wizard[data-mode="sections"] .wizard__nav > button { flex: 1; min-height: 44px; }
     .wizard[data-mode="sections"] .wizard__nav-spacer { display: none; }
 }
+
+/* One import table: group header rows, their rules indented below with a tree line. */
+.import-row--group td { background: var(--color-surface-alt); font-weight: 600; }
+.import-row--group td:first-child { white-space: nowrap; }
+.import-row--group td:first-child > * { vertical-align: middle; }
+.import-row--group td:first-child .import-row__icon { margin-right: 0.5rem; }
+.import-row--group td:first-child .import-row__count { margin-left: 0.5rem; }
+.import-row__icon { display: inline-flex; color: var(--color-primary); }
+.import-row__icon svg { width: 18px; height: 18px; }
+.import-row__count { min-width: 1.4rem; height: 1.4rem; padding: 0 0.35rem; display: inline-grid; place-items: center; border-radius: 999px; background: var(--color-border); color: var(--color-text-muted); font-size: 0.75rem; font-weight: 600; }
+.import-row--child td:first-child { position: relative; padding-left: 3rem; }
+.import-row--child td:first-child::before { content: ""; position: absolute; left: 1.45rem; top: 0; bottom: 0; border-left: 2px solid var(--color-border); }
+.import-row--child.is-last td:first-child::before { bottom: 50%; }
+.import-row--child td:first-child::after { content: ""; position: absolute; left: 1.45rem; top: 50%; width: 0.8rem; border-top: 2px solid var(--color-border); }
+.import-row__order { display: inline-block; min-width: 1.1rem; margin-right: 0.35rem; color: var(--color-text-muted); font-size: 0.8rem; }

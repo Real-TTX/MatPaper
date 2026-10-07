@@ -408,7 +408,8 @@ public class TaskSchedulerService : BackgroundService
         }
 
         return new RunReport(true, result.Added,
-            $"Searched \"{location.Name}\": {result.Scanned} file(s) checked, {result.Added} new, {result.Skipped} already known.");
+            $"Searched \"{location.Name}\": {result.Scanned} file(s) checked, {result.Added} new, {result.Skipped} already known" +
+            (result.Relinked > 0 ? $", {result.Relinked} moved file(s) recognised by their ID." : "."));
     }
 
     private async Task ScheduleAsync(CancellationToken ct)

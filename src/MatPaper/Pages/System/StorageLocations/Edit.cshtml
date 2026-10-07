@@ -60,6 +60,9 @@
     <section class="form-section">
         <h2 class="form-section__title">@L["Metadata files"]</h2>
 
+        <mp-field asp-for="Input.IdInFileName" kind="checkbox" label='@L["Unique ID in the file name"]'
+                  help='@L["Name [a1b2c3d4].pdf: files with the same name stay apart, and a file that was moved by hand is recognised again by its ID. Existing files get the ID through Align to template."]' />
+
         <mp-field asp-for="Input.WriteMetadataFiles" kind="checkbox" label='@L["Write metadata files"]'
                   help='@L["Next to every filed document a .matpaper.json file holds its type, correspondent, tags and invoice data, and follows it when it moves. Import tasks and the storage search read it back."]' />
         @if (Model.IsEdit && Model.Input.WriteMetadataFiles)

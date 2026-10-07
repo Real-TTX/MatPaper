@@ -39,6 +39,9 @@ public sealed class StorageScanService
     public record ScanResult(int Scanned, int Added, int Skipped, bool LocationMissing, string? Failure)
     {
         public bool Ok => !LocationMissing && Failure is null;
+
+        /// <summary>Files that were moved by hand and recognised again by their id: the document kept, only its path updated.</summary>
+        public int Relinked { get; init; }
     }
 
     /// <summary>
@@ -92,6 +95,16 @@ public sealed class StorageScanService
         var extensions = ParseExtensions(loc.ScanExtensions);
         var ownerId = await ResolveOwnerIdAsync(loc, actingUserId, ct);
 
+        // A file that moved or was renamed outside MatPaper still carries its document's id (in the name
+        // or in the metadata file). When the old path is gone, that is the same document, not a new one.
+        var knownDocs = await _db.Documents.AsNoTracking()
+            .Where(d => d.StorageLocationId == storageLocationId && !d.IsStaged)
+            .Select(d => new { d.Id, d.Token, d.RelativePath })
+            .ToListAsync(ct);
+        var byShortId = knownDocs.GroupBy(d => DocumentStorageService.ShortId(d.Token)).ToDictionary(g => g.Key, g => g.First());
+        var byToken = knownDocs.ToDictionary(d => d.Token, d => d);
+        var relinks = new List<(long Id, string Path, DateTime? Modified)>();
+
         // Companion files (a metadata file, the XML of an imported XRechnung) belong to the file
         // they are named after and are never documents of their own.
         var allPaths = new HashSet<string>(entries.Select(e => e.RelativePath), StringComparer.Ordinal);
@@ -119,6 +132,26 @@ public sealed class StorageScanService
             }
 
             var fileName = Path.GetFileName(entry.RelativePath);
+
+            // Same document, new place?
+            DocumentSidecar? entrySidecar = null;
+            var shortId = DocumentStorageService.ShortIdFromName(entry.RelativePath);
+            var match = shortId is not null && byShortId.TryGetValue(shortId, out var byName) ? byName : null;
+            if (match is null && allPaths.Contains(entry.RelativePath + DocumentStorageService.MetadataCompanion))
+            {
+                entrySidecar = await _sidecars.ReadAsync(loc, entry.RelativePath, ct);
+                if (entrySidecar?.Token is Guid sidecarToken && byToken.TryGetValue(sidecarToken, out var byMeta))
+                {
+                    match = byMeta;
+                }
+            }
+
+            if (match is not null && !allPaths.Contains(match.RelativePath))
+            {
+                relinks.Add((match.Id, entry.RelativePath, entry.ModifiedUtc));
+                continue;
+            }
+
             var title = Path.GetFileNameWithoutExtension(fileName);
 
             var found = new Document
@@ -167,12 +200,22 @@ public sealed class StorageScanService
 
         await FlushAsync(batch, ct);
 
+        // Files that were moved by hand: the document keeps everything, only its path changes.
+        foreach (var (id, path, modified) in relinks)
+        {
+            await _db.Documents.Where(d => d.Id == id)
+                .ExecuteUpdateAsync(set => set
+                    .SetProperty(d => d.RelativePath, path)
+                    .SetProperty(d => d.FileModifiedUtc, modified)
+                    .SetProperty(d => d.UpdateDate, DateTime.UtcNow), ct);
+        }
+
         _logger.LogInformation(
             "Storage search of location {LocationId} finished: {Scanned} scanned, {Added} new, {Skipped} known.",
             storageLocationId, scanned, added, skipped);
 
         await FinishAsync(loc, added, null, ct);
-        return new ScanResult(scanned, added, skipped, false, null);
+        return new ScanResult(scanned, added, skipped, false, null) { Relinked = relinks.Count };
     }
 
     internal static bool IsCompanion(string relativePath, HashSet<string> allPaths)

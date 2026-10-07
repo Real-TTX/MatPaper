@@ -103,7 +103,8 @@ public sealed class DocumentFilingService(
             effectiveDate,
             correspondentName,
             documentTypeName,
-            document.OriginalFileName);
+            document.OriginalFileName,
+            document.Token);
 
         // Files MatPaper never placed itself live in folders the user created. Moving one on
         // request is fine; tidying up the folders around it is not.
@@ -207,7 +208,7 @@ public sealed class DocumentFilingService(
                 var desired = storage.BuildRelativePath(
                     location, document.Title,
                     document.DocumentDate ?? document.FileModifiedUtc ?? document.CreateDate,
-                    correspondentName, typeName, document.OriginalFileName);
+                    correspondentName, typeName, document.OriginalFileName, document.Token);
 
                 oldPath = document.RelativePath;
                 var newPath = await storage.MoveAsync(location, oldPath, desired, ct, cleanupEmptyDirectories: true).ConfigureAwait(false);

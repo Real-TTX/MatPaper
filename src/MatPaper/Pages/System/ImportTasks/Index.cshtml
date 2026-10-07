@@ -4,6 +4,21 @@
 @using MatPaper.Services
 @{
     ViewData["Breadcrumb"] = L["System / Import tasks"].Value;
+
+    string TypeLabel(ImportTaskType type) => type switch
+    {
+        ImportTaskType.Imap => "IMAP",
+        ImportTaskType.Pop3 => "POP3",
+        ImportTaskType.Smb => L["SMB share"].Value,
+        _ => L["Watched folder"].Value
+    };
+
+    string StateBadge(TaskRunState state) => state switch
+    {
+        TaskRunState.Success => "badge--ok",
+        TaskRunState.Failed => "badge--off",
+        _ => "badge--muted"
+    };
 }
 
 <mp-toolbar count="Model.TotalCount">
@@ -16,50 +31,131 @@
 }
 <partial name="_FilterChips" model="activeFilters" />
 
-@foreach (var g in Model.Groups)
-{
-    var sched = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
-    <section class="import-group">
-        <div class="import-group__head">
-            <h2 class="import-group__title"><a href="/System/ImportGroups/Edit?id=@g.Id">@g.Name</a></h2>
-            @if (!g.IsEnabled) { <span class="badge badge--warn">@L["Disabled"]</span> }
-            <span class="import-group__meta">
-                @L["Group"] · @sched.Text@(sched.NextUtc is DateTime next ? $" · {L["next:"].Value} {Fmt.DateTime(next)}" : "")
-                @if (g.LastState is TaskRunState state && g.LastStartedAt is DateTime started)
-                {
-                    <text> · </text><span class="badge @(state == TaskRunState.Success ? "badge--ok" : state == TaskRunState.Failed ? "badge--off" : "badge--muted")">@state</span><text> @Fmt.DateTime(started)</text>
-                }
-            </span>
-            <form method="post" action="/System/ImportGroups/Edit?id=@g.Id&handler=Run" style="display:inline">
-                @Html.AntiForgeryToken()
-                <button class="btn btn--secondary" type="submit">@L["Run group now"]</button>
-            </form>
-            <a class="btn btn--secondary" href="/System/ImportGroups/Edit?id=@g.Id">@L["Edit"]</a>
-        </div>
-        @if (g.Rules.Count == 0)
+@* One table: a group is a header row, its rules sit indented below it in the order they run; single rules follow. *@
+<mp-table item-count="Model.TotalCount + Model.Groups.Count" empty-text='@L["No import tasks match your criteria."]'>
+    <thead>
+        <tr>
+            <th>@L["Name"]</th>
+            <th>@L["Type"]</th>
+            <th>@L["Enabled"]</th>
+            <th>@L["Schedule"]</th>
+            <th>@L["Last run"]</th>
+            <th class="is-actions"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var g in Model.Groups)
         {
-            <p class="form-help" style="padding:0.7rem 0.9rem;border:1px solid var(--color-border);border-top:0;margin:0">@L["No rules in this group yet."]</p>
-        }
-        else
-        {
-            <partial name="_RuleTable" model="new MatPaper.Pages.System.ImportTasks.IndexModel.RuleTable(g.Rules, true)" />
-        }
-    </section>
-}
+            var gs = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
+            <tr class="import-row import-row--group" data-row-href="/System/ImportGroups/Edit?id=@g.Id" tabindex="0">
+                <td>
+                    <span class="import-row__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12l9 5 9-5" /><path d="M3 16l9 5 9-5" /></svg>
+                    </span>
+                    <a href="/System/ImportGroups/Edit?id=@g.Id">@g.Name</a>
+                    <span class="import-row__count">@g.Rules.Count</span>
+                </td>
+                <td>@L["Group"]</td>
+                <td>
+                    @if (g.IsEnabled) { <span class="badge badge--ok">@L["Enabled"]</span> }
+                    else { <span class="badge badge--warn">@L["Disabled"]</span> }
+                </td>
+                <td>
+                    <span class="@(gs.IsValid ? "" : "badge badge--warn")">@gs.Text</span>
+                    @if (gs.NextUtc is DateTime gnext)
+                    {
+                        <br /><span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(gnext)</span>
+                    }
+                </td>
+                <td>
+                    @if (g.LastState is TaskRunState gstate && g.LastStartedAt is DateTime gstarted)
+                    {
+                        <span class="badge @StateBadge(gstate)">@gstate</span>
+                        <span>&nbsp;@Fmt.DateTime(gstarted)</span>
+                    }
+                    else { <span>—</span> }
+                </td>
+                <td class="is-actions">
+                    <form method="post" action="/System/ImportGroups/Edit?id=@g.Id&handler=Run" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button class="icon-btn" type="submit" title='@L["Run group now"]' aria-label='@L["Run group now"]'>
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                        </button>
+                    </form>
+                    <a href="/System/ImportGroups/Edit?id=@g.Id">@L["Edit"]</a>
+                </td>
+            </tr>
 
-@if (Model.Singles.Count > 0 || Model.Groups.Count == 0)
-{
-    <section class="import-group import-group--singles">
-        @if (Model.Groups.Count > 0)
-        {
-            <div class="import-group__head">
-                <h2 class="import-group__title">@L["Single rules"]</h2>
-                <span class="import-group__meta">@L["Each with its own schedule"]</span>
-            </div>
+            @for (var i = 0; i < g.Rules.Count; i++)
+            {
+                var t = g.Rules[i];
+                <tr class="import-row import-row--child@(i == g.Rules.Count - 1 ? " is-last" : "")" data-row-href="/System/ImportTasks/Details?id=@t.Id" tabindex="0">
+                    <td><span class="import-row__order">@(i + 1)</span><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></td>
+                    <td>@TypeLabel(t.Type)</td>
+                    <td>
+                        @if (t.IsEnabled) { <span class="badge badge--ok">@L["Enabled"]</span> }
+                        else { <span class="badge badge--warn">@L["Disabled"]</span> }
+                    </td>
+                    <td><span class="form-help" style="margin:0">@L["with the group"]</span></td>
+                    <td>
+                        @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
+                        {
+                            <span class="badge @StateBadge(state)">@state</span>
+                            <span>&nbsp;@Fmt.DateTime(started)</span>
+                        }
+                        else { <span>—</span> }
+                    </td>
+                    <td class="is-actions">
+                        <form method="post" action="/System/ImportTasks/Edit?id=@t.Id&handler=Run" style="display:inline">
+                            @Html.AntiForgeryToken()
+                            <button class="icon-btn" type="submit" title='@L["Run now"]' aria-label='@L["Run now"]'>
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                            </button>
+                        </form>
+                        <a href="/System/ImportTasks/Edit?id=@t.Id">@L["Edit"]</a>
+                    </td>
+                </tr>
+            }
         }
-        <partial name="_RuleTable" model="new MatPaper.Pages.System.ImportTasks.IndexModel.RuleTable(Model.Singles, false)" />
-    </section>
-}
+
+        @foreach (var t in Model.Singles)
+        {
+            var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone);
+            <tr class="import-row" data-row-href="/System/ImportTasks/Details?id=@t.Id" tabindex="0">
+                <td><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></td>
+                <td>@TypeLabel(t.Type)</td>
+                <td>
+                    @if (t.IsEnabled) { <span class="badge badge--ok">@L["Enabled"]</span> }
+                    else { <span class="badge badge--warn">@L["Disabled"]</span> }
+                </td>
+                <td>
+                    <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
+                    @if (sched.NextUtc is DateTime nextUtc)
+                    {
+                        <br /><span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
+                    }
+                </td>
+                <td>
+                    @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
+                    {
+                        <span class="badge @StateBadge(state)">@state</span>
+                        <span>&nbsp;@Fmt.DateTime(started)</span>
+                    }
+                    else { <span>—</span> }
+                </td>
+                <td class="is-actions">
+                    <form method="post" action="/System/ImportTasks/Edit?id=@t.Id&handler=Run" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button class="icon-btn" type="submit" title='@L["Run now"]' aria-label='@L["Run now"]'>
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                        </button>
+                    </form>
+                    <a href="/System/ImportTasks/Edit?id=@t.Id">@L["Edit"]</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</mp-table>
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/System/ImportTasks/Edit">@L["New import task"]</a>

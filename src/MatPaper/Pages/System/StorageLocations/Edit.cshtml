@@ -102,3 +102,8 @@
 @section Scripts {
     <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
 }
+
+@{
+    var quickConnections = new MatPaper.Services.QuickConnectionConfig(new[] { "Input.ConnectionId" }, new string[0], new[] { "Input.CloudConnectionId" });
+}
+<partial name="_QuickConnection" model="quickConnections" />

@@ -821,4 +821,11 @@
   <data name="Page" xml:space="preserve"><value>Seite</value></data>
   <data name="There is no preview for this file type." xml:space="preserve"><value>Für diesen Dateityp gibt es keine Vorschau.</value></data>
   <data name="The document could not be shown." xml:space="preserve"><value>Das Dokument konnte nicht angezeigt werden.</value></data>
+  <data name="New connection …" xml:space="preserve"><value>Neue Verbindung …</value></data>
+  <data name="Saving …" xml:space="preserve"><value>Speichere …</value></data>
+  <data name="The connection could not be saved." xml:space="preserve"><value>Die Verbindung konnte nicht gespeichert werden.</value></data>
+  <data name="Google Drive and OneDrive need a sign-in at Google or Microsoft. Create that connection under System → Connections, then pick it here." xml:space="preserve"><value>Google Drive und OneDrive brauchen eine Anmeldung bei Google bzw. Microsoft. Lege diese Verbindung unter System → Verbindungen an und wähle sie danach hier aus.</value></data>
+  <data name="Open the connections" xml:space="preserve"><value>Verbindungen öffnen</value></data>
+  <data name="Save connection" xml:space="preserve"><value>Verbindung speichern</value></data>
+  <data name="Only password connections can be created here." xml:space="preserve"><value>Hier lassen sich nur Passwort-Verbindungen anlegen.</value></data>
 </root>

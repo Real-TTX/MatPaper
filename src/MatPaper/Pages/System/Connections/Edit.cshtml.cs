@@ -172,6 +172,30 @@ public class EditModel : PageModel
         return RedirectToPage("Index");
     }
 
+    /// <summary>
+    /// Creates a password connection (NAS share, mailbox) for the "New connection ..." dialog of other
+    /// pages and answers with JSON, so the caller can select it without leaving its form. OAuth and
+    /// cloud connections need the consent flow and stay on this page.
+    /// </summary>
+    public async Task<IActionResult> OnPostQuickAsync()
+    {
+        if (Input.AuthMode != (int)ConnectionAuthMode.Password
+            || Input.Kind is (int)ConnectionKind.GoogleDrive or (int)ConnectionKind.OneDrive)
+        {
+            return new JsonResult(new { ok = false, errors = new[] { _l["Only password connections can be created here."].Value } });
+        }
+
+        var entity = await ValidateAndBindAsync();
+        if (entity is null)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
+            return new JsonResult(new { ok = false, errors });
+        }
+
+        await _db.SaveChangesAsync();
+        return new JsonResult(new { ok = true, id = entity.Id, name = entity.Name, kind = (int)entity.Kind });
+    }
+
     /// <summary>Saves the draft (if needed) and redirects to the provider's consent screen.</summary>
     public async Task<IActionResult> OnPostConnectAsync()
     {

@@ -1,0 +1,74 @@
+@model MatPaper.Services.QuickConnectionConfig
+@* "New connection ..." without leaving the page: the connection selects named in the model get an extra
+   entry that opens this dialog. It creates a password connection (NAS share, mailbox) through
+   /System/Connections/Edit?handler=Quick and selects it. Cloud drives need a sign-in at Google or
+   Microsoft, so for those the dialog only points to the connections page. See quick-connection.js. *@
+<dialog id="quick-connection" class="quick-connection"
+        data-smb="@string.Join(",", Model.Smb)" data-mail="@string.Join(",", Model.Mail)" data-cloud="@string.Join(",", Model.Cloud)"
+        data-t-new='@L["New connection …"]' data-t-saving='@L["Saving …"]' data-t-failed='@L["The connection could not be saved."]'>
+    <form method="dialog" class="quick-connection__form" novalidate>
+        <div class="quick-connection__head">
+            <h2 class="quick-connection__title">@L["New connection"]</h2>
+            <button type="button" class="icon-btn" data-qc="close" aria-label='@L["Close"]'>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+        </div>
+
+        <div class="quick-connection__body" data-qc="fields">
+            <div class="form-row" data-qc-only="mail">
+                <label for="qc-kind">@L["Type"]</label>
+                <select class="form-control" id="qc-kind" name="Input.Kind">
+                    <option value="1">IMAP</option>
+                    <option value="2">POP3</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="qc-name">@L["Name"]</label>
+                <input class="form-control" id="qc-name" name="Input.Name" autocomplete="off" />
+            </div>
+            <div class="form-row">
+                <label for="qc-host">@L["Host"]</label>
+                <input class="form-control" id="qc-host" name="Input.Host" autocomplete="off" />
+            </div>
+            <div class="form-row" data-qc-only="smb">
+                <label for="qc-share">@L["SMB share"]</label>
+                <input class="form-control" id="qc-share" name="Input.Share" placeholder="Documents" autocomplete="off" />
+            </div>
+            <div class="form-row" data-qc-only="smb">
+                <label for="qc-path">@L["Folder in share"]</label>
+                <input class="form-control" id="qc-path" name="Input.SmbPath" placeholder="MatPaper" autocomplete="off" />
+            </div>
+            <div class="form-row" data-qc-only="smb">
+                <label for="qc-domain">@L["Domain"]</label>
+                <input class="form-control" id="qc-domain" name="Input.Domain" autocomplete="off" />
+            </div>
+            <div class="form-row" data-qc-only="mail">
+                <label for="qc-port">@L["Port"]</label>
+                <input class="form-control" id="qc-port" name="Input.Port" type="number" value="993" />
+            </div>
+            <div class="form-row" data-qc-only="mail">
+                <label class="form-check"><input type="checkbox" id="qc-ssl" checked /> <span>@L["Use SSL/TLS"]</span></label>
+            </div>
+            <div class="form-row">
+                <label for="qc-user">@L["Username"]</label>
+                <input class="form-control" id="qc-user" name="Input.Username" autocomplete="off" />
+            </div>
+            <div class="form-row">
+                <label for="qc-pass">@L["Password"]</label>
+                <input class="form-control" id="qc-pass" name="Input.Password" type="password" autocomplete="new-password" />
+            </div>
+            <div class="form-summary" data-qc="errors" hidden></div>
+        </div>
+
+        <div class="quick-connection__cloud" data-qc="cloud" hidden>
+            <p>@L["Google Drive and OneDrive need a sign-in at Google or Microsoft. Create that connection under System → Connections, then pick it here."]</p>
+            <a class="btn btn--primary" href="/System/Connections/Edit" target="_blank" rel="noopener">@L["Open the connections"]</a>
+        </div>
+
+        <div class="quick-connection__foot">
+            <button type="button" class="btn btn--secondary" data-qc="close">@L["Cancel"]</button>
+            <button type="button" class="btn btn--primary" data-qc="save">@L["Save connection"]</button>
+        </div>
+    </form>
+</dialog>
+<script src="~/js/quick-connection.js" asp-append-version="true"></script>

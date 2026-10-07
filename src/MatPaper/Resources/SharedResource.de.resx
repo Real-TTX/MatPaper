@@ -817,4 +817,8 @@
   <data name="None" xml:space="preserve"><value>Keine</value></data>
   <data name="Reset filters" xml:space="preserve"><value>Zurücksetzen</value></data>
   <data name="Apply" xml:space="preserve"><value>Anwenden</value></data>
+  <data name="View pages" xml:space="preserve"><value>Seiten ansehen</value></data>
+  <data name="Page" xml:space="preserve"><value>Seite</value></data>
+  <data name="There is no preview for this file type." xml:space="preserve"><value>Für diesen Dateityp gibt es keine Vorschau.</value></data>
+  <data name="The document could not be shown." xml:space="preserve"><value>Das Dokument konnte nicht angezeigt werden.</value></data>
 </root>

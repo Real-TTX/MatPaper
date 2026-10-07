@@ -84,7 +84,7 @@ else
                     }
                     else
                     {
-                        <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
+                        <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" data-viewer-token="@d.Token" data-viewer-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
                             @if (d.ThumbnailPath != null)
                             {
                                 <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />

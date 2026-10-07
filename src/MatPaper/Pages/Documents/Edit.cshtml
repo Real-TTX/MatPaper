@@ -52,6 +52,14 @@
             <strong>@L["Preview"]</strong>
             <a class="btn btn--secondary" href="/Documents/@Model.Token/view" target="_blank" rel="noopener">@L["Open in tab"]</a>
         </div>
+        @* On a phone the browser's own PDF viewer is no use; the page viewer takes over (doc-viewer.js). *@
+        <button type="button" class="doc-preview__mobile" data-viewer-token="@Model.Token" data-viewer-title="@Model.Input.Title">
+            @if (Model.ThumbnailPath != null)
+            {
+                <img src="/Documents/@Model.Token/thumb" alt="" loading="lazy" />
+            }
+            <span class="btn btn--primary">@L["View pages"]</span>
+        </button>
         <iframe class="doc-preview__frame" src="/Documents/@Model.Token/view" title='@L["Document preview"]'></iframe>
 
         <a class="btn btn--secondary" href="/Documents/@Model.Token/download">@L["Download"]</a>

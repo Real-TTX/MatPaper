@@ -236,7 +236,10 @@
         </script>
     }
 
+    <div id="viewer-i18n" hidden data-close='@L["Close"]' data-download='@L["Download"]' data-page='@L["Page"]'
+         data-no-preview='@L["There is no preview for this file type."]' data-failed='@L["The document could not be shown."]'></div>
     <script src="~/js/app.js" asp-append-version="true"></script>
+    <script src="~/js/doc-viewer.js" asp-append-version="true"></script>
     <script src="~/js/picker.js" asp-append-version="true"></script>
     <script src="~/js/schedule.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

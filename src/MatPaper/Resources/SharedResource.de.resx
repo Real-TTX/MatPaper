@@ -903,4 +903,5 @@
   <data name="Camera app: take the photo, it is judged afterwards" xml:space="preserve"><value>Kamera-App: Foto aufnehmen, es wird danach ausgewertet</value></data>
   <data name="The photo is taken with the camera app of your device - usually sharper, with autofocus." xml:space="preserve"><value>Das Foto entsteht mit der Kamera-App deines Geräts - meist schärfer, mit Autofokus.</value></data>
   <data name="Choose photos" xml:space="preserve"><value>Fotos auswählen</value></data>
+  <data name="Scan a document" xml:space="preserve"><value>Dokument scannen</value></data>
 </root>

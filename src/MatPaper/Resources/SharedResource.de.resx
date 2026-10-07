@@ -943,4 +943,8 @@
   <data name="Create a group first." xml:space="preserve"><value>Lege zuerst eine Gruppe an.</value></data>
   <data name="Which group?" xml:space="preserve"><value>Welche Gruppe?</value></data>
   <data name="The target of this rule is set by its group." xml:space="preserve"><value>Das Ziel dieser Regel legt ihre Gruppe fest.</value></data>
+  <data name="General" xml:space="preserve"><value>Allgemein</value></data>
+  <data name="Target" xml:space="preserve"><value>Ziel</value></data>
+  <data name="Back to the group" xml:space="preserve"><value>Zurück zur Gruppe</value></data>
+  <data name="Assignment" xml:space="preserve"><value>Zuordnung</value></data>
 </root>

@@ -1595,60 +1595,39 @@ html.has-scanner { overflow: hidden; }
 .group-add__existing { display: flex; gap: 0.5rem; align-items: center; }
 .group-add__existing .form-control { width: auto; min-width: 12rem; }
 
-/* ---------- Import rule editor: all sections on one page (editing), jump list on the left ---------- */
+/* ---------- Tabs (rule editor when editing, group page) ---------- */
 .wizard[data-mode="sections"] #wizard-back,
 .wizard[data-mode="sections"] #wizard-next { display: none; }
-.wizard[data-mode="sections"] .wizard__panel { margin-bottom: 1rem; scroll-margin-top: 80px; }
 .wizard[data-mode="sections"] .wizard__panel[hidden] { display: none; }
-.wizard[data-mode="sections"] .wizard__title { cursor: default; }
+.wizard[data-mode="sections"] { max-width: none; }
+@media (min-width: 1100px) { .wizard[data-mode="sections"] { max-width: 70rem; } }
 
-@media (min-width: 1100px) {
-    .wizard[data-mode="sections"] {
-        display: grid;
-        grid-template-columns: 13rem minmax(0, 1fr);
-        column-gap: 1.5rem;
-        align-items: start;
-    }
-    .wizard[data-mode="sections"] > * { grid-column: 2; }
-    .wizard[data-mode="sections"] > .wizard__steps {
-        grid-column: 1; grid-row: 1 / span 40; position: sticky; top: 1rem;
-        flex-direction: column; flex-wrap: nowrap; align-items: stretch; margin: 0;
-    }
-    .wizard[data-mode="sections"] .wizard__step { border-radius: var(--radius-md); }
-    .wizard[data-mode="sections"] .wizard__step .wizard__label { display: inline; }
+.wizard[data-mode="sections"] > .wizard__steps,
+.tabs__bar {
+    display: flex; flex-wrap: nowrap; gap: 0.25rem; margin: 0 0 1.25rem; padding: 0; list-style: none;
+    border-bottom: 1px solid var(--color-border); overflow-x: auto; scrollbar-width: none;
 }
-
-/* Between phone and wide desktop the jump list is a sticky bar. */
-@media (max-width: 1099px) {
-    .wizard[data-mode="sections"] > .wizard__steps {
-        position: sticky; top: 0; z-index: 8; padding: 0.5rem 0; background: var(--color-bg); overflow-x: auto; flex-wrap: nowrap;
-    }
-    .wizard[data-mode="sections"] .wizard__step { flex: none; }
+.wizard[data-mode="sections"] > .wizard__steps::-webkit-scrollbar,
+.tabs__bar::-webkit-scrollbar { display: none; }
+.wizard[data-mode="sections"] .wizard__step,
+.tabs__tab {
+    flex: none; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1rem; margin-bottom: -1px;
+    border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent;
+    color: var(--color-text-muted); font: inherit; font-size: 0.9rem; cursor: pointer; white-space: nowrap;
 }
+.wizard[data-mode="sections"] .wizard__step:hover,
+.tabs__tab:hover { color: var(--color-text); }
+.wizard[data-mode="sections"] .wizard__step.is-active,
+.tabs__tab.is-active { color: var(--color-text); font-weight: 600; border-bottom-color: var(--color-primary); }
+.wizard[data-mode="sections"] .wizard__num { display: none; }
+.tabs__panel[hidden] { display: none; }
 
-/* Phones: a section is a heading you tap to open or close. */
-@media (max-width: 800px) {
-    .wizard[data-mode="sections"] .wizard__title {
-        display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 0.75rem; min-height: 40px;
-    }
-    .wizard[data-mode="sections"] .wizard__title::after {
-        content: ""; width: 9px; height: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
-        transform: rotate(225deg); margin-right: 4px; transition: transform 0.15s; flex: none;
-    }
-    .wizard[data-mode="sections"] .wizard__panel.is-collapsed .wizard__title { margin-bottom: 0; }
-    .wizard[data-mode="sections"] .wizard__panel.is-collapsed .wizard__title::after { transform: rotate(45deg); }
-    .wizard[data-mode="sections"] .wizard__panel.is-collapsed > :not(.wizard__title) { display: none !important; }
-    .wizard[data-mode="sections"] .wizard__step:not(.is-active) .wizard__label { display: none; }
-}
-
-/* Editing: the save bar stays in reach while the sections scroll. */
+/* Editing: the save bar stays in reach. */
 .wizard[data-mode="sections"] .wizard__nav {
     position: sticky; bottom: 0; z-index: 7; margin-top: 0.5rem; padding: 0.7rem 0.25rem;
     padding-bottom: max(0.7rem, env(safe-area-inset-bottom));
     background: var(--color-bg); border-top: 1px solid var(--color-border);
 }
-.wizard[data-mode="sections"] { max-width: none; }
-@media (min-width: 1100px) { .wizard[data-mode="sections"] { max-width: 70rem; } }
 @media (max-width: 800px) {
     .wizard[data-mode="sections"] .wizard__nav > .btn, .wizard[data-mode="sections"] .wizard__nav > button { flex: 1; min-height: 44px; }
     .wizard[data-mode="sections"] .wizard__nav-spacer { display: none; }
@@ -1671,3 +1650,9 @@ html.has-scanner { overflow: hidden; }
 
 .type-tiles--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 520px) { .type-tiles--two { grid-template-columns: 1fr; } }
+
+/* The rules tab has its own buttons; the save bar belongs to the form tabs. */
+[data-tabs][data-active-tab="rules"] > form .btn-row { display: none; }
+
+.wizard[data-mode="sections"] .wizard__step:not(.is-active) .wizard__label { display: inline !important; }
+.wizard[data-mode="sections"] .wizard__step:not(.is-active) { padding: 0.65rem 1rem !important; }

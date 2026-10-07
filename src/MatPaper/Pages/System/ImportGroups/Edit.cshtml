@@ -5,18 +5,33 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Group"].Value : L["System / Import tasks / New group"].Value;
 }
 
+@if (Model.IsEdit)
+{
+    <p class="runs-panel__more" style="margin-top:0"><a href="/System/ImportGroups/Details?id=@Model.Id">← @L["Back to the group"]</a></p>
+}
+
+<div data-tabs>
+<div class="tabs__bar" role="tablist">
+    <button type="button" class="tabs__tab" data-tab="general" role="tab">@L["General"]</button>
+    <button type="button" class="tabs__tab" data-tab="target" role="tab">@L["Target"]</button>
+    @if (Model.IsEdit)
+    {
+        <button type="button" class="tabs__tab" data-tab="rules" role="tab">@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></button>
+    }
+</div>
+
 <form class="form" method="post">
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <section class="form-section">
+    <section class="form-section tabs__panel" data-tab-panel="general">
         <h2 class="form-section__title">@L["Group"]</h2>
         <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoices"]' />
         <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
         <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
-    <section class="form-section">
+    <section class="form-section tabs__panel" data-tab-panel="target">
         <h2 class="form-section__title">@L["Target of all rules"]</h2>
         <p class="form-help">@L["What a rule leaves empty it takes from here. Switches and tags are added to the rule's own."]</p>
         <mp-picker asp-for="Input.StorageLocationId" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" placeholder='@L["— default —"]' />
@@ -44,7 +59,7 @@
 
 @if (Model.IsEdit)
 {
-    <section class="task-card task-card--wide" style="margin-top:1.25rem">
+    <section class="task-card task-card--wide tabs__panel" data-tab-panel="rules">
         <h3>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></h3>
         <p class="form-help">@L["They run from top to bottom. What a rule above takes, the ones below leave alone."]</p>
 
@@ -110,4 +125,9 @@
             }
         </div>
     </section>
+}
+</div>
+
+@section Scripts {
+    <script src="~/js/tabs.js" asp-append-version="true"></script>
 }

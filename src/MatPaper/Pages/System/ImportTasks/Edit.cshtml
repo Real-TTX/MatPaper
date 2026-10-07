@@ -34,6 +34,7 @@
     <input type="hidden" asp-for="ActiveStep" id="wizard-active-step" />
 
     <ol class="wizard__steps" id="wizard-steps">
+        <li class="wizard__step" data-goto="0"><span class="wizard__num"></span><span class="wizard__label">@L["Assignment"]</span></li>
         <li class="wizard__step" data-goto="1"><span class="wizard__num"></span><span class="wizard__label">@L["Type"]</span></li>
         <li class="wizard__step" data-goto="2"><span class="wizard__num"></span><span class="wizard__label">@L["Connection"]</span></li>
         <li class="wizard__step" data-goto="3"><span class="wizard__num"></span><span class="wizard__label">@L["Credentials"]</span></li>
@@ -43,8 +44,8 @@
         <li class="wizard__step" data-goto="7"><span class="wizard__num"></span><span class="wizard__label">@L["Filing"]</span></li>
     </ol>
 
-    @* ---------- 1 Type ---------- *@
-    <section class="wizard__panel" data-step="1">
+    @* ---------- 0 Assignment: on its own or in a group ---------- *@
+    <section class="wizard__panel" data-step="0">
         @{ var inGroup = Model.Input.GroupId is not null; var hasGroups = Model.GroupOptions.Any(o => o.Value != string.Empty); }
         <h2 class="wizard__title">@L["Where does the rule belong?"]</h2>
         <div class="type-tiles type-tiles--two" id="scope-tiles">
@@ -65,7 +66,11 @@
             <mp-field asp-for="Input.GroupId" kind="select" label='@L["Which group?"]' asp-items="Model.GroupOptions" />
         </div>
 
-        <h2 class="wizard__title" style="margin-top:1.5rem">@L["What should be imported?"]</h2>
+    </section>
+
+    @* ---------- 1 Type ---------- *@
+    <section class="wizard__panel" data-step="1">
+        <h2 class="wizard__title">@L["What should be imported?"]</h2>
 
         <div class="type-tiles">
             <label class="type-tile">

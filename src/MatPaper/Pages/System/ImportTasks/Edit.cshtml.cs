@@ -49,7 +49,7 @@ public class EditModel : PageModel
     /// connection test returns to the same step instead of jumping back to the start.
     /// </summary>
     [BindProperty]
-    public int ActiveStep { get; set; } = 1;
+    public int ActiveStep { get; set; } = 0;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();

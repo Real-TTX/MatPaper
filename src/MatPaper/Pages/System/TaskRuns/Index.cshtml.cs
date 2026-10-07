@@ -46,6 +46,7 @@ public class IndexModel : PageModel
             "import" => TaskRunKind.Import,
             "export" => TaskRunKind.Export,
             "scan" => TaskRunKind.Scan,
+            "align" => TaskRunKind.Align,
             _ => null
         };
 

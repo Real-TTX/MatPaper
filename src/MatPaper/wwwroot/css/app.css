@@ -657,3 +657,21 @@ button.account__logout {
         padding: 10px 12px;
     }
 }
+
+/* ---------- Phone shell: status bar, notch, home indicator, no page zoom ---------- */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+.app-header {
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--header-height) + env(safe-area-inset-top));
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+}
+.app-content { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.sidebar__footer { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+.sidebar__brand { padding-top: max(18px, env(safe-area-inset-top)); }
+@media (max-width: 768px) {
+    .app-header { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+    /* 16px keeps iOS from zooming into a field when it gets the focus */
+    input, select, textarea, .form-control { font-size: 16px; }
+}
+body { padding-top: 0; }

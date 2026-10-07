@@ -214,7 +214,7 @@ public static class TaskSettingsJson
 /// <summary>
 /// A request to run a specific import or export task.
 /// </summary>
-public record TaskTrigger(TaskRunKind Kind, long TaskId, long? ActingUserId = null);
+public record TaskTrigger(TaskRunKind Kind, long TaskId, long? ActingUserId = null, string? Options = null);
 
 /// <summary>
 /// Unbounded in-memory queue of task triggers consumed by the scheduler service.
@@ -232,14 +232,14 @@ public class TaskTriggerQueue
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(TaskRunKind, long), byte> _busy = new();
 
     /// <summary>Queues a task run. False when one is already queued or running for that task.</summary>
-    public bool Enqueue(TaskRunKind kind, long taskId, long? actingUserId = null)
+    public bool Enqueue(TaskRunKind kind, long taskId, long? actingUserId = null, string? options = null)
     {
         if (!_busy.TryAdd((kind, taskId), 0))
         {
             return false;
         }
 
-        if (_channel.Writer.TryWrite(new TaskTrigger(kind, taskId, actingUserId)))
+        if (_channel.Writer.TryWrite(new TaskTrigger(kind, taskId, actingUserId, options)))
         {
             return true;
         }

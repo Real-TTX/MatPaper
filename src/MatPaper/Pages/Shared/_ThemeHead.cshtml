@@ -22,7 +22,7 @@
         root.setAttribute("data-theme-mode", mode);
         root.setAttribute("data-mode", dark ? "dark" : "light");
         var meta = document.querySelector('meta[name="theme-color"]');
-        var accent = getComputedStyle(root).getPropertyValue("--color-primary").trim();
-        if (meta && accent) { meta.setAttribute("content", accent); }
+        var bar = getComputedStyle(root).getPropertyValue("--color-surface").trim();
+        if (meta && bar) { meta.setAttribute("content", bar); }
     })();
 </script>

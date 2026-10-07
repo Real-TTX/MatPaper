@@ -8,7 +8,12 @@
 <html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" data-theme-mode="@theme.Mode" data-mode="@(theme.Mode == "dark" ? "dark" : "light")" data-scheme="@theme.Scheme" data-accent="@theme.Accent" data-theme-source="@(theme.UserHasMode ? "user" : "default")">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MatPaper" />
+    @* The page reaches under the iPhone status bar; the header carries the same colour (see app.css). *@
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>@(string.IsNullOrEmpty(breadcrumb) ? "MatPaper" : $"{breadcrumb} · MatPaper")</title>
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />

@@ -882,4 +882,25 @@
   <data name="Presets" xml:space="preserve"><value>Vorauswahl</value></data>
   <data name="PDF only" xml:space="preserve"><value>Nur PDF</value></data>
   <data name="XML only (e-invoice)" xml:space="preserve"><value>Nur XML (E-Rechnung)</value></data>
+  <data name="Align to template" xml:space="preserve"><value>An Vorlage ausrichten</value></data>
+  <data name="System / Storage locations / Align to template" xml:space="preserve"><value>System / Speicherorte / An Vorlage ausrichten</value></data>
+  <data name="Align now" xml:space="preserve"><value>Jetzt ausrichten</value></data>
+  <data name="Everything lies where the template puts it." xml:space="preserve"><value>Alles liegt dort, wo die Vorlage es hinlegt.</value></data>
+  <data name="{0} file(s) would move." xml:space="preserve"><value>{0} Datei(en) würden verschoben.</value></data>
+  <data name="An alignment of this location is already running." xml:space="preserve"><value>Für diesen Speicherort läuft schon eine Ausrichtung.</value></data>
+  <data name="Alignment started." xml:space="preserve"><value>Ausrichtung gestartet.</value></data>
+  <data name="Template" xml:space="preserve"><value>Vorlage</value></data>
+  <data name="Include files found in place" xml:space="preserve"><value>Auch gefundene Dateien (an Ort und Stelle) ausrichten</value></data>
+  <data name="Files to move" xml:space="preserve"><value>Zu verschiebende Dateien</value></data>
+  <data name="{0} file(s) found in place are left alone." xml:space="preserve"><value>{0} an Ort und Stelle gefundene Datei(en) bleiben unberührt.</value></data>
+  <data name="Now" xml:space="preserve"><value>Jetzt</value></data>
+  <data name="Becomes" xml:space="preserve"><value>Wird</value></data>
+  <data name="The first {0} of {1} are shown." xml:space="preserve"><value>Die ersten {0} von {1} werden angezeigt.</value></data>
+  <data name="Align files to the template …" xml:space="preserve"><value>Dateien an die Vorlage ausrichten …</value></data>
+  <data name="Camera mode" xml:space="preserve"><value>Kameramodus</value></data>
+  <data name="Live camera" xml:space="preserve"><value>Live-Kamera</value></data>
+  <data name="Camera app" xml:space="preserve"><value>Kamera-App</value></data>
+  <data name="Camera app: take the photo, it is judged afterwards" xml:space="preserve"><value>Kamera-App: Foto aufnehmen, es wird danach ausgewertet</value></data>
+  <data name="The photo is taken with the camera app of your device - usually sharper, with autofocus." xml:space="preserve"><value>Das Foto entsteht mit der Kamera-App deines Geräts - meist schärfer, mit Autofokus.</value></data>
+  <data name="Choose photos" xml:space="preserve"><value>Fotos auswählen</value></data>
 </root>

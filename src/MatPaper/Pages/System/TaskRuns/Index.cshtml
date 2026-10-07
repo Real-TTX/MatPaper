@@ -10,6 +10,7 @@
         <option value="import">@L["Import"]</option>
         <option value="export">@L["Export"]</option>
         <option value="scan">@L["Storage search"]</option>
+        <option value="align">@L["Align to template"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
@@ -18,6 +19,7 @@
     {
         MatPaper.Data.TaskRunKind.Import => L["Import"].Value,
         MatPaper.Data.TaskRunKind.Export => L["Export"].Value,
+        MatPaper.Data.TaskRunKind.Align => L["Align to template"].Value,
         _ => L["Storage search"].Value
     };
 }
@@ -28,6 +30,7 @@
         "import" => L["Import"].Value,
         "export" => L["Export"].Value,
         "scan" => L["Storage search"].Value,
+        "align" => L["Align to template"].Value,
         _ => null
     };
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,

@@ -108,7 +108,10 @@ public enum TaskRunKind
     Export = 1,
 
     /// <summary>A storage search. <c>TaskRun.TaskId</c> is then the storage location id.</summary>
-    Scan = 2
+    Scan = 2,
+
+    /// <summary>"Align to template" of a storage location. <c>TaskRun.TaskId</c> is the storage location id.</summary>
+    Align = 3
 }
 
 public enum TaskRunState

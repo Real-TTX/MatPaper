@@ -60,6 +60,7 @@ builder.Services.AddSingleton<ThumbnailService>();
 builder.Services.AddScoped<DocumentIngestService>();
 builder.Services.AddScoped<DocumentFilingService>();
 builder.Services.AddScoped<DocumentSidecarService>();
+builder.Services.AddScoped<DocumentAlignService>();
 builder.Services.AddScoped<StorageScanService>();
 builder.Services.AddSingleton<InvoiceDataExtractor>();
 builder.Services.AddSingleton<InvoicePdfRenderer>();

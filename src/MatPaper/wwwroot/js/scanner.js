@@ -27,6 +27,9 @@
     var stream = null, track = null, detectTimer = null;
     var smoothQuad = null, stableFrames = 0, lastFound = null, autoMode = true, torchOn = false;
     var sensitivity = 1;
+    var MODE_KEY = "matpaper.scan.mode";
+    var mode = "live"; // "live" = the in-page camera, "native" = the phone's own camera app (better optics, autofocus)
+    try { if (localStorage.getItem(MODE_KEY) === "native") { mode = "native"; } } catch (e) { }
     try { var saved = parseInt(localStorage.getItem(SENS_KEY), 10); if (saved >= 0 && saved <= 2) { sensitivity = saved; } } catch (e) { }
 
     var FILTERS = [["enhanced", "Enhanced"], ["color", "Original"], ["gray", "Gray"], ["bw", "B/W"]];
@@ -48,6 +51,9 @@
         trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
         left: '<path d="M14 6l-6 6 6 6"/>',
         right: '<path d="M10 6l6 6-6 6"/>',
+        live: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
+        native: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><circle cx="12" cy="9.5" r="3"/><path d="M10.5 18h3"/>',
+        image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.7"/><path d="M4 18l5-5 4 4 3-3 4 4"/>',
         detect: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M9 12h6"/>'
     };
 
@@ -94,13 +100,14 @@
         var camTop = el("div", "scn__top");
         ui.closeBtn = btn("scn__tool", "close", "", close, t("close", "Close"));
         ui.camTitle = el("div", "scn__heading", t("title", "Scanner"));
+        ui.modeBtn = btn("scn__tool", "live", "", toggleMode, t("mode", "Camera mode"));
         ui.sensBtn = btn("scn__tool scn__tool--text", "sliders", "", cycleSensitivity, t("sensitivity", "Sensitivity"));
         ui.sensLabel = el("span", "scn__label");
         ui.sensBtn.appendChild(ui.sensLabel);
         ui.torchBtn = btn("scn__tool", "torch", "", toggleTorch, t("torch", "Light"));
         ui.torchBtn.hidden = true;
         ui.autoBtn = btn("scn__tool scn__tool--text", "auto", t("auto", "Auto"), toggleAuto);
-        camTop.append(ui.closeBtn, ui.camTitle, ui.sensBtn, ui.torchBtn, ui.autoBtn);
+        camTop.append(ui.closeBtn, ui.camTitle, ui.modeBtn, ui.sensBtn, ui.torchBtn, ui.autoBtn);
 
         ui.stage = el("div", "scn__stage scn__stage--camera");
         ui.video = el("video", "scn__video");
@@ -110,14 +117,27 @@
         ui.hint = el("div", "scn__hint", t("hint", "Hold the camera over the page"));
         ui.message = el("div", "scn__message");
         ui.message.hidden = true;
-        ui.stage.append(ui.video, ui.overlay, ui.hint, ui.message);
+        ui.nativePanel = el("div", "scn__native");
+        ui.nativePanel.append(
+            icon("native"),
+            el("p", "scn__native-text", t("native-text", "The photo is taken with the camera app of your device - usually sharper, with autofocus.")),
+            btn("scn__action scn__action--primary scn__native-btn", "camera", t("native-shoot", "Take photo"), function () { ui.nativeInput.click(); }),
+            btn("scn__action scn__native-btn", "image", t("native-pick", "Choose photos"), function () { ui.pickInput.click(); }));
+        ui.nativeInput = el("input");
+        ui.nativeInput.type = "file"; ui.nativeInput.accept = "image/*"; ui.nativeInput.setAttribute("capture", "environment"); ui.nativeInput.hidden = true;
+        ui.pickInput = el("input");
+        ui.pickInput.type = "file"; ui.pickInput.accept = "image/*"; ui.pickInput.multiple = true; ui.pickInput.hidden = true;
+        [ui.nativeInput, ui.pickInput].forEach(function (inp) {
+            inp.addEventListener("change", function () { addFiles(inp.files); inp.value = ""; });
+        });
+        ui.stage.append(ui.video, ui.overlay, ui.nativePanel, ui.hint, ui.message, ui.nativeInput, ui.pickInput);
 
         var camBottom = el("div", "scn__bottom scn__bottom--camera");
         ui.pagesBtn = btn("scn__pagesbtn", "", "", showPages, t("pages", "Pages"));
         ui.pagesThumb = el("canvas", "scn__pagesthumb");
         ui.pagesCount = el("span", "scn__badge");
         ui.pagesBtn.append(ui.pagesThumb, ui.pagesCount);
-        ui.shutter = btn("scn__shutter", "", "", function () { capture(false); }, t("shoot", "Take photo"));
+        ui.shutter = btn("scn__shutter", "", "", function () { if (mode === "native") { ui.nativeInput.click(); } else { capture(false); } }, t("shoot", "Take photo"));
         ui.shutter.appendChild(el("span", "scn__shutter-ring"));
         ui.finishBtn = btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish);
         camBottom.append(ui.pagesBtn, ui.shutter, ui.finishBtn);
@@ -227,8 +247,8 @@
 
     function updateCameraBar() {
         var has = pages.length > 0;
-        ui.pagesBtn.hidden = !has;
-        ui.finishBtn.hidden = !has;
+        ui.pagesBtn.style.visibility = has ? "visible" : "hidden";
+        ui.finishBtn.style.visibility = has ? "visible" : "hidden";
         ui.camTitle.textContent = has ? t("page-n", "Page {0}").replace("{0}", pages.length + 1) : t("title", "Scanner");
         if (has) {
             ui.pagesCount.textContent = String(pages.length);
@@ -241,7 +261,66 @@
     function showCamera() {
         setView("camera");
         updateCameraBar();
-        startCamera();
+        applyMode();
+    }
+
+    // The two ways to get a photo: the live view (outline while you hold the camera, automatic release)
+    // or the device's camera app (full sensor quality, autofocus), judged afterwards.
+    function applyMode() {
+        var native = mode === "native";
+        ui.nativePanel.hidden = !native;
+        ui.video.style.visibility = native ? "hidden" : "visible";
+        ui.overlay.style.visibility = native ? "hidden" : "visible";
+        ui.autoBtn.hidden = native;
+        if (native) { ui.torchBtn.hidden = true; }
+        ui.modeBtn.replaceChildren(icon(native ? "native" : "live"));
+        ui.modeBtn.setAttribute("aria-label", t("mode", "Camera mode") + ": " + (native ? t("mode-native", "Camera app") : t("mode-live", "Live camera")));
+        ui.hint.hidden = native;
+        if (native) { stopCamera(); ui.message.hidden = true; } else { startCamera(); }
+    }
+
+    function toggleMode() {
+        mode = mode === "live" ? "native" : "live";
+        try { localStorage.setItem(MODE_KEY, mode); } catch (e) { }
+        applyMode();
+        flashHint(mode === "native" ? t("mode-native-hint", "Camera app: take the photo, it is judged afterwards") : t("mode-live-hint", "Live camera"));
+    }
+
+    // Photos from the camera app or the gallery: find the page in each, then show the last one.
+    function addFiles(fileList) {
+        var files = Array.prototype.slice.call(fileList || []).filter(function (f) { return /^image\//.test(f.type); });
+        if (!files.length) { return; }
+        busy(true);
+        var chain = Promise.resolve();
+        files.forEach(function (file) {
+            chain = chain.then(function () {
+                return loadImage(file).then(function (canvas) {
+                    var det = null;
+                    try { det = core.detect(canvas, { sensitivity: sensitivity }); } catch (e) { det = null; }
+                    pages.push({ src: canvas, quad: det ? det.quad : defaultQuad(), turns: 0, filter: "enhanced", preview: null, thumb: null });
+                });
+            });
+        });
+        chain.then(function () {
+            busy(false);
+            current = pages.length - 1;
+            stopCamera();
+            showReview(current);
+        }).catch(function () { busy(false); });
+    }
+
+    function loadImage(file) {
+        return new Promise(function (resolve, reject) {
+            var url = URL.createObjectURL(file), img = new Image();
+            img.onload = function () {
+                var c = core.makeCanvas(img.naturalWidth, img.naturalHeight);
+                c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
+                resolve(limit(c));
+            };
+            img.onerror = function () { URL.revokeObjectURL(url); reject(); };
+            img.src = url;
+        });
     }
 
     function startCamera() {

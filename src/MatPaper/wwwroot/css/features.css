@@ -1553,3 +1553,24 @@ html.has-scanner { overflow: hidden; }
 .add-doc__scan { flex-wrap: wrap; }
 .add-doc__scan-strip { min-width: 0; flex: 1 1 8rem; }
 .add-doc__camera-icon { color: #fff; }
+
+/* Align to template */
+.align-options { margin-bottom: 0.75rem; }
+.align-table__path { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.82rem; overflow-wrap: anywhere; }
+.table-scroll { overflow-x: auto; }
+
+/* Camera app mode of the scanner. */
+.scn__native { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center; background: #0e1014; }
+.scn__native[hidden] { display: none !important; }
+.scn__native .scn__icon { width: 56px; height: 56px; opacity: 0.85; }
+.scn__native-text { max-width: 22rem; margin: 0; color: rgba(255,255,255,0.8); }
+.scn__native-btn { flex-direction: row; gap: 0.5rem; min-width: 14rem; min-height: 48px; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.25); }
+.scn__native-btn.scn__action--primary { border-color: transparent; }
+
+/* the viewer zooms by itself, so the browser must not take the pinch */
+.doc-viewer__scroll { touch-action: pan-x pan-y; }
+
+/* 16px keeps iOS from zooming into a field when it gets the focus (loaded last, so it wins over components.css) */
+@media (max-width: 768px) {
+    input.form-control, select.form-control, textarea.form-control, .mp-picker__trigger, .mp-picker-dialog__search, input[type="text"], input[type="search"], input[type="date"], input[type="number"], input[type="password"], input[type="email"] { font-size: 16px; }
+}

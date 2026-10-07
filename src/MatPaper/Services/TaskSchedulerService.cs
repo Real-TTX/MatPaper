@@ -175,7 +175,7 @@ public class TaskSchedulerService : BackgroundService
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ImportRunner>();
                 using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var flusher = FlushProgressAsync(run.Id, runner, progress.Token);
+                var flusher = FlushProgressAsync(run.Id, runner.LogSoFar, progress.Token);
                 try
                 {
                     report = await runner.RunAsync(importTask, ct);
@@ -190,6 +190,24 @@ public class TaskSchedulerService : BackgroundService
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ExportRunner>();
                 report = await runner.RunAsync(exportTask, ct);
+            }
+            else if (trigger.Kind == TaskRunKind.Align)
+            {
+                // Its own scope on purpose: the alignment clears its change tracker between batches,
+                // which would detach the TaskRun this method is holding.
+                using var alignScope = _scopeFactory.CreateScope();
+                var align = alignScope.ServiceProvider.GetRequiredService<DocumentAlignService>();
+                using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var flusher = FlushProgressAsync(run.Id, align.LogSoFar, progress.Token);
+                try
+                {
+                    report = await align.RunAsync(location!.Id, trigger.Options == "found", ct);
+                }
+                finally
+                {
+                    progress.Cancel();
+                    await flusher;
+                }
             }
             else
             {
@@ -220,7 +238,7 @@ public class TaskSchedulerService : BackgroundService
     }
 
     /// <summary>While an import runs, copies its log into the run every few seconds so the page can show progress.</summary>
-    private async Task FlushProgressAsync(long runId, ImportRunner runner, CancellationToken ct)
+    private async Task FlushProgressAsync(long runId, Func<string?> logSoFar, CancellationToken ct)
     {
         string? last = null;
         try
@@ -228,7 +246,7 @@ public class TaskSchedulerService : BackgroundService
             while (!ct.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(2), ct);
-                var text = runner.LogSoFar();
+                var text = logSoFar();
                 if (text is null || text == last)
                 {
                     continue;

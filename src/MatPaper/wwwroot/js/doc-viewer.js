@@ -11,10 +11,10 @@
 (function () {
     "use strict";
 
-    var ZOOMS = [1, 1.5, 2, 3];
+    var MIN_ZOOM = 1, MAX_ZOOM = 4;
     var dialog = null;
     var parts = null;
-    var zoomIndex = 0;
+    var zoom = 1;
     var observer = null;
 
     function isPhone() {
@@ -59,8 +59,8 @@
             if (!act) { return; }
             var name = act.getAttribute("data-act");
             if (name === "close") { dialog.close(); }
-            else if (name === "in") { setZoom(zoomIndex + 1); }
-            else if (name === "out") { setZoom(zoomIndex - 1); }
+            else if (name === "in") { setZoom(zoom + 0.5); }
+            else if (name === "out") { setZoom(zoom - 0.5); }
         });
 
         // Double-tap: fit width <-> 2x.
@@ -69,7 +69,7 @@
             if (event.touches.length > 0 || event.changedTouches.length !== 1) { return; }
             var now = Date.now();
             if (now - lastTap < 300) {
-                setZoom(zoomIndex === 0 ? 2 : 0);
+                setZoom(zoom > 1.2 ? 1 : 2);
                 event.preventDefault();
             }
             lastTap = now;
@@ -82,11 +82,40 @@
         });
 
         parts.scroll.addEventListener("scroll", updateIndicator, { passive: true });
+        wirePinch();
     }
 
-    function setZoom(index) {
-        zoomIndex = Math.max(0, Math.min(ZOOMS.length - 1, index));
-        parts.pages.style.width = (ZOOMS[zoomIndex] * 100) + "%";
+    function setZoom(value) {
+        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+        parts.pages.style.width = (zoom * 100) + "%";
+    }
+
+    // Two fingers: the pages grow or shrink around the point between them.
+    function wirePinch() {
+        var start = null;
+        function distance(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+        parts.scroll.addEventListener("touchstart", function (e) {
+            if (e.touches.length === 2) {
+                var rect = parts.scroll.getBoundingClientRect();
+                start = {
+                    d: distance(e.touches), zoom: zoom,
+                    fx: (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left,
+                    fy: (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top,
+                    sl: parts.scroll.scrollLeft, st: parts.scroll.scrollTop
+                };
+            }
+        }, { passive: true });
+        parts.scroll.addEventListener("touchmove", function (e) {
+            if (!start || e.touches.length !== 2) { return; }
+            e.preventDefault();
+            var before = zoom;
+            setZoom(start.zoom * distance(e.touches) / start.d);
+            var ratio = zoom / start.zoom;
+            parts.scroll.scrollLeft = (start.sl + start.fx) * ratio - start.fx;
+            parts.scroll.scrollTop = (start.st + start.fy) * ratio - start.fy;
+            void before;
+        }, { passive: false });
+        parts.scroll.addEventListener("touchend", function (e) { if (e.touches.length < 2) { start = null; } }, { passive: true });
     }
 
     function updateIndicator() {
@@ -138,7 +167,7 @@
         parts.download.setAttribute("href", "/Documents/" + token + "/download");
         parts.pages.innerHTML = "";
         parts.indicator.textContent = "";
-        setZoom(0);
+        setZoom(1);
         parts.scroll.scrollTop = 0;
 
         if ("IntersectionObserver" in window) {

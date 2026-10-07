@@ -46,9 +46,10 @@
     // The browser bar (mobile, installed PWA) follows the active accent.
     function syncThemeColor() {
         var meta = document.querySelector('meta[name="theme-color"]');
-        var accent = getComputedStyle(root).getPropertyValue("--color-primary").trim();
-        if (meta && accent) {
-            meta.setAttribute("content", accent);
+        // The colour of the header: on a phone it also shows behind the status bar.
+        var bar = getComputedStyle(root).getPropertyValue("--color-surface").trim();
+        if (meta && bar) {
+            meta.setAttribute("content", bar);
         }
     }
 
@@ -556,4 +557,13 @@
     } else {
         init();
     }
+})();
+
+// The installed app does not zoom the page by pinching or double-tapping (iOS ignores the viewport hint
+// in Safari). Places that need zoom - the page viewer, the scanner - bring their own.
+(function () {
+    "use strict";
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (name) {
+        document.addEventListener(name, function (event) { event.preventDefault(); }, { passive: false });
+    });
 })();

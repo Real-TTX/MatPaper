@@ -1,0 +1,67 @@
+@page "/System/StorageLocations/Align"
+@model MatPaper.Pages.System.StorageLocations.AlignModel
+@{
+    var plan = Model.Plan;
+    var shown = plan.Items.Take(MatPaper.Pages.System.StorageLocations.AlignModel.ShownItems).ToList();
+}
+
+<div class="task-head">
+    <div class="task-head__main">
+        <h2 class="task-head__title">@plan.Location.Name</h2>
+        <div class="task-head__meta"><span class="form-help" style="margin:0">@L["Template"]: <code>@plan.Location.PathTemplate</code></span></div>
+    </div>
+    <div class="task-head__actions">
+        <a class="btn btn--secondary" href="/System/StorageLocations/Edit?id=@plan.Location.Id">@L["Back"]</a>
+    </div>
+</div>
+
+<partial name="_TaskRunsPanel" model="Model.Runs" />
+
+<section class="task-card task-card--wide" data-live="align">
+    <form method="get" class="align-options">
+        <input type="hidden" name="id" value="@plan.Location.Id" />
+        <label class="form-check">
+            <input type="checkbox" name="Found" value="true" checked="@plan.IncludeFound" onchange="this.form.submit()" />
+            <span>@L["Include files found in place"]</span>
+        </label>
+    </form>
+
+    <h3>
+        @L["Files to move"]
+        <span class="task-card__count">@plan.Total / @plan.Checked</span>
+    </h3>
+
+    @if (plan.FoundSkipped > 0)
+    {
+        <p class="form-help">@L["{0} file(s) found in place are left alone.", plan.FoundSkipped]</p>
+    }
+
+    @if (plan.Total == 0)
+    {
+        <p class="form-help">@L["Everything lies where the template puts it."]</p>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="data-table align-table">
+                <thead>
+                    <tr><th>@L["Title"]</th><th>@L["Now"]</th><th>@L["Becomes"]</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in shown)
+                    {
+                        <tr>
+                            <td><a href="/Documents/Edit?id=@item.Id">@item.Title</a></td>
+                            <td class="align-table__path">@item.From</td>
+                            <td class="align-table__path">@item.To</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (plan.Total > shown.Count)
+        {
+            <p class="form-help">@L["The first {0} of {1} are shown.", shown.Count, plan.Total]</p>
+        }
+    }
+</section>

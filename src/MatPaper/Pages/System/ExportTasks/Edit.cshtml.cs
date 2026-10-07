@@ -44,15 +44,37 @@ public class EditModel : PageModel
         }
     }
 
-    public List<SelectListItem> TypeOptions { get; } = new()
+    public List<SelectListItem> TypeOptions => new()
     {
-        new SelectListItem("Backup", ((int)ExportTaskType.Backup).ToString())
+        new SelectListItem(_l["Export documents"].Value, ((int)ExportTaskType.Export).ToString()),
+        new SelectListItem(_l["Full backup"].Value, ((int)ExportTaskType.Backup).ToString())
     };
+
+    public List<SelectListItem> LocationOptions { get; private set; } = new();
+    public List<SelectListItem> UserOptions { get; private set; } = new();
+    public List<SelectListItem> ProjectOptions { get; private set; } = new();
+    public List<SelectListItem> CorrespondentOptions { get; private set; } = new();
+    public List<SelectListItem> DocumentTypeOptions { get; private set; } = new();
+    public List<SelectListItem> TagOptions { get; private set; } = new();
+
+    [BindProperty]
+    public long[] TagIds { get; set; } = Array.Empty<long>();
+
+    private async Task LoadOptionsAsync()
+    {
+        static List<SelectListItem> Items(IEnumerable<(long Id, string Name)> rows) => rows.Select(r => new SelectListItem(r.Name, r.Id.ToString())).ToList();
+        LocationOptions = Items((await _db.StorageLocations.AsNoTracking().Where(x => x.UpdateState != UpdateState.Deleted).OrderBy(x => x.Name).Select(x => new { x.Id, x.Name }).ToListAsync()).Select(x => (x.Id, x.Name)));
+        UserOptions = Items((await _db.Users.AsNoTracking().Where(u => u.IsActive).OrderBy(u => u.DisplayName).Select(u => new { u.Id, u.DisplayName, u.Username }).ToListAsync()).Select(u => (u.Id, string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : u.DisplayName)));
+        ProjectOptions = Items((await _db.Projects.AsNoTracking().Where(x => x.UpdateState != UpdateState.Deleted).OrderBy(x => x.Name).Select(x => new { x.Id, x.Name }).ToListAsync()).Select(x => (x.Id, x.Name)));
+        CorrespondentOptions = Items((await _db.Correspondents.AsNoTracking().Where(x => x.UpdateState != UpdateState.Deleted).OrderBy(x => x.Name).Select(x => new { x.Id, x.Name }).ToListAsync()).Select(x => (x.Id, x.Name)));
+        DocumentTypeOptions = Items((await _db.DocumentTypes.AsNoTracking().Where(x => x.UpdateState != UpdateState.Deleted).OrderBy(x => x.Name).Select(x => new { x.Id, x.Name }).ToListAsync()).Select(x => (x.Id, x.Name)));
+        TagOptions = Items((await _db.Tags.AsNoTracking().Where(x => x.UpdateState != UpdateState.Deleted).OrderBy(x => x.Name).Select(x => new { x.Id, x.Name }).ToListAsync()).Select(x => (x.Id, x.Name)));
+    }
 
     public class InputModel
     {
         public string Name { get; set; } = string.Empty;
-        public ExportTaskType Type { get; set; } = ExportTaskType.Backup;
+        public ExportTaskType Type { get; set; } = ExportTaskType.Export;
         public bool IsEnabled { get; set; } = true;
         public string? CronExpression { get; set; }
 
@@ -61,6 +83,16 @@ public class EditModel : PageModel
         public bool IncludeConfig { get; set; } = true;
         public bool IncludeDocuments { get; set; }
         public int Retention { get; set; } = 7;
+
+        // DocumentExportSettings
+        public long? CorrespondentId { get; set; }
+        public long? DocumentTypeId { get; set; }
+        public long? ProjectId { get; set; }
+        public long? OwnerUserId { get; set; }
+        public long? SourceLocationId { get; set; }
+        public string? SourceFolder { get; set; }
+        public long? TargetLocationId { get; set; }
+        public string PathTemplate { get; set; } = "{Year}/{Title}{Ext}";
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -78,6 +110,7 @@ public class EditModel : PageModel
             }
 
             var settings = TaskSettingsJson.Read<BackupSettings>(entity.SettingsJson);
+            var export = TaskSettingsJson.Read<DocumentExportSettings>(entity.SettingsJson);
 
             Input = new InputModel
             {
@@ -88,10 +121,20 @@ public class EditModel : PageModel
                 TargetPath = settings.TargetPath,
                 IncludeConfig = settings.IncludeConfig,
                 IncludeDocuments = settings.IncludeDocuments,
-                Retention = settings.Retention
+                Retention = settings.Retention,
+                CorrespondentId = export.CorrespondentId,
+                DocumentTypeId = export.DocumentTypeId,
+                ProjectId = export.ProjectId,
+                OwnerUserId = export.OwnerUserId,
+                SourceLocationId = export.SourceLocationId,
+                SourceFolder = export.SourceFolder,
+                TargetLocationId = export.TargetLocationId,
+                PathTemplate = string.IsNullOrWhiteSpace(export.PathTemplate) ? "{Year}/{Title}{Ext}" : export.PathTemplate
             };
+            TagIds = export.TagIds.ToArray();
         }
 
+        await LoadOptionsAsync();
         await LoadRunsAsync();
         return Page();
     }
@@ -108,13 +151,28 @@ public class EditModel : PageModel
         {
             ModelState.AddModelError("Input.Name", _l["Name is required."]);
         }
-        if (string.IsNullOrWhiteSpace(targetPath))
+        var isExport = Input.Type == ExportTaskType.Export;
+        if (isExport)
         {
-            ModelState.AddModelError("Input.TargetPath", _l["Target path is required."]);
+            if (Input.TargetLocationId is null)
+            {
+                ModelState.AddModelError("Input.TargetLocationId", _l["A rule needs a target location."]);
+            }
+            else if (Input.TargetLocationId == Input.SourceLocationId)
+            {
+                ModelState.AddModelError("Input.TargetLocationId", _l["Choose a different target: the copies would land in the location the documents come from."]);
+            }
         }
-        if (Input.Retention < 1)
+        else
         {
-            ModelState.AddModelError("Input.Retention", _l["Retention must be at least 1."]);
+            if (string.IsNullOrWhiteSpace(targetPath))
+            {
+                ModelState.AddModelError("Input.TargetPath", _l["Target path is required."]);
+            }
+            if (Input.Retention < 1)
+            {
+                ModelState.AddModelError("Input.Retention", _l["Retention must be at least 1."]);
+            }
         }
         if (!CronSchedule.IsValid(Input.CronExpression))
         {
@@ -123,18 +181,31 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
+            await LoadOptionsAsync();
             await LoadRunsAsync();
             return Page();
         }
 
-        var settings = new BackupSettings
-        {
-            TargetPath = targetPath,
-            IncludeConfig = Input.IncludeConfig,
-            IncludeDocuments = Input.IncludeDocuments,
-            Retention = Input.Retention
-        };
-        var settingsJson = TaskSettingsJson.Write(settings);
+        var settingsJson = isExport
+            ? TaskSettingsJson.Write(new DocumentExportSettings
+            {
+                TagIds = TagIds.Distinct().ToList(),
+                CorrespondentId = Input.CorrespondentId,
+                DocumentTypeId = Input.DocumentTypeId,
+                ProjectId = Input.ProjectId,
+                OwnerUserId = Input.OwnerUserId,
+                SourceLocationId = Input.SourceLocationId,
+                SourceFolder = string.IsNullOrWhiteSpace(Input.SourceFolder) ? null : Input.SourceFolder.Trim(),
+                TargetLocationId = Input.TargetLocationId,
+                PathTemplate = string.IsNullOrWhiteSpace(Input.PathTemplate) ? "{Year}/{Title}{Ext}" : Input.PathTemplate.Trim()
+            })
+            : TaskSettingsJson.Write(new BackupSettings
+            {
+                TargetPath = targetPath,
+                IncludeConfig = Input.IncludeConfig,
+                IncludeDocuments = Input.IncludeDocuments,
+                Retention = Input.Retention
+            });
 
         var now = DateTime.UtcNow;
 
@@ -148,7 +219,7 @@ public class EditModel : PageModel
             }
 
             existing.Name = name;
-            existing.Type = ExportTaskType.Backup;
+            existing.Type = Input.Type;
             existing.IsEnabled = Input.IsEnabled;
             existing.CronExpression = cron;
             existing.SettingsJson = settingsJson;
@@ -161,7 +232,7 @@ public class EditModel : PageModel
             var entity = new ExportTask
             {
                 Name = name,
-                Type = ExportTaskType.Backup,
+                Type = Input.Type,
                 IsEnabled = Input.IsEnabled,
                 CronExpression = cron,
                 SettingsJson = settingsJson,

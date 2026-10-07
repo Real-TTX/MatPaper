@@ -181,6 +181,29 @@ public class BackupSettings
 }
 
 /// <summary>
+/// Settings for a document export rule: which documents (all filters combine), where they are copied
+/// to and under which path. Serialized to <see cref="ExportTask.SettingsJson"/>.
+/// </summary>
+public class DocumentExportSettings
+{
+    public List<long> TagIds { get; set; } = new();
+    public long? CorrespondentId { get; set; }
+    public long? DocumentTypeId { get; set; }
+    public long? ProjectId { get; set; }
+    public long? OwnerUserId { get; set; }
+
+    /// <summary>Only documents stored in this location (and, if set, below <see cref="SourceFolder"/>).</summary>
+    public long? SourceLocationId { get; set; }
+    public string? SourceFolder { get; set; }
+
+    /// <summary>The storage location the copies are written to.</summary>
+    public long? TargetLocationId { get; set; }
+
+    /// <summary>Path of a copy inside the target, with the same placeholders as a storage location.</summary>
+    public string PathTemplate { get; set; } = "{Year}/{Title}{Ext}";
+}
+
+/// <summary>
 /// Tolerant helpers for reading/writing task settings JSON.
 /// </summary>
 public static class TaskSettingsJson

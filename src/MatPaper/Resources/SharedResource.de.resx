@@ -211,7 +211,7 @@
   <data name="Delete this document? It is removed from the inbox together with its file." xml:space="preserve"><value>Dieses Dokument löschen? Es wird samt Datei aus dem Posteingang entfernt.</value></data>
   <data name="Delete this document? The file in the staging area is deleted as well." xml:space="preserve"><value>Dieses Dokument löschen? Die Datei im Zwischenspeicher wird mitgelöscht.</value></data>
   <data name="Delete this document? The file stays in its storage location but the document is removed from MatPaper." xml:space="preserve"><value>Dieses Dokument löschen? Die Datei bleibt am Speicherort, das Dokument wird aber aus MatPaper entfernt.</value></data>
-  <data name="Delete this export task? This cannot be undone." xml:space="preserve"><value>Diese Sicherung löschen? Das kann nicht rückgängig gemacht werden.</value></data>
+  <data name="Delete this export task? This cannot be undone." xml:space="preserve"><value>Diese Export-Regel löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this import task? This cannot be undone." xml:space="preserve"><value>Diese Import-Regel löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this project? This cannot be undone." xml:space="preserve"><value>Dieses Projekt löschen? Das kann nicht rückgängig gemacht werden.</value></data>
   <data name="Delete this storage location? This cannot be undone." xml:space="preserve"><value>Diesen Speicherort löschen? Das kann nicht rückgängig gemacht werden.</value></data>
@@ -243,7 +243,7 @@
   <data name="e.g. Finanzamt" xml:space="preserve"><value>z. B. Finanzamt</value></data>
   <data name="e.g. Gmail archive" xml:space="preserve"><value>z. B. Gmail-Archiv</value></data>
   <data name="e.g. Invoice" xml:space="preserve"><value>z. B. Rechnung</value></data>
-  <data name="e.g. Nightly backup" xml:space="preserve"><value>z. B. Nächtliche Sicherung</value></data>
+  <data name="e.g. Nightly backup" xml:space="preserve"><value>z. B. Finanzamt-Unterlagen</value></data>
   <data name="e.g. Rechnung" xml:space="preserve"><value>z. B. Rechnung</value></data>
   <data name="e.g. scan-user" xml:space="preserve"><value>z. B. scan-user</value></data>
   <data name="e.g. Scanner watch folder" xml:space="preserve"><value>z. B. Scanner-Ordner</value></data>
@@ -262,7 +262,7 @@
   <data name="Expires in" xml:space="preserve"><value>Läuft ab in</value></data>
   <data name="Export" xml:space="preserve"><value>Export</value></data>
   <data name="Export task &quot;{0}&quot; queued to run now." xml:space="preserve"><value>Export-Regel „{0}“ wurde zur sofortigen Ausführung eingereiht.</value></data>
-  <data name="Export tasks" xml:space="preserve"><value>Sicherungen</value></data>
+  <data name="Export tasks" xml:space="preserve"><value>Export-Regeln</value></data>
   <data name="Failed" xml:space="preserve"><value>Fehlgeschlagen</value></data>
   <data name="File all processed documents with their current suggestions?" xml:space="preserve"><value>Alle verarbeiteten Dokumente mit den aktuellen Vorschlägen ablegen?</value></data>
   <data name="File pattern" xml:space="preserve"><value>Dateimuster</value></data>
@@ -371,7 +371,7 @@
   <data name="New connection" xml:space="preserve"><value>Neue Verbindung</value></data>
   <data name="New correspondent" xml:space="preserve"><value>Neuer Korrespondent</value></data>
   <data name="New document type" xml:space="preserve"><value>Neuer Dokumenttyp</value></data>
-  <data name="New export task" xml:space="preserve"><value>Neue Sicherung</value></data>
+  <data name="New export task" xml:space="preserve"><value>Neue Export-Regel</value></data>
   <data name="New import task" xml:space="preserve"><value>Neue Import-Regel</value></data>
   <data name="New project" xml:space="preserve"><value>Neues Projekt</value></data>
   <data name="New storage location" xml:space="preserve"><value>Neuer Speicherort</value></data>
@@ -387,7 +387,7 @@
   <data name="No documents match your criteria." xml:space="preserve"><value>Keine Dokumente entsprechen den Kriterien.</value></data>
   <data name="No documents were uploaded." xml:space="preserve"><value>Es wurden keine Dokumente hochgeladen.</value></data>
   <data name="No documents yet." xml:space="preserve"><value>Noch keine Dokumente.</value></data>
-  <data name="No export tasks match your criteria." xml:space="preserve"><value>Keine Sicherungen entsprechen den Kriterien.</value></data>
+  <data name="No export tasks match your criteria." xml:space="preserve"><value>Keine Export-Regeln entsprechen den Kriterien.</value></data>
   <data name="No import tasks match your criteria." xml:space="preserve"><value>Keine Import-Regeln entsprechen den Kriterien.</value></data>
   <data name="No items match the current rules." xml:space="preserve"><value>Keine Treffer für die aktuellen Regeln.</value></data>
   <data name="No projects match your criteria." xml:space="preserve"><value>Keine Projekte entsprechen den Kriterien.</value></data>
@@ -475,7 +475,7 @@
   <data name="Remove filter" xml:space="preserve"><value>Filter entfernen</value></data>
   <data name="Required." xml:space="preserve"><value>Erforderlich.</value></data>
   <data name="Restore" xml:space="preserve"><value>Wiederherstellen</value></data>
-  <data name="Results and logs of import/export runs" xml:space="preserve"><value>Ergebnisse und Protokolle der Import- und Sicherungsläufe</value></data>
+  <data name="Results and logs of import/export runs" xml:space="preserve"><value>Ergebnisse und Protokolle der Import- und Export-Läufe</value></data>
   <data name="Retention" xml:space="preserve"><value>Aufbewahrung</value></data>
   <data name="Retention must be at least 1." xml:space="preserve"><value>Aufbewahrung muss mindestens 1 betragen.</value></data>
   <data name="Reusable connections for mailboxes, shares and cloud drives" xml:space="preserve"><value>Wiederverwendbare Verbindungen für Postfächer, Freigaben und Cloud-Speicher</value></data>
@@ -500,7 +500,7 @@
   <data name="Scan" xml:space="preserve"><value>Scannen</value></data>
   <data name="scan stopped at {0} — there may be more" xml:space="preserve"><value>Prüfung bei {0} gestoppt — es können mehr sein</value></data>
   <data name="Schedule" xml:space="preserve"><value>Zeitplan</value></data>
-  <data name="Scheduled database and document backups" xml:space="preserve"><value>Geplante Datenbank- und Dokumentsicherungen</value></data>
+  <data name="Scheduled database and document backups" xml:space="preserve"><value>Dokumente automatisch kopieren (nach Schlagwort, Ordner, Besitzer …) und Vollsicherungen</value></data>
   <data name="Scheduled imports from folders and mailboxes" xml:space="preserve"><value>Geplante Importe aus Ordnern und Postfächern</value></data>
   <data name="Scope" xml:space="preserve"><value>Bereich</value></data>
   <data name="Search" xml:space="preserve"><value>Suche</value></data>
@@ -564,9 +564,9 @@
   <data name="System / Document types" xml:space="preserve"><value>System / Dokumenttypen</value></data>
   <data name="System / Document types / Edit" xml:space="preserve"><value>System / Dokumenttypen / Bearbeiten</value></data>
   <data name="System / Document types / New" xml:space="preserve"><value>System / Dokumenttypen / Neu</value></data>
-  <data name="System / Export tasks" xml:space="preserve"><value>System / Sicherungen</value></data>
-  <data name="System / Export tasks / Edit" xml:space="preserve"><value>System / Sicherungen / Bearbeiten</value></data>
-  <data name="System / Export tasks / New" xml:space="preserve"><value>System / Sicherungen / Neu</value></data>
+  <data name="System / Export tasks" xml:space="preserve"><value>System / Export-Regeln</value></data>
+  <data name="System / Export tasks / Edit" xml:space="preserve"><value>System / Export-Regeln / Bearbeiten</value></data>
+  <data name="System / Export tasks / New" xml:space="preserve"><value>System / Export-Regeln / Neu</value></data>
   <data name="System / Import tasks" xml:space="preserve"><value>System / Import-Regeln</value></data>
   <data name="System / Import tasks / Edit" xml:space="preserve"><value>System / Import-Regeln / Bearbeiten</value></data>
   <data name="System / Import tasks / New" xml:space="preserve"><value>System / Import-Regeln / Neu</value></data>
@@ -947,4 +947,18 @@
   <data name="Target" xml:space="preserve"><value>Ziel</value></data>
   <data name="Back to the group" xml:space="preserve"><value>Zurück zur Gruppe</value></data>
   <data name="Assignment" xml:space="preserve"><value>Zuordnung</value></data>
+  <data name="Full backup" xml:space="preserve"><value>Vollsicherung</value></data>
+  <data name="Export documents" xml:space="preserve"><value>Dokumente exportieren</value></data>
+  <data name="Which documents" xml:space="preserve"><value>Welche Dokumente</value></data>
+  <data name="All filters have to match. Leave a filter empty to ignore it." xml:space="preserve"><value>Alle Filter müssen zutreffen. Ein leerer Filter wird ignoriert.</value></data>
+  <data name="Only documents in this location" xml:space="preserve"><value>Nur Dokumente aus diesem Speicherort</value></data>
+  <data name="Only in this folder" xml:space="preserve"><value>Nur in diesem Ordner</value></data>
+  <data name="e.g. Taxes/2025" xml:space="preserve"><value>z. B. Steuer/2025</value></data>
+  <data name="Where to" xml:space="preserve"><value>Wohin</value></data>
+  <data name="Target location" xml:space="preserve"><value>Zielort</value></data>
+  <data name="Path in the target" xml:space="preserve"><value>Pfad im Ziel</value></data>
+  <data name="Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone." xml:space="preserve"><value>Platzhalter: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Ext} {Id}. Beispiel: {Year}/{Title}{Ext}. Bereits vorhandene Kopien bleiben unverändert.</value></data>
+  <data name="Pick the location the copies go to." xml:space="preserve"><value>Wähle den Speicherort, in den kopiert wird.</value></data>
+  <data name="A rule needs a target location." xml:space="preserve"><value>Die Regel braucht einen Zielort.</value></data>
+  <data name="Choose a different target: the copies would land in the location the documents come from." xml:space="preserve"><value>Wähle einen anderen Zielort: sonst landen die Kopien im Speicherort der Dokumente.</value></data>
 </root>

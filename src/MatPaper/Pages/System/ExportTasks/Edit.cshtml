@@ -22,6 +22,32 @@
         <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
+    <div data-show-when-field="Input.Type" data-show-when-value="1">
+        <section class="form-section">
+            <h2 class="form-section__title">@L["Which documents"]</h2>
+            <p class="form-help">@L["All filters have to match. Leave a filter empty to ignore it."]</p>
+            @if (Model.TagOptions.Count > 0)
+            {
+                <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
+            }
+            <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— None —"]' />
+            <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— None —"]' />
+            <mp-picker asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
+            <mp-picker asp-for="Input.OwnerUserId" label='@L["Owner"]' asp-items="Model.UserOptions" placeholder='@L["— None —"]' />
+            <mp-picker asp-for="Input.SourceLocationId" label='@L["Only documents in this location"]' asp-items="Model.LocationOptions" placeholder='@L["— None —"]' />
+            <mp-field asp-for="Input.SourceFolder" label='@L["Only in this folder"]' placeholder='@L["e.g. Taxes/2025"]' />
+        </section>
+
+        <section class="form-section">
+            <h2 class="form-section__title">@L["Where to"]</h2>
+            <mp-field asp-for="Input.TargetLocationId" kind="select" label='@L["Target location"]' asp-items="Model.LocationOptions"
+                      help='@L["Pick the location the copies go to."]' />
+            <mp-field asp-for="Input.PathTemplate" label='@L["Path in the target"]' placeholder="{Year}/{Title}{Ext}"
+                      help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone."]' />
+        </section>
+    </div>
+
+    <div data-show-when-field="Input.Type" data-show-when-value="0">
     <section class="form-section">
         <h2 class="form-section__title">@L["Backup settings"]</h2>
         <mp-field asp-for="Input.TargetPath" label='@L["Target path"]'
@@ -32,6 +58,7 @@
         <mp-field asp-for="Input.Retention" kind="number" label='@L["Retention"]'
                   help='@L["how many backups to keep"]' />
     </section>
+    </div>
 
     <mp-button-row>
         <mp-button variant="primary" type="submit">@L["Save"]</mp-button>

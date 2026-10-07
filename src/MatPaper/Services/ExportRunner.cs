@@ -19,12 +19,14 @@ public sealed class ExportRunner
 
     private readonly AppDbContext _db;
     private readonly AppConfig _config;
+    private readonly DocumentStorageService _storage;
     private readonly ILogger<ExportRunner> _logger;
 
-    public ExportRunner(AppDbContext db, AppConfig config, ILogger<ExportRunner> logger)
+    public ExportRunner(AppDbContext db, AppConfig config, DocumentStorageService storage, ILogger<ExportRunner> logger)
     {
         _db = db;
         _config = config;
+        _storage = storage;
         _logger = logger;
     }
 
@@ -32,6 +34,11 @@ public sealed class ExportRunner
     {
         try
         {
+            if (task.Type == ExportTaskType.Export)
+            {
+                return await RunDocumentExportAsync(task, ct);
+            }
+
             var settings = TaskSettingsJson.Read<BackupSettings>(task.SettingsJson);
 
             if (string.IsNullOrWhiteSpace(settings.TargetPath))
@@ -79,6 +86,94 @@ public sealed class ExportRunner
             _logger.LogError(ex, "Export task {TaskId} failed.", task.Id);
             return new RunReport(false, 0, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Copies the documents that match the rule into the target storage location, each under the
+    /// path the rule's template gives it. A copy that already exists is left alone, so every run
+    /// only adds what is new.
+    /// </summary>
+    private async Task<RunReport> RunDocumentExportAsync(ExportTask task, CancellationToken ct)
+    {
+        var s = TaskSettingsJson.Read<DocumentExportSettings>(task.SettingsJson);
+        if (s.TargetLocationId is not long targetId)
+        {
+            return new RunReport(false, 0, "No target storage location chosen.");
+        }
+
+        var target = await _db.StorageLocations.Include(l => l.Connection)
+            .FirstOrDefaultAsync(l => l.Id == targetId && l.UpdateState != UpdateState.Deleted, ct);
+        if (target is null)
+        {
+            return new RunReport(false, 0, "The target storage location no longer exists.");
+        }
+
+        var query = _db.Documents.AsNoTracking()
+            .Include(d => d.StorageLocation).ThenInclude(l => l!.Connection)
+            .Include(d => d.Correspondent)
+            .Include(d => d.DocumentType)
+            .Where(d => d.UpdateState != UpdateState.Deleted && !d.IsStaged && d.RelativePath != "" && d.StorageLocationId != targetId);
+
+        if (s.TagIds.Count > 0) { var tags = s.TagIds; query = query.Where(d => d.DocumentTags.Any(t => tags.Contains(t.TagId))); }
+        if (s.CorrespondentId is long cid) { query = query.Where(d => d.CorrespondentId == cid); }
+        if (s.DocumentTypeId is long tid) { query = query.Where(d => d.DocumentTypeId == tid); }
+        if (s.ProjectId is long pid) { query = query.Where(d => d.ProjectId == pid); }
+        if (s.OwnerUserId is long oid) { query = query.Where(d => d.OwnerId == oid); }
+        if (s.SourceLocationId is long lid) { query = query.Where(d => d.StorageLocationId == lid); }
+        var folder = (s.SourceFolder ?? string.Empty).Trim().Trim('/', '\\').Replace('\\', '/');
+        if (folder.Length > 0) { var prefix = folder + "/"; query = query.Where(d => d.RelativePath.StartsWith(prefix)); }
+
+        var documents = await query.OrderBy(d => d.Id).ToListAsync(ct);
+
+        // The template is a storage location's template: same placeholders, same cleaning of names.
+        var template = new StorageLocation { PathTemplate = string.IsNullOrWhiteSpace(s.PathTemplate) ? "{Year}/{Title}{Ext}" : s.PathTemplate };
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int copied = 0, existing = 0, failed = 0;
+        var problems = new List<string>();
+
+        foreach (var d in documents)
+        {
+            ct.ThrowIfCancellationRequested();
+            var relative = _storage.BuildRelativePath(template, d.Title,
+                d.DocumentDate ?? d.FileModifiedUtc ?? d.CreateDate,
+                d.Correspondent?.Name, d.DocumentType?.Name, d.OriginalFileName, d.Token);
+
+            // Two documents that end up on the same path: the later one gets its id in the name.
+            if (!used.Add(relative))
+            {
+                var ext = Path.GetExtension(relative);
+                relative = relative[..^ext.Length] + " [" + DocumentStorageService.ShortId(d.Token) + "]" + ext;
+                used.Add(relative);
+            }
+
+            try
+            {
+                if (await _storage.ExistsAsync(target, relative, ct))
+                {
+                    existing++;
+                    continue;
+                }
+
+                await using var source = await _storage.OpenDocumentReadAsync(d, ct);
+                await _storage.SaveNewAsync(target, relative, source, ct);
+                copied++;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                _logger.LogWarning(ex, "Export of document {DocumentId} failed.", d.Id);
+                if (problems.Count < 5) { problems.Add($"{d.Title}: {ex.Message}"); }
+            }
+        }
+
+        var log = $"{documents.Count} document(s) match, {copied} copied, {existing} already there"
+            + (failed > 0 ? $", {failed} failed" : "") + $" (target: {target.Name}).";
+        if (problems.Count > 0) { log += "\n" + string.Join("\n", problems); }
+        return new RunReport(failed == 0, copied, log);
     }
 
     private async Task<(bool Ok, string Stderr)> RunPgDumpAsync(string tempSqlPath, CancellationToken ct)

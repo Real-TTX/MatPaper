@@ -851,4 +851,35 @@
   <data name="+ Page" xml:space="preserve"><value>+ Seite</value></data>
   <data name="Working …" xml:space="preserve"><value>Verarbeite …</value></data>
   <data name="{0} page(s) ready" xml:space="preserve"><value>{0} Seite(n) bereit</value></data>
+  <data name="Document" xml:space="preserve"><value>Dokument</value></data>
+  <data name="Choose what to add" xml:space="preserve"><value>Auswählen</value></data>
+  <data name="PDF, images or XRechnung (XML)." xml:space="preserve"><value>PDF, Bilder oder XRechnung (XML).</value></data>
+  <data name="or" xml:space="preserve"><value>oder</value></data>
+  <data name="Scan with the camera" xml:space="preserve"><value>Mit der Kamera scannen</value></data>
+  <data name="Photograph pages; they are cropped and straightened automatically." xml:space="preserve"><value>Seiten fotografieren; sie werden automatisch zugeschnitten und begradigt.</value></data>
+  <data name="Details" xml:space="preserve"><value>Angaben</value></data>
+  <data name="optional" xml:space="preserve"><value>optional</value></data>
+  <data name="Add" xml:space="preserve"><value>Hinzufügen</value></data>
+  <data name="Scan: {0} page(s)" xml:space="preserve"><value>Scan: {0} Seite(n)</value></data>
+  <data name="Queued" xml:space="preserve"><value>Wartet</value></data>
+  <data name="Rotate" xml:space="preserve"><value>Drehen</value></data>
+  <data name="Sensitivity" xml:space="preserve"><value>Empfindlichkeit</value></data>
+  <data name="Low" xml:space="preserve"><value>Niedrig</value></data>
+  <data name="Medium" xml:space="preserve"><value>Mittel</value></data>
+  <data name="High" xml:space="preserve"><value>Hoch</value></data>
+  <data name="Low: only a clearly visible page" xml:space="preserve"><value>Niedrig: nur eine klar erkennbare Seite</value></data>
+  <data name="Medium: balanced" xml:space="preserve"><value>Mittel: ausgewogen</value></data>
+  <data name="High: finds more, but may mistake reflections for the page" xml:space="preserve"><value>Hoch: findet mehr, hält aber auch mal Reflexe für die Seite</value></data>
+  <data name="Auto: takes the photo when the page lies still" xml:space="preserve"><value>Auto: löst aus, wenn die Seite ruhig liegt</value></data>
+  <data name="Auto off: tap the shutter" xml:space="preserve"><value>Auto aus: Auslöser tippen</value></data>
+  <data name="The camera is not available here (it needs HTTPS)." xml:space="preserve"><value>Die Kamera ist hier nicht verfügbar (sie braucht HTTPS).</value></data>
+  <data name="No access to the camera. Allow it in the browser." xml:space="preserve"><value>Kein Zugriff auf die Kamera. Erlaube sie im Browser.</value></data>
+  <data name="Left" xml:space="preserve"><value>Links</value></data>
+  <data name="Right" xml:space="preserve"><value>Rechts</value></data>
+  <data name="Page {0}" xml:space="preserve"><value>Seite {0}</value></data>
+  <data name="Move left" xml:space="preserve"><value>Nach links</value></data>
+  <data name="Move right" xml:space="preserve"><value>Nach rechts</value></data>
+  <data name="Presets" xml:space="preserve"><value>Vorauswahl</value></data>
+  <data name="PDF only" xml:space="preserve"><value>Nur PDF</value></data>
+  <data name="XML only (e-invoice)" xml:space="preserve"><value>Nur XML (E-Rechnung)</value></data>
 </root>

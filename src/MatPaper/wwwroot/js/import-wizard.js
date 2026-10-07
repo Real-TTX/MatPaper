@@ -231,3 +231,32 @@
         }
     });
 })();
+
+// Attachment presets: one click sets the extension list; the chip that matches the field is marked.
+(function () {
+    "use strict";
+    var field = document.getElementById("Input_AttachmentExtensions");
+    var chips = document.querySelectorAll("[data-ext-preset]");
+    if (!field || chips.length === 0) { return; }
+
+    function normalized(value) {
+        return value.split(",").map(function (p) { return p.trim().toLowerCase(); }).filter(Boolean).sort().join(",");
+    }
+
+    function mark() {
+        var current = normalized(field.value);
+        chips.forEach(function (chip) {
+            chip.classList.toggle("is-active", normalized(chip.getAttribute("data-ext-preset")) === current);
+        });
+    }
+
+    chips.forEach(function (chip) {
+        chip.addEventListener("click", function () {
+            field.value = chip.getAttribute("data-ext-preset");
+            field.dispatchEvent(new Event("input", { bubbles: true }));
+            mark();
+        });
+    });
+    field.addEventListener("input", mark);
+    mark();
+})();

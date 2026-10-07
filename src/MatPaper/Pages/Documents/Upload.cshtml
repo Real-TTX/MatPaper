@@ -2,10 +2,7 @@
 @model MatPaper.Pages.Documents.UploadModel
 @{
     ViewData["Breadcrumb"] = L["Documents / Add"].Value;
-    ViewData["AddTab"] = "files";
 }
-
-<partial name="_AddDocumentTabs" />
 
 @if (Model.Messages.Count > 0)
 {
@@ -19,45 +16,110 @@
     </div>
 }
 
-<form class="form" id="upload-form" method="post" enctype="multipart/form-data" data-no-busy
-      data-ajax-url="/Documents/Upload?handler=Ajax" data-inbox-url="/Inbox"
-      data-t-uploading='@L["Uploading…"]' data-t-added='@L["Added"]'
-      data-t-duplicate='@L["Duplicate — skipped"]' data-t-failed='@L["Failed"]'
-      data-t-show-existing='@L["Show existing document"]'
-      data-t-network-error='@L["Network error"]'
-      data-t-summary-added='@L["{0} added"]' data-t-summary-duplicates='@L["{0} duplicate(s) skipped"]'
-      data-t-summary-failed='@L["{0} failed"]' data-t-review-link='@L["Review them in your inbox →"]'>
-    @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+<div class="add-doc">
+    <form id="upload-form" method="post" enctype="multipart/form-data" data-no-busy data-camera="@(Model.Camera ? "1" : "")"
+          data-ajax-url="/Documents/Upload?handler=Ajax" data-scan-url="/Documents/Upload?handler=Scan" data-inbox-url="/Inbox"
+          data-t-queued='@L["Queued"]' data-t-uploading='@L["Uploading…"]' data-t-added='@L["Added"]'
+          data-t-duplicate='@L["Duplicate — skipped"]' data-t-failed='@L["Failed"]'
+          data-t-show-existing='@L["Show existing document"]' data-t-network-error='@L["Network error"]'
+          data-t-summary-added='@L["{0} added"]' data-t-summary-duplicates='@L["{0} duplicate(s) skipped"]'
+          data-t-summary-failed='@L["{0} failed"]' data-t-review-link='@L["Review them in your inbox →"]'
+          data-t-scan-pages='@L["Scan: {0} page(s)"]' data-t-remove='@L["Remove"]'>
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
-    <div class="form-row">
-        <label for="Files">@L["Files"]</label>
-        <div class="uploader" id="uploader">
-            <div class="uploader__dropzone" id="uploader-dropzone">
-                <svg class="uploader__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <path d="M7 9l5-5 5 5" />
-                    <path d="M12 4v12" />
-                </svg>
-                <p class="uploader__hint">
-                    <strong>@L["Drag & drop"]</strong> @L["files here, or"]
-                    <button type="button" class="uploader__browse" id="uploader-browse">@L["choose files"]</button>
-                </p>
-                <p class="form-help">@L["PDF or images."]</p>
+        <section class="add-doc__step" id="step-select">
+            <h2 class="add-doc__step-title"><span class="add-doc__num">1</span> @L["Choose what to add"]</h2>
+
+            <div class="uploader" id="uploader">
+                <div class="uploader__dropzone" id="uploader-dropzone">
+                    <svg class="uploader__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <path d="M7 9l5-5 5 5" />
+                        <path d="M12 4v12" />
+                    </svg>
+                    <p class="uploader__hint">
+                        <strong>@L["Drag & drop"]</strong> @L["files here, or"]
+                        <button type="button" class="uploader__browse" id="uploader-browse">@L["choose files"]</button>
+                    </p>
+                    <p class="form-help">@L["PDF, images or XRechnung (XML)."]</p>
+                </div>
+                <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,.xml,image/*" />
             </div>
-            <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,.xml,image/*" />
+            <span class="field-error" asp-validation-for="Files"></span>
+
+            <div class="add-doc__or">@L["or"]</div>
+
+            <button type="button" class="add-doc__camera" id="add-camera">
+                <span class="add-doc__camera-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+                        <circle cx="12" cy="12.5" r="3.5" />
+                    </svg>
+                </span>
+                <span class="add-doc__camera-text">
+                    <strong>@L["Scan with the camera"]</strong>
+                    <span>@L["Photograph pages; they are cropped and straightened automatically."]</span>
+                </span>
+            </button>
+
+            <div class="add-doc__scan" id="add-scan" hidden>
+                <strong data-scan-count></strong>
+                <div class="add-doc__scan-strip" data-scan-strip></div>
+                <button type="button" class="btn btn--secondary" id="add-scan-edit">@L["Edit pages"]</button>
+                <button type="button" class="icon-btn" id="add-scan-remove" aria-label='@L["Remove"]'>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+
+            <ul class="upload-list" id="upload-list" hidden></ul>
+        </section>
+
+        <section class="add-doc__step" id="step-details" hidden>
+            <h2 class="add-doc__step-title"><span class="add-doc__num">2</span> @L["Details"] <span class="form-help" style="margin:0">(@L["optional"])</span></h2>
+
+            <div class="add-doc__fields">
+                <div class="form-row" id="add-title-row" hidden>
+                    <label for="add-title">@L["Title"]</label>
+                    <input class="form-control" type="text" id="add-title" name="Title" placeholder='@L["Optional"]' autocomplete="off" />
+                </div>
+
+                <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— Auto-detect —"]' />
+                <mp-picker asp-for="DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— Auto-detect —"]' />
+                <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
+                @if (Model.TagOptions.Count > 0)
+                {
+                    <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
+                }
+            </div>
+        </section>
+
+        <div class="add-doc__actions">
+            <button class="btn btn--primary" type="submit" id="upload-submit" disabled>@L["Add"]</button>
+            <a class="btn btn--secondary" href="/Documents">@L["Back"]</a>
         </div>
-        <span class="field-error" asp-validation-for="Files"></span>
-    </div>
+    </form>
+</div>
 
-    <ul class="upload-list" id="upload-list" hidden></ul>
-
-    <mp-button-row>
-        <mp-button variant="primary" type="submit" id="upload-submit">@L["Upload"]</mp-button>
-        <mp-button variant="secondary" href="/Documents">@L["Back"]</mp-button>
-    </mp-button-row>
-</form>
+<div id="scanner-config" hidden
+     data-t-title='@L["Scanner"]' data-t-hint='@L["Hold the camera over the page"]' data-t-close='@L["Close"]'
+     data-t-torch='@L["Light"]' data-t-auto='@L["Auto"]' data-t-shoot='@L["Take photo"]'
+     data-t-found='@L["Page found"]' data-t-hold='@L["Hold still …"]' data-t-camera='@L["Camera"]' data-t-rotate='@L["Rotate"]'
+     data-t-sensitivity='@L["Sensitivity"]' data-t-sens-low='@L["Low"]' data-t-sens-mid='@L["Medium"]' data-t-sens-high='@L["High"]'
+     data-t-sens-low-hint='@L["Low: only a clearly visible page"]' data-t-sens-mid-hint='@L["Medium: balanced"]'
+     data-t-sens-high-hint='@L["High: finds more, but may mistake reflections for the page"]'
+     data-t-auto-on='@L["Auto: takes the photo when the page lies still"]' data-t-auto-off='@L["Auto off: tap the shutter"]'
+     data-t-no-camera='@L["The camera is not available here (it needs HTTPS)."]'
+     data-t-camera-denied='@L["No access to the camera. Allow it in the browser."]'
+     data-t-auto-corners='@L["Detect again"]' data-t-turn-left='@L["Left"]' data-t-turn-right='@L["Right"]'
+     data-t-apply='@L["Apply"]' data-t-back='@L["Back"]' data-t-adjust='@L["Drag the corners onto the page"]'
+     data-t-f-enhanced='@L["Enhanced"]' data-t-f-color='@L["Original"]' data-t-f-gray='@L["Gray"]' data-t-f-bw='@L["Black & white"]'
+     data-t-retake='@L["Retake"]' data-t-crop='@L["Crop"]' data-t-add-page='@L["Page"]' data-t-finish='@L["Done"]'
+     data-t-pages='@L["Pages"]' data-t-page-n='@L["Page {0}"]' data-t-working='@L["Working …"]'
+     data-t-move-left='@L["Move left"]' data-t-move-right='@L["Move right"]' data-t-delete='@L["Delete"]'></div>
 
 @section Scripts {
+    <script src="~/js/scanner-core.js" asp-append-version="true"></script>
+    <script src="~/js/scanner.js" asp-append-version="true"></script>
     <script src="~/js/upload.js" asp-append-version="true"></script>
 }

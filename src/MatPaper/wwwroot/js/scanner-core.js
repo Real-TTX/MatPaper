@@ -85,9 +85,9 @@
         return threshold;
     }
 
-    // Biggest 4-connected component of a binary mask. Returns { mask, area } or null.
-    function biggestComponent(mask, w, h) {
-        var labels = new Int32Array(mask.length), best = 0, bestLabel = 0, label = 0;
+    // The biggest 4-connected components of a binary mask (largest first). Each is { mask, area }.
+    function components(mask, w, h, minArea, maxCount) {
+        var labels = new Int32Array(mask.length), label = 0, found = [];
         var stack = new Int32Array(mask.length);
         for (var start = 0; start < mask.length; start++) {
             if (!mask[start] || labels[start]) { continue; }
@@ -102,12 +102,14 @@
                 if (y > 0 && mask[p - w] && !labels[p - w]) { labels[p - w] = label; stack[sp++] = p - w; }
                 if (y < h - 1 && mask[p + w] && !labels[p + w]) { labels[p + w] = label; stack[sp++] = p + w; }
             }
-            if (area > best) { best = area; bestLabel = label; }
+            if (area >= minArea) { found.push({ label: label, area: area }); }
         }
-        if (!bestLabel) { return null; }
-        var out = new Uint8Array(mask.length);
-        for (var i = 0; i < out.length; i++) { out[i] = labels[i] === bestLabel ? 1 : 0; }
-        return { mask: out, area: best };
+        found.sort(function (u, v) { return v.area - u.area; });
+        return found.slice(0, maxCount).map(function (c) {
+            var out = new Uint8Array(mask.length);
+            for (var i = 0; i < out.length; i++) { out[i] = labels[i] === c.label ? 1 : 0; }
+            return { mask: out, area: c.area };
+        });
     }
 
     function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
@@ -162,37 +164,100 @@
         return [sorted[start], sorted[(start + 1) % 4], sorted[(start + 2) % 4], sorted[(start + 3) % 4]];
     }
 
-    function quadFromMask(mask, w, h) {
-        var comp = biggestComponent(mask, w, h);
-        if (!comp) { return null; }
-        var frame = w * h;
-        if (comp.area < frame * 0.12 || comp.area > frame * 0.985) { return null; }
+    function sideLength(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
 
-        var boundary = [];
-        for (var y = 0; y < h; y++) {
-            for (var x = 0; x < w; x++) {
-                var i = y * w + x;
-                if (!comp.mask[i]) { continue; }
-                if (x === 0 || y === 0 || x === w - 1 || y === h - 1
-                    || !comp.mask[i - 1] || !comp.mask[i + 1] || !comp.mask[i - w] || !comp.mask[i + w]) {
-                    boundary.push([x, y]);
-                }
-            }
+    // How close the corners are to right angles (perspective bends them, so this is tolerant).
+    function rectangularity(q) {
+        var sum = 0;
+        for (var i = 0; i < 4; i++) {
+            var p = q[(i + 3) % 4], c = q[i], n = q[(i + 1) % 4];
+            var v1 = [p[0] - c[0], p[1] - c[1]], v2 = [n[0] - c[0], n[1] - c[1]];
+            var cos = (v1[0] * v2[0] + v1[1] * v2[1]) / Math.max(1e-6, Math.hypot(v1[0], v1[1]) * Math.hypot(v2[0], v2[1]));
+            var angle = Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI;
+            sum += Math.abs(angle - 90);
         }
-        if (boundary.length < 8) { return null; }
-        var hull = convexHull(boundary);
-        if (hull.length < 4) { return null; }
-        var quad = reduceToQuad(hull);
-        var quadArea = polygonArea(quad);
-        if (quadArea <= 0) { return null; }
-
-        // How well does a four-corner shape describe the region? 1 = a perfect quadrilateral.
-        var fit = Math.min(1, comp.area / quadArea);
-        var areaFrac = quadArea / frame;
-        return { quad: orderQuad(quad), fit: fit, areaFrac: areaFrac };
+        return Math.max(0, 1 - (sum / 4) / 38);
     }
 
-    function edgeMask(gray, w, h) {
+    // A sheet is longer than wide by a paper-like ratio (A4 1.41, letter 1.29); photographed at an angle it varies.
+    function aspectFit(q) {
+        var w = (sideLength(q[0], q[1]) + sideLength(q[3], q[2])) / 2, h = (sideLength(q[0], q[3]) + sideLength(q[1], q[2])) / 2;
+        var r = Math.max(w, h) / Math.max(1, Math.min(w, h));
+        if (r >= 1.1 && r <= 1.8) { return 1; }
+        if (r < 1.1) { return Math.max(0, 0.6 + (r - 1) * 4); }
+        return Math.max(0, 1 - (r - 1.8) / 1.0);
+    }
+
+    // Printed text and lines give a sheet fine structure; a reflection or a bare table is smooth.
+    function textureOf(mask, grad, w, h) {
+        var sum = 0, n = 0;
+        for (var y = 3; y < h - 3; y += 1) {
+            for (var x = 3; x < w - 3; x += 1) {
+                var i = y * w + x;
+                // only well inside the region, away from its border
+                if (mask[i] && mask[i - 3] && mask[i + 3] && mask[i - 3 * w] && mask[i + 3 * w]) { sum += grad[i]; n++; }
+            }
+        }
+        return n > 20 ? sum / n : 0;
+    }
+
+    function gradientOf(gray, w, h) {
+        var g = boxBlur(gray, w, h, 1), out = new Float32Array(gray.length);
+        for (var y = 1; y < h - 1; y++) {
+            for (var x = 1; x < w - 1; x++) {
+                var i = y * w + x;
+                var gx = g[i + 1] - g[i - 1], gy = g[i + w] - g[i - w];
+                out[i] = Math.abs(gx) + Math.abs(gy);
+            }
+        }
+        return out;
+    }
+
+    // Quadrilateral candidates from the biggest regions of a mask, each with quality measures.
+    function candidatesFromMask(mask, w, h, grad, source) {
+        var frame = w * h, result = [];
+        components(mask, w, h, frame * 0.1, 3).forEach(function (comp) {
+            if (comp.area > frame * 0.985) { return; }
+            var boundary = [], sharpCount = 0, edgeCount = 0;
+            for (var y = 0; y < h; y++) {
+                for (var x = 0; x < w; x++) {
+                    var i = y * w + x;
+                    if (!comp.mask[i]) { continue; }
+                    var onFrame = x === 0 || y === 0 || x === w - 1 || y === h - 1;
+                    if (onFrame || !comp.mask[i - 1] || !comp.mask[i + 1] || !comp.mask[i - w] || !comp.mask[i + w]) {
+                        boundary.push([x, y]);
+                        // how sharp is the transition here? a sheet has a crisp edge, a reflection fades out
+                        if (!onFrame) {
+                            var m = 0;
+                            for (var dy = -2; dy <= 2; dy++) { for (var dx = -2; dx <= 2; dx++) { var v = grad[(y + dy) * w + x + dx] || 0; if (v > m) { m = v; } } }
+                            if (m > 18) { sharpCount++; }
+                            edgeCount++;
+                        }
+                    }
+                }
+            }
+            if (boundary.length < 8) { return; }
+            var hull = convexHull(boundary);
+            if (hull.length < 4) { return; }
+            var quad = reduceToQuad(hull), quadArea = polygonArea(quad);
+            if (quadArea <= 0) { return; }
+            var ordered = orderQuad(quad);
+            result.push({
+                quad: ordered,
+                fit: Math.min(comp.area, quadArea) / Math.max(comp.area, quadArea),
+                areaFrac: quadArea / frame,
+                rect: rectangularity(ordered),
+                aspect: aspectFit(ordered),
+                texture: textureOf(comp.mask, grad, w, h),
+                // share of the outline that is a crisp edge (a sheet: nearly all; a reflection: little)
+                sharp: edgeCount > 0 ? sharpCount / edgeCount : 0,
+                source: source
+            });
+        });
+        return result;
+    }
+
+    function edgeMask(gray, w, h, factor) {
         var blurred = boxBlur(gray, w, h, 1);
         var mag = new Float32Array(gray.length), sum = 0, sumSq = 0, n = 0, x, y;
         for (y = 1; y < h - 1; y++) {
@@ -205,7 +270,7 @@
             }
         }
         var mean = sum / n, sd = Math.sqrt(Math.max(0, sumSq / n - mean * mean));
-        var threshold = mean + sd * 0.8;
+        var threshold = mean + sd * (factor || 0.8);
         var edges = new Uint8Array(gray.length);
         for (var k = 0; k < edges.length; k++) { edges[k] = mag[k] > threshold ? 1 : 0; }
         // close small gaps
@@ -235,29 +300,44 @@
 
     // ------------------------------------------------------------------ detect
 
-    function detect(source) {
+    // Sensitivity 0 = strict (only a clear sheet), 1 = balanced, 2 = lenient (finds more, also false ones).
+    var LEVELS = [
+        { offset: 14, minScore: 0.80, minTexture: 4.5, minSharp: 0.30, minFit: 0.88, edge: 1.1 },
+        { offset: 0, minScore: 0.68, minTexture: 2.2, minSharp: 0.20, minFit: 0.84, edge: 0.8 },
+        { offset: -10, minScore: 0.52, minTexture: 0, minSharp: 0.08, minFit: 0.78, edge: 0.55 }
+    ];
+
+    function detect(source, options) {
+        var level = LEVELS[Math.max(0, Math.min(2, (options && options.sensitivity) != null ? options.sensitivity : 1))];
         var img = scaledImageData(source, ANALYSIS_WIDTH);
         var w = img.width, h = img.height;
         var gray = toGray(img);
         var smooth = boxBlur(boxBlur(gray, w, h, 2), w, h, 2);
+        var grad = gradientOf(gray, w, h);
 
-        var candidates = [];
+        var candidates = [], i;
+        var t = otsu(smooth);
+        [level.offset, level.offset + 18].forEach(function (shift) {
+            var bright = new Uint8Array(smooth.length);
+            for (i = 0; i < bright.length; i++) { bright[i] = smooth[i] > t + shift ? 1 : 0; }
+            candidates = candidates.concat(candidatesFromMask(bright, w, h, grad, "bright"));
+        });
+        candidates = candidates.concat(candidatesFromMask(edgeMask(smooth, w, h, level.edge), w, h, grad, "edges"));
 
-        // 1) the biggest bright area
-        var t = otsu(smooth), bright = new Uint8Array(smooth.length), i;
-        for (i = 0; i < bright.length; i++) { bright[i] = smooth[i] > t ? 1 : 0; }
-        var a = quadFromMask(bright, w, h);
-        if (a) { candidates.push(a); }
-
-        // 2) the area enclosed by strong edges
-        var b = quadFromMask(edgeMask(smooth, w, h), w, h);
-        if (b) { candidates.push(b); }
-
+        if (options && options.debug) { return candidates.map(function (c) { return { src: c.source, fit: +c.fit.toFixed(2), rect: +c.rect.toFixed(2), asp: +c.aspect.toFixed(2), tex: +c.texture.toFixed(1), sharp: +c.sharp.toFixed(2), area: +c.areaFrac.toFixed(2), q: c.quad.map(function (p) { return [Math.round(p[0] / w * 100) / 100, Math.round(p[1] / h * 100) / 100]; }) }; }); }
         var best = null;
         candidates.forEach(function (c) {
-            var score = c.fit * 0.7 + Math.min(1, c.areaFrac / 0.5) * 0.3;
-            if (c.fit < 0.8) { return; }
-            if (!best || score > best.score) { best = { quad: c.quad, score: score }; }
+            if (c.fit < level.minFit || c.areaFrac < 0.1) { return; }
+            var tex = c.texture >= level.minTexture ? 1 : (level.minTexture > 0 ? c.texture / level.minTexture : 1);
+            var texScore = Math.min(1, c.texture / 8);
+            // geometry first, then evidence that there is print on it, then size
+            var edgeScore = Math.min(1, c.sharp / 0.9);
+            var score = c.fit * 0.25 + c.rect * 0.30 + c.aspect * 0.10 + edgeScore * 0.10 + texScore * 0.08 + Math.min(1, c.areaFrac / 0.5) * 0.10;
+            if (tex < 1) { score *= 0.55 + 0.45 * tex; }
+            // a soft outline is a reflection or shadow, not a sheet
+            if (c.sharp < level.minSharp) { return; }
+            if (score < level.minScore) { return; }
+            if (!best || score > best.score) { best = { quad: c.quad, score: score, source: c.source }; }
         });
         if (!best) { return null; }
         best.quad = best.quad.map(function (p) { return [p[0] / w, p[1] / h]; });
@@ -425,5 +505,5 @@
         return c;
     }
 
-    root.MatPaperScan = { detect: detect, warp: warp, filter: filter, rotate: rotate, makeCanvas: makeCanvas };
+    root.MatPaperScan = { detect: detect, levels: LEVELS.length, warp: warp, filter: filter, rotate: rotate, makeCanvas: makeCanvas };
 })(window);

@@ -1,15 +1,17 @@
-// Document scanner UI (camera -> automatic crop -> filter -> several pages -> PDF).
-// Uses scanner-core.js for the image work. Full-screen on a phone, works the same on a desktop with a webcam.
+// Document scanner UI: camera -> automatic crop -> filter -> several pages.
+// Full-screen on a phone, the same on a desktop with a webcam. The image work lives in scanner-core.js.
 //
-// The scan page (Pages/Documents/Scan.cshtml) holds the form; this script fills its "Images" file input with
-// the finished pages (JPEG) and sets "Prepared", so the normal form post builds the PDF.
+//   MatPaperScanner.open({ onDone: function (files, thumbs) { ... } })
+//        files  = the finished pages as JPEG Files, in order
+//        thumbs = small canvases of the same pages (for a summary)
+//   MatPaperScanner.openPages()   open on the page overview (to edit what was scanned)
+//   MatPaperScanner.reset()       forget all pages
+//   MatPaperScanner.count()       how many pages there are
 (function () {
     "use strict";
 
     var core = window.MatPaperScan;
-    var launch = document.getElementById("scanner-launch");
-    var form = document.getElementById("scan-form");
-    if (!core || !launch || !form) { return; }
+    if (!core) { return; }
 
     var cfg = document.getElementById("scanner-config");
     function t(key, fallback) { return (cfg && cfg.getAttribute("data-t-" + key)) || fallback; }
@@ -17,22 +19,53 @@
     var PREVIEW_SIDE = 1100;   // review preview
     var FINAL_SIDE = 2200;     // what ends up in the PDF
     var SOURCE_SIDE = 2600;    // photos are scaled down to this before any work
+    var SENS_KEY = "matpaper.scan.sensitivity";
 
     var pages = [];            // { src, quad, turns, filter, preview, thumb }
-    var current = -1;          // page being reviewed/adjusted
-    var root = null, ui = {};
+    var current = -1;
+    var root = null, ui = {}, view = "camera", onDone = null;
     var stream = null, track = null, detectTimer = null;
     var smoothQuad = null, stableFrames = 0, lastFound = null, autoMode = true, torchOn = false;
-    var view = "camera";
+    var sensitivity = 1;
+    try { var saved = parseInt(localStorage.getItem(SENS_KEY), 10); if (saved >= 0 && saved <= 2) { sensitivity = saved; } } catch (e) { }
 
-    var FILTERS = [
-        ["enhanced", "Enhanced"],
-        ["color", "Original"],
-        ["gray", "Gray"],
-        ["bw", "B/W"]
-    ];
+    var FILTERS = [["enhanced", "Enhanced"], ["color", "Original"], ["gray", "Gray"], ["bw", "B/W"]];
 
-    // ------------------------------------------------------------------ DOM
+    // ------------------------------------------------------------------ icons (stroke, currentColor)
+
+    var ICONS = {
+        close: '<path d="M6 6l12 12M18 6L6 18"/>',
+        back: '<path d="M15 5l-7 7 7 7"/>',
+        torch: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+        sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+        auto: '<path d="M12 3l2.2 5.3L20 9l-4.3 3.7L17 18l-5-3-5 3 1.3-5.3L4 9l5.8-.7z"/>',
+        rotateCw: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+        rotateCcw: '<path d="M4 11a8 8 0 1 1 2.3 5.7"/><path d="M4 4v7h7"/>',
+        crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M2 6h14a2 2 0 0 1 2 2v14"/>',
+        camera: '<path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/>',
+        plus: '<path d="M12 5v14M5 12h14"/>',
+        check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+        trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
+        left: '<path d="M14 6l-6 6 6 6"/>',
+        right: '<path d="M10 6l6 6-6 6"/>',
+        detect: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M9 12h6"/>'
+    };
+
+    function icon(name) {
+        var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        s.setAttribute("viewBox", "0 0 24 24");
+        s.setAttribute("fill", "none");
+        s.setAttribute("stroke", "currentColor");
+        s.setAttribute("stroke-width", "1.9");
+        s.setAttribute("stroke-linecap", "round");
+        s.setAttribute("stroke-linejoin", "round");
+        s.setAttribute("aria-hidden", "true");
+        s.setAttribute("class", "scn__icon");
+        s.innerHTML = ICONS[name] || "";
+        return s;
+    }
+
+    // ------------------------------------------------------------------ DOM helpers
 
     function el(tag, cls, text) {
         var e = document.createElement(tag);
@@ -41,9 +74,12 @@
         return e;
     }
 
-    function button(cls, label, action) {
-        var b = el("button", cls, label);
+    function btn(cls, iconName, label, action, aria) {
+        var b = el("button", cls);
         b.type = "button";
+        if (iconName) { b.appendChild(icon(iconName)); }
+        if (label) { b.appendChild(el("span", "scn__label", label)); }
+        if (aria || label) { b.setAttribute("aria-label", aria || label); }
         b.addEventListener("click", action);
         return b;
     }
@@ -53,100 +89,114 @@
         root.setAttribute("role", "dialog");
         root.setAttribute("aria-label", t("title", "Scanner"));
 
-        // ---- camera view
-        var cam = el("div", "scn__view scn__camera");
+        // ---------------- camera
+        var cam = el("div", "scn__view");
+        var camTop = el("div", "scn__top");
+        ui.closeBtn = btn("scn__tool", "close", "", close, t("close", "Close"));
+        ui.camTitle = el("div", "scn__heading", t("title", "Scanner"));
+        ui.sensBtn = btn("scn__tool scn__tool--text", "sliders", "", cycleSensitivity, t("sensitivity", "Sensitivity"));
+        ui.sensLabel = el("span", "scn__label");
+        ui.sensBtn.appendChild(ui.sensLabel);
+        ui.torchBtn = btn("scn__tool", "torch", "", toggleTorch, t("torch", "Light"));
+        ui.torchBtn.hidden = true;
+        ui.autoBtn = btn("scn__tool scn__tool--text", "auto", t("auto", "Auto"), toggleAuto);
+        camTop.append(ui.closeBtn, ui.camTitle, ui.sensBtn, ui.torchBtn, ui.autoBtn);
+
+        ui.stage = el("div", "scn__stage scn__stage--camera");
         ui.video = el("video", "scn__video");
         ui.video.setAttribute("playsinline", "");
         ui.video.muted = true;
         ui.overlay = el("canvas", "scn__overlay");
         ui.hint = el("div", "scn__hint", t("hint", "Hold the camera over the page"));
-        ui.cameraBar = el("div", "scn__bar scn__bar--top");
-        ui.closeBtn = button("scn__btn", "✕", function () { if (pages.length) { finish(); } else { closeScanner(); } });
-        ui.closeBtn.setAttribute("aria-label", t("close", "Close"));
-        ui.torchBtn = button("scn__btn", "☀", toggleTorch);
-        ui.torchBtn.setAttribute("aria-label", t("torch", "Light"));
-        ui.torchBtn.hidden = true;
-        ui.autoBtn = button("scn__btn scn__btn--text", t("auto", "Auto") + " ✓", toggleAuto);
-        ui.cameraBar.append(ui.closeBtn, el("span", "scn__spacer"), ui.torchBtn, ui.autoBtn);
-        ui.cameraControls = el("div", "scn__bar scn__bar--bottom");
-        ui.galleryBtn = button("scn__btn scn__btn--text", t("gallery", "Gallery"), function () { ui.file.click(); });
-        ui.shutter = button("scn__shutter", "", function () { capture(false); });
-        ui.shutter.setAttribute("aria-label", t("shoot", "Take photo"));
-        ui.pagesBtn = button("scn__btn scn__btn--text", "", showPages);
-        ui.cameraControls.append(ui.galleryBtn, ui.shutter, ui.pagesBtn);
         ui.message = el("div", "scn__message");
         ui.message.hidden = true;
-        cam.append(ui.video, ui.overlay, ui.hint, ui.cameraBar, ui.cameraControls, ui.message);
+        ui.stage.append(ui.video, ui.overlay, ui.hint, ui.message);
+
+        var camBottom = el("div", "scn__bottom scn__bottom--camera");
+        ui.pagesBtn = btn("scn__pagesbtn", "", "", showPages, t("pages", "Pages"));
+        ui.pagesThumb = el("canvas", "scn__pagesthumb");
+        ui.pagesCount = el("span", "scn__badge");
+        ui.pagesBtn.append(ui.pagesThumb, ui.pagesCount);
+        ui.shutter = btn("scn__shutter", "", "", function () { capture(false); }, t("shoot", "Take photo"));
+        ui.shutter.appendChild(el("span", "scn__shutter-ring"));
+        ui.finishBtn = btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish);
+        camBottom.append(ui.pagesBtn, ui.shutter, ui.finishBtn);
+        cam.append(camTop, ui.stage, camBottom);
         ui.cameraView = cam;
 
-        ui.file = el("input");
-        ui.file.type = "file";
-        ui.file.accept = "image/*";
-        ui.file.multiple = true;
-        ui.file.hidden = true;
-        ui.file.addEventListener("change", function () { addFiles(ui.file.files); ui.file.value = ""; });
-
-        // ---- adjust view (drag the four corners)
-        var adj = el("div", "scn__view scn__adjust");
-        ui.adjustStage = el("div", "scn__stage");
-        ui.adjustCanvas = el("canvas", "scn__adjust-canvas");
-        ui.adjustSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        ui.adjustSvg.setAttribute("class", "scn__adjust-svg");
-        ui.adjustStage.append(ui.adjustCanvas, ui.adjustSvg);
-        var adjBar = el("div", "scn__bar scn__bar--bottom");
-        adjBar.append(
-            button("scn__btn scn__btn--text", t("auto-corners", "Detect again"), redetect),
-            button("scn__btn scn__btn--text", "⟲", function () { turnSource(-1); }),
-            button("scn__btn scn__btn--text", "⟳", function () { turnSource(1); }),
-            button("scn__btn scn__btn--primary", t("apply", "Done"), applyAdjust));
-        adj.append(el("div", "scn__title", t("adjust", "Drag the corners onto the page")), ui.adjustStage, adjBar);
-        ui.adjustView = adj;
-
-        // ---- review view
-        var rev = el("div", "scn__view scn__review");
+        // ---------------- review
+        var rev = el("div", "scn__view");
+        var revTop = el("div", "scn__top");
+        ui.revBack = btn("scn__tool", "back", "", showCamera, t("camera", "Camera"));
+        ui.revTitle = el("div", "scn__heading");
+        revTop.append(ui.revBack, ui.revTitle, btn("scn__tool", "rotateCw", "", function () { turnPage(1); }, t("rotate", "Rotate")));
         ui.reviewStage = el("div", "scn__stage");
-        ui.reviewCanvas = el("canvas", "scn__review-canvas");
-        ui.reviewStage.append(ui.reviewCanvas);
+        ui.reviewCanvas = el("canvas", "scn__page");
+        ui.reviewStage.appendChild(ui.reviewCanvas);
         ui.filterBar = el("div", "scn__filters");
         FILTERS.forEach(function (f) {
-            var b = button("scn__chip", t("f-" + f[0], f[1]), function () { setFilter(f[0]); });
+            var b = el("button", "scn__chip", t("f-" + f[0], f[1]));
+            b.type = "button";
             b.setAttribute("data-filter", f[0]);
+            b.addEventListener("click", function () { setFilter(f[0]); });
             ui.filterBar.appendChild(b);
         });
-        var revBar = el("div", "scn__bar scn__bar--bottom scn__bar--wrap");
-        ui.retakeBtn = button("scn__btn scn__btn--text", t("retake", "Retake"), retake);
-        ui.cropBtn = button("scn__btn scn__btn--text", t("crop", "Crop"), function () { showAdjust(current); });
-        ui.turnBtn = button("scn__btn scn__btn--text", "⟳", function () { turnPage(1); });
-        ui.nextBtn = button("scn__btn scn__btn--text", t("add-page", "+ Page"), nextPage);
-        ui.doneBtn = button("scn__btn scn__btn--primary", t("finish", "Done"), finish);
-        revBar.append(ui.retakeBtn, ui.cropBtn, ui.turnBtn, ui.nextBtn, ui.doneBtn);
-        rev.append(ui.reviewStage, ui.filterBar, revBar);
+        var revBottom = el("div", "scn__bottom scn__bottom--actions");
+        revBottom.append(
+            btn("scn__action", "camera", t("retake", "Retake"), retake),
+            btn("scn__action", "crop", t("crop", "Crop"), function () { showAdjust(current); }),
+            btn("scn__action", "plus", t("add-page", "Page"), showCamera),
+            btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish));
+        rev.append(revTop, ui.reviewStage, ui.filterBar, revBottom);
         ui.reviewView = rev;
 
-        // ---- pages view
-        var pg = el("div", "scn__view scn__pages");
-        pg.append(el("div", "scn__title", t("pages", "Pages")));
+        // ---------------- adjust corners
+        var adj = el("div", "scn__view");
+        var adjTop = el("div", "scn__top");
+        adjTop.append(btn("scn__tool", "back", "", function () { showReview(current); }, t("back", "Back")),
+            el("div", "scn__heading", t("adjust", "Drag the corners onto the page")));
+        ui.adjustStage = el("div", "scn__stage");
+        ui.adjustWrap = el("div", "scn__adjust-wrap");
+        ui.adjustCanvas = el("canvas", "scn__page");
+        ui.adjustSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        ui.adjustSvg.setAttribute("class", "scn__adjust-svg");
+        ui.adjustWrap.append(ui.adjustCanvas, ui.adjustSvg);
+        ui.adjustStage.appendChild(ui.adjustWrap);
+        var adjBottom = el("div", "scn__bottom scn__bottom--actions");
+        adjBottom.append(
+            btn("scn__action", "detect", t("auto-corners", "Detect again"), redetect),
+            btn("scn__action", "rotateCcw", t("turn-left", "Left"), function () { turnSource(-1); }),
+            btn("scn__action", "rotateCw", t("turn-right", "Right"), function () { turnSource(1); }),
+            btn("scn__action scn__action--primary", "check", t("apply", "Apply"), function () { showReview(current); }));
+        adj.append(adjTop, ui.adjustStage, adjBottom);
+        ui.adjustView = adj;
+
+        // ---------------- pages overview
+        var pg = el("div", "scn__view");
+        var pgTop = el("div", "scn__top");
+        pgTop.append(btn("scn__tool", "back", "", showCamera, t("camera", "Camera")), el("div", "scn__heading", t("pages", "Pages")));
         ui.grid = el("div", "scn__grid");
-        var pgBar = el("div", "scn__bar scn__bar--bottom");
-        pgBar.append(
-            button("scn__btn scn__btn--text", t("add-page", "+ Page"), showCamera),
-            button("scn__btn scn__btn--primary", t("finish", "Done"), finish));
-        pg.append(ui.grid, pgBar);
+        var pgBottom = el("div", "scn__bottom scn__bottom--actions");
+        pgBottom.append(
+            btn("scn__action", "plus", t("add-page", "Page"), showCamera),
+            btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish));
+        pg.append(pgTop, ui.grid, pgBottom);
         ui.pagesView = pg;
 
         ui.busy = el("div", "scn__busy", t("working", "Working …"));
         ui.busy.hidden = true;
 
-        root.append(cam, adj, rev, pg, ui.file, ui.busy);
+        root.append(cam, rev, adj, pg, ui.busy);
         document.body.appendChild(root);
         window.addEventListener("resize", function () { if (root && !root.hidden) { redrawCurrent(); } });
+        updateSens();
     }
 
     function setView(name) {
         view = name;
         ui.cameraView.hidden = name !== "camera";
-        ui.adjustView.hidden = name !== "adjust";
         ui.reviewView.hidden = name !== "review";
+        ui.adjustView.hidden = name !== "adjust";
         ui.pagesView.hidden = name !== "pages";
     }
 
@@ -154,45 +204,51 @@
 
     // ------------------------------------------------------------------ open / close
 
-    function openScanner(files) {
+    function open(options) {
+        onDone = (options && options.onDone) || onDone;
         if (!root) { build(); }
         root.hidden = false;
         document.documentElement.classList.add("has-scanner");
-        updatePagesBtn();
-        if (files && files.length) {
-            showCamera(true); // sets the view; camera stays off until needed
-            stopCamera();
-            addFiles(files);
-        } else {
-            showCamera();
-        }
+        if (options && options.pages && pages.length) { showPages(); } else { showCamera(); }
     }
 
-    function closeScanner() {
+    function hide() {
         stopCamera();
         if (root) { root.hidden = true; }
         document.documentElement.classList.remove("has-scanner");
-        summarize();
+    }
+
+    // Closing keeps what was scanned; the page that opened the scanner decides what to do with it.
+    function close() {
+        if (pages.length) { finish(); } else { hide(); if (onDone) { onDone([], []); } }
     }
 
     // ------------------------------------------------------------------ camera
 
-    function showCamera(skipStart) {
-        setView("camera");
-        updatePagesBtn();
-        if (!skipStart) { startCamera(); }
+    function updateCameraBar() {
+        var has = pages.length > 0;
+        ui.pagesBtn.hidden = !has;
+        ui.finishBtn.hidden = !has;
+        ui.camTitle.textContent = has ? t("page-n", "Page {0}").replace("{0}", pages.length + 1) : t("title", "Scanner");
+        if (has) {
+            ui.pagesCount.textContent = String(pages.length);
+            var th = thumbOf(pages[pages.length - 1], 120);
+            ui.pagesThumb.width = th.width; ui.pagesThumb.height = th.height;
+            ui.pagesThumb.getContext("2d").drawImage(th, 0, 0);
+        }
     }
 
-    function updatePagesBtn() {
-        ui.pagesBtn.textContent = pages.length ? "▦ " + pages.length : "";
-        ui.pagesBtn.hidden = pages.length === 0;
+    function showCamera() {
+        setView("camera");
+        updateCameraBar();
+        startCamera();
     }
 
     function startCamera() {
         if (stream) { return; }
         ui.message.hidden = true;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            return cameraUnavailable(t("no-camera", "The camera is not available here (it needs HTTPS). Use the gallery instead."));
+            return cameraUnavailable(t("no-camera", "The camera is not available here (it needs HTTPS)."));
         }
         navigator.mediaDevices.getUserMedia({
             video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -207,16 +263,16 @@
             smoothQuad = null; stableFrames = 0; lastFound = null;
             detectTimer = setInterval(detectLoop, 230);
         }).catch(function () {
-            cameraUnavailable(t("camera-denied", "No access to the camera. Allow it in the browser, or use the gallery."));
+            cameraUnavailable(t("camera-denied", "No access to the camera. Allow it in the browser."));
         });
     }
 
     function stopCamera() {
         if (detectTimer) { clearInterval(detectTimer); detectTimer = null; }
         if (stream) { stream.getTracks().forEach(function (tr) { tr.stop(); }); }
-        stream = null; track = null;
-        torchOn = false;
-        ui.video.srcObject = null;
+        stream = null; track = null; torchOn = false;
+        if (ui.video) { ui.video.srcObject = null; }
+        if (ui.torchBtn) { ui.torchBtn.classList.remove("is-on"); }
     }
 
     function cameraUnavailable(text) {
@@ -233,8 +289,33 @@
 
     function toggleAuto() {
         autoMode = !autoMode;
-        ui.autoBtn.textContent = t("auto", "Auto") + (autoMode ? " ✓" : "");
+        ui.autoBtn.classList.toggle("is-off", !autoMode);
         stableFrames = 0;
+        flashHint(autoMode ? t("auto-on", "Auto: takes the photo when the page lies still") : t("auto-off", "Auto off: tap the shutter"));
+    }
+
+    function updateSens() {
+        var names = [t("sens-low", "Low"), t("sens-mid", "Medium"), t("sens-high", "High")];
+        ui.sensLabel.textContent = names[sensitivity];
+        ui.sensBtn.setAttribute("aria-label", t("sensitivity", "Sensitivity") + ": " + names[sensitivity]);
+    }
+
+    // Low = only a clear sheet counts; high = finds more, but may take a reflection for a page.
+    function cycleSensitivity() {
+        sensitivity = (sensitivity + 1) % 3;
+        try { localStorage.setItem(SENS_KEY, String(sensitivity)); } catch (e) { }
+        updateSens();
+        smoothQuad = null; stableFrames = 0; lastFound = null;
+        flashHint([t("sens-low-hint", "Low: only a clearly visible page"), t("sens-mid-hint", "Medium"),
+            t("sens-high-hint", "High: finds more, but may mistake reflections for the page")][sensitivity]);
+    }
+
+    var hintTimer = null, hintLocked = false;
+    function flashHint(text) {
+        ui.hint.textContent = text;
+        hintLocked = true;
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(function () { hintLocked = false; }, 2200);
     }
 
     // Maps a point of the video frame (0..1) to overlay pixels; the video is letterboxed (object-fit: contain).
@@ -248,7 +329,7 @@
     function detectLoop() {
         if (view !== "camera" || ui.video.readyState < 2 || !ui.video.videoWidth) { return; }
         var found = null;
-        try { found = core.detect(ui.video); } catch (e) { found = null; }
+        try { found = core.detect(ui.video, { sensitivity: sensitivity }); } catch (e) { found = null; }
 
         var cw = ui.overlay.clientWidth, ch = ui.overlay.clientHeight;
         if (ui.overlay.width !== cw * 2) { ui.overlay.width = cw * 2; ui.overlay.height = ch * 2; }
@@ -258,11 +339,10 @@
 
         if (!found) {
             smoothQuad = null; stableFrames = 0; lastFound = null;
-            ui.hint.textContent = t("hint", "Hold the camera over the page");
+            if (!hintLocked) { ui.hint.textContent = t("hint", "Hold the camera over the page"); }
             return;
         }
 
-        // light smoothing so the outline does not jitter
         if (smoothQuad) {
             var moved = 0;
             smoothQuad = smoothQuad.map(function (p, i) {
@@ -276,10 +356,10 @@
         }
         lastFound = smoothQuad;
 
-        var box = frameBox();
+        var box = frameBox(), steady = stableFrames > 2;
         g.lineWidth = 3;
-        g.strokeStyle = stableFrames > 2 ? "#3ddc84" : "#ffd54a";
-        g.fillStyle = stableFrames > 2 ? "rgba(61,220,132,0.18)" : "rgba(255,213,74,0.14)";
+        g.strokeStyle = steady ? "#3ddc84" : "#ffd54a";
+        g.fillStyle = steady ? "rgba(61,220,132,0.18)" : "rgba(255,213,74,0.14)";
         g.beginPath();
         smoothQuad.forEach(function (p, i) {
             var x = box.x + p[0] * box.w, y = box.y + p[1] * box.h;
@@ -287,7 +367,7 @@
         });
         g.closePath(); g.fill(); g.stroke();
 
-        ui.hint.textContent = stableFrames > 2 && autoMode ? t("hold", "Hold still …") : t("found", "Page found");
+        if (!hintLocked) { ui.hint.textContent = steady && autoMode ? t("hold", "Hold still …") : t("found", "Page found"); }
         if (autoMode && stableFrames >= 7) { stableFrames = 0; capture(true); }
     }
 
@@ -295,9 +375,8 @@
         if (ui.video.readyState < 2 || !ui.video.videoWidth) { return; }
         var c = core.makeCanvas(ui.video.videoWidth, ui.video.videoHeight);
         c.getContext("2d", { willReadFrequently: true }).drawImage(ui.video, 0, 0);
-        var quad = lastFound || defaultQuad();
         if (automatic && navigator.vibrate) { navigator.vibrate(30); }
-        addPage(limit(c), quad);
+        addPage(limit(c), lastFound || defaultQuad());
     }
 
     // ------------------------------------------------------------------ pages
@@ -315,53 +394,24 @@
     function addPage(sourceCanvas, quad) {
         pages.push({ src: sourceCanvas, quad: quad, turns: 0, filter: "enhanced", preview: null, thumb: null });
         current = pages.length - 1;
-        updatePagesBtn();
         stopCamera();
         showReview(current);
     }
 
-    function addFiles(fileList) {
-        var files = Array.prototype.slice.call(fileList || []).filter(function (f) { return /^image\//.test(f.type); });
-        if (!files.length) { return; }
-        busy(true);
-        var chain = Promise.resolve();
-        files.forEach(function (file) {
-            chain = chain.then(function () { return loadImage(file).then(function (canvas) {
-                var det = null;
-                try { det = core.detect(canvas); } catch (e) { det = null; }
-                pages.push({ src: canvas, quad: det ? det.quad : defaultQuad(), turns: 0, filter: "enhanced", preview: null, thumb: null });
-            }); });
-        });
-        chain.then(function () {
-            busy(false);
-            current = pages.length - 1;
-            updatePagesBtn();
-            showReview(current);
-        }).catch(function () { busy(false); });
-    }
-
-    function loadImage(file) {
-        return new Promise(function (resolve, reject) {
-            var url = URL.createObjectURL(file), img = new Image();
-            img.onload = function () {
-                var c = core.makeCanvas(img.naturalWidth, img.naturalHeight);
-                c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0);
-                URL.revokeObjectURL(url);
-                resolve(limit(c));
-            };
-            img.onerror = function () { URL.revokeObjectURL(url); reject(); };
-            img.src = url;
-        });
-    }
-
     function render(page, side) {
-        var warped = core.warp(page.src, page.quad, side);
-        var turned = core.rotate(warped, page.turns);
-        return core.filter(turned, page.filter);
+        return core.filter(core.rotate(core.warp(page.src, page.quad, side), page.turns), page.filter);
+    }
+
+    function thumbOf(page, side) {
+        if (!page.thumb || page.thumbSide !== side) {
+            page.thumb = render(page, side);
+            page.thumbSide = side;
+        }
+        return page.thumb;
     }
 
     function fit(canvas, stage, target) {
-        var sw = stage.clientWidth, sh = stage.clientHeight;
+        var sw = stage.clientWidth - 16, sh = stage.clientHeight - 16;
         var scale = Math.min(sw / canvas.width, sh / canvas.height);
         target.width = Math.max(1, Math.round(canvas.width * scale));
         target.height = Math.max(1, Math.round(canvas.height * scale));
@@ -375,6 +425,7 @@
         current = index;
         setView("review");
         var page = pages[index];
+        ui.revTitle.textContent = t("page-n", "Page {0}").replace("{0}", index + 1) + " / " + pages.length;
         busy(true);
         setTimeout(function () {
             page.preview = render(page, PREVIEW_SIDE);
@@ -395,7 +446,7 @@
     function markFilter() {
         var page = pages[current];
         ui.filterBar.querySelectorAll("[data-filter]").forEach(function (b) {
-            b.classList.toggle("is-active", page && b.getAttribute("data-filter") === page.filter);
+            b.classList.toggle("is-active", !!page && b.getAttribute("data-filter") === page.filter);
         });
     }
 
@@ -423,21 +474,16 @@
     function retake() {
         pages.splice(current, 1);
         current = -1;
-        updatePagesBtn();
         showCamera();
     }
 
-    function nextPage() { showCamera(); }
-
     // ------------------------------------------------------------------ adjust (corners)
-
-    var adjust = { scale: 1, handles: [] };
 
     function showAdjust(index) {
         current = index;
         setView("adjust");
         var page = pages[index];
-        adjust.scale = fit(page.src, ui.adjustStage, ui.adjustCanvas);
+        fit(page.src, ui.adjustStage, ui.adjustCanvas);
         var w = ui.adjustCanvas.width, h = ui.adjustCanvas.height;
         ui.adjustSvg.setAttribute("viewBox", "0 0 " + w + " " + h);
         ui.adjustSvg.setAttribute("width", w);
@@ -446,10 +492,9 @@
     }
 
     function drawAdjust() {
-        var page = pages[current], svg = ui.adjustSvg;
+        var page = pages[current], svg = ui.adjustSvg, ns = "http://www.w3.org/2000/svg";
         var w = ui.adjustCanvas.width, h = ui.adjustCanvas.height;
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
-        var ns = "http://www.w3.org/2000/svg";
         var poly = document.createElementNS(ns, "polygon");
         poly.setAttribute("points", page.quad.map(function (p) { return (p[0] * w) + "," + (p[1] * h); }).join(" "));
         poly.setAttribute("class", "scn__poly");
@@ -472,10 +517,10 @@
             var x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
             var y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
             page.quad[index] = [x, y];
-            var poly = svg.querySelector("polygon"), circles = svg.querySelectorAll("circle");
             var w = ui.adjustCanvas.width, h = ui.adjustCanvas.height;
-            poly.setAttribute("points", page.quad.map(function (p) { return (p[0] * w) + "," + (p[1] * h); }).join(" "));
-            circles[index].setAttribute("cx", x * w); circles[index].setAttribute("cy", y * h);
+            svg.querySelector("polygon").setAttribute("points", page.quad.map(function (p) { return (p[0] * w) + "," + (p[1] * h); }).join(" "));
+            var c = svg.querySelectorAll("circle")[index];
+            c.setAttribute("cx", x * w); c.setAttribute("cy", y * h);
         }
         function up() {
             svg.removeEventListener("pointermove", move);
@@ -489,44 +534,39 @@
 
     function redetect() {
         var page = pages[current], det = null;
-        try { det = core.detect(page.src); } catch (e) { det = null; }
+        try { det = core.detect(page.src, { sensitivity: sensitivity }); } catch (e) { det = null; }
         page.quad = det ? det.quad : defaultQuad();
         drawAdjust();
     }
 
-    // Turns the photo itself (when the page was shot sideways); the corners turn with it.
+    // Turns the photo itself (page shot sideways); the corners turn with it.
     function turnSource(delta) {
         var page = pages[current];
-        var rotated = core.rotate(page.src, delta);
+        page.src = core.rotate(page.src, delta);
         page.quad = page.quad.map(function (p) { return delta > 0 ? [1 - p[1], p[0]] : [p[1], 1 - p[0]]; });
-        page.src = rotated;
         showAdjust(current);
     }
 
-    function applyAdjust() { showReview(current); }
-
-    // ------------------------------------------------------------------ pages overview
+    // ------------------------------------------------------------------ overview
 
     function showPages() {
         stopCamera();
+        if (!pages.length) { showCamera(); return; }
         setView("pages");
         ui.grid.innerHTML = "";
         pages.forEach(function (page, i) {
             var cell = el("div", "scn__cell");
-            var thumb = core.makeCanvas(1, 1);
-            if (!page.thumb) { page.thumb = core.filter(core.rotate(core.warp(page.src, page.quad, 360), page.turns), page.filter); }
-            thumb = page.thumb;
+            var th = thumbOf(page, 360);
             var img = el("canvas", "scn__thumb");
-            img.width = thumb.width; img.height = thumb.height;
-            img.getContext("2d").drawImage(thumb, 0, 0);
+            img.width = th.width; img.height = th.height;
+            img.getContext("2d").drawImage(th, 0, 0);
             img.addEventListener("click", function () { showReview(i); });
             var tools = el("div", "scn__cell-tools");
-            tools.append(
-                button("scn__mini", "◀", function () { moveBy(i, -1); }),
-                button("scn__mini", "✕", function () { pages.splice(i, 1); updatePagesBtn(); pages.length ? showPages() : showCamera(); }),
-                button("scn__mini", "▶", function () { moveBy(i, 1); }));
-            tools.children[0].disabled = i === 0;
-            tools.children[2].disabled = i === pages.length - 1;
+            var left = btn("scn__mini", "left", "", function () { moveBy(i, -1); }, t("move-left", "Move left"));
+            var del = btn("scn__mini", "trash", "", function () { pages.splice(i, 1); if (pages.length) { showPages(); } else { showCamera(); } }, t("delete", "Delete"));
+            var right = btn("scn__mini", "right", "", function () { moveBy(i, 1); }, t("move-right", "Move right"));
+            left.disabled = i === 0; right.disabled = i === pages.length - 1;
+            tools.append(left, del, right);
             cell.append(img, el("span", "scn__num", String(i + 1)), tools);
             ui.grid.appendChild(cell);
         });
@@ -549,7 +589,7 @@
 
     function finish() {
         stopCamera();
-        if (!pages.length) { closeScanner(); return; }
+        if (!pages.length) { hide(); if (onDone) { onDone([], []); } return; }
         busy(true);
         var files = [], chain = Promise.resolve();
         pages.forEach(function (page, i) {
@@ -562,52 +602,18 @@
             });
         });
         chain.then(function () {
-            var dt = new DataTransfer();
-            files.forEach(function (f) { dt.items.add(f); });
-            var input = document.getElementById("Images");
-            input.files = dt.files;
-            document.getElementById("Prepared").value = "1";
             busy(false);
-            closeScanner();
+            hide();
+            if (onDone) { onDone(files, pages.map(function (p) { return thumbOf(p, 240); })); }
         });
     }
 
-    // The form shows how many pages are ready.
-    function summarize() {
-        var box = document.getElementById("scanner-summary");
-        if (!box) { return; }
-        var input = document.getElementById("Images");
-        var ready = pages.length && input && input.files && input.files.length === pages.length;
-        box.hidden = !pages.length;
-        box.querySelector("[data-count]").textContent = pages.length ? t("pages-ready", "{0} page(s) ready").replace("{0}", pages.length) : "";
-        var strip = box.querySelector("[data-strip]");
-        strip.innerHTML = "";
-        pages.forEach(function (page) {
-            if (!page.thumb) { page.thumb = core.filter(core.rotate(core.warp(page.src, page.quad, 240), page.turns), page.filter); }
-            var c = el("canvas", "scn-summary__thumb");
-            c.width = page.thumb.width; c.height = page.thumb.height;
-            c.getContext("2d").drawImage(page.thumb, 0, 0);
-            strip.appendChild(c);
-        });
-        var submit = document.getElementById("scan-submit");
-        if (submit) { submit.disabled = !ready && pages.length > 0; }
-    }
+    function reset() { pages = []; current = -1; }
 
-    // ------------------------------------------------------------------ wire up
-
-    launch.addEventListener("click", function () { openScanner(); });
-    var galleryLaunch = document.getElementById("scanner-gallery");
-    var galleryInput = document.getElementById("scanner-gallery-input");
-    if (galleryLaunch && galleryInput) {
-        galleryLaunch.addEventListener("click", function () { galleryInput.click(); });
-        galleryInput.addEventListener("change", function () { openScanner(galleryInput.files); galleryInput.value = ""; });
-    }
-    var reopen = document.getElementById("scanner-reopen");
-    if (reopen) { reopen.addEventListener("click", function () { openScanner(); showPages(); }); }
-
-    // The scanner replaces the plain photo field; without it the field stays as the fallback.
-    document.getElementById("scan-fallback").hidden = true;
-    launch.closest(".scn-launch").hidden = false;
-
-    window.MatPaperScanner = { open: openScanner };
+    window.MatPaperScanner = {
+        open: open,
+        openPages: function (options) { open({ onDone: options && options.onDone, pages: true }); },
+        reset: reset,
+        count: function () { return pages.length; }
+    };
 })();

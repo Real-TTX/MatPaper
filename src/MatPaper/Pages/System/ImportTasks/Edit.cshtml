@@ -247,6 +247,11 @@
             </div>
 
             <mp-field asp-for="Input.AttachmentExtensions" label='@L["Attachment extensions"]' />
+            <div class="preset-chips" role="group" aria-label='@L["Presets"]'>
+                <button type="button" class="preset-chip" data-ext-preset=".pdf">@L["PDF only"]</button>
+                <button type="button" class="preset-chip" data-ext-preset=".xml">@L["XML only (e-invoice)"]</button>
+                <button type="button" class="preset-chip" data-ext-preset=".pdf,.xml,.png,.jpg,.jpeg,.tif,.tiff">@L["All documents"]</button>
+            </div>
             <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label='@L["Also import the mail body as a PDF"]' />
 
             <div data-show-when-field="Input.Type" data-show-when-value="0">

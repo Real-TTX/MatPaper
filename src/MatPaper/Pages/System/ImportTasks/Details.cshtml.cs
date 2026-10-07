@@ -69,7 +69,7 @@ public class DetailsModel : PageModel
             $"/System/ImportTasks/Edit?id={Id}&handler=Run",
             _l["Run now"].Value,
             memory,
-            hasState ? $"/System/ImportTasks/Edit?id={Id}&handler=ResetSync" : null,
+            $"/System/ImportTasks/Edit?id={Id}&handler=ResetSync",
             await TaskRunsPanel.LoadRunsAsync(_db, TaskRunKind.Import, Id));
         LastRun = Runs.Runs.FirstOrDefault();
 

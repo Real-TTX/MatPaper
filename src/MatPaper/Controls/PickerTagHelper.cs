@@ -115,6 +115,7 @@ public sealed class PickerTagHelper : TagHelper
         // The dialog is built in picker.js, so its labels travel as data attributes.
         widget.Append($" data-search-label=\"{enc.Encode(_l["Search…"].Value)}\"");
         widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\"");
+        widget.Append($" data-close-label=\"{enc.Encode(_l["Close"].Value)}\"");
         widget.Append($" data-remove-label=\"{enc.Encode(_l["Remove"].Value)}\">");
 
         widget.Append($"<script type=\"application/json\" class=\"mp-picker__data\">{optionsJson}</script>");

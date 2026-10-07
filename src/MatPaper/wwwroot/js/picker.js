@@ -52,6 +52,15 @@
         search.setAttribute("autocomplete", "off");
         header.appendChild(search);
 
+        // A way out that does not depend on a keyboard: full-screen on a phone there is no backdrop to tap.
+        var closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = "icon-btn mp-picker-dialog__close";
+        closeBtn.setAttribute("aria-label", (labelSource && labelSource.getAttribute("data-close-label")) || "Close");
+        closeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        closeBtn.addEventListener("click", function () { dialog._mp.active = null; dialog.close(); });
+        header.appendChild(closeBtn);
+
         var list = document.createElement("ul");
         list.className = "mp-picker-dialog__list";
 

@@ -106,8 +106,8 @@ public class EditModel : PageModel
         public string? SubjectFilter { get; set; }
         public string? SenderRegex { get; set; }
         public string? SubjectRegex { get; set; }
-        public string MailFilterWhere { get; set; } = "auto";
-        public string AttachmentExtensions { get; set; } = DefaultAttachmentExtensions;
+        public string MailFilterWhere { get; set; } = "server";
+        public string AttachmentExtensions { get; set; } = ".pdf";
         public bool ImportBodyAsPdf { get; set; }
         public bool MailMarkSeen { get; set; } = true;
         public bool MailMarkFlagged { get; set; }

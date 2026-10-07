@@ -26,6 +26,7 @@
             var withError = panels.filter(function (p) { return p.querySelector(".field-error:not(:empty), .input-validation-error, .field-validation-error"); })[0];
             var valid = tabs.some(function (t) { return t.getAttribute("data-tab") === wanted; });
             show(withError ? withError.getAttribute("data-tab-panel") : valid ? wanted : tabs[0].getAttribute("data-tab"));
+            root.classList.remove("is-booting");
         });
     });
 })();

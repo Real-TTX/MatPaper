@@ -1672,3 +1672,17 @@ html.has-scanner { overflow: hidden; }
 .suggest-chip { border: 1px solid var(--color-primary); background: transparent; color: var(--color-primary); border-radius: 999px; padding: 0.25rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
 .suggest-chip:hover { background: var(--color-primary); color: #fff; }
 .suggest-chip:disabled { opacity: 0.5; cursor: default; }
+
+/* Nothing flashes before the page script has arranged the steps; without script the page shows everything. */
+.wizard.is-booting, [data-tabs].is-booting { visibility: hidden; }
+
+/* The group page uses the same numbered steps as the rule wizard. */
+.tabs__bar { gap: 4px; border-bottom: 0; margin: 0 0 1.25rem; }
+.tabs__tab {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 5px; margin-bottom: 0;
+    border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface);
+    color: var(--color-text-muted); font-size: 12.5px; white-space: nowrap;
+}
+.tabs__tab.is-active { border-color: var(--color-primary); border-bottom-color: var(--color-primary); color: var(--color-text); font-weight: 600; }
+.tabs__tab .wizard__num { width: 20px; height: 20px; font-size: 11px; }
+.tabs__tab.is-active .wizard__num { background: var(--color-primary); color: #fff; }

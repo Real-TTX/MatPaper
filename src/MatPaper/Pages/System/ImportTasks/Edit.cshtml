@@ -8,7 +8,7 @@
 @* The wizard walks through type → connection → credentials → source → rules →
    preview → filing. Steps that do not apply to the chosen type hide themselves
    (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
-<form class="form form--wide wizard" id="import-wizard" method="post" data-mode="@(Model.IsEdit ? "sections" : "wizard")"
+<form class="form form--wide wizard is-booting" id="import-wizard" method="post" data-mode="wizard"
       data-group-sources='@Html.Raw(global::System.Text.Json.JsonSerializer.Serialize(Model.GroupSources))'
       data-browse-url="/System/ImportTasks/Edit?handler=Browse"
       data-preview-url="/System/ImportTasks/Edit?handler=Preview"
@@ -41,7 +41,7 @@
     </ol>
 
     @* ---------- 0 Assignment: on its own or in a group ---------- *@
-    <section class="wizard__panel" data-step="0">
+    <section class="wizard__panel" data-step="0" hidden="@(Model.ActiveStep != 0)">
         @{ var inGroup = Model.Input.GroupId is not null; var hasGroups = Model.GroupOptions.Any(o => o.Value != string.Empty); }
         <h2 class="wizard__title">@L["Where does the rule belong?"]</h2>
         <div class="type-tiles type-tiles--two" id="scope-tiles">
@@ -65,7 +65,7 @@
     </section>
 
     @* ---------- 1 Type ---------- *@
-    <section class="wizard__panel" data-step="1">
+    <section class="wizard__panel" data-step="1" hidden="@(Model.ActiveStep != 1)">
         <div id="type-pick">
         <h2 class="wizard__title">@L["What should be imported?"]</h2>
 
@@ -111,7 +111,7 @@
     </section>
 
     @* ---------- 2 Connection ---------- *@
-    <section class="wizard__panel" data-step="2" data-for-type="0,1,3" data-hide-with-source>
+    <section class="wizard__panel" data-step="2" data-for-type="0,1,3" data-hide-with-source hidden="@(Model.ActiveStep != 2)">
         <h2 class="wizard__title">@L["Where does it connect to?"]</h2>
 
         <div data-show-when-field="Input.Type" data-show-when-value="3">
@@ -134,7 +134,7 @@
     </section>
 
     @* ---------- 3 Credentials ---------- *@
-    <section class="wizard__panel" data-step="3" data-for-type="0,1,3" data-hide-with-source>
+    <section class="wizard__panel" data-step="3" data-for-type="0,1,3" data-hide-with-source hidden="@(Model.ActiveStep != 3)">
         <h2 class="wizard__title">@L["How does it sign in?"]</h2>
 
         @* SMB: manual sign-in only when no saved connection is chosen. *@
@@ -162,7 +162,7 @@
     </section>
 
     @* ---------- 4 Source ---------- *@
-    <section class="wizard__panel" data-step="4" data-hide-with-source>
+    <section class="wizard__panel" data-step="4" data-hide-with-source hidden="@(Model.ActiveStep != 4)">
         <h2 class="wizard__title">@L["Which folder should be watched?"]</h2>
 
         @* Filesystem *@
@@ -220,7 +220,7 @@
     </section>
 
     @* ---------- 5 Rules ---------- *@
-    <section class="wizard__panel" data-step="5">
+    <section class="wizard__panel" data-step="5" hidden="@(Model.ActiveStep != 5)">
         <h2 class="wizard__title">@L["What should be picked up?"]</h2>
 
         @* Files *@
@@ -312,7 +312,7 @@
     </section>
 
     @* ---------- 6 Preview ---------- *@
-    <section class="wizard__panel" data-step="6">
+    <section class="wizard__panel" data-step="6" hidden="@(Model.ActiveStep != 6)">
         <h2 class="wizard__title">@L["What would be imported right now?"]</h2>
         <p class="form-help">@L["A dry run: nothing is imported, moved, deleted or marked as read."]</p>
 
@@ -331,7 +331,7 @@
     </section>
 
     @* ---------- 7 Filing ---------- *@
-    <section class="wizard__panel" data-step="7">
+    <section class="wizard__panel" data-step="7" hidden="@(Model.ActiveStep != 7)">
         <h2 class="wizard__title">@L["Where do the documents go?"]</h2>
 
         <p class="form-help" id="group-target-note" @(inGroup ? "" : "hidden")>@L["The target of this rule is set by its group."]</p>
@@ -376,6 +376,8 @@
         }
     </div>
 </form>
+
+<noscript><style>.wizard.is-booting { visibility: visible; } .wizard__panel { display: block !important; }</style></noscript>
 
 @* Source picker, filled from the Browse handler. *@
 <partial name="_BrowseDialog" />

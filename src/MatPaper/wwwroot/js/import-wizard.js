@@ -202,6 +202,7 @@
         syncPostAction();
         render();
         if (sectionsMode) { wireSections(); }
+        form.classList.remove("is-booting");
 
         // The source picker dialog lives in browse-dialog.js (shared with the storage-location
         // editor); the preview below reuses its request helper.

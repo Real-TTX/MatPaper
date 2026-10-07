@@ -5,14 +5,14 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Group"].Value : L["System / Import tasks / New group"].Value;
 }
 
-<div data-tabs>
+<div data-tabs class="is-booting">
 <div class="tabs__bar" role="tablist">
-    <button type="button" class="tabs__tab" data-tab="general" role="tab">@L["General"]</button>
-    <button type="button" class="tabs__tab" data-tab="source" role="tab">@L["Source"]</button>
-    <button type="button" class="tabs__tab" data-tab="target" role="tab">@L["Target"]</button>
+    <button type="button" class="tabs__tab" data-tab="general" role="tab"><span class="wizard__num">1</span>@L["General"]</button>
+    <button type="button" class="tabs__tab" data-tab="source" role="tab"><span class="wizard__num">2</span>@L["Source"]</button>
+    <button type="button" class="tabs__tab" data-tab="target" role="tab"><span class="wizard__num">3</span>@L["Target"]</button>
     @if (Model.IsEdit)
     {
-        <button type="button" class="tabs__tab" data-tab="rules" role="tab">@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></button>
+        <button type="button" class="tabs__tab" data-tab="rules" role="tab"><span class="wizard__num">4</span>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></button>
     }
 </div>
 
@@ -27,7 +27,7 @@
         <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
-    <section class="form-section tabs__panel" data-tab-panel="source">
+    <section class="form-section tabs__panel" data-tab-panel="source" hidden>
         <h2 class="form-section__title">@L["Source of all rules"]</h2>
         <p class="form-help">@L["One connection and one folder for the whole group: the rules only say what to pick up. A mailbox is opened once per run for all rules."]</p>
         <mp-field asp-for="Input.SourceType" kind="select" label='@L["Type"]' asp-items="Model.SourceTypeOptions" />
@@ -49,7 +49,7 @@
         </div>
     </section>
 
-    <section class="form-section tabs__panel" data-tab-panel="target">
+    <section class="form-section tabs__panel" data-tab-panel="target" hidden>
         <h2 class="form-section__title">@L["Target of all rules"]</h2>
         <p class="form-help">@L["What a rule leaves empty it takes from here. Switches and tags are added to the rule's own."]</p>
         <mp-picker asp-for="Input.StorageLocationId" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" placeholder='@L["— default —"]' />
@@ -74,7 +74,7 @@
 
 @if (Model.IsEdit)
 {
-    <section class="task-card task-card--wide tabs__panel" data-tab-panel="rules">
+    <section class="task-card task-card--wide tabs__panel" data-tab-panel="rules" hidden>
         <h3>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></h3>
         <p class="form-help">@L["They run from top to bottom. What a rule above takes, the ones below leave alone."]</p>
 

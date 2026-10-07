@@ -57,7 +57,7 @@
                 <span class="type-tile__hint">@(hasGroups ? L["Schedule, order and target come from the group."].Value : L["Create a group first."].Value)</span>
             </label>
         </div>
-        <div id="group-pick" @(inGroup ? "" : "hidden")>
+        <div id="group-pick" @(inGroup ? "" : "hidden") data-group-types='@Html.Raw(global::System.Text.Json.JsonSerializer.Serialize(Model.GroupTypes))'>
             <mp-field asp-for="Input.GroupId" kind="select" label='@L["Which group?"]' asp-items="Model.GroupOptions" />
         </div>
 
@@ -65,6 +65,7 @@
 
     @* ---------- 1 Type ---------- *@
     <section class="wizard__panel" data-step="1">
+        <div id="type-pick">
         <h2 class="wizard__title">@L["What should be imported?"]</h2>
 
         <div class="type-tiles">
@@ -102,6 +103,8 @@
                 <span class="type-tile__hint">@L["Simple mailbox without folders."]</span>
             </label>
         </div>
+        </div>
+        <p class="form-help" id="type-fixed-note" hidden>@L["The group already decides what is imported here."]</p>
 
         <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Scanner watch folder"]' />
     </section>
@@ -391,6 +394,20 @@
             var note = document.getElementById("group-target-note");
             var select = document.querySelector('[name="Input.GroupId"]');
             if (!tiles || !pick || !select) { return; }
+            // A group that already has a rule decides the kind of source: the type tiles are not offered then.
+            var typeMap = {};
+            try { typeMap = JSON.parse(pick.getAttribute("data-group-types") || "{}"); } catch (e) { }
+            function syncType() {
+                var fixed = select.value && typeMap[select.value] !== undefined ? String(typeMap[select.value]) : null;
+                var tilesBox = document.getElementById("type-pick");
+                var typeNote = document.getElementById("type-fixed-note");
+                if (tilesBox) { tilesBox.hidden = fixed !== null; }
+                if (typeNote) { typeNote.hidden = fixed === null; }
+                if (fixed !== null) {
+                    var radio = document.querySelector('input[name="Input.Type"][value="' + fixed + '"]');
+                    if (radio && !radio.checked) { radio.checked = true; radio.dispatchEvent(new Event("change", { bubbles: true })); }
+                }
+            }
             function apply(scope) {
                 var group = scope === "group";
                 pick.hidden = !group;
@@ -398,9 +415,11 @@
                 else if (!select.value && select.options.length > 1) { select.selectedIndex = 1; }
                 select.dispatchEvent(new Event("change", { bubbles: true }));
                 if (note) { note.hidden = !group; }
+                syncType();
             }
             tiles.addEventListener("change", function (e) { if (e.target.name === "rule-scope") { apply(e.target.value); } });
-            select.addEventListener("change", function () { if (note) { note.hidden = !select.value; } });
+            select.addEventListener("change", function () { if (note) { note.hidden = !select.value; } syncType(); });
+            syncType();
         })();
     </script>
     <script src="~/js/browse-dialog.js" asp-append-version="true"></script>

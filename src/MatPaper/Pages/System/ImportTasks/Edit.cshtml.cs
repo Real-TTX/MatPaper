@@ -74,6 +74,9 @@ public class EditModel : PageModel
     public List<SelectListItem> UserOptions { get; private set; } = new();
     public List<SelectListItem> GroupOptions { get; private set; } = new();
 
+    /// <summary>Group id → source type of its rules (the first one's), for groups that already have a rule other than this one.</summary>
+    public Dictionary<long, int> GroupTypes { get; private set; } = new();
+
     /// <summary>A new rule opened from a group starts in that group.</summary>
     [BindProperty(SupportsGet = true, Name = "group")]
     public long? PresetGroup { get; set; }
@@ -242,6 +245,19 @@ public class EditModel : PageModel
         entity.CronExpression = string.IsNullOrWhiteSpace(Input.CronExpression) ? null : Input.CronExpression.Trim();
 
         var groupId = Input.GroupId is long gid && await _db.ImportGroups.AnyAsync(g => g.Id == gid && g.UpdateState != UpdateState.Deleted) ? Input.GroupId : null;
+        if (groupId is long typedGroup)
+        {
+            // A group has one kind of source: what its first rule is, the others are too.
+            var groupType = await _db.ImportTasks
+                .Where(t => t.GroupId == typedGroup && t.Id != entity.Id && t.UpdateState != UpdateState.Deleted)
+                .OrderBy(t => t.Priority).ThenBy(t => t.Id)
+                .Select(t => (ImportTaskType?)t.Type).FirstOrDefaultAsync();
+            if (groupType is ImportTaskType fixedType)
+            {
+                Input.Type = (int)fixedType;
+                entity.Type = fixedType;
+            }
+        }
         if (groupId != entity.GroupId)
         {
             // joining a group puts the rule at the end of its order
@@ -848,6 +864,11 @@ public class EditModel : PageModel
         SmbConnectionOptions = BuildOptions(
             connections.Where(c => c.Kind == ConnectionKind.Smb).Select(c => (c.Id, c.Name)),
             Input.SmbConnectionId, "— Enter manually —");
+        GroupTypes = (await _db.ImportTasks.AsNoTracking()
+                .Where(t => t.GroupId != null && t.Id != Id && t.UpdateState != UpdateState.Deleted)
+                .OrderBy(t => t.Priority).ThenBy(t => t.Id)
+                .Select(t => new { GroupId = t.GroupId!.Value, t.Type }).ToListAsync())
+            .GroupBy(t => t.GroupId).ToDictionary(g => g.Key, g => (int)g.First().Type);
         GroupOptions = BuildOptions(
             (await _db.ImportGroups.AsNoTracking().Where(g => g.UpdateState != UpdateState.Deleted).OrderBy(g => g.Name)
                 .Select(g => new { g.Id, g.Name }).ToListAsync()).Select(g => (g.Id, g.Name)),

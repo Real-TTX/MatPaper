@@ -1652,3 +1652,9 @@ html.has-scanner { overflow: hidden; }
 
 /* Rule wizard, tabs and group page use the whole width. */
 .form.wizard, .form.wizard[data-mode] { max-width: none; }
+
+/* The step bar of the new-rule wizard stays on one line (compact chips, scrolls sideways if the window is very narrow). */
+.wizard:not([data-mode="sections"]) > .wizard__steps { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 4px; }
+.wizard:not([data-mode="sections"]) > .wizard__steps::-webkit-scrollbar { display: none; }
+.wizard:not([data-mode="sections"]) .wizard__step { flex: none; gap: 5px; padding: 5px 10px 5px 5px; white-space: nowrap; font-size: 12.5px; }
+.wizard:not([data-mode="sections"]) .wizard__num { width: 20px; height: 20px; font-size: 11px; }

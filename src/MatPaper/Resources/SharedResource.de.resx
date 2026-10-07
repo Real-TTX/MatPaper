@@ -961,4 +961,5 @@
   <data name="Pick the location the copies go to." xml:space="preserve"><value>Wähle den Speicherort, in den kopiert wird.</value></data>
   <data name="A rule needs a target location." xml:space="preserve"><value>Die Regel braucht einen Zielort.</value></data>
   <data name="Choose a different target: the copies would land in the location the documents come from." xml:space="preserve"><value>Wähle einen anderen Zielort: sonst landen die Kopien im Speicherort der Dokumente.</value></data>
+  <data name="The group already decides what is imported here." xml:space="preserve"><value>Die Gruppe legt bereits fest, was hier importiert wird (Ordner, Netzwerkfreigabe oder Postfach).</value></data>
 </root>

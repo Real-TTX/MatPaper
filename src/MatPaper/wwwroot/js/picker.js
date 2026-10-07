@@ -366,6 +366,25 @@
         }
     }
 
+    // Sets a single picker from code (the "suggest" button): learns the option, shows it, tells the page.
+    window.MpPicker = {
+        select: function (widget, opt) {
+            var data = widget.querySelector(".mp-picker__data");
+            if (data) {
+                var list = [];
+                try { list = JSON.parse(data.textContent) || []; } catch (e) { list = []; }
+                if (!list.some(function (o) { return o.v === opt.v; })) { list.push(opt); data.textContent = JSON.stringify(list); }
+            }
+            var hidden = widget.querySelector(".mp-picker__value");
+            var trigger = widget.querySelector(".mp-picker__trigger");
+            var labelEl = trigger ? trigger.querySelector(".mp-picker__label") : null;
+            if (hidden) { hidden.value = opt.v; }
+            if (labelEl) { labelEl.textContent = opt.t; }
+            if (trigger) { trigger.removeAttribute("data-placeholder-shown"); }
+            notifyChanged(widget);
+        }
+    };
+
     function commitSingle(dialog, opt) {
         var active = dialog._mp.active;
         if (!active) {
@@ -450,4 +469,62 @@
         chip.appendChild(remove);
         return chip;
     }
+
+    // "Vorschlag erstellen": proposes correspondent names from the document's text; a click takes one
+    // (an existing entry is selected, a new name is created first).
+    document.addEventListener("click", function (ev) {
+        var btn = ev.target.closest ? ev.target.closest("[data-suggest-correspondent]") : null;
+        if (!btn) { return; }
+        ev.preventDefault();
+        var box = btn.parentNode.querySelector(".suggest-box");
+        var scope = btn.closest("[data-doc-id], form, body");
+        var widget = (scope || document).querySelector('.mp-picker[data-create="correspondent"]');
+        if (!box || !widget) { return; }
+        btn.disabled = true;
+        fetch("/QuickCreate?handler=Suggest&documentId=" + encodeURIComponent(btn.getAttribute("data-suggest-correspondent")), { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                btn.disabled = false;
+                box.innerHTML = "";
+                box.hidden = false;
+                var items = (result && result.items) || [];
+                if (items.length === 0) {
+                    var none = document.createElement("span");
+                    none.className = "form-help";
+                    none.textContent = btn.getAttribute("data-none") || "No suggestion found.";
+                    box.appendChild(none);
+                    return;
+                }
+                items.forEach(function (item) {
+                    var chip = document.createElement("button");
+                    chip.type = "button";
+                    chip.className = "suggest-chip";
+                    chip.textContent = (item.id ? "" : "+ ") + (item.existing || item.name);
+                    chip.addEventListener("click", function () {
+                        if (item.id) {
+                            window.MpPicker.select(widget, { v: String(item.id), t: item.existing || item.name });
+                            box.hidden = true;
+                            return;
+                        }
+                        var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+                        var body = new FormData();
+                        body.append("__RequestVerificationToken", tokenEl ? tokenEl.value : "");
+                        body.append("kind", "correspondent");
+                        body.append("name", item.name);
+                        chip.disabled = true;
+                        fetch("/QuickCreate", { method: "POST", body: body, credentials: "same-origin" })
+                            .then(function (r) { return r.json(); })
+                            .then(function (created) {
+                                if (created && created.ok) {
+                                    window.MpPicker.select(widget, { v: String(created.id), t: created.name });
+                                    box.hidden = true;
+                                } else { chip.disabled = false; }
+                            })
+                            .catch(function () { chip.disabled = false; });
+                    });
+                    box.appendChild(chip);
+                });
+            })
+            .catch(function () { btn.disabled = false; });
+    });
 })();

@@ -187,6 +187,8 @@ public sealed class ImportRunner
                     _logger.LogWarning(ex, "Failed to import SMB file '{File}'.", file);
                     log.AppendLine($"Error ({fileName}): {ex.Message}");
                 }
+
+                if (LimitReached(count, settings.MaxPerRun, log)) { break; }
             }
 
             state.Seen = keep.ToList();
@@ -413,6 +415,8 @@ public sealed class ImportRunner
                 _logger.LogWarning(ex, "Failed to import file '{File}'.", file);
                 log.AppendLine($"Error ({fileName}): {ex.Message}");
             }
+
+            if (LimitReached(count, settings.MaxPerRun, log)) { break; }
         }
 
         state.Seen = keep.ToList();
@@ -549,6 +553,14 @@ public sealed class ImportRunner
         }
 
         return new SharedImapSession(client);
+    }
+
+    /// <summary>True (and says so in the log) once a run has imported as many documents as the rule allows.</summary>
+    private static bool LimitReached(int count, int max, StringBuilder log)
+    {
+        if (max <= 0 || count < max) { return false; }
+        log.AppendLine($"Limit reached: {count} document(s) imported (at most {max} per run). The next run continues from here.");
+        return true;
     }
 
     private async Task<RunReport> RunMailAsync(ImportTask task, bool isPop3, long? ownerId, CancellationToken ct)
@@ -716,6 +728,7 @@ public sealed class ImportRunner
                     }
 
                     lastDone = Math.Max(lastDone, uid.Id);
+                    if (LimitReached(count, settings.MaxPerRun, log)) { break; }
                 }
             }
             finally
@@ -827,6 +840,7 @@ public sealed class ImportRunner
                     }
 
                     if (id is not null) { handled.Add(id); }
+                    if (LimitReached(count, settings.MaxPerRun, log)) { break; }
                 }
             }
             finally

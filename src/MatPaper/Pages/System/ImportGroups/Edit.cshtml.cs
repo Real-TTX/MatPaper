@@ -235,6 +235,20 @@ public class EditModel : PageModel
         return RedirectToPage("Details", new { id = Id });
     }
 
+    public async Task<IActionResult> OnPostResetSyncAsync()
+    {
+        var ids = await _db.ImportTasks.Where(t => t.GroupId == Id && t.UpdateState != UpdateState.Deleted).Select(t => t.Id).ToListAsync();
+        if (ids.Any(id => _tasks.IsBusy(TaskRunKind.Import, id)) || _tasks.IsBusy(TaskRunKind.ImportGroup, Id))
+        {
+            this.Notify(_l["The group is running right now. Start over when it has finished."].Value, NoticeKind.Warn);
+            return RedirectToPage("Details", new { id = Id });
+        }
+
+        foreach (var id in ids) { await ImportSync.ResetAsync(_db, id); }
+        this.Notify(_l["Started over: the position is forgotten and deleted documents of this rule can be imported again."].Value);
+        return RedirectToPage("Details", new { id = Id });
+    }
+
     /// <summary>Moves a rule one place up or down; the order is renumbered so it stays gap-free.</summary>
     public async Task<IActionResult> OnPostMoveAsync(long ruleId, int delta)
     {

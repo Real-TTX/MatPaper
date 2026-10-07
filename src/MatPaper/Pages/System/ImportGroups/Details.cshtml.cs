@@ -77,7 +77,7 @@ public class DetailsModel : PageModel
             TaskRunKind.ImportGroup, Id,
             $"/System/ImportGroups/Edit?id={Id}&handler=Run",
             _l["Run group now"].Value,
-            null, null,
+            null, $"/System/ImportGroups/Edit?id={Id}&handler=ResetSync",
             await TaskRunsPanel.LoadRunsAsync(_db, TaskRunKind.ImportGroup, Id));
         LastRun = Runs.Runs.FirstOrDefault();
 

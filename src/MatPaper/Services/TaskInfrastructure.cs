@@ -43,6 +43,9 @@ public class FilesystemImportSettings
     public string LookbackMode { get; set; } = "all";
     public int LookbackDays { get; set; } = 30;
     public DateTime? LookbackDate { get; set; }
+
+    /// <summary>Import at most this many documents per run (0 = no limit). The next run continues where this one stopped - handy for testing.</summary>
+    public int MaxPerRun { get; set; }
 }
 
 /// <summary>
@@ -107,6 +110,9 @@ public class MailImportSettings
     public string LookbackMode { get; set; } = "all";
     public int LookbackDays { get; set; } = 30;
     public DateTime? LookbackDate { get; set; }
+
+    /// <summary>Import at most this many documents per run (0 = no limit). The next run continues where this one stopped - handy for testing.</summary>
+    public int MaxPerRun { get; set; }
 }
 
 /// <summary>
@@ -156,6 +162,9 @@ public class SmbImportSettings
     public string LookbackMode { get; set; } = "all";
     public int LookbackDays { get; set; } = 30;
     public DateTime? LookbackDate { get; set; }
+
+    /// <summary>Import at most this many documents per run (0 = no limit). The next run continues where this one stopped - handy for testing.</summary>
+    public int MaxPerRun { get; set; }
 }
 
 /// <summary>

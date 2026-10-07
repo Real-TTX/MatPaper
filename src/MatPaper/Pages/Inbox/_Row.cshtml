@@ -51,8 +51,15 @@
             <partial name="_RowPath" model="Model" />
 
             <div class="inbox-grid">
-                <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="m.CorrespondentOptions"
-                           value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
+                <div class="suggest-field">
+                    <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="m.CorrespondentOptions"
+                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
+                    @if (row.CorrespondentId is null)
+                    {
+                        <button type="button" class="btn btn--secondary suggest-btn" data-suggest-correspondent="@row.Id" data-none='@L["No suggestion found."]'>@L["Suggest"]</button>
+                        <div class="suggest-box" hidden></div>
+                    }
+                </div>
                 <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="m.DocumentTypeOptions"
                            value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
                 <div class="form-row">

@@ -73,6 +73,20 @@ public static class ImportSync
     }
 
     /// <summary>
+    /// "Start over", completely: forgets the position AND frees what this rule imported and the user deleted since.
+    /// A deleted document otherwise stays a tombstone (so a mailbox that keeps its mail does not bring back what
+    /// was thrown away); after a reset the user asked for exactly that, so the tombstones of this rule go.
+    /// </summary>
+    public static async Task ResetAsync(AppDbContext db, long taskId)
+    {
+        await SaveAsync(db, taskId, null).ConfigureAwait(false);
+        await db.Documents
+            .Where(d => d.ImportTaskId == taskId && d.UpdateState == UpdateState.Deleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(d => d.ContentHash, (string?)null))
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// What decides WHICH items a task picks up. When it changes (another folder, other filters, a
     /// different period) the remembered position no longer fits and the task starts over. Settings
     /// that only say what to do with an item (post-action, owner, tags …) are deliberately left out.

@@ -970,4 +970,11 @@
   <data name="One connection and one folder for the whole group: the rules only say what to pick up. A mailbox is opened once per run for all rules." xml:space="preserve"><value>Eine Verbindung und ein Ordner für die ganze Gruppe: die Regeln legen nur fest, was geholt wird. Ein Postfach wird pro Lauf nur einmal für alle Regeln geöffnet.</value></data>
   <data name="Choose a saved connection." xml:space="preserve"><value>Wähle eine gespeicherte Verbindung.</value></data>
   <data name="— Choose —" xml:space="preserve"><value>— Wählen —</value></data>
+  <data name="At most per run" xml:space="preserve"><value>Höchstens pro Lauf</value></data>
+  <data name="0 = no limit. To try a rule out: import 10 now, the next run takes the next 10." xml:space="preserve"><value>0 = unbegrenzt. Zum Ausprobieren: jetzt 10 importieren, der nächste Lauf holt die nächsten 10.</value></data>
+  <data name="The rule is running right now. Start over when it has finished." xml:space="preserve"><value>Die Regel läuft gerade. Neu beginnen, wenn sie fertig ist.</value></data>
+  <data name="The group is running right now. Start over when it has finished." xml:space="preserve"><value>Die Gruppe läuft gerade. Neu beginnen, wenn sie fertig ist.</value></data>
+  <data name="Started over: the position is forgotten and deleted documents of this rule can be imported again." xml:space="preserve"><value>Neu begonnen: Die Position ist vergessen, und gelöschte Dokumente dieser Regel können wieder importiert werden.</value></data>
+  <data name="Suggest" xml:space="preserve"><value>Vorschlag erstellen</value></data>
+  <data name="No suggestion found." xml:space="preserve"><value>Kein Vorschlag gefunden.</value></data>
 </root>

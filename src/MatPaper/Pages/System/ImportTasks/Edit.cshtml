@@ -306,6 +306,9 @@
                   show-when-field="Input.LookbackMode" show-when-value="days" />
         <mp-field asp-for="Input.LookbackDate" kind="date" label='@L["From"]'
                   show-when-field="Input.LookbackMode" show-when-value="date" />
+
+        <mp-field asp-for="Input.MaxPerRun" kind="number" label='@L["At most per run"]'
+                  help='@L["0 = no limit. To try a rule out: import 10 now, the next run takes the next 10."]' />
     </section>
 
     @* ---------- 6 Preview ---------- *@

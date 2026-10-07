@@ -26,6 +26,30 @@ public class QuickCreateModel : PageModel
     {
     }
 
+    /// <summary>Names a document's text suggests for its correspondent; an entry that exists already comes with its id.</summary>
+    public async Task<IActionResult> OnGetSuggestAsync(long documentId)
+    {
+        var text = await _db.Documents.AsNoTracking()
+            .AccessibleTo(_currentUser)
+            .Where(d => d.Id == documentId)
+            .Select(d => d.OcrText)
+            .FirstOrDefaultAsync();
+
+        var suggestions = CorrespondentSuggester.Suggest(text);
+        var known = await _db.Correspondents.AsNoTracking()
+            .Where(c => c.UpdateState != UpdateState.Deleted)
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
+
+        var items = suggestions.Select(name =>
+        {
+            var hit = known.FirstOrDefault(k => k.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                ?? known.FirstOrDefault(k => k.Name.Length >= 4 && (name.Contains(k.Name, StringComparison.OrdinalIgnoreCase) || k.Name.Contains(name, StringComparison.OrdinalIgnoreCase)));
+            return new { name, id = hit?.Id, existing = hit?.Name };
+        }).ToList();
+        return new JsonResult(new { ok = true, items });
+    }
+
     public async Task<IActionResult> OnPostAsync(string kind, string name)
     {
         name = (name ?? string.Empty).Trim();

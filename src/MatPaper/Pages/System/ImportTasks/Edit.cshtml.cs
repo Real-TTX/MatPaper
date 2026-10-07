@@ -150,6 +150,9 @@ public class EditModel : PageModel
 
         public int LookbackDays { get; set; } = 30;
 
+        /// <summary>Import at most this many documents per run; 0 = no limit.</summary>
+        public int MaxPerRun { get; set; }
+
         /// <summary>First day to consider, as yyyy-MM-dd (an HTML date input posts exactly that).</summary>
         public string? LookbackDate { get; set; }
 
@@ -314,8 +317,14 @@ public class EditModel : PageModel
             return RedirectToPage("Index");
         }
 
-        await ImportSync.SaveAsync(_db, Id, null);
-        this.Notify(_l["Position forgotten. The next run checks everything again."].Value);
+        if (_queue.IsBusy(TaskRunKind.Import, Id))
+        {
+            this.Notify(_l["The rule is running right now. Start over when it has finished."].Value, NoticeKind.Warn);
+            return RedirectToPage("Details", new { id = Id });
+        }
+
+        await ImportSync.ResetAsync(_db, Id);
+        this.Notify(_l["Started over: the position is forgotten and deleted documents of this rule can be imported again."].Value);
         return RedirectToPage("Details", new { id = Id });
     }
 
@@ -641,6 +650,7 @@ public class EditModel : PageModel
             OwnerUserId = Input.OwnerUserId,
             LookbackMode = ImportSync.IsMode(Input.LookbackMode) ? Input.LookbackMode : ImportSync.ModeAll,
             LookbackDays = Input.LookbackDays > 0 ? Input.LookbackDays : 30,
+            MaxPerRun = Input.MaxPerRun > 0 ? Input.MaxPerRun : 0,
             LookbackDate = ParseDay(Input.LookbackDate),
             IsCommon = Input.IsCommon
         };
@@ -670,6 +680,7 @@ public class EditModel : PageModel
             OwnerUserId = Input.OwnerUserId,
             LookbackMode = ImportSync.IsMode(Input.LookbackMode) ? Input.LookbackMode : ImportSync.ModeAll,
             LookbackDays = Input.LookbackDays > 0 ? Input.LookbackDays : 30,
+            MaxPerRun = Input.MaxPerRun > 0 ? Input.MaxPerRun : 0,
             LookbackDate = ParseDay(Input.LookbackDate),
             IsCommon = Input.IsCommon
         };
@@ -710,6 +721,7 @@ public class EditModel : PageModel
             OwnerUserId = Input.OwnerUserId,
             LookbackMode = ImportSync.IsMode(Input.LookbackMode) ? Input.LookbackMode : ImportSync.ModeAll,
             LookbackDays = Input.LookbackDays > 0 ? Input.LookbackDays : 30,
+            MaxPerRun = Input.MaxPerRun > 0 ? Input.MaxPerRun : 0,
             LookbackDate = ParseDay(Input.LookbackDate),
             IsCommon = Input.IsCommon
         };
@@ -750,6 +762,7 @@ public class EditModel : PageModel
             Input.OwnerUserId = fs.OwnerUserId;
             Input.IsCommon = fs.IsCommon;
             LoadLookback(fs.LookbackMode, fs.LookbackDays, fs.LookbackDate);
+            Input.MaxPerRun = fs.MaxPerRun;
             TagIds = fs.TagIds.ToArray();
         }
         else if (entity.Type == ImportTaskType.Smb)
@@ -774,6 +787,7 @@ public class EditModel : PageModel
             Input.OwnerUserId = smb.OwnerUserId;
             Input.IsCommon = smb.IsCommon;
             LoadLookback(smb.LookbackMode, smb.LookbackDays, smb.LookbackDate);
+            Input.MaxPerRun = smb.MaxPerRun;
             TagIds = smb.TagIds.ToArray();
         }
         else
@@ -814,6 +828,7 @@ public class EditModel : PageModel
             Input.OwnerUserId = mail.OwnerUserId;
             Input.IsCommon = mail.IsCommon;
             LoadLookback(mail.LookbackMode, mail.LookbackDays, mail.LookbackDate);
+            Input.MaxPerRun = mail.MaxPerRun;
             TagIds = mail.TagIds.ToArray();
         }
     }

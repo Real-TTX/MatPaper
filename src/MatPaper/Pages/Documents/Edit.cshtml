@@ -103,17 +103,7 @@
         <mp-field asp-for="Input.StorageLocationId" kind="select" label='@(Model.IsStaged ? L["File to"].Value : L["Storage location"].Value)'
                   asp-items="Model.StorageLocationOptions" />
 
-        @if (Model.TagItems.Count == 0)
-        {
-            <div class="form-row">
-                <label>@L["Tags"]</label>
-                <p class="form-help">@L["No tags defined yet."]</p>
-            </div>
-        }
-        else
-        {
-            <mp-picker asp-for="SelectedTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true" placeholder='@L["Add tags…"]' />
-        }
+        <mp-picker asp-for="SelectedTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true" placeholder='@L["Add tags…"]' />
 
         <mp-button-row>
             @if (Model.CanEdit && Model.ReviewState == MatPaper.Data.ReviewState.Pending)

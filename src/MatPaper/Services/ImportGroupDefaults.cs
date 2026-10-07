@@ -55,6 +55,28 @@ public static class ImportGroupDefaults
             return copy;
         }
 
+        // A group with a source decides where every rule reads from; the rule only says what to pick up.
+        if (group.SourceType is ImportTaskType sourceType)
+        {
+            copy.Type = sourceType;
+            switch (sourceType)
+            {
+                case ImportTaskType.Imap:
+                case ImportTaskType.Pop3:
+                    SetId(settings, "ConnectionId", group.SourceConnectionId);
+                    if (sourceType == ImportTaskType.Imap && !string.IsNullOrWhiteSpace(group.SourcePath)) { settings["Folder"] = group.SourcePath; }
+                    break;
+                case ImportTaskType.Smb:
+                    SetId(settings, "ConnectionId", group.SourceConnectionId);
+                    if (!string.IsNullOrWhiteSpace(group.SourceShare)) { settings["Share"] = group.SourceShare; }
+                    settings["Path"] = group.SourcePath ?? string.Empty;
+                    break;
+                default:
+                    settings["SourcePath"] = group.SourcePath ?? string.Empty;
+                    break;
+            }
+        }
+
         InheritId(settings, "StorageLocationId", group.StorageLocationId);
         InheritId(settings, "OwnerUserId", group.OwnerUserId);
         InheritId(settings, "ProjectId", group.ProjectId);
@@ -79,6 +101,11 @@ public static class ImportGroupDefaults
 
         copy.SettingsJson = settings.ToJsonString();
         return copy;
+    }
+
+    private static void SetId(JsonObject settings, string key, long? value)
+    {
+        if (value is long id) { settings[key] = id; }
     }
 
     private static void InheritId(JsonObject settings, string key, long? fromGroup)

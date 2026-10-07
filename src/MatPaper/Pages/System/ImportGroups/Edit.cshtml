@@ -8,6 +8,7 @@
 <div data-tabs>
 <div class="tabs__bar" role="tablist">
     <button type="button" class="tabs__tab" data-tab="general" role="tab">@L["General"]</button>
+    <button type="button" class="tabs__tab" data-tab="source" role="tab">@L["Source"]</button>
     <button type="button" class="tabs__tab" data-tab="target" role="tab">@L["Target"]</button>
     @if (Model.IsEdit)
     {
@@ -26,16 +27,35 @@
         <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
     </section>
 
+    <section class="form-section tabs__panel" data-tab-panel="source">
+        <h2 class="form-section__title">@L["Source of all rules"]</h2>
+        <p class="form-help">@L["One connection and one folder for the whole group: the rules only say what to pick up. A mailbox is opened once per run for all rules."]</p>
+        <mp-field asp-for="Input.SourceType" kind="select" label='@L["Type"]' asp-items="Model.SourceTypeOptions" />
+
+        <div data-show-when-field="Input.SourceType" data-show-when-value="0,1">
+            <mp-picker asp-for="Input.MailConnectionId" label='@L["Saved connection"]' asp-items="Model.MailConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
+        </div>
+        <div data-show-when-field="Input.SourceType" data-show-when-value="0">
+            <mp-field asp-for="Input.MailFolder" label='@L["Mailbox folder"]' placeholder="INBOX" />
+        </div>
+
+        <div data-show-when-field="Input.SourceType" data-show-when-value="3">
+            <mp-picker asp-for="Input.SmbConnectionId" label='@L["Saved connection"]' asp-items="Model.SmbConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
+            <mp-field asp-for="Input.SourceShare" label='@L["SMB share"]' placeholder="documents" />
+        </div>
+
+        <div data-show-when-field="Input.SourceType" data-show-when-value="2,3">
+            <mp-field asp-for="Input.SourcePath" label='@L["Folder"]' placeholder="/mnt/scan" />
+        </div>
+    </section>
+
     <section class="form-section tabs__panel" data-tab-panel="target">
         <h2 class="form-section__title">@L["Target of all rules"]</h2>
         <p class="form-help">@L["What a rule leaves empty it takes from here. Switches and tags are added to the rule's own."]</p>
         <mp-picker asp-for="Input.StorageLocationId" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" placeholder='@L["— default —"]' />
         <mp-picker asp-for="Input.OwnerUserId" label='@L["Inbox of"]' asp-items="Model.UserOptions" placeholder='@L["— Task creator —"]' />
         <mp-picker asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
-        @if (Model.TagOptions.Count > 0)
-        {
-            <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
-        }
+        <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
         <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
         <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
     </section>

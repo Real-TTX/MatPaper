@@ -87,10 +87,7 @@
                 <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— Auto-detect —"]' />
                 <mp-picker asp-for="DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— Auto-detect —"]' />
                 <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
-                @if (Model.TagOptions.Count > 0)
-                {
-                    <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
-                }
+                <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
             </div>
         </section>
 

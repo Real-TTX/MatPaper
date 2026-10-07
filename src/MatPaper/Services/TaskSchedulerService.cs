@@ -289,6 +289,33 @@ public class TaskSchedulerService : BackgroundService
 
         void Say(string line) { lock (log) { log.AppendLine(line); } }
 
+        // One mailbox connection for the whole group: every rule filters on the server with its own search,
+        // but connecting and signing in happens once.
+        ImportRunner.SharedImapSession? sharedImap = null;
+        var firstRule = rules.FirstOrDefault(r => r.IsEnabled);
+        if (group.SourceType == ImportTaskType.Imap && firstRule is not null)
+        {
+            try
+            {
+                using var openScope = _scopeFactory.CreateScope();
+                var opener = openScope.ServiceProvider.GetRequiredService<ImportRunner>();
+                sharedImap = await opener.OpenSharedImapAsync(ImportGroupDefaults.Effective(firstRule, group), ct);
+                Say("Mailbox opened once for all rules.");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Shared mailbox connection for group {GroupId} failed; the rules connect on their own.", group.Id);
+                Say("Shared mailbox connection failed (" + ex.Message + "); each rule connects on its own.");
+            }
+        }
+
+        try
+        {
+
         Say($"Group \"{group.Name}\": {rules.Count} rule(s), highest priority first.");
         int items = 0, failed = 0, ran = 0, n = 0;
         foreach (var rule in rules)
@@ -311,6 +338,7 @@ public class TaskSchedulerService : BackgroundService
             using var ruleScope = _scopeFactory.CreateScope();
             var ruleDb = ruleScope.ServiceProvider.GetRequiredService<AppDbContext>();
             var runner = ruleScope.ServiceProvider.GetRequiredService<ImportRunner>();
+            runner.SharedImap = sharedImap;
             var ruleRun = new TaskRun
             {
                 Kind = TaskRunKind.Import,
@@ -362,6 +390,11 @@ public class TaskSchedulerService : BackgroundService
         string text;
         lock (log) { text = log.ToString(); }
         return new RunReport(failed == 0, items, text);
+        }
+        finally
+        {
+            if (sharedImap is not null) { await sharedImap.DisposeAsync(); }
+        }
     }
 
     /// <summary>While an import runs, copies its log into the run every few seconds so the page can show progress.</summary>

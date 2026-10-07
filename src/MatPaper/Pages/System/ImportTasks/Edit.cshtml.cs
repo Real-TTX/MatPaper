@@ -77,6 +77,9 @@ public class EditModel : PageModel
     /// <summary>Group id → source type of its rules (the first one's), for groups that already have a rule other than this one.</summary>
     public Dictionary<long, int> GroupTypes { get; private set; } = new();
 
+    /// <summary>Groups that fix the source (connection and folder) for their rules: group id → source type.</summary>
+    public Dictionary<long, int> GroupSources { get; private set; } = new();
+
     /// <summary>A new rule opened from a group starts in that group.</summary>
     [BindProperty(SupportsGet = true, Name = "group")]
     public long? PresetGroup { get; set; }
@@ -205,7 +208,16 @@ public class EditModel : PageModel
     {
         SetBreadcrumb();
 
-        Validate();
+        // A group with a source decides where the rule reads from; the rule is only checked for what it adds.
+        var sourceGroup = Input.GroupId is long sg
+            ? await _db.ImportGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == sg && g.UpdateState != UpdateState.Deleted && g.SourceType != null)
+            : null;
+        if (sourceGroup?.SourceType is ImportTaskType groupSourceType)
+        {
+            Input.Type = (int)groupSourceType;
+        }
+
+        Validate(sourceGroup is not null);
         if (!ModelState.IsValid)
         {
             await BuildOptionListsAsync();
@@ -252,10 +264,14 @@ public class EditModel : PageModel
                 .Where(t => t.GroupId == typedGroup && t.Id != entity.Id && t.UpdateState != UpdateState.Deleted)
                 .OrderBy(t => t.Priority).ThenBy(t => t.Id)
                 .Select(t => (ImportTaskType?)t.Type).FirstOrDefaultAsync();
-            if (groupType is ImportTaskType fixedType)
+            if (groupType is ImportTaskType fixedType && sourceGroup is null)
             {
                 Input.Type = (int)fixedType;
                 entity.Type = fixedType;
+            }
+            else if (sourceGroup?.SourceType is ImportTaskType declared)
+            {
+                entity.Type = declared;
             }
         }
         if (groupId != entity.GroupId)
@@ -516,7 +532,7 @@ public class EditModel : PageModel
         return RedirectToPage("Index");
     }
 
-    private void Validate()
+    private void Validate(bool sourceFromGroup = false)
     {
         if (string.IsNullOrWhiteSpace(Input.Name))
         {
@@ -539,7 +555,7 @@ public class EditModel : PageModel
 
         if (Input.Type == (int)ImportTaskType.Filesystem)
         {
-            if (string.IsNullOrWhiteSpace(Input.SourcePath))
+            if (!sourceFromGroup && string.IsNullOrWhiteSpace(Input.SourcePath))
             {
                 ModelState.AddModelError("Input.SourcePath", _l["Source path is required."]);
             }
@@ -547,6 +563,10 @@ public class EditModel : PageModel
             {
                 ModelState.AddModelError("Input.MoveToPath", _l["A move target path is required for the move action."]);
             }
+        }
+        else if (sourceFromGroup)
+        {
+            // connection, sign-in and folder come from the group
         }
         else if (Input.Type == (int)ImportTaskType.Smb)
         {
@@ -869,6 +889,11 @@ public class EditModel : PageModel
                 .OrderBy(t => t.Priority).ThenBy(t => t.Id)
                 .Select(t => new { GroupId = t.GroupId!.Value, t.Type }).ToListAsync())
             .GroupBy(t => t.GroupId).ToDictionary(g => g.Key, g => (int)g.First().Type);
+        GroupSources = (await _db.ImportGroups.AsNoTracking()
+                .Where(g => g.UpdateState != UpdateState.Deleted && g.SourceType != null)
+                .Select(g => new { g.Id, Type = (int)g.SourceType!.Value }).ToListAsync())
+            .ToDictionary(g => g.Id, g => g.Type);
+        foreach (var fixedGroup in GroupSources) { GroupTypes[fixedGroup.Key] = fixedGroup.Value; }
         GroupOptions = BuildOptions(
             (await _db.ImportGroups.AsNoTracking().Where(g => g.UpdateState != UpdateState.Deleted).OrderBy(g => g.Name)
                 .Select(g => new { g.Id, g.Name }).ToListAsync()).Select(g => (g.Id, g.Name)),

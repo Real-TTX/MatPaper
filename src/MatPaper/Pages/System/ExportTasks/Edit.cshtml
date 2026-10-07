@@ -28,11 +28,11 @@
             <p class="form-help">@L["All filters have to match. Leave a filter empty to ignore it."]</p>
             @if (Model.TagOptions.Count > 0)
             {
-                <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
+                <mp-picker create="false" asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
             }
-            <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— None —"]' />
-            <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— None —"]' />
-            <mp-picker asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
+            <mp-picker create="false" asp-for="Input.CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— None —"]' />
+            <mp-picker create="false" asp-for="Input.DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— None —"]' />
+            <mp-picker create="false" asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
             <mp-picker asp-for="Input.OwnerUserId" label='@L["Owner"]' asp-items="Model.UserOptions" placeholder='@L["— None —"]' />
             <mp-picker asp-for="Input.SourceLocationId" label='@L["Only documents in this location"]' asp-items="Model.LocationOptions" placeholder='@L["— None —"]' />
             <mp-field asp-for="Input.SourceFolder" label='@L["Only in this folder"]' placeholder='@L["e.g. Taxes/2025"]' />

@@ -44,6 +44,19 @@
 <partial name="_TaskRunsPanel" model="Model.Runs" />
 
 <div class="task-grid">
+    @if (Model.Source.Count > 0)
+    {
+        <section class="task-card">
+            <h3>@L["Source of all rules"]</h3>
+            <dl class="task-facts">
+                @foreach (var (label, value) in Model.Source)
+                {
+                    <dt>@label</dt>
+                    <dd>@value</dd>
+                }
+            </dl>
+        </section>
+    }
     <section class="task-card">
         <h3>@L["Target of all rules"]</h3>
         <dl class="task-facts">

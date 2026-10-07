@@ -70,6 +70,13 @@ public sealed class PickerTagHelper : TagHelper
     [HtmlAttributeName("value")]
     public string? Value { get; set; }
 
+    /// <summary>
+    /// Offer "+ create" for names that do not exist yet. Inferred from the field (correspondent, document
+    /// type, project, tag); set to "false" for filters, where creating an entry makes no sense.
+    /// </summary>
+    [HtmlAttributeName("create")]
+    public string? Create { get; set; }
+
     /// <summary>Suffix appended to the widget id so repeated pickers keep unique ids.</summary>
     [HtmlAttributeName("id-suffix")]
     public string? IdSuffix { get; set; }
@@ -116,7 +123,20 @@ public sealed class PickerTagHelper : TagHelper
         widget.Append($" data-search-label=\"{enc.Encode(_l["Search…"].Value)}\"");
         widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\"");
         widget.Append($" data-close-label=\"{enc.Encode(_l["Close"].Value)}\"");
-        widget.Append($" data-remove-label=\"{enc.Encode(_l["Remove"].Value)}\">");
+        widget.Append($" data-remove-label=\"{enc.Encode(_l["Remove"].Value)}\"");
+        string? createKind = CreateKind(fullName);
+        if (createKind is not null)
+        {
+            widget.Append($" data-create=\"{createKind}\"");
+            widget.Append($" data-create-label=\"{enc.Encode(_l["Create \"{0}\""].Value)}\"");
+            widget.Append($" data-create-hint=\"{enc.Encode(_l["Type a name to create it."].Value)}\"");
+            widget.Append($" data-more-label=\"{enc.Encode(_l["{0} more — narrow the search"].Value)}\"");
+        }
+        else
+        {
+            widget.Append($" data-more-label=\"{enc.Encode(_l["{0} more — narrow the search"].Value)}\"");
+        }
+        widget.Append(">");
 
         widget.Append($"<script type=\"application/json\" class=\"mp-picker__data\">{optionsJson}</script>");
 
@@ -140,6 +160,26 @@ public sealed class PickerTagHelper : TagHelper
         {
             output.Content.AppendHtml($"<p class=\"form-help\">{enc.Encode(Help)}</p>");
         }
+    }
+
+    private string? CreateKind(string fullName)
+    {
+        if (string.Equals(Create, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Create))
+        {
+            return Create;
+        }
+
+        var field = fullName.Contains('.') ? fullName[(fullName.LastIndexOf('.') + 1)..] : fullName;
+        if (field.Contains("Correspondent", StringComparison.OrdinalIgnoreCase)) { return "correspondent"; }
+        if (field.Contains("DocumentType", StringComparison.OrdinalIgnoreCase)) { return "document-type"; }
+        if (field.Contains("Project", StringComparison.OrdinalIgnoreCase)) { return "project"; }
+        if (field.Contains("Tag", StringComparison.OrdinalIgnoreCase)) { return "tag"; }
+        return null;
     }
 
     private static void AppendSingle(

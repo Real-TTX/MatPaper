@@ -48,6 +48,13 @@ public class EditModel : PageModel
         public bool IsCommon { get; set; }
         public bool SkipInbox { get; set; }
         public long? ProjectId { get; set; }
+
+        public int? SourceType { get; set; }
+        public long? MailConnectionId { get; set; }
+        public long? SmbConnectionId { get; set; }
+        public string? SourceShare { get; set; }
+        public string? SourcePath { get; set; }
+        public string? MailFolder { get; set; }
     }
 
     public record Member(long Id, string Name, ImportTaskType Type, bool IsEnabled, TaskRunState? LastState, DateTime? LastStartedAt);
@@ -55,6 +62,17 @@ public class EditModel : PageModel
     public List<Member> Members { get; private set; } = new();
     public List<(long Id, string Name)> SingleRules { get; private set; } = new();
     public List<SelectListItem> StorageLocationOptions { get; private set; } = new();
+    public List<SelectListItem> MailConnectionOptions { get; private set; } = new();
+    public List<SelectListItem> SmbConnectionOptions { get; private set; } = new();
+
+    public List<SelectListItem> SourceTypeOptions => new()
+    {
+        new SelectListItem(_l["— each rule has its own —"].Value, string.Empty),
+        new SelectListItem(_l["Watch folder"].Value, ((int)ImportTaskType.Filesystem).ToString()),
+        new SelectListItem(_l["Network share (SMB)"].Value, ((int)ImportTaskType.Smb).ToString()),
+        new SelectListItem(_l["IMAP mailbox"].Value, ((int)ImportTaskType.Imap).ToString()),
+        new SelectListItem(_l["POP3 mailbox"].Value, ((int)ImportTaskType.Pop3).ToString())
+    };
     public List<SelectListItem> UserOptions { get; private set; } = new();
     public List<SelectListItem> ProjectOptions { get; private set; } = new();
     public List<SelectListItem> TagOptions { get; private set; } = new();
@@ -79,7 +97,13 @@ public class EditModel : PageModel
                 OwnerUserId = group.OwnerUserId,
                 IsCommon = group.IsCommon,
                 SkipInbox = group.SkipInbox,
-                ProjectId = group.ProjectId
+                ProjectId = group.ProjectId,
+                SourceType = group.SourceType is ImportTaskType st ? (int)st : null,
+                MailConnectionId = group.SourceType is ImportTaskType.Imap or ImportTaskType.Pop3 ? group.SourceConnectionId : null,
+                SmbConnectionId = group.SourceType == ImportTaskType.Smb ? group.SourceConnectionId : null,
+                SourceShare = group.SourceShare,
+                SourcePath = group.SourceType == ImportTaskType.Imap ? null : group.SourcePath,
+                MailFolder = group.SourceType == ImportTaskType.Imap ? group.SourcePath : null
             };
             TagIds = ImportGroupDefaults.ParseTagIds(group.TagIds).ToArray();
         }
@@ -100,6 +124,24 @@ public class EditModel : PageModel
         else if (await _db.ImportGroups.AnyAsync(g => g.Id != Id && g.UpdateState != UpdateState.Deleted && g.Name.ToLower() == name.ToLower()))
         {
             ModelState.AddModelError("Input.Name", _l["A group with that name already exists."]);
+        }
+
+        if (Input.SourceType is int typeValue)
+        {
+            var type = (ImportTaskType)typeValue;
+            if (type is ImportTaskType.Imap or ImportTaskType.Pop3 && Input.MailConnectionId is null)
+            {
+                ModelState.AddModelError("Input.MailConnectionId", _l["Choose a saved connection."]);
+            }
+            else if (type == ImportTaskType.Smb)
+            {
+                if (Input.SmbConnectionId is null) { ModelState.AddModelError("Input.SmbConnectionId", _l["Choose a saved connection."]); }
+                if (string.IsNullOrWhiteSpace(Input.SourceShare)) { ModelState.AddModelError("Input.SourceShare", _l["Share name is required."]); }
+            }
+            else if (type == ImportTaskType.Filesystem && string.IsNullOrWhiteSpace(Input.SourcePath))
+            {
+                ModelState.AddModelError("Input.SourcePath", _l["Source path is required."]);
+            }
         }
 
         if (!ModelState.IsValid)
@@ -129,6 +171,20 @@ public class EditModel : PageModel
         group.IsCommon = Input.IsCommon;
         group.SkipInbox = Input.SkipInbox;
         group.ProjectId = Input.ProjectId;
+        group.SourceType = Input.SourceType is int sourceValue ? (ImportTaskType)sourceValue : null;
+        group.SourceConnectionId = group.SourceType switch
+        {
+            ImportTaskType.Imap or ImportTaskType.Pop3 => Input.MailConnectionId,
+            ImportTaskType.Smb => Input.SmbConnectionId,
+            _ => null
+        };
+        group.SourceShare = group.SourceType == ImportTaskType.Smb ? Input.SourceShare?.Trim() : null;
+        group.SourcePath = group.SourceType switch
+        {
+            null => null,
+            ImportTaskType.Imap => Input.MailFolder?.Trim(),
+            _ => Input.SourcePath?.Trim()
+        };
         group.TagIds = TagIds.Length == 0 ? null : string.Join(",", TagIds.Distinct());
         group.UpdateDate = now;
         group.UpdateUserId = _currentUser.UserId;
@@ -233,6 +289,12 @@ public class EditModel : PageModel
         StorageLocationOptions = (await _db.StorageLocations.AsNoTracking()
                 .Where(s => s.UpdateState != UpdateState.Deleted).OrderBy(s => s.Name).Select(s => new { s.Id, s.Name }).ToListAsync())
             .Select(s => new SelectListItem(s.Name, s.Id.ToString())).ToList();
+        var connections = await _db.Connections.AsNoTracking()
+            .Where(c => c.UpdateState != UpdateState.Deleted).OrderBy(c => c.Name).Select(c => new { c.Id, c.Name, c.Kind }).ToListAsync();
+        MailConnectionOptions = connections.Where(c => c.Kind is ConnectionKind.Imap or ConnectionKind.Pop3)
+            .Select(c => new SelectListItem($"{c.Name} ({c.Kind})", c.Id.ToString())).ToList();
+        SmbConnectionOptions = connections.Where(c => c.Kind == ConnectionKind.Smb)
+            .Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
         UserOptions = (await _db.Users.AsNoTracking()
                 .Where(u => u.IsActive).OrderBy(u => u.DisplayName).Select(u => new { u.Id, u.DisplayName, u.Username }).ToListAsync())
             .Select(u => new SelectListItem(string.IsNullOrWhiteSpace(u.DisplayName) ? u.Username : u.DisplayName, u.Id.ToString())).ToList();

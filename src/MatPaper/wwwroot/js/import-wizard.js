@@ -34,8 +34,18 @@
             return "2";
         }
 
+        // A group that fixes the source (connection, folder) takes those steps away from its rules.
+        var groupSelect = form.querySelector('[name="Input.GroupId"]');
+        var groupSources = {};
+        try { groupSources = JSON.parse(form.getAttribute("data-group-sources") || "{}"); } catch (e) { groupSources = {}; }
+        function sourceFromGroup() {
+            return !!(groupSelect && groupSelect.value && groupSources[groupSelect.value] !== undefined);
+        }
+        if (groupSelect) { groupSelect.addEventListener("change", function () { render(); }); }
+
         // A panel may declare data-for-type; without it the step applies to every type.
         function appliesToType(panel, type) {
+            if (panel.hasAttribute("data-hide-with-source") && sourceFromGroup()) { return false; }
             var only = panel.getAttribute("data-for-type");
             return !only || only.split(",").indexOf(type) !== -1;
         }

@@ -186,6 +186,9 @@
         mp.search.focus();
     }
 
+    // Rows built at once: a long list stays fast, the search narrows it down.
+    var MAX_ROWS = 60;
+
     function renderList(dialog, filter) {
         var mp = dialog._mp;
         var active = mp.active;
@@ -196,6 +199,9 @@
         var needle = (filter || "").toLowerCase();
         var list = mp.list;
         list.innerHTML = "";
+        var shown = 0;
+        var hidden = 0;
+        var exact = false;
 
         if (!active.multiple) {
             list.appendChild(buildSingleRow(dialog, {
@@ -207,9 +213,16 @@
 
         for (var i = 0; i < active.options.length; i++) {
             var opt = active.options[i];
-            if (needle && opt.t.toLowerCase().indexOf(needle) === -1) {
+            var lower = opt.t.toLowerCase();
+            if (needle && lower === needle) { exact = true; }
+            if (needle && lower.indexOf(needle) === -1) {
                 continue;
             }
+            if (shown >= MAX_ROWS) {
+                hidden++;
+                continue;
+            }
+            shown++;
             var isSel = active.selected[opt.v] === true;
             if (active.multiple) {
                 list.appendChild(buildMultiRow(active, opt, isSel));
@@ -217,6 +230,69 @@
                 list.appendChild(buildSingleRow(dialog, opt, isSel));
             }
         }
+
+        if (hidden > 0) {
+            var more = document.createElement("li");
+            more.className = "mp-picker-dialog__more";
+            more.textContent = ((active.widget.getAttribute("data-more-label")) || "{0} more").replace("{0}", String(hidden));
+            list.appendChild(more);
+        }
+
+        // "+ create": a name the list does not have yet.
+        var kind = active.widget.getAttribute("data-create");
+        if (kind) {
+            var typed = (filter || "").trim();
+            var li = document.createElement("li");
+            if (typed && !exact) {
+                li.className = "mp-picker-dialog__item mp-picker-dialog__create";
+                li.textContent = "+ " + ((active.widget.getAttribute("data-create-label")) || 'Create "{0}"').replace("{0}", typed);
+                li.addEventListener("click", function () { createEntry(dialog, kind, typed, li); });
+                list.insertBefore(li, list.firstChild);
+            } else if (!typed) {
+                li.className = "mp-picker-dialog__more";
+                li.textContent = "+ " + (active.widget.getAttribute("data-create-hint") || "Type a name to create it.");
+                list.appendChild(li);
+            }
+        }
+    }
+
+    function createEntry(dialog, kind, name, row) {
+        var active = dialog._mp.active;
+        if (!active) { return; }
+        var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+        var body = new FormData();
+        body.append("__RequestVerificationToken", tokenEl ? tokenEl.value : "");
+        body.append("kind", kind);
+        body.append("name", name);
+        row.classList.add("is-busy");
+        fetch("/QuickCreate", { method: "POST", body: body, credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                if (!result || !result.ok || !dialog._mp.active) { row.classList.remove("is-busy"); return; }
+                var opt = { v: String(result.id), t: result.name };
+                // Every picker of this kind on the page learns the new entry.
+                var peers = document.querySelectorAll('.mp-picker[data-create="' + kind + '"]');
+                for (var i = 0; i < peers.length; i++) {
+                    var data = peers[i].querySelector(".mp-picker__data");
+                    if (!data) { continue; }
+                    var list = [];
+                    try { list = JSON.parse(data.textContent) || []; } catch (e) { list = []; }
+                    if (!list.some(function (o) { return o.v === opt.v; })) {
+                        list.push(opt);
+                        data.textContent = JSON.stringify(list);
+                    }
+                }
+                if (!active.options.some(function (o) { return o.v === opt.v; })) { active.options.push(opt); }
+                if (active.multiple) {
+                    active.selected[opt.v] = true;
+                    dialog._mp.search.value = "";
+                    renderList(dialog, "");
+                } else {
+                    commitSingle(dialog, opt);
+                    dialog.close();
+                }
+            })
+            .catch(function () { row.classList.remove("is-busy"); });
     }
 
     function isEmpty(set) {

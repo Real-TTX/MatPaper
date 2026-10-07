@@ -500,6 +500,57 @@ public sealed class ImportRunner
 
     // ----- Mail (IMAP / POP3) ----------------------------------------------
 
+    /// <summary>
+    /// A mailbox connection that a group run opens once and hands to every rule of the group: one connect and one
+    /// sign-in instead of one per rule. Each rule still filters on the server with its own search.
+    /// </summary>
+    public sealed class SharedImapSession : IAsyncDisposable
+    {
+        internal SharedImapSession(ImapClient client) => Client = client;
+
+        internal ImapClient Client { get; }
+
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                if (Client.IsConnected)
+                {
+                    await Client.DisconnectAsync(true).ConfigureAwait(false);
+                }
+            }
+            catch
+            {
+                // closing is best effort
+            }
+
+            Client.Dispose();
+        }
+    }
+
+    /// <summary>When set, IMAP rules use this connection instead of opening their own.</summary>
+    public SharedImapSession? SharedImap { get; set; }
+
+    /// <summary>Connects and signs in once for the mailbox the given (group) rule reads from.</summary>
+    public async Task<SharedImapSession> OpenSharedImapAsync(ImportTask rule, CancellationToken ct)
+    {
+        var settings = TaskSettingsJson.Read<MailImportSettings>(rule.SettingsJson);
+        var mail = await _connections.ResolveMailAsync(settings, ct).ConfigureAwait(false);
+        var client = new ImapClient();
+        try
+        {
+            await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            client.Dispose();
+            throw;
+        }
+
+        return new SharedImapSession(client);
+    }
+
     private async Task<RunReport> RunMailAsync(ImportTask task, bool isPop3, long? ownerId, CancellationToken ct)
     {
         var settings = TaskSettingsJson.Read<MailImportSettings>(task.SettingsJson);
@@ -552,11 +603,16 @@ public sealed class ImportRunner
     {
         var count = 0;
         var reviewState = settings.SkipInbox ? ReviewState.Reviewed : ReviewState.Pending;
-        using var client = new ImapClient();
+        // Inside a group run the connection is shared (and closed by the group); alone the rule opens its own.
+        var ownClient = SharedImap is null ? new ImapClient() : null;
+        var client = SharedImap?.Client ?? ownClient!;
         try
         {
-            await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
-            await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
+            if (ownClient is not null)
+            {
+                await client.ConnectAsync(mail.Host, mail.Port, SecureOption(mail.UseSsl), ct).ConfigureAwait(false);
+                await _connections.AuthenticateAsync(client, mail, ct).ConfigureAwait(false);
+            }
 
             var folderName = string.IsNullOrWhiteSpace(settings.Folder) ? "INBOX" : settings.Folder;
             var folder = string.Equals(folderName, "INBOX", StringComparison.OrdinalIgnoreCase)
@@ -679,9 +735,14 @@ public sealed class ImportRunner
         }
         finally
         {
-            if (client.IsConnected)
+            if (ownClient is not null)
             {
-                await client.DisconnectAsync(true, ct).ConfigureAwait(false);
+                if (ownClient.IsConnected)
+                {
+                    await ownClient.DisconnectAsync(true, ct).ConfigureAwait(false);
+                }
+
+                ownClient.Dispose();
             }
         }
 

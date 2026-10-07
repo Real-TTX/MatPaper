@@ -1658,3 +1658,8 @@ html.has-scanner { overflow: hidden; }
 .wizard:not([data-mode="sections"]) > .wizard__steps::-webkit-scrollbar { display: none; }
 .wizard:not([data-mode="sections"]) .wizard__step { flex: none; gap: 5px; padding: 5px 10px 5px 5px; white-space: nowrap; font-size: 12.5px; }
 .wizard:not([data-mode="sections"]) .wizard__num { width: 20px; height: 20px; font-size: 11px; }
+
+/* Picker: the "+ create" row, the "n more" note */
+.mp-picker-dialog__create { color: var(--color-primary); font-weight: 600; }
+.mp-picker-dialog__create.is-busy { opacity: 0.55; pointer-events: none; }
+.mp-picker-dialog__more { padding: 0.55rem 0.9rem; color: var(--color-text-muted); font-size: 0.85rem; list-style: none; }

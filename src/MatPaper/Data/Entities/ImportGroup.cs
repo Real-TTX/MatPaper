@@ -15,6 +15,20 @@ public class ImportGroup : BaseEntity
     /// <summary>When the group runs; empty = only on demand.</summary>
     public string? CronExpression { get; set; }
 
+    // ---- source of every rule of the group (null type: each rule has its own source)
+
+    /// <summary>What the rules of the group import from: folder, SMB share, IMAP or POP3 mailbox.</summary>
+    public ImportTaskType? SourceType { get; set; }
+
+    /// <summary>The saved connection (mailbox or SMB) the rules read from.</summary>
+    public long? SourceConnectionId { get; set; }
+
+    /// <summary>SMB: the share.</summary>
+    public string? SourceShare { get; set; }
+
+    /// <summary>Folder: the watched folder. SMB: the folder in the share. IMAP: the mailbox folder.</summary>
+    public string? SourcePath { get; set; }
+
     // ---- target defaults for every rule of the group
 
     public long? StorageLocationId { get; set; }

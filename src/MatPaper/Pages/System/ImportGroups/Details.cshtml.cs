@@ -31,6 +31,9 @@ public class DetailsModel : PageModel
     /// <summary>Label/value pairs describing the target every rule of the group shares.</summary>
     public List<(string Label, string Value)> Target { get; } = new();
 
+    /// <summary>What the group's rules read from (empty when each rule has its own source).</summary>
+    public List<(string Label, string Value)> Source { get; } = new();
+
     public record Member(long Id, string Name, ImportTaskType Type, bool IsEnabled, TaskRunState? LastState, DateTime? LastStartedAt);
 
     public List<Member> Members { get; private set; } = new();
@@ -51,6 +54,7 @@ public class DetailsModel : PageModel
         ViewData["Breadcrumb"] = _l["System / Import tasks / Group"].Value;
         ViewData["Title"] = group.Name;
 
+        await DescribeSourceAsync(group);
         await DescribeTargetAsync(group);
 
         var rules = await _db.ImportTasks.AsNoTracking()
@@ -88,6 +92,28 @@ public class DetailsModel : PageModel
             .ToListAsync();
 
         return Page();
+    }
+
+    private async Task DescribeSourceAsync(ImportGroup g)
+    {
+        if (g.SourceType is not ImportTaskType type) { return; }
+        Source.Add((_l["Type"].Value, type switch
+        {
+            ImportTaskType.Imap => "IMAP",
+            ImportTaskType.Pop3 => "POP3",
+            ImportTaskType.Smb => _l["SMB share"].Value,
+            _ => _l["Watched folder"].Value
+        }));
+        if (g.SourceConnectionId is long cid)
+        {
+            var name = await _db.Connections.AsNoTracking().Where(c => c.Id == cid).Select(c => c.Name).FirstOrDefaultAsync();
+            if (name is not null) { Source.Add((_l["Connection"].Value, name)); }
+        }
+        if (type == ImportTaskType.Smb && !string.IsNullOrWhiteSpace(g.SourceShare)) { Source.Add((_l["SMB share"].Value, g.SourceShare)); }
+        if (!string.IsNullOrWhiteSpace(g.SourcePath))
+        {
+            Source.Add((type == ImportTaskType.Imap ? _l["Mailbox folder"].Value : _l["Folder"].Value, g.SourcePath));
+        }
     }
 
     private async Task DescribeTargetAsync(ImportGroup g)

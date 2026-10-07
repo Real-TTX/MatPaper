@@ -962,4 +962,12 @@
   <data name="A rule needs a target location." xml:space="preserve"><value>Die Regel braucht einen Zielort.</value></data>
   <data name="Choose a different target: the copies would land in the location the documents come from." xml:space="preserve"><value>Wähle einen anderen Zielort: sonst landen die Kopien im Speicherort der Dokumente.</value></data>
   <data name="The group already decides what is imported here." xml:space="preserve"><value>Die Gruppe legt bereits fest, was hier importiert wird (Ordner, Netzwerkfreigabe oder Postfach).</value></data>
+  <data name="Create &quot;{0}&quot;" xml:space="preserve"><value>„{0}“ anlegen</value></data>
+  <data name="Type a name to create it." xml:space="preserve"><value>Namen eintippen, um ihn neu anzulegen.</value></data>
+  <data name="{0} more — narrow the search" xml:space="preserve"><value>{0} weitere – Suche eingrenzen</value></data>
+  <data name="— each rule has its own —" xml:space="preserve"><value>— jede Regel hat ihre eigene —</value></data>
+  <data name="Source of all rules" xml:space="preserve"><value>Quelle für alle Regeln</value></data>
+  <data name="One connection and one folder for the whole group: the rules only say what to pick up. A mailbox is opened once per run for all rules." xml:space="preserve"><value>Eine Verbindung und ein Ordner für die ganze Gruppe: die Regeln legen nur fest, was geholt wird. Ein Postfach wird pro Lauf nur einmal für alle Regeln geöffnet.</value></data>
+  <data name="Choose a saved connection." xml:space="preserve"><value>Wähle eine gespeicherte Verbindung.</value></data>
+  <data name="— Choose —" xml:space="preserve"><value>— Wählen —</value></data>
 </root>

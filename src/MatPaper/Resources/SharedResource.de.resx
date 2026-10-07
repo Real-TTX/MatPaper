@@ -828,4 +828,27 @@
   <data name="Open the connections" xml:space="preserve"><value>Verbindungen öffnen</value></data>
   <data name="Save connection" xml:space="preserve"><value>Verbindung speichern</value></data>
   <data name="Only password connections can be created here." xml:space="preserve"><value>Hier lassen sich nur Passwort-Verbindungen anlegen.</value></data>
+  <data name="Start scanner" xml:space="preserve"><value>Scanner starten</value></data>
+  <data name="From gallery" xml:space="preserve"><value>Aus der Galerie</value></data>
+  <data name="Edit pages" xml:space="preserve"><value>Seiten bearbeiten</value></data>
+  <data name="Scanner" xml:space="preserve"><value>Scanner</value></data>
+  <data name="Hold the camera over the page" xml:space="preserve"><value>Kamera über die Seite halten</value></data>
+  <data name="Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="Gallery" xml:space="preserve"><value>Galerie</value></data>
+  <data name="Take photo" xml:space="preserve"><value>Foto aufnehmen</value></data>
+  <data name="Page found" xml:space="preserve"><value>Seite erkannt</value></data>
+  <data name="Hold still …" xml:space="preserve"><value>Ruhig halten …</value></data>
+  <data name="The camera is not available here (it needs HTTPS). Use the gallery instead." xml:space="preserve"><value>Die Kamera ist hier nicht verfügbar (sie braucht HTTPS). Nutze stattdessen die Galerie.</value></data>
+  <data name="No access to the camera. Allow it in the browser, or use the gallery." xml:space="preserve"><value>Kein Zugriff auf die Kamera. Erlaube sie im Browser oder nutze die Galerie.</value></data>
+  <data name="Detect again" xml:space="preserve"><value>Neu erkennen</value></data>
+  <data name="Drag the corners onto the page" xml:space="preserve"><value>Ecken auf die Seite ziehen</value></data>
+  <data name="Enhanced" xml:space="preserve"><value>Verstärkt</value></data>
+  <data name="Original" xml:space="preserve"><value>Original</value></data>
+  <data name="Gray" xml:space="preserve"><value>Grau</value></data>
+  <data name="Black &amp; white" xml:space="preserve"><value>Schwarz-Weiß</value></data>
+  <data name="Retake" xml:space="preserve"><value>Neu aufnehmen</value></data>
+  <data name="Crop" xml:space="preserve"><value>Zuschnitt</value></data>
+  <data name="+ Page" xml:space="preserve"><value>+ Seite</value></data>
+  <data name="Working …" xml:space="preserve"><value>Verarbeite …</value></data>
+  <data name="{0} page(s) ready" xml:space="preserve"><value>{0} Seite(n) bereit</value></data>
 </root>

@@ -1453,3 +1453,59 @@ dialog.quick-connection[open] { display: flex; flex-direction: column; }
 }
 
 dialog.quick-connection [hidden] { display: none !important; }
+
+/* ---------- Document scanner (scanner.js) ---------- */
+.scn-launch__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.scn-launch__main { min-height: 52px; font-size: 1.05rem; flex: 1 1 14rem; }
+.scn-summary { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.scn-summary__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.6rem; }
+.scn-summary__strip { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; }
+.scn-summary__thumb { height: 96px; width: auto; border: 1px solid var(--color-border); background: #fff; flex: none; }
+
+html.has-scanner { overflow: hidden; }
+.scn { position: fixed; inset: 0; z-index: 3000; background: #000; color: #fff; display: flex; flex-direction: column; font-family: inherit; touch-action: manipulation; }
+.scn[hidden], .scn [hidden] { display: none !important; }
+.scn__view { position: absolute; inset: 0; display: flex; flex-direction: column; background: #000; }
+.scn__camera { background: #000; }
+.scn__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.scn__overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.scn__hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(max(110px, 14vh) + env(safe-area-inset-bottom)); padding: 0.3rem 0.8rem; border-radius: 999px; background: rgba(0,0,0,0.55); font-size: 0.9rem; pointer-events: none; white-space: nowrap; }
+.scn__message { position: absolute; left: 1rem; right: 1rem; top: 40%; text-align: center; padding: 1rem; background: rgba(0,0,0,0.75); border-radius: var(--radius-md); }
+.scn__bar { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; }
+.scn__bar--top { top: 0; padding-top: max(0.6rem, env(safe-area-inset-top)); background: linear-gradient(rgba(0,0,0,0.55), transparent); }
+.scn__bar--bottom { bottom: 0; padding-bottom: max(0.8rem, env(safe-area-inset-bottom)); justify-content: space-between; background: linear-gradient(transparent, rgba(0,0,0,0.6)); }
+.scn__bar--wrap { flex-wrap: wrap; justify-content: center; }
+.scn__spacer { flex: 1; }
+.scn__btn { min-width: 44px; min-height: 44px; padding: 0 0.9rem; border: 0; border-radius: 999px; background: rgba(255,255,255,0.16); color: #fff; font-size: 1.1rem; cursor: pointer; }
+.scn__btn--text { font-size: 0.95rem; }
+.scn__btn--primary { background: var(--color-primary, #2f9e44); font-weight: 600; }
+.scn__btn.is-on { background: #ffd54a; color: #000; }
+.scn__btn:disabled { opacity: 0.35; }
+.scn__shutter { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #fff; background: rgba(255,255,255,0.25); cursor: pointer; padding: 0; box-shadow: inset 0 0 0 6px #000; }
+.scn__shutter:active { background: #fff; }
+.scn__title { padding: max(0.8rem, env(safe-area-inset-top)) 1rem 0.5rem; text-align: center; font-weight: 600; }
+.scn__stage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0.5rem 0.5rem 5.2rem; }
+.scn__adjust-canvas, .scn__review-canvas { display: block; max-width: 100%; max-height: 100%; background: #fff; }
+.scn__review-canvas { box-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+.scn__adjust-svg { position: absolute; touch-action: none; }
+.scn__poly { fill: rgba(61,220,132,0.18); stroke: #3ddc84; stroke-width: 2.5; }
+.scn__handle { fill: rgba(61,220,132,0.35); stroke: #fff; stroke-width: 3; cursor: grab; touch-action: none; }
+.scn__filters { position: absolute; left: 0; right: 0; bottom: calc(76px + env(safe-area-inset-bottom)); display: flex; gap: 0.5rem; justify-content: center; padding: 0 0.5rem; z-index: 1; }
+.scn__chip { min-height: 38px; padding: 0 0.9rem; border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; background: rgba(0,0,0,0.55); color: #fff; cursor: pointer; font-size: 0.9rem; }
+.scn__chip.is-active { background: #fff; color: #000; }
+.scn__grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.75rem; padding: 0.75rem 0.75rem 6rem; align-content: start; }
+.scn__cell { position: relative; background: #1b1b1b; border-radius: var(--radius-sm); padding: 0.4rem; }
+.scn__thumb { display: block; width: 100%; height: auto; background: #fff; cursor: pointer; }
+.scn__num { position: absolute; left: 0.6rem; top: 0.6rem; width: 1.6rem; height: 1.6rem; display: grid; place-items: center; border-radius: 50%; background: rgba(0,0,0,0.65); font-size: 0.8rem; }
+.scn__cell-tools { display: flex; justify-content: space-between; margin-top: 0.4rem; }
+.scn__mini { min-width: 40px; min-height: 36px; border: 0; border-radius: var(--radius-sm); background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; }
+.scn__mini:disabled { opacity: 0.3; }
+.scn__busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,0.55); font-size: 1.1rem; z-index: 5; }
+
+/* Review screen: preview, filters and buttons stack instead of overlapping. */
+.scn__review .scn__stage { padding-bottom: 0.5rem; }
+.scn__review .scn__filters { position: static; padding: 0.5rem; }
+.scn__review .scn__bar--bottom { position: static; background: none; padding-top: 0.2rem; }
+#scan-fallback[hidden], .scn-launch[hidden] { display: none !important; }
+.scn__chip { white-space: nowrap; padding: 0 0.75rem; }
+.scn__filters { flex-wrap: wrap; }

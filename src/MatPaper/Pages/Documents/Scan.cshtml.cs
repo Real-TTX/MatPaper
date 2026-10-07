@@ -39,6 +39,10 @@ public class ScanModel : PageModel
     [BindProperty]
     public List<IFormFile> Images { get; set; } = new();
 
+    /// <summary>Set by the in-browser scanner: the pages are already cropped and filtered.</summary>
+    [BindProperty]
+    public string? Prepared { get; set; }
+
     [BindProperty]
     public long? CorrespondentId { get; set; }
 
@@ -92,7 +96,7 @@ public class ScanModel : PageModel
         byte[] pdfBytes;
         try
         {
-            pdfBytes = _imageToPdf.Build(images);
+            pdfBytes = _imageToPdf.Build(images, fullPage: Prepared == "1");
         }
         catch (Exception)
         {

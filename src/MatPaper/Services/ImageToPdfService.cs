@@ -16,7 +16,8 @@ public sealed class ImageToPdfService
     /// </summary>
     /// <param name="images">The raw image bytes, in the desired page order.</param>
     /// <returns>The generated PDF as a byte array.</returns>
-    public byte[] Build(IReadOnlyList<byte[]> images)
+    /// <param name="fullPage">True for images the scanner already cropped to the sheet: they fill the page edge to edge instead of sitting in a margin.</param>
+    public byte[] Build(IReadOnlyList<byte[]> images, bool fullPage = false)
     {
         ArgumentNullException.ThrowIfNull(images);
 
@@ -32,7 +33,7 @@ public sealed class ImageToPdfService
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(20);
+                    page.Margin(fullPage ? 0 : 20);
                     page.Content()
                         .AlignCenter()
                         .AlignMiddle()

@@ -304,6 +304,19 @@ public class IndexModel : PageModel
         return RedirectBack();
     }
 
+    /// <summary>Delete and put the content on the blocklist: it is skipped when it turns up again.</summary>
+    public async Task<IActionResult> OnPostBlockAsync(long id, CancellationToken ct)
+    {
+        var document = await LoadEditableAsync(id, ct);
+        if (document is not null && DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, IsAdmin))
+        {
+            await BlocklistService.BlockAsync(_db, document, _currentUser.UserId, ct);
+            this.Notify(_l["Deleted and blocked: it is skipped when it turns up again (see the blocklist)."].Value);
+        }
+
+        return await OnPostDeleteAsync(id, ct);
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(long id, CancellationToken ct)
     {
         var document = await LoadEditableAsync(id, ct);

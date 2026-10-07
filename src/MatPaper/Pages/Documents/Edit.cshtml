@@ -141,6 +141,8 @@
             @if (Model.IsOwner)
             {
                 <mp-button-spacer />
+                <mp-button variant="secondary" type="submit" handler="Block"
+                           confirm='@L["Delete this document and put it on the blocklist? It is skipped when it turns up again."]'>@L["Delete and block"]</mp-button>
                 <mp-button variant="danger" type="submit" handler="Delete"
                            confirm='@(Model.IsStaged ? L["Delete this document? It is removed from the inbox together with its file."].Value : L["Delete this document? The file stays in its storage location but the document is removed from MatPaper."].Value)'>@L["Delete"]</mp-button>
             }

@@ -168,6 +168,11 @@ public sealed class ImportRunner
                             ApplySmbPostAction(session, settings, file, log);
                             if (leavesFile) { keep.Add(fingerprint); }
                             break;
+                        case IngestStatus.Blocked:
+                            log.AppendLine($"Skipped (on the blocklist): {fileName}");
+                            ApplySmbPostAction(session, settings, file, log);
+                            if (leavesFile) { keep.Add(fingerprint); }
+                            break;
                         case IngestStatus.Duplicate:
                             log.AppendLine($"Skipped (duplicate): {fileName}");
                             ApplySmbPostAction(session, settings, file, log);
@@ -393,6 +398,11 @@ public sealed class ImportRunner
                     case IngestStatus.Created:
                         count++;
                         log.AppendLine($"Imported: {fileName}");
+                        ApplyFilesystemPostAction(settings, file, log);
+                        if (leavesFile) { keep.Add(fingerprint); }
+                        break;
+                    case IngestStatus.Blocked:
+                        log.AppendLine($"Skipped (on the blocklist): {fileName}");
                         ApplyFilesystemPostAction(settings, file, log);
                         if (leavesFile) { keep.Add(fingerprint); }
                         break;
@@ -658,23 +668,32 @@ public sealed class ImportRunner
                 : $"No earlier position stored: {uids.Count} message(s) to check.");
 
             // Headers first (envelope only, no body): a mailbox with thousands of mails should not
-            // be downloaded just to find the few that match.
+            // be downloaded just to find the few that match. They are read a chunk at a time, only as far
+            // as the run gets: with a limit per run the rest of the mailbox is not looked at at all.
             var wanted = new HashSet<uint>();
-            for (var i = 0; i < uids.Count; i += 200)
+            var headersRead = 0;
+            var headerChunk = settings.MaxPerRun > 0 ? Math.Clamp(settings.MaxPerRun * 3, 10, 200) : 200;
+
+            async Task ReadHeadersUpToAsync(int index)
             {
-                ct.ThrowIfCancellationRequested();
-                var chunk = uids.Skip(i).Take(200).ToList();
-                var summaries = await folder.FetchAsync(chunk, MessageSummaryItems.Envelope, ct).ConfigureAwait(false);
-                foreach (var summary in summaries)
+                while (headersRead <= index && headersRead < uids.Count)
                 {
-                    var env = summary.Envelope;
-                    if (HeadersMatch(env?.From?.ToString() ?? string.Empty, env?.To?.ToString() ?? string.Empty,
-                        env?.Subject ?? string.Empty, settings, senderRegex, subjectRegex))
+                    ct.ThrowIfCancellationRequested();
+                    var chunk = uids.Skip(headersRead).Take(headerChunk).ToList();
+                    var summaries = await folder.FetchAsync(chunk, MessageSummaryItems.Envelope, ct).ConfigureAwait(false);
+                    foreach (var summary in summaries)
                     {
-                        wanted.Add(summary.UniqueId.Id);
+                        var env = summary.Envelope;
+                        if (HeadersMatch(env?.From?.ToString() ?? string.Empty, env?.To?.ToString() ?? string.Empty,
+                            env?.Subject ?? string.Empty, settings, senderRegex, subjectRegex))
+                        {
+                            wanted.Add(summary.UniqueId.Id);
+                        }
                     }
+
+                    headersRead += chunk.Count;
+                    log.AppendLine($"Read headers of {headersRead} of {uids.Count} message(s): {wanted.Count} match.");
                 }
-                log.AppendLine($"Read headers of {Math.Min(i + 200, uids.Count)} of {uids.Count} message(s): {wanted.Count} match.");
             }
 
             var post = MailPostActions.Parse(settings.PostAction);
@@ -686,9 +705,11 @@ public sealed class ImportRunner
             try
             {
                 var checkedCount = 0;
-                foreach (var uid in uids)
+                for (var uidIndex = 0; uidIndex < uids.Count; uidIndex++)
                 {
+                    var uid = uids[uidIndex];
                     ct.ThrowIfCancellationRequested();
+                    await ReadHeadersUpToAsync(uidIndex).ConfigureAwait(false);
                     if (++checkedCount % 25 == 0)
                     {
                         log.AppendLine($"Checked {checkedCount} of {uids.Count} message(s) ...");
@@ -980,6 +1001,9 @@ public sealed class ImportRunner
                     case IngestStatus.Created:
                         count++;
                         log.AppendLine($"Imported attachment: {fileName}");
+                        break;
+                    case IngestStatus.Blocked:
+                        log.AppendLine($"Skipped attachment (on the blocklist): {fileName}");
                         break;
                     case IngestStatus.Duplicate:
                         log.AppendLine($"Skipped attachment (duplicate): {fileName}");

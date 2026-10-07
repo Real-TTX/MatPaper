@@ -13,7 +13,9 @@
 }
 else
 {
-    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'>
+    @* On a phone the page viewer opens (doc-viewer.js); elsewhere the link opens the file in a tab. *@
+    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'
+       data-viewer-token="@row.Token" data-viewer-title="@row.Title">
         <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
     </a>
 }

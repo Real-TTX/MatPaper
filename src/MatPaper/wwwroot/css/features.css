@@ -1690,3 +1690,48 @@ html.has-scanner { overflow: hidden; }
 .btn--danger-outline { border: 1px solid var(--color-danger, #c0392b); color: var(--color-danger, #c0392b); background: transparent; }
 .btn--danger-outline:hover { background: var(--color-danger, #c0392b); color: #fff; }
 .btn--danger-outline svg { width: 14px; height: 14px; margin-right: 0.35rem; vertical-align: -2px; }
+
+/* ---------- Inbox on a phone: a card per document, the main fields first ---------- */
+.inbox-more { display: contents; }
+.inbox-more-toggle, .inbox-view-btn { display: none; }
+
+@media (max-width: 800px) {
+    .inbox-item { padding: 0.9rem; border-radius: 14px; margin-bottom: 0.9rem; }
+
+    /* checkbox | thumbnail | title over meta */
+    .inbox-item__head {
+        display: grid; grid-template-columns: auto auto 1fr; grid-template-areas: "pick thumb title" "pick thumb meta";
+        align-items: center; column-gap: 0.7rem; row-gap: 0.15rem; margin-bottom: 0.85rem;
+    }
+    .inbox-item__pick { grid-area: pick; align-self: start; padding-top: 0.2rem; }
+    .inbox-item__head > .inbox-item__thumb { grid-area: thumb; }
+    .inbox-item__title { grid-area: title; min-width: 0; font-size: 1.05rem; }
+    .inbox-item__meta { grid-area: meta; flex-wrap: wrap; white-space: normal; row-gap: 0.2rem; font-size: 0.8rem; }
+    .inbox-item__thumb img, .inbox-item__thumb--file { width: 62px; height: 82px; }
+    .inbox-item__thumb { position: relative; }
+    .inbox-item__thumb::after {
+        content: ""; position: absolute; right: 4px; bottom: 4px; width: 18px; height: 18px; border-radius: 50%;
+        background: var(--color-primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / 11px no-repeat;
+    }
+    .inbox-item__thumb--file::after { display: none; }
+
+    /* correspondent on its own line, type + date side by side, the rest on demand */
+    .inbox-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem 0.7rem; align-items: start; }
+    .inbox-grid > .suggest-field, .inbox-grid > .inbox-more-toggle, .inbox-grid > .inbox-more { grid-column: 1 / -1; }
+    .inbox-more { display: none; grid-template-columns: 1fr; gap: 0.6rem; }
+    .inbox-item.is-expanded .inbox-more { display: grid; }
+    .inbox-more-toggle {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 40px;
+        border: 1px dashed var(--color-border); border-radius: 10px; background: transparent; color: var(--color-text-muted); font: inherit; font-size: 0.9rem;
+    }
+    .inbox-more-toggle svg { width: 16px; height: 16px; transition: transform 0.15s; }
+    .inbox-item.is-expanded .inbox-more-toggle svg { transform: rotate(180deg); }
+
+    /* the action row: take it over full width, view/open/tools below */
+    .inbox-item__actions { flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+    .inbox-item__actions > .btn--primary { flex: 1 1 100%; min-height: 46px; font-size: 1rem; }
+    .inbox-item__actions > .btn--secondary { flex: 1 1 0; min-height: 42px; }
+    .inbox-view-btn { display: inline-flex; align-items: center; justify-content: center; }
+    .inbox-item__tools { margin-left: 0; }
+    .inbox-item__path { font-size: 0.8rem; }
+}

@@ -981,4 +981,18 @@
   <data name="Cancelled" xml:space="preserve"><value>Abgebrochen</value></data>
   <data name="Stopping … the run ends at its next checkpoint." xml:space="preserve"><value>Wird gestoppt … der Lauf endet am nächsten Kontrollpunkt.</value></data>
   <data name="Nothing is running there." xml:space="preserve"><value>Dort läuft gerade nichts.</value></data>
+  <data name="More fields" xml:space="preserve"><value>Weitere Felder</value></data>
+  <data name="View" xml:space="preserve"><value>Ansehen</value></data>
+  <data name="Blocklist" xml:space="preserve"><value>Sperrliste</value></data>
+  <data name="Delete and block" xml:space="preserve"><value>Löschen und sperren</value></data>
+  <data name="Deleted and blocked: it is skipped when it turns up again (see the blocklist)." xml:space="preserve"><value>Gelöscht und gesperrt: Es wird übersprungen, wenn es wieder auftaucht (siehe Sperrliste).</value></data>
+  <data name="Delete this document and put it on the blocklist? It is skipped when it turns up again." xml:space="preserve"><value>Dieses Dokument löschen und auf die Sperrliste setzen? Es wird übersprungen, wenn es wieder auftaucht.</value></data>
+  <data name="What you deleted and blocked is skipped by imports and searches when it turns up again. Release an entry to get it back." xml:space="preserve"><value>Was du gelöscht und gesperrt hast, wird von Importen und Suchen übersprungen, wenn es wieder auftaucht. Gib einen Eintrag frei, um es zurückzubekommen.</value></data>
+  <data name="Search by name" xml:space="preserve"><value>Nach Name suchen</value></data>
+  <data name="Nothing is blocked." xml:space="preserve"><value>Nichts ist gesperrt.</value></data>
+  <data name="File name" xml:space="preserve"><value>Dateiname</value></data>
+  <data name="Blocked on" xml:space="preserve"><value>Gesperrt am</value></data>
+  <data name="Release" xml:space="preserve"><value>Freigeben</value></data>
+  <data name="Release this entry? The document is imported again the next time it turns up." xml:space="preserve"><value>Diesen Eintrag freigeben? Das Dokument wird beim nächsten Auftauchen wieder importiert.</value></data>
+  <data name="Only the newest entries are shown; narrow it down with the search." xml:space="preserve"><value>Es werden nur die neuesten Einträge gezeigt; mit der Suche eingrenzen.</value></data>
 </root>

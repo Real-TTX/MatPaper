@@ -8,7 +8,10 @@ public enum IngestStatus
 {
     Created,
     Duplicate,
-    NoStorage
+    NoStorage,
+
+    /// <summary>The content is on the blocklist (the user deleted it and asked not to get it back).</summary>
+    Blocked
 }
 
 /// <summary>
@@ -34,6 +37,8 @@ public sealed class IngestResult
     public static IngestResult Duplicate(long existingDocumentId) => new(IngestStatus.Duplicate, existingDocumentId);
 
     public static IngestResult NoStorage() => new(IngestStatus.NoStorage, 0);
+
+    public static IngestResult Blocked() => new(IngestStatus.Blocked, 0);
 }
 
 /// <summary>
@@ -111,6 +116,15 @@ public sealed class DocumentIngestService(
         // deleted lost its file, so treating it as known would make the import task delete
         // the source as a duplicate and leave no copy anywhere.
         var automated = origin is DocumentOrigin.Mail or DocumentOrigin.ImportFolder or DocumentOrigin.StorageScan;
+
+        // The blocklist: what a user threw away on purpose never comes back through an import or a search.
+        if (automated
+            && await db.BlockedDocuments.AsNoTracking()
+                .AnyAsync(b => b.ContentHash == contentHash && (b.OwnerId == actingUserId || b.OwnerId == null), ct)
+                .ConfigureAwait(false))
+        {
+            return IngestResult.Blocked();
+        }
 
         var existing = await db.Documents
             .AsNoTracking()

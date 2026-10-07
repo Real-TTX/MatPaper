@@ -101,6 +101,7 @@ else
         @if (!Model.ShowingIgnored)
         {
             <span class="list-header__actions" style="margin-left:auto">
+                <a class="btn btn--secondary" href="/Blocklist">@L["Blocklist"]</a>
                 @if (Model.LocationId is long filteredLocation && Model.FoundCount > 0)
                 {
                     <form method="post" asp-page-handler="IgnoreAllFound" asp-route-LocationId="@Model.LocationId"
@@ -189,6 +190,16 @@ else
 }
 
 @section Scripts {
+    <script>
+        // Phones: project, tags and filing sit behind "More fields".
+        document.addEventListener("click", function (e) {
+            var btn = e.target.closest && e.target.closest(".inbox-more-toggle");
+            if (!btn) { return; }
+            var item = btn.closest(".inbox-item");
+            var open = item.classList.toggle("is-expanded");
+            btn.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+    </script>
     <script>
         // While documents are still being processed (OCR), poll their state and reload
         // once suggestions are available — unless the user has started editing a row.

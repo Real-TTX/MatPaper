@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<StorageLocation> StorageLocations => Set<StorageLocation>();
     public DbSet<Correspondent> Correspondents => Set<Correspondent>();
     public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<BlockedDocument> BlockedDocuments => Set<BlockedDocument>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
     public DbSet<Document> Documents => Set<Document>();

@@ -67,6 +67,11 @@
                     <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
                            value="@Fmt.InputDate(row.DocumentDate)" />
                 </div>
+                <button type="button" class="inbox-more-toggle" aria-expanded="false">
+                    <span>@L["More fields"]</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+                <div class="inbox-more">
                 <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="m.ProjectOptions"
                            value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
                 <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="m.TagItems" multiple="true"
@@ -100,6 +105,7 @@
                         </select>
                     </div>
                 }
+                </div>
             </div>
 
             <div class="inbox-item__actions">
@@ -108,6 +114,8 @@
                     @L["Take into archive"]
                 </button>
 
+                <a class="btn btn--secondary inbox-view-btn" href="/Documents/@row.Token/view" target="_blank" rel="noopener"
+                   data-viewer-token="@row.Token" data-viewer-title="@row.Title">@L["View"]</a>
                 <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">@L["Open"]</a>
 
                 @if (deferred)
@@ -128,6 +136,12 @@
                     }
                     else
                     {
+                        <button class="icon-btn" type="submit" form="inbox-block-@row.Id" title='@L["Delete and block"]'
+                                data-confirm='@L["Delete this document and put it on the blocklist? It is skipped when it turns up again."]'>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" />
+                            </svg>
+                        </button>
                         <button class="icon-btn icon-btn--danger" type="submit" form="inbox-delete-@row.Id" title='@L["Delete"]'
                                 data-confirm='@L["Delete this document? The file in the staging area is deleted as well."]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -151,6 +165,8 @@
 
         <div class="inbox-item__actions">
             <button class="btn btn--secondary" type="submit" form="inbox-restore-@row.Id">@L["Back to the inbox"]</button>
+            <a class="btn btn--secondary inbox-view-btn" href="/Documents/@row.Token/view" target="_blank" rel="noopener"
+               data-viewer-token="@row.Token" data-viewer-title="@row.Title">@L["View"]</a>
             <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox%3FState%3Dignored">@L["Open"]</a>
             @if (deferred)
             {
@@ -159,7 +175,7 @@
         </div>
     }
 
-    @foreach (var handler in new[] { "Delete", "Ignore", "Restore", "Analyze" })
+    @foreach (var handler in new[] { "Delete", "Block", "Ignore", "Restore", "Analyze" })
     {
         <form method="post" id="inbox-@handler.ToLowerInvariant()-@row.Id" asp-page-handler="@handler"
               asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"

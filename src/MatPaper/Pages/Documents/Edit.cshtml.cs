@@ -732,6 +732,18 @@ public class EditModel : PageModel
             : null;
     }
 
+    public async Task<IActionResult> OnPostBlockAsync()
+    {
+        var document = await _db.Documents.AccessibleTo(_currentUser).FirstOrDefaultAsync(d => d.Id == Id);
+        if (document is not null && DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin))
+        {
+            await BlocklistService.BlockAsync(_db, document, _currentUser.UserId);
+            this.Notify(_l["Deleted and blocked: it is skipped when it turns up again (see the blocklist)."].Value);
+        }
+
+        return await OnPostDeleteAsync();
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync()
     {
         if (Id == 0)

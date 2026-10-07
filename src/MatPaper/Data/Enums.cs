@@ -121,5 +121,8 @@ public enum TaskRunState
 {
     Running = 0,
     Success = 1,
-    Failed = 2
+    Failed = 2,
+
+    /// <summary>Stopped by a user while it was running (or before it started).</summary>
+    Cancelled = 3
 }

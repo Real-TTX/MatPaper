@@ -25,6 +25,9 @@
                 case MatPaper.Data.TaskRunState.Failed:
                     <span class="badge badge--off">@L["Failed"]</span>
                     break;
+                case MatPaper.Data.TaskRunState.Cancelled:
+                    <span class="badge badge--warn">@L["Cancelled"]</span>
+                    break;
                 default:
                     <span class="badge badge--muted">@L["Running"]</span>
                     break;

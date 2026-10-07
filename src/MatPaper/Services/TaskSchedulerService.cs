@@ -87,6 +87,12 @@ public class TaskSchedulerService : BackgroundService
             {
                 try
                 {
+                    if (_queue.TakeQueuedCancel(trigger.Kind, trigger.TaskId))
+                    {
+                        await RecordCancelledBeforeStartAsync(trigger, ct);
+                        continue;
+                    }
+
                     await ExecuteTriggerAsync(trigger, ct);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -112,7 +118,40 @@ public class TaskSchedulerService : BackgroundService
         }
     }
 
-    private async Task ExecuteTriggerAsync(TaskTrigger trigger, CancellationToken ct)
+    private async Task RecordCancelledBeforeStartAsync(TaskTrigger trigger, CancellationToken ct)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTime.UtcNow;
+        db.TaskRuns.Add(new TaskRun
+        {
+            Kind = trigger.Kind,
+            TaskId = trigger.TaskId,
+            StartedAt = now,
+            FinishedAt = now,
+            State = TaskRunState.Cancelled,
+            Log = "Cancelled before it started.",
+            CreateDate = now,
+            UpdateDate = now
+        });
+        await db.SaveChangesAsync(ct);
+    }
+
+    private async Task ExecuteTriggerAsync(TaskTrigger trigger, CancellationToken appStopping)
+    {
+        // The run's own token: it fires when the app stops and also when a user cancels this task.
+        using var runCts = _queue.BeginRun(trigger.Kind, trigger.TaskId, appStopping);
+        try
+        {
+            await ExecuteCoreAsync(trigger, runCts.Token, appStopping);
+        }
+        finally
+        {
+            _queue.EndRun(trigger.Kind, trigger.TaskId);
+        }
+    }
+
+    private async Task ExecuteCoreAsync(TaskTrigger trigger, CancellationToken ct, CancellationToken appStopping)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -187,6 +226,7 @@ public class TaskSchedulerService : BackgroundService
         db.TaskRuns.Add(run);
         await db.SaveChangesAsync(ct);
 
+        Func<string?>? partialLog = null;
         try
         {
             RunReport report;
@@ -194,6 +234,7 @@ public class TaskSchedulerService : BackgroundService
             {
                 using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 var groupLog = new StringBuilder();
+                partialLog = () => { lock (groupLog) { return groupLog.ToString(); } };
                 var flusher = FlushProgressAsync(run.Id, () => { lock (groupLog) { return groupLog.ToString(); } }, progress.Token);
                 try
                 {
@@ -208,6 +249,7 @@ public class TaskSchedulerService : BackgroundService
             else if (importTask is not null)
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ImportRunner>();
+                partialLog = runner.LogSoFar;
                 using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 var flusher = FlushProgressAsync(run.Id, runner.LogSoFar, progress.Token);
                 try
@@ -257,6 +299,13 @@ public class TaskSchedulerService : BackgroundService
             run.ItemsProcessed = report.ItemsProcessed;
             run.Log = Truncate(report.Log);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Stopped by a user (or the app is shutting down: the startup cleanup closes such runs anyway).
+            run.State = appStopping.IsCancellationRequested ? TaskRunState.Failed : TaskRunState.Cancelled;
+            var soFar = partialLog?.Invoke();
+            run.Log = Truncate((string.IsNullOrWhiteSpace(soFar) ? string.Empty : soFar + Environment.NewLine) + "Cancelled.");
+        }
         catch (Exception ex)
         {
             run.State = TaskRunState.Failed;
@@ -267,7 +316,7 @@ public class TaskSchedulerService : BackgroundService
         {
             run.FinishedAt = DateTime.UtcNow;
             run.UpdateDate = DateTime.UtcNow;
-            await db.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(CancellationToken.None);
         }
     }
 
@@ -360,6 +409,13 @@ public class TaskSchedulerService : BackgroundService
             }
             catch (OperationCanceledException)
             {
+                // The rule that was running is closed as cancelled; the group's own run is closed by the caller.
+                ruleRun.State = TaskRunState.Cancelled;
+                var soFar = runner.LogSoFar();
+                ruleRun.Log = Truncate((string.IsNullOrWhiteSpace(soFar) ? string.Empty : soFar + Environment.NewLine) + "Cancelled.");
+                ruleRun.FinishedAt = DateTime.UtcNow;
+                ruleRun.UpdateDate = DateTime.UtcNow;
+                await ruleDb.SaveChangesAsync(CancellationToken.None);
                 throw;
             }
             catch (Exception ex)

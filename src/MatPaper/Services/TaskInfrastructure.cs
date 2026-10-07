@@ -280,6 +280,43 @@ public class TaskTriggerQueue
         return false;
     }
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(TaskRunKind, long), CancellationTokenSource> _running = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(TaskRunKind, long), byte> _cancelQueued = new();
+
+    /// <summary>
+    /// Stops a task: a run in progress is cancelled at its next checkpoint, a queued one is dropped before it
+    /// starts. False when the task is neither running nor queued.
+    /// </summary>
+    public bool Cancel(TaskRunKind kind, long taskId)
+    {
+        if (_running.TryGetValue((kind, taskId), out var cts))
+        {
+            try { cts.Cancel(); } catch (ObjectDisposedException) { return false; }
+            return true;
+        }
+
+        if (_busy.ContainsKey((kind, taskId)))
+        {
+            _cancelQueued.TryAdd((kind, taskId), 0);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>True once (and forgets it) when this queued task was cancelled before it started.</summary>
+    public bool TakeQueuedCancel(TaskRunKind kind, long taskId) => _cancelQueued.TryRemove((kind, taskId), out _);
+
+    /// <summary>The scheduler starts a run: a token that fires on shutdown or when a user cancels it.</summary>
+    public CancellationTokenSource BeginRun(TaskRunKind kind, long taskId, CancellationToken appStopping)
+    {
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(appStopping);
+        _running[(kind, taskId)] = cts;
+        return cts;
+    }
+
+    public void EndRun(TaskRunKind kind, long taskId) => _running.TryRemove((kind, taskId), out _);
+
     /// <summary>Marks a task as runnable again. Called by the scheduler when a run ends.</summary>
     public void Release(TaskRunKind kind, long taskId) => _busy.TryRemove((kind, taskId), out _);
 

@@ -1,8 +1,10 @@
 @model MatPaper.Services.TaskRunsPanel
 @using MatPaper.Data
+@inject MatPaper.Services.TaskTriggerQueue Queue
+@{ var busy = Model.IsRunning || Queue.IsBusy(Model.Kind, Model.TaskId); }
 @* The runs block at the top of a task editor. Not a nested form: render it OUTSIDE the editor's
    own <form>. While the newest run is still running the page reloads itself every few seconds. *@
-<section class="runs-panel" data-live="runs" @(Model.IsRunning ? "data-running=true" : "")>
+<section class="runs-panel" data-live="runs" @(busy ? "data-running=true" : "")>
     <div class="runs-panel__head">
         <div class="runs-panel__title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
@@ -13,11 +15,21 @@
             }
         </div>
         <div class="runs-panel__actions">
+            @if (busy)
+            {
+                <form method="post" action="/System/TaskRuns/Cancel?kind=@((int)Model.Kind)&taskId=@Model.TaskId">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn--danger-outline" type="submit">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5" /></svg>
+                        @L["Cancel run"]
+                    </button>
+                </form>
+            }
             <form method="post" action="@Model.RunAction">
                 @Html.AntiForgeryToken()
-                <button class="btn btn--primary" type="submit" disabled="@Model.IsRunning">
+                <button class="btn btn--primary" type="submit" disabled="@busy">
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-                    @(Model.IsRunning ? L["Running"].Value : Model.RunLabel)
+                    @(busy ? L["Running"].Value : Model.RunLabel)
                 </button>
             </form>
             @if (Model.ResetAction is not null)
@@ -59,6 +71,9 @@
                                     break;
                                 case TaskRunState.Failed:
                                     <span class="badge badge--off">@L["Failed"]</span>
+                                    break;
+                                case TaskRunState.Cancelled:
+                                    <span class="badge badge--warn">@L["Cancelled"]</span>
                                     break;
                                 default:
                                     <span class="badge badge--muted">@L["Running"]</span>

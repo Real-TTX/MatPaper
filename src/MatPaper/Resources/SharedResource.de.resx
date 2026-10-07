@@ -977,4 +977,8 @@
   <data name="Started over: the position is forgotten and deleted documents of this rule can be imported again." xml:space="preserve"><value>Neu begonnen: Die Position ist vergessen, und gelöschte Dokumente dieser Regel können wieder importiert werden.</value></data>
   <data name="Suggest" xml:space="preserve"><value>Vorschlag erstellen</value></data>
   <data name="No suggestion found." xml:space="preserve"><value>Kein Vorschlag gefunden.</value></data>
+  <data name="Cancel run" xml:space="preserve"><value>Lauf abbrechen</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>Abgebrochen</value></data>
+  <data name="Stopping … the run ends at its next checkpoint." xml:space="preserve"><value>Wird gestoppt … der Lauf endet am nächsten Kontrollpunkt.</value></data>
+  <data name="Nothing is running there." xml:space="preserve"><value>Dort läuft gerade nichts.</value></data>
 </root>

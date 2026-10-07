@@ -250,6 +250,15 @@ public class EditModel : PageModel
                 : 0;
             entity.GroupId = groupId;
         }
+
+        // In a group the target (location, inbox owner, switches) is the group's, not the rule's.
+        if (groupId is not null)
+        {
+            Input.StorageLocationId = null;
+            Input.OwnerUserId = null;
+            Input.IsCommon = false;
+            Input.SkipInbox = false;
+        }
         entity.SettingsJson = BuildSettingsJson(entity.SettingsJson);
 
         // Another folder, other filters or a different period: the remembered position no longer fits.

@@ -45,7 +45,27 @@
 
     @* ---------- 1 Type ---------- *@
     <section class="wizard__panel" data-step="1">
-        <h2 class="wizard__title">@L["What should be imported?"]</h2>
+        @{ var inGroup = Model.Input.GroupId is not null; var hasGroups = Model.GroupOptions.Any(o => o.Value != string.Empty); }
+        <h2 class="wizard__title">@L["Where does the rule belong?"]</h2>
+        <div class="type-tiles type-tiles--two" id="scope-tiles">
+            <label class="type-tile">
+                <input type="radio" name="rule-scope" value="single" checked="@(!inGroup)" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2" /><path d="M8 10h8M8 14h5" /></svg>
+                <span class="type-tile__name">@L["Single rule"]</span>
+                <span class="type-tile__hint">@L["Has its own schedule and target."]</span>
+            </label>
+            <label class="type-tile">
+                <input type="radio" name="rule-scope" value="group" checked="@inGroup" disabled="@(!hasGroups)" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12l9 5 9-5" /><path d="M3 16l9 5 9-5" /></svg>
+                <span class="type-tile__name">@L["In a group"]</span>
+                <span class="type-tile__hint">@(hasGroups ? L["Schedule, order and target come from the group."].Value : L["Create a group first."].Value)</span>
+            </label>
+        </div>
+        <div id="group-pick" @(inGroup ? "" : "hidden")>
+            <mp-field asp-for="Input.GroupId" kind="select" label='@L["Which group?"]' asp-items="Model.GroupOptions" />
+        </div>
+
+        <h2 class="wizard__title" style="margin-top:1.5rem">@L["What should be imported?"]</h2>
 
         <div class="type-tiles">
             <label class="type-tile">
@@ -84,8 +104,6 @@
         </div>
 
         <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Scanner watch folder"]' />
-        <mp-field asp-for="Input.GroupId" kind="select" label='@L["Group"]' asp-items="Model.GroupOptions"
-                  help='@L["In a group the rule runs with the group: its schedule, its order, its target."]' />
     </section>
 
     @* ---------- 2 Connection ---------- *@
@@ -309,12 +327,15 @@
     <section class="wizard__panel" data-step="7">
         <h2 class="wizard__title">@L["Where do the documents go?"]</h2>
 
-        <mp-field asp-for="Input.StorageLocationId" kind="select" label='@L["Storage location"]'
-                  asp-items="Model.StorageLocationOptions" />
-        <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]'
-                  asp-items="Model.UserOptions" />
-        <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
-        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
+        <p class="form-help" id="group-target-note" @(inGroup ? "" : "hidden")>@L["The target of this rule is set by its group."]</p>
+        <div data-show-when-field="Input.GroupId" data-show-when-value="">
+            <mp-field asp-for="Input.StorageLocationId" kind="select" label='@L["Storage location"]'
+                      asp-items="Model.StorageLocationOptions" />
+            <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]'
+                      asp-items="Model.UserOptions" />
+            <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
+            <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
+        </div>
 
         <h3 class="wizard__subtitle">@L["Preset metadata"]</h3>
         <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
@@ -363,6 +384,25 @@
 <partial name="_BrowseDialog" />
 
 @section Scripts {
+    <script>
+        (function () {
+            var tiles = document.getElementById("scope-tiles");
+            var pick = document.getElementById("group-pick");
+            var note = document.getElementById("group-target-note");
+            var select = document.querySelector('[name="Input.GroupId"]');
+            if (!tiles || !pick || !select) { return; }
+            function apply(scope) {
+                var group = scope === "group";
+                pick.hidden = !group;
+                if (!group) { select.value = ""; }
+                else if (!select.value && select.options.length > 1) { select.selectedIndex = 1; }
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+                if (note) { note.hidden = !group; }
+            }
+            tiles.addEventListener("change", function (e) { if (e.target.name === "rule-scope") { apply(e.target.value); } });
+            select.addEventListener("change", function () { if (note) { note.hidden = !select.value; } });
+        })();
+    </script>
     <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
     <script src="~/js/import-wizard.js" asp-append-version="true"></script>
 }

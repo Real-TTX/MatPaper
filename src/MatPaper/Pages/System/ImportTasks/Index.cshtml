@@ -47,12 +47,12 @@
         @foreach (var g in Model.Groups)
         {
             var gs = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
-            <tr class="import-row import-row--group" data-row-href="/System/ImportGroups/Edit?id=@g.Id" tabindex="0">
+            <tr class="import-row import-row--group" data-row-href="/System/ImportGroups/Details?id=@g.Id" tabindex="0">
                 <td>
                     <span class="import-row__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12l9 5 9-5" /><path d="M3 16l9 5 9-5" /></svg>
                     </span>
-                    <a href="/System/ImportGroups/Edit?id=@g.Id">@g.Name</a>
+                    <a href="/System/ImportGroups/Details?id=@g.Id">@g.Name</a>
                     <span class="import-row__count">@g.Rules.Count</span>
                 </td>
                 <td>@L["Group"]</td>

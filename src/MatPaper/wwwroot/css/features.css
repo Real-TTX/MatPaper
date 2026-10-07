@@ -1668,3 +1668,6 @@ html.has-scanner { overflow: hidden; }
 .import-row--child.is-last td:first-child::before { bottom: 50%; }
 .import-row--child td:first-child::after { content: ""; position: absolute; left: 1.45rem; top: 50%; width: 0.8rem; border-top: 2px solid var(--color-border); }
 .import-row__order { display: inline-block; min-width: 1.1rem; margin-right: 0.35rem; color: var(--color-text-muted); font-size: 0.8rem; }
+
+.type-tiles--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 520px) { .type-tiles--two { grid-template-columns: 1fr; } }

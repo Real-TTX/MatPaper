@@ -5,11 +5,6 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Group"].Value : L["System / Import tasks / New group"].Value;
 }
 
-@if (Model.IsEdit && Model.Runs is not null)
-{
-    <partial name="_TaskRunsPanel" model="Model.Runs" />
-}
-
 <form class="form" method="post">
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
@@ -37,7 +32,7 @@
 
     <mp-button-row>
         <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/System/ImportTasks">@L["Back"]</mp-button>
+        <mp-button variant="secondary" href="@(Model.IsEdit ? "/System/ImportGroups/Details?id=" + Model.Id : "/System/ImportTasks")">@L["Back"]</mp-button>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {

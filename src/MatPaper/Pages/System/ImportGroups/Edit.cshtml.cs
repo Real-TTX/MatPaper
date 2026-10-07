@@ -58,7 +58,6 @@ public class EditModel : PageModel
     public List<SelectListItem> UserOptions { get; private set; } = new();
     public List<SelectListItem> ProjectOptions { get; private set; } = new();
     public List<SelectListItem> TagOptions { get; private set; } = new();
-    public TaskRunsPanel? Runs { get; private set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -136,7 +135,7 @@ public class EditModel : PageModel
         await _db.SaveChangesAsync();
 
         this.Notify(_l["Saved"].Value);
-        return RedirectToPage("Edit", new { id = group.Id });
+        return RedirectToPage("Details", new { id = group.Id });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()
@@ -177,7 +176,7 @@ public class EditModel : PageModel
             this.Notify(_l["This group is already running."].Value, NoticeKind.Warn);
         }
 
-        return RedirectToPage("Edit", new { id = Id });
+        return RedirectToPage("Details", new { id = Id });
     }
 
     /// <summary>Moves a rule one place up or down; the order is renumbered so it stays gap-free.</summary>
@@ -269,12 +268,5 @@ public class EditModel : PageModel
                 .Where(t => t.GroupId == null && t.UpdateState != UpdateState.Deleted).OrderBy(t => t.Name)
                 .Select(t => new { t.Id, t.Name }).ToListAsync())
             .Select(t => (t.Id, t.Name)).ToList();
-
-        Runs = new TaskRunsPanel(
-            TaskRunKind.ImportGroup, Id,
-            $"/System/ImportGroups/Edit?id={Id}&handler=Run",
-            _l["Run group now"].Value,
-            null, null,
-            await TaskRunsPanel.LoadRunsAsync(_db, TaskRunKind.ImportGroup, Id));
     }
 }

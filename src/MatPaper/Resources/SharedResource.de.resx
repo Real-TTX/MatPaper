@@ -935,4 +935,12 @@
   <data name="Unique ID in the file name" xml:space="preserve"><value>Eindeutige ID im Dateinamen</value></data>
   <data name="Name [a1b2c3d4].pdf: files with the same name stay apart, and a file that was moved by hand is recognised again by its ID. Existing files get the ID through Align to template." xml:space="preserve"><value>Name [a1b2c3d4].pdf: Dateien mit gleichem Namen bleiben auseinander, und eine von Hand verschobene Datei wird an ihrer ID wiedererkannt. Bestehende Dateien bekommen die ID über „An Vorlage ausrichten“.</value></data>
   <data name="with the group" xml:space="preserve"><value>mit der Gruppe</value></data>
+  <data name="Where does the rule belong?" xml:space="preserve"><value>Wozu gehört die Regel?</value></data>
+  <data name="Single rule" xml:space="preserve"><value>Einzelregel</value></data>
+  <data name="Has its own schedule and target." xml:space="preserve"><value>Eigener Zeitplan und eigenes Ziel.</value></data>
+  <data name="In a group" xml:space="preserve"><value>In einer Gruppe</value></data>
+  <data name="Schedule, order and target come from the group." xml:space="preserve"><value>Zeitplan, Reihenfolge und Ziel kommen von der Gruppe.</value></data>
+  <data name="Create a group first." xml:space="preserve"><value>Lege zuerst eine Gruppe an.</value></data>
+  <data name="Which group?" xml:space="preserve"><value>Welche Gruppe?</value></data>
+  <data name="The target of this rule is set by its group." xml:space="preserve"><value>Das Ziel dieser Regel legt ihre Gruppe fest.</value></data>
 </root>

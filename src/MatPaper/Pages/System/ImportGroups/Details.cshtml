@@ -1,25 +1,26 @@
-@page "/System/ImportTasks/Details"
-@model MatPaper.Pages.System.ImportTasks.DetailsModel
+@page "/System/ImportGroups/Details"
+@model MatPaper.Pages.System.ImportGroups.DetailsModel
 @using MatPaper.Data
 @using MatPaper.Services
 @{
-    var t = Model.Task;
-    var typeLabel = t.Type switch
+    var g = Model.Group;
+    var sched = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
+
+    string TypeLabel(ImportTaskType type) => type switch
     {
         ImportTaskType.Imap => "IMAP",
         ImportTaskType.Pop3 => "POP3",
         ImportTaskType.Smb => L["SMB share"].Value,
         _ => L["Watched folder"].Value
     };
-    var sched = CronSchedule.Describe(Model.Group?.CronExpression ?? t.CronExpression, Fmt.TimeZone);
 }
 
 <div class="task-head">
     <div class="task-head__main">
-        <h2 class="task-head__title">@t.Name</h2>
+        <h2 class="task-head__title">@g.Name</h2>
         <div class="task-head__meta">
-            <span class="badge badge--muted">@typeLabel</span>
-            @if (t.IsEnabled)
+            <span class="badge badge--muted">@L["Group"]</span>
+            @if (g.IsEnabled)
             {
                 <span class="badge badge--ok">@L["Enabled"]</span>
             }
@@ -27,19 +28,15 @@
             {
                 <span class="badge badge--warn">@L["Disabled"]</span>
             }
-            @if (Model.Group is { } grp)
-            {
-                <a class="badge badge--muted" href="/System/ImportGroups/Details?id=@grp.Id" title='@L["Group"]'>@grp.Name</a>
-            }
             <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
-            @if (sched.NextUtc is DateTime nextUtc && t.IsEnabled)
+            @if (sched.NextUtc is DateTime nextUtc && g.IsEnabled)
             {
                 <span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
             }
         </div>
     </div>
     <div class="task-head__actions">
-        <a class="btn btn--secondary" href="/System/ImportTasks/Edit?id=@t.Id">@L["Edit"]</a>
+        <a class="btn btn--secondary" href="/System/ImportGroups/Edit?id=@g.Id">@L["Edit"]</a>
         <a class="btn btn--secondary" href="/System/ImportTasks">@L["Back"]</a>
     </div>
 </div>
@@ -48,9 +45,9 @@
 
 <div class="task-grid">
     <section class="task-card">
-        <h3>@L["Source"]</h3>
+        <h3>@L["Target of all rules"]</h3>
         <dl class="task-facts">
-            @foreach (var (label, value) in Model.Source)
+            @foreach (var (label, value) in Model.Target)
             {
                 <dt>@label</dt>
                 <dd>@value</dd>
@@ -58,14 +55,26 @@
         </dl>
     </section>
     <section class="task-card">
-        <h3>@L["Filing"]</h3>
-        <dl class="task-facts">
-            @foreach (var (label, value) in Model.Filing)
-            {
-                <dt>@label</dt>
-                <dd>@value</dd>
-            }
-        </dl>
+        <h3>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></h3>
+        @if (Model.Members.Count == 0)
+        {
+            <p class="form-help">@L["No rules in this group yet."]</p>
+        }
+        else
+        {
+            <dl class="task-facts">
+                @for (var i = 0; i < Model.Members.Count; i++)
+                {
+                    var m = Model.Members[i];
+                    <dt>@(i + 1)</dt>
+                    <dd>
+                        <a href="/System/ImportTasks/Details?id=@m.Id">@m.Name</a>
+                        <span class="form-help" style="margin:0">@TypeLabel(m.Type)</span>
+                        @if (!m.IsEnabled) { <span class="badge badge--warn">@L["Disabled"]</span> }
+                    </dd>
+                }
+            </dl>
+        }
     </section>
 </div>
 

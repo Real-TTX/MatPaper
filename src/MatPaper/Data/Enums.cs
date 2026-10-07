@@ -111,7 +111,10 @@ public enum TaskRunKind
     Scan = 2,
 
     /// <summary>"Align to template" of a storage location. <c>TaskRun.TaskId</c> is the storage location id.</summary>
-    Align = 3
+    Align = 3,
+
+    /// <summary>A run of a whole import group. <c>TaskRun.TaskId</c> is the group id; every rule inside also records its own run.</summary>
+    ImportGroup = 4
 }
 
 public enum TaskRunState

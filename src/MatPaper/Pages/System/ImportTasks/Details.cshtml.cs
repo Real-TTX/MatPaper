@@ -27,6 +27,9 @@ public class DetailsModel : PageModel
     public long Id { get; set; }
 
     public ImportTask Task { get; private set; } = new();
+
+    /// <summary>The group the rule belongs to, if any.</summary>
+    public ImportGroup? Group { get; private set; }
     public TaskRunsPanel Runs { get; private set; } = null!;
     public TaskRun? LastRun { get; private set; }
 
@@ -54,7 +57,13 @@ public class DetailsModel : PageModel
         ViewData["Breadcrumb"] = _l["System / Import tasks / View"].Value;
         ViewData["Title"] = task.Name;
 
-        await DescribeAsync(task);
+        if (task.GroupId is long gid)
+        {
+            Group = await _db.ImportGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == gid && g.UpdateState != UpdateState.Deleted);
+        }
+
+        // what the rule really uses: its own settings completed by the group's target
+        await DescribeAsync(ImportGroupDefaults.Effective(task, Group));
 
         var state = ImportSync.Load(task);
         var hasState = !string.IsNullOrWhiteSpace(task.SyncState);

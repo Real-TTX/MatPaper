@@ -904,4 +904,32 @@
   <data name="The photo is taken with the camera app of your device - usually sharper, with autofocus." xml:space="preserve"><value>Das Foto entsteht mit der Kamera-App deines Geräts - meist schärfer, mit Autofokus.</value></data>
   <data name="Choose photos" xml:space="preserve"><value>Fotos auswählen</value></data>
   <data name="Scan a document" xml:space="preserve"><value>Dokument scannen</value></data>
+  <data name="Import group" xml:space="preserve"><value>Import-Gruppe</value></data>
+  <data name="Group" xml:space="preserve"><value>Gruppe</value></data>
+  <data name="Run group now" xml:space="preserve"><value>Gruppe jetzt ausführen</value></data>
+  <data name="New group" xml:space="preserve"><value>Neue Gruppe</value></data>
+  <data name="Single rules" xml:space="preserve"><value>Einzelregeln</value></data>
+  <data name="Each with its own schedule" xml:space="preserve"><value>jede mit eigenem Zeitplan</value></data>
+  <data name="System / Import tasks / Group" xml:space="preserve"><value>System / Importregeln / Gruppe</value></data>
+  <data name="System / Import tasks / New group" xml:space="preserve"><value>System / Importregeln / Neue Gruppe</value></data>
+  <data name="e.g. Invoices" xml:space="preserve"><value>z. B. Rechnungen</value></data>
+  <data name="Target of all rules" xml:space="preserve"><value>Ziel für alle Regeln</value></data>
+  <data name="What a rule leaves empty it takes from here. Switches and tags are added to the rule's own." xml:space="preserve"><value>Was eine Regel leer lässt, übernimmt sie von hier. Schalter und Schlagwörter kommen zu denen der Regel dazu.</value></data>
+  <data name="A group with that name already exists." xml:space="preserve"><value>Eine Gruppe mit diesem Namen gibt es schon.</value></data>
+  <data name="Group deleted. Its rules stay as single rules." xml:space="preserve"><value>Gruppe gelöscht. Ihre Regeln bleiben als Einzelregeln.</value></data>
+  <data name="Group queued" xml:space="preserve"><value>Gruppe eingeplant</value></data>
+  <data name="This group is already running." xml:space="preserve"><value>Diese Gruppe läuft bereits.</value></data>
+  <data name="Delete this group? Its rules stay as single rules." xml:space="preserve"><value>Diese Gruppe löschen? Ihre Regeln bleiben als Einzelregeln.</value></data>
+  <data name="They run from top to bottom. What a rule above takes, the ones below leave alone." xml:space="preserve"><value>Sie laufen von oben nach unten. Was eine Regel weiter oben übernimmt, lassen die darunter in Ruhe.</value></data>
+  <data name="No rules in this group yet." xml:space="preserve"><value>In dieser Gruppe sind noch keine Regeln.</value></data>
+  <data name="Move up" xml:space="preserve"><value>Nach oben</value></data>
+  <data name="Move down" xml:space="preserve"><value>Nach unten</value></data>
+  <data name="Take out of the group" xml:space="preserve"><value>Aus der Gruppe nehmen</value></data>
+  <data name="New rule in this group" xml:space="preserve"><value>Neue Regel in dieser Gruppe</value></data>
+  <data name="Add an existing rule" xml:space="preserve"><value>Bestehende Regel hinzufügen</value></data>
+  <data name="— None (own schedule) —" xml:space="preserve"><value>— Keine (eigener Zeitplan) —</value></data>
+  <data name="In a group the rule runs with the group: its schedule, its order, its target." xml:space="preserve"><value>In einer Gruppe läuft die Regel mit der Gruppe: deren Zeitplan, deren Reihenfolge, deren Ziel.</value></data>
+  <data name="— default —" xml:space="preserve"><value>— Standard —</value></data>
+  <data name="— Task creator —" xml:space="preserve"><value>— Ersteller der Regel —</value></data>
+  <data name="— Enter manually —" xml:space="preserve"><value>— Von Hand eintragen —</value></data>
 </root>

@@ -1,0 +1,118 @@
+@page "/System/ImportGroups/Edit"
+@model MatPaper.Pages.System.ImportGroups.EditModel
+@using MatPaper.Data
+@{
+    ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Group"].Value : L["System / Import tasks / New group"].Value;
+}
+
+@if (Model.IsEdit && Model.Runs is not null)
+{
+    <partial name="_TaskRunsPanel" model="Model.Runs" />
+}
+
+<form class="form" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Group"]</h2>
+        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoices"]' />
+        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
+        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section__title">@L["Target of all rules"]</h2>
+        <p class="form-help">@L["What a rule leaves empty it takes from here. Switches and tags are added to the rule's own."]</p>
+        <mp-picker asp-for="Input.StorageLocationId" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" placeholder='@L["— default —"]' />
+        <mp-picker asp-for="Input.OwnerUserId" label='@L["Inbox of"]' asp-items="Model.UserOptions" placeholder='@L["— Task creator —"]' />
+        <mp-picker asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
+        @if (Model.TagOptions.Count > 0)
+        {
+            <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
+        }
+        <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
+        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
+    </section>
+
+    <mp-button-row>
+        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/ImportTasks">@L["Back"]</mp-button>
+        <mp-button-spacer />
+        @if (Model.IsEdit)
+        {
+            <mp-button variant="danger" type="submit" handler="Delete"
+                       confirm='@L["Delete this group? Its rules stay as single rules."]'>@L["Delete"]</mp-button>
+        }
+    </mp-button-row>
+</form>
+
+@if (Model.IsEdit)
+{
+    <section class="task-card task-card--wide" style="margin-top:1.25rem">
+        <h3>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></h3>
+        <p class="form-help">@L["They run from top to bottom. What a rule above takes, the ones below leave alone."]</p>
+
+        @if (Model.Members.Count == 0)
+        {
+            <p class="form-help">@L["No rules in this group yet."]</p>
+        }
+        else
+        {
+            <div class="table-scroll">
+                <table class="data-table group-rules">
+                    <thead><tr><th>#</th><th>@L["Name"]</th><th>@L["Last run"]</th><th class="is-actions"></th></tr></thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Members.Count; i++)
+                        {
+                            var m = Model.Members[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    <a href="/System/ImportTasks/Details?id=@m.Id">@m.Name</a>
+                                    @if (!m.IsEnabled) { <span class="badge badge--warn">@L["Disabled"]</span> }
+                                </td>
+                                <td>
+                                    @if (m.LastState is TaskRunState state && m.LastStartedAt is DateTime started)
+                                    {
+                                        <span class="badge @(state == TaskRunState.Success ? "badge--ok" : state == TaskRunState.Failed ? "badge--off" : "badge--muted")">@state</span>
+                                        <span>&nbsp;@Fmt.DateTime(started)</span>
+                                    }
+                                    else { <span>—</span> }
+                                </td>
+                                <td class="is-actions group-rules__actions">
+                                    <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" asp-route-delta="-1" style="display:inline">
+                                        <button class="icon-btn" type="submit" title='@L["Move up"]' aria-label='@L["Move up"]' disabled="@(i == 0)">▲</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" asp-route-delta="1" style="display:inline">
+                                        <button class="icon-btn" type="submit" title='@L["Move down"]' aria-label='@L["Move down"]' disabled="@(i == Model.Members.Count - 1)">▼</button>
+                                    </form>
+                                    <a class="icon-btn" href="/System/ImportTasks/Edit?id=@m.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>✎</a>
+                                    <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" style="display:inline">
+                                        <button class="icon-btn" type="submit" title='@L["Take out of the group"]' aria-label='@L["Take out of the group"]'>✕</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="group-add">
+            <a class="btn btn--primary" href="/System/ImportTasks/Edit?group=@Model.Id">@L["New rule in this group"]</a>
+            @if (Model.SingleRules.Count > 0)
+            {
+                <form method="post" asp-page-handler="Add" asp-route-id="@Model.Id" class="group-add__existing">
+                    <select class="form-control" name="ruleId" aria-label='@L["Add an existing rule"]'>
+                        @foreach (var r in Model.SingleRules)
+                        {
+                            <option value="@r.Id">@r.Name</option>
+                        }
+                    </select>
+                    <button class="btn btn--secondary" type="submit">@L["Add an existing rule"]</button>
+                </form>
+            }
+        </div>
+    </section>
+}

@@ -72,6 +72,11 @@ public class EditModel : PageModel
     public List<SelectListItem> MailConnectionOptions { get; private set; } = new();
     public List<SelectListItem> SmbConnectionOptions { get; private set; } = new();
     public List<SelectListItem> UserOptions { get; private set; } = new();
+    public List<SelectListItem> GroupOptions { get; private set; } = new();
+
+    /// <summary>A new rule opened from a group starts in that group.</summary>
+    [BindProperty(SupportsGet = true, Name = "group")]
+    public long? PresetGroup { get; set; }
     public List<TagOption> TagOptions { get; private set; } = new();
 
     public record TagOption(long Id, string Name, bool Selected);
@@ -86,6 +91,9 @@ public class EditModel : PageModel
 
         public bool IsEnabled { get; set; } = true;
         public string? CronExpression { get; set; }
+
+        /// <summary>The group the rule belongs to (shared target and schedule), or null for a rule on its own.</summary>
+        public long? GroupId { get; set; }
 
         // Filesystem.
         public string SourcePath { get; set; } = string.Empty;
@@ -168,6 +176,11 @@ public class EditModel : PageModel
     {
         SetBreadcrumb();
 
+        if (!IsEdit && PresetGroup is long preset)
+        {
+            Input.GroupId = preset;
+        }
+
         if (IsEdit)
         {
             var entity = await _db.ImportTasks
@@ -227,6 +240,16 @@ public class EditModel : PageModel
         entity.Type = (ImportTaskType)Input.Type;
         entity.IsEnabled = Input.IsEnabled;
         entity.CronExpression = string.IsNullOrWhiteSpace(Input.CronExpression) ? null : Input.CronExpression.Trim();
+
+        var groupId = Input.GroupId is long gid && await _db.ImportGroups.AnyAsync(g => g.Id == gid && g.UpdateState != UpdateState.Deleted) ? Input.GroupId : null;
+        if (groupId != entity.GroupId)
+        {
+            // joining a group puts the rule at the end of its order
+            entity.Priority = groupId is long joined
+                ? (await _db.ImportTasks.Where(t => t.GroupId == joined).MaxAsync(t => (int?)t.Priority) ?? -1) + 1
+                : 0;
+            entity.GroupId = groupId;
+        }
         entity.SettingsJson = BuildSettingsJson(entity.SettingsJson);
 
         // Another folder, other filters or a different period: the remembered position no longer fits.
@@ -664,6 +687,7 @@ public class EditModel : PageModel
         Input.Type = (int)entity.Type;
         Input.IsEnabled = entity.IsEnabled;
         Input.CronExpression = entity.CronExpression;
+        Input.GroupId = entity.GroupId;
 
         if (entity.Type == ImportTaskType.Filesystem)
         {
@@ -815,6 +839,10 @@ public class EditModel : PageModel
         SmbConnectionOptions = BuildOptions(
             connections.Where(c => c.Kind == ConnectionKind.Smb).Select(c => (c.Id, c.Name)),
             Input.SmbConnectionId, "— Enter manually —");
+        GroupOptions = BuildOptions(
+            (await _db.ImportGroups.AsNoTracking().Where(g => g.UpdateState != UpdateState.Deleted).OrderBy(g => g.Name)
+                .Select(g => new { g.Id, g.Name }).ToListAsync()).Select(g => (g.Id, g.Name)),
+            Input.GroupId, "— None (own schedule) —");
         UserOptions = BuildOptions(
             users.Select(u => (u.Id, u.Name)), Input.OwnerUserId, "— Task creator —");
 
@@ -824,12 +852,12 @@ public class EditModel : PageModel
             .ToList();
     }
 
-    private static List<SelectListItem> BuildOptions(
+    private List<SelectListItem> BuildOptions(
         IEnumerable<(long Id, string Name)> source, long? selectedId, string emptyLabel)
     {
         var items = new List<SelectListItem>
         {
-            new() { Value = string.Empty, Text = emptyLabel, Selected = selectedId is null }
+            new() { Value = string.Empty, Text = _l[emptyLabel].Value, Selected = selectedId is null }
         };
 
         items.AddRange(source.Select(s => new SelectListItem

@@ -42,6 +42,8 @@ public class DetailsModel : PageModel
                 .FirstOrDefaultAsync(t => t.Id == run.TaskId))?.Name,
             TaskRunKind.Export => (await _db.ExportTasks.AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == run.TaskId))?.Name,
+            TaskRunKind.ImportGroup => (await _db.ImportGroups.AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == run.TaskId))?.Name,
             // A search run points at a storage location, not at a task.
             _ => (await _db.StorageLocations.AsNoTracking()
                 .FirstOrDefaultAsync(s => s.Id == run.TaskId))?.Name,

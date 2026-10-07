@@ -337,7 +337,11 @@
         }
 
         <h3 class="wizard__subtitle">@L["When does it run?"]</h3>
-        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
+        <mp-field asp-for="Input.GroupId" kind="select" label='@L["Group"]' asp-items="Model.GroupOptions"
+                  help='@L["In a group the rule runs with the group: its schedule, its order, its target."]' />
+        <div data-show-when-field="Input.GroupId" data-show-when-value="">
+            <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
+        </div>
         <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
     </section>
 

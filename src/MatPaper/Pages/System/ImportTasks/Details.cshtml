@@ -11,7 +11,7 @@
         ImportTaskType.Smb => L["SMB share"].Value,
         _ => L["Watched folder"].Value
     };
-    var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone);
+    var sched = CronSchedule.Describe(Model.Group?.CronExpression ?? t.CronExpression, Fmt.TimeZone);
 }
 
 <div class="task-head">
@@ -26,6 +26,10 @@
             else
             {
                 <span class="badge badge--warn">@L["Disabled"]</span>
+            }
+            @if (Model.Group is { } grp)
+            {
+                <a class="badge badge--muted" href="/System/ImportGroups/Edit?id=@grp.Id" title='@L["Group"]'>@grp.Name</a>
             }
             <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
             @if (sched.NextUtc is DateTime nextUtc && t.IsEnabled)

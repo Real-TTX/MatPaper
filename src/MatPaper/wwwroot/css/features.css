@@ -1587,3 +1587,16 @@ html.has-scanner { overflow: hidden; }
     .header-add svg { width: 22px; height: 22px; }
     .header-add:active { filter: brightness(0.9); }
 }
+
+/* Import groups */
+.group-rules__actions { white-space: nowrap; }
+.group-rules__actions .icon-btn { font-size: 0.95rem; }
+.group-add { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1rem; }
+.group-add__existing { display: flex; gap: 0.5rem; align-items: center; }
+.group-add__existing .form-control { width: auto; min-width: 12rem; }
+.import-group { margin-bottom: 1.25rem; }
+.import-group__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.7rem 0.9rem; background: var(--color-surface-alt); border: 1px solid var(--color-border); border-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.import-group__title { margin: 0; font-size: 1rem; }
+.import-group__meta { color: var(--color-text-muted); font-size: 0.85rem; flex: 1; }
+.import-group__table { margin: 0; }
+.import-group--singles .import-group__head { border-radius: var(--radius-md) var(--radius-md) 0 0; }

@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<DocumentShare> DocumentShares => Set<DocumentShare>();
     public DbSet<ProjectShare> ProjectShares => Set<ProjectShare>();
     public DbSet<ImportTask> ImportTasks => Set<ImportTask>();
+    public DbSet<ImportGroup> ImportGroups => Set<ImportGroup>();
     public DbSet<ExportTask> ExportTasks => Set<ExportTask>();
     public DbSet<TaskRun> TaskRuns => Set<TaskRun>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
@@ -46,6 +47,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<DocumentShare>().ToTable("DocumentShare");
         modelBuilder.Entity<ProjectShare>().ToTable("ProjectShare");
         modelBuilder.Entity<ImportTask>().ToTable("ImportTask");
+        modelBuilder.Entity<ImportGroup>().ToTable("ImportGroup");
         modelBuilder.Entity<ExportTask>().ToTable("ExportTask");
         modelBuilder.Entity<TaskRun>().ToTable("TaskRun");
         modelBuilder.Entity<ShareLink>().ToTable("ShareLink");

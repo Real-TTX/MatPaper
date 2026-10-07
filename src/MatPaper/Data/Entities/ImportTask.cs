@@ -10,5 +10,11 @@ public class ImportTask : BaseEntity
 
     /// <summary>What the task remembers between runs (see ImportSyncState); null = start from the beginning.</summary>
     public string? SyncState { get; set; }
+
+    /// <summary>The group this rule belongs to (shared target, schedule and order); null = a rule on its own.</summary>
+    public long? GroupId { get; set; }
+
+    /// <summary>Order inside the group, lowest first: the rule at the top gets the first pick.</summary>
+    public int Priority { get; set; }
     public UpdateState UpdateState { get; set; }
 }

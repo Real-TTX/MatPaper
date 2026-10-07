@@ -6,94 +6,62 @@
     ViewData["Breadcrumb"] = L["System / Import tasks"].Value;
 }
 
-@functions {
-    string TypeLabel(MatPaper.Data.ImportTaskType type) => type switch
-    {
-        MatPaper.Data.ImportTaskType.Imap => "IMAP",
-        MatPaper.Data.ImportTaskType.Pop3 => "POP3",
-        MatPaper.Data.ImportTaskType.Smb => L["SMB share"].Value,
-        _ => L["Watched folder"].Value
-    };
-}
-
 <mp-toolbar count="Model.TotalCount">
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
 </mp-toolbar>
 
 @{
-    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
-        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+    var activeFilters = FilterChipBar.From(ViewContext.HttpContext.Request,
+        new FilterSpec("Search", L["Search"].Value, Model.Search));
 }
 <partial name="_FilterChips" model="activeFilters" />
 
-<mp-table item-count="Model.Rows.Count" empty-text='@L["No import tasks match your criteria."]'>
-    <thead>
-        <tr>
-            <th>@L["Name"]</th>
-            <th>@L["Type"]</th>
-            <th>@L["Enabled"]</th>
-            <th>@L["Schedule"]</th>
-            <th>@L["Last run"]</th>
-            <th class="is-actions"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in Model.Rows)
+@foreach (var g in Model.Groups)
+{
+    var sched = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
+    <section class="import-group">
+        <div class="import-group__head">
+            <h2 class="import-group__title"><a href="/System/ImportGroups/Edit?id=@g.Id">@g.Name</a></h2>
+            @if (!g.IsEnabled) { <span class="badge badge--warn">@L["Disabled"]</span> }
+            <span class="import-group__meta">
+                @L["Group"] · @sched.Text@(sched.NextUtc is DateTime next ? $" · {L["next:"].Value} {Fmt.DateTime(next)}" : "")
+                @if (g.LastState is TaskRunState state && g.LastStartedAt is DateTime started)
+                {
+                    <text> · </text><span class="badge @(state == TaskRunState.Success ? "badge--ok" : state == TaskRunState.Failed ? "badge--off" : "badge--muted")">@state</span><text> @Fmt.DateTime(started)</text>
+                }
+            </span>
+            <form method="post" action="/System/ImportGroups/Edit?id=@g.Id&handler=Run" style="display:inline">
+                @Html.AntiForgeryToken()
+                <button class="btn btn--secondary" type="submit">@L["Run group now"]</button>
+            </form>
+            <a class="btn btn--secondary" href="/System/ImportGroups/Edit?id=@g.Id">@L["Edit"]</a>
+        </div>
+        @if (g.Rules.Count == 0)
         {
-            <tr data-row-href="/System/ImportTasks/Details?id=@t.Id" tabindex="0">
-                <td><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></td>
-                <td>@TypeLabel(t.Type)</td>
-                <td>
-                    @if (t.IsEnabled)
-                    {
-                        <span class="badge badge--ok">@L["Enabled"]</span>
-                    }
-                    else
-                    {
-                        <span class="badge badge--warn">@L["Disabled"]</span>
-                    }
-                </td>
-                <td>
-                    @{ var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone); }
-                    <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
-                    @if (sched.NextUtc is DateTime nextUtc)
-                    {
-                        <br /><span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
-                    }
-                </td>
-                <td>
-                    @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
-                    {
-                        var css = state switch
-                        {
-                            TaskRunState.Success => "badge--ok",
-                            TaskRunState.Failed => "badge--off",
-                            _ => "badge--muted"
-                        };
-                        <span class="badge @css">@state</span>
-                        <span>&nbsp;@Fmt.DateTime(started)</span>
-                    }
-                    else
-                    {
-                        <span>—</span>
-                    }
-                </td>
-                <td class="is-actions">
-                    <form method="post" action="/System/ImportTasks/Edit?id=@t.Id&handler=Run" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <button class="icon-btn" type="submit" title='@L["Run now"]' aria-label='@L["Run now"]'>
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-                        </button>
-                    </form>
-                    <a href="/System/ImportTasks/Edit?id=@t.Id">@L["Edit"]</a>
-                </td>
-            </tr>
+            <p class="form-help" style="padding:0.7rem 0.9rem;border:1px solid var(--color-border);border-top:0;margin:0">@L["No rules in this group yet."]</p>
         }
-    </tbody>
-</mp-table>
+        else
+        {
+            <partial name="_RuleTable" model="new MatPaper.Pages.System.ImportTasks.IndexModel.RuleTable(g.Rules, true)" />
+        }
+    </section>
+}
+
+@if (Model.Singles.Count > 0 || Model.Groups.Count == 0)
+{
+    <section class="import-group import-group--singles">
+        @if (Model.Groups.Count > 0)
+        {
+            <div class="import-group__head">
+                <h2 class="import-group__title">@L["Single rules"]</h2>
+                <span class="import-group__meta">@L["Each with its own schedule"]</span>
+            </div>
+        }
+        <partial name="_RuleTable" model="new MatPaper.Pages.System.ImportTasks.IndexModel.RuleTable(Model.Singles, false)" />
+    </section>
+}
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/System/ImportTasks/Edit">@L["New import task"]</a>
+    <a class="btn btn--secondary" href="/System/ImportGroups/Edit">@L["New group"]</a>
 </div>
-
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />

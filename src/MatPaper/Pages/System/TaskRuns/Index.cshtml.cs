@@ -47,6 +47,7 @@ public class IndexModel : PageModel
             "export" => TaskRunKind.Export,
             "scan" => TaskRunKind.Scan,
             "align" => TaskRunKind.Align,
+            "importgroup" => TaskRunKind.ImportGroup,
             _ => null
         };
 
@@ -76,7 +77,9 @@ public class IndexModel : PageModel
 
         var importIds = runs.Where(r => r.Kind == TaskRunKind.Import).Select(r => r.TaskId).Distinct().ToList();
         var exportIds = runs.Where(r => r.Kind == TaskRunKind.Export).Select(r => r.TaskId).Distinct().ToList();
-        var scanIds = runs.Where(r => r.Kind == TaskRunKind.Scan).Select(r => r.TaskId).Distinct().ToList();
+        var scanIds = runs.Where(r => r.Kind == TaskRunKind.Scan || r.Kind == TaskRunKind.Align).Select(r => r.TaskId).Distinct().ToList();
+        var groupIds = runs.Where(r => r.Kind == TaskRunKind.ImportGroup).Select(r => r.TaskId).Distinct().ToList();
+        var groupNames = await _db.ImportGroups.AsNoTracking().Where(g => groupIds.Contains(g.Id)).ToDictionaryAsync(g => g.Id, g => g.Name);
 
         var importNames = await _db.ImportTasks
             .AsNoTracking()
@@ -101,6 +104,7 @@ public class IndexModel : PageModel
             {
                 TaskRunKind.Import => importNames,
                 TaskRunKind.Export => exportNames,
+                TaskRunKind.ImportGroup => groupNames,
                 _ => scanNames
             };
             var name = names.TryGetValue(r.TaskId, out var n) ? n : $"#{r.TaskId} (deleted)";

@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -117,17 +118,35 @@ public class TaskSchedulerService : BackgroundService
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         ImportTask? importTask = null;
+        ImportGroup? importGroup = null;
         ExportTask? exportTask = null;
         StorageLocation? location = null;
 
         switch (trigger.Kind)
         {
             case TaskRunKind.Import:
-                importTask = await db.ImportTasks
+                // Untracked: a rule in a group runs with the group's target filled in, and that
+                // completed copy must never be saved back onto the stored rule.
+                var storedRule = await db.ImportTasks.AsNoTracking()
                     .FirstOrDefaultAsync(t => t.Id == trigger.TaskId && t.UpdateState != UpdateState.Deleted, ct);
-                if (importTask is null)
+                if (storedRule is null)
                 {
                     _logger.LogWarning("Import task {TaskId} not found or deleted; skipping run.", trigger.TaskId);
+                    return;
+                }
+
+                var ruleGroup = storedRule.GroupId is long gid
+                    ? await db.ImportGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == gid && g.UpdateState != UpdateState.Deleted, ct)
+                    : null;
+                importTask = ImportGroupDefaults.Effective(storedRule, ruleGroup);
+                break;
+
+            case TaskRunKind.ImportGroup:
+                importGroup = await db.ImportGroups.AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Id == trigger.TaskId && g.UpdateState != UpdateState.Deleted, ct);
+                if (importGroup is null)
+                {
+                    _logger.LogWarning("Import group {GroupId} not found or deleted; skipping run.", trigger.TaskId);
                     return;
                 }
                 break;
@@ -171,7 +190,22 @@ public class TaskSchedulerService : BackgroundService
         try
         {
             RunReport report;
-            if (importTask is not null)
+            if (importGroup is not null)
+            {
+                using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var groupLog = new StringBuilder();
+                var flusher = FlushProgressAsync(run.Id, () => { lock (groupLog) { return groupLog.ToString(); } }, progress.Token);
+                try
+                {
+                    report = await RunGroupAsync(importGroup, groupLog, ct);
+                }
+                finally
+                {
+                    progress.Cancel();
+                    await flusher;
+                }
+            }
+            else if (importTask is not null)
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ImportRunner>();
                 using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -235,6 +269,99 @@ public class TaskSchedulerService : BackgroundService
             run.UpdateDate = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
         }
+    }
+
+    /// <summary>
+    /// Runs the rules of an import group one after the other, top priority first. Every rule records its
+    /// own run as well (so its page shows it), and a rule that fails does not stop the ones after it.
+    /// </summary>
+    private async Task<RunReport> RunGroupAsync(ImportGroup group, StringBuilder log, CancellationToken ct)
+    {
+        List<ImportTask> rules;
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            rules = await db.ImportTasks.AsNoTracking()
+                .Where(t => t.GroupId == group.Id && t.UpdateState != UpdateState.Deleted)
+                .OrderBy(t => t.Priority).ThenBy(t => t.Id)
+                .ToListAsync(ct);
+        }
+
+        void Say(string line) { lock (log) { log.AppendLine(line); } }
+
+        Say($"Group \"{group.Name}\": {rules.Count} rule(s), highest priority first.");
+        int items = 0, failed = 0, ran = 0, n = 0;
+        foreach (var rule in rules)
+        {
+            ct.ThrowIfCancellationRequested();
+            n++;
+            if (!rule.IsEnabled)
+            {
+                Say($"{n}. {rule.Name}: skipped (switched off).");
+                continue;
+            }
+
+            if (_queue.IsBusy(TaskRunKind.Import, rule.Id))
+            {
+                Say($"{n}. {rule.Name}: skipped (already running).");
+                continue;
+            }
+
+            Say($"{n}. {rule.Name} ...");
+            using var ruleScope = _scopeFactory.CreateScope();
+            var ruleDb = ruleScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var runner = ruleScope.ServiceProvider.GetRequiredService<ImportRunner>();
+            var ruleRun = new TaskRun
+            {
+                Kind = TaskRunKind.Import,
+                TaskId = rule.Id,
+                StartedAt = DateTime.UtcNow,
+                State = TaskRunState.Running,
+                CreateDate = DateTime.UtcNow,
+                UpdateDate = DateTime.UtcNow
+            };
+            ruleDb.TaskRuns.Add(ruleRun);
+            await ruleDb.SaveChangesAsync(ct);
+
+            using var progress = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var flusher = FlushProgressAsync(ruleRun.Id, runner.LogSoFar, progress.Token);
+            RunReport report;
+            try
+            {
+                report = await runner.RunAsync(ImportGroupDefaults.Effective(rule, group), ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Rule {RuleId} of group {GroupId} failed.", rule.Id, group.Id);
+                report = new RunReport(false, 0, ex.ToString());
+            }
+            finally
+            {
+                progress.Cancel();
+                await flusher;
+            }
+
+            ruleRun.State = report.Success ? TaskRunState.Success : TaskRunState.Failed;
+            ruleRun.ItemsProcessed = report.ItemsProcessed;
+            ruleRun.Log = Truncate(report.Log);
+            ruleRun.FinishedAt = DateTime.UtcNow;
+            ruleRun.UpdateDate = DateTime.UtcNow;
+            await ruleDb.SaveChangesAsync(ct);
+
+            ran++;
+            items += report.ItemsProcessed;
+            if (!report.Success) { failed++; }
+            Say($"   {(report.Success ? "ok" : "FAILED")}: {report.ItemsProcessed} document(s) imported.");
+        }
+
+        Say($"Done. {ran} rule(s) ran, {items} document(s) imported, {failed} failed.");
+        string text;
+        lock (log) { text = log.ToString(); }
+        return new RunReport(failed == 0, items, text);
     }
 
     /// <summary>While an import runs, copies its log into the run every few seconds so the page can show progress.</summary>
@@ -328,8 +455,10 @@ public class TaskSchedulerService : BackgroundService
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;
 
+        // A rule in a group runs when its group runs; only rules on their own keep a schedule of their own.
         var importTasks = await db.ImportTasks
             .Where(t => t.IsEnabled
+                && t.GroupId == null
                 && t.UpdateState != UpdateState.Deleted
                 && t.CronExpression != null
                 && t.CronExpression != "")
@@ -339,6 +468,19 @@ public class TaskSchedulerService : BackgroundService
         foreach (var t in importTasks)
         {
             await EvaluateOneAsync(db, TaskRunKind.Import, t.Id, t.CronExpression!, t.CreateDate, now, ct);
+        }
+
+        var importGroups = await db.ImportGroups
+            .Where(g => g.IsEnabled
+                && g.UpdateState != UpdateState.Deleted
+                && g.CronExpression != null
+                && g.CronExpression != "")
+            .Select(g => new { g.Id, g.CronExpression, g.CreateDate })
+            .ToListAsync(ct);
+
+        foreach (var g in importGroups)
+        {
+            await EvaluateOneAsync(db, TaskRunKind.ImportGroup, g.Id, g.CronExpression!, g.CreateDate, now, ct);
         }
 
         var exportTasks = await db.ExportTasks

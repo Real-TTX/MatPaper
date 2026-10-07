@@ -13,7 +13,7 @@
     <p class="runs-panel__more" style="margin-top:0"><a href="/System/ImportTasks/Details?id=@Model.Id">← @L["Back to the task"]</a></p>
 }
 
-<form class="form wizard" id="import-wizard" method="post"
+<form class="form wizard" id="import-wizard" method="post" data-mode="@(Model.IsEdit ? "sections" : "wizard")"
       data-browse-url="/System/ImportTasks/Edit?handler=Browse"
       data-preview-url="/System/ImportTasks/Edit?handler=Preview"
       data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'
@@ -350,7 +350,7 @@
         <button class="btn btn--primary" type="button" id="wizard-next">@L["Next"]</button>
         <span class="wizard__nav-spacer"></span>
         <button class="btn btn--primary" type="submit">@L["Save"]</button>
-        <a class="btn btn--secondary" href="/System/ImportTasks">@L["Cancel"]</a>
+        <a class="btn btn--secondary" href="@(Model.IsEdit ? $"/System/ImportTasks/Details?id={Model.Id}" : "/System/ImportTasks")">@L["Cancel"]</a>
         @if (Model.IsEdit)
         {
             <mp-button variant="danger" type="submit" handler="Delete"

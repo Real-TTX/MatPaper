@@ -18,6 +18,11 @@
         // the user was on travels in a hidden field so they land back there.
         var current = parseInt(stepField && stepField.value, 10) || 1;
 
+        // Editing an existing rule shows every section on one page (a jump list instead of Back/Next);
+        // creating one keeps the step-by-step wizard.
+        var sectionsMode = form.getAttribute("data-mode") === "sections";
+        var phone = window.matchMedia("(max-width: 800px)");
+
         function t(name, fallback) { return form.getAttribute("data-t-" + name) || fallback; }
         function fill(template, a) { return String(template).replace("{0}", a); }
 
@@ -43,6 +48,7 @@
 
         function render() {
             var visible = visibleSteps();
+            if (sectionsMode) { renderSections(visible); return; }
             if (visible.indexOf(current) === -1) {
                 current = visible[0];
             }
@@ -65,12 +71,97 @@
             if (stepField) { stepField.value = String(current); }
 
             var pos = visible.indexOf(current);
-            backBtn.disabled = pos <= 0;
-            nextBtn.disabled = pos === visible.length - 1;
+            if (backBtn) { backBtn.disabled = pos <= 0; }
+            if (nextBtn) { nextBtn.disabled = pos === visible.length - 1; }
+        }
+
+        // ---- sections mode: all sections stacked, a jump list, collapsible on phones
+        function panelOf(step) {
+            for (var i = 0; i < panels.length; i++) {
+                if (parseInt(panels[i].getAttribute("data-step"), 10) === step) { return panels[i]; }
+            }
+            return null;
+        }
+
+        function renderSections(visible) {
+            if (visible.indexOf(current) === -1) { current = visible[0]; }
+            panels.forEach(function (panel) {
+                var step = parseInt(panel.getAttribute("data-step"), 10);
+                panel.hidden = visible.indexOf(step) === -1;
+            });
+            steps.forEach(function (chip) {
+                var step = parseInt(chip.getAttribute("data-goto"), 10);
+                var index = visible.indexOf(step);
+                chip.hidden = index === -1;
+                chip.classList.toggle("is-active", step === current);
+                var num = chip.querySelector(".wizard__num");
+                if (num) { num.textContent = index === -1 ? "" : String(index + 1); }
+            });
+            if (stepField) { stepField.value = String(current); }
+        }
+
+        function setCollapsed(panel, collapsed) {
+            panel.classList.toggle("is-collapsed", collapsed);
+            var title = panel.querySelector(".wizard__title");
+            if (title) { title.setAttribute("aria-expanded", collapsed ? "false" : "true"); }
+        }
+
+        function wireSections() {
+            panels.forEach(function (panel) {
+                panel.classList.add("is-section");
+                var title = panel.querySelector(".wizard__title");
+                if (!title) { return; }
+                title.setAttribute("role", "button");
+                title.setAttribute("tabindex", "0");
+                function toggle() { if (phone.matches) { setCollapsed(panel, !panel.classList.contains("is-collapsed")); } }
+                title.addEventListener("click", toggle);
+                title.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+            });
+
+            // On a phone start with one section open: the one with a problem, else the one the user came from, else the source.
+            function collapseForPhone() {
+                var firstOpen = null;
+                panels.forEach(function (panel) {
+                    if (panel.querySelector(".field-error:not(:empty), .input-validation-error, .field-validation-error")) { firstOpen = firstOpen || panel; }
+                });
+                firstOpen = firstOpen || panelOf(current > 1 ? current : 4) || panels[0];
+                panels.forEach(function (panel) { setCollapsed(panel, phone.matches && panel !== firstOpen); });
+            }
+            collapseForPhone();
+            if (phone.addEventListener) { phone.addEventListener("change", collapseForPhone); }
+
+            // The jump list follows the section in view.
+            if ("IntersectionObserver" in window) {
+                var seen = {};
+                var observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) { seen[entry.target.getAttribute("data-step")] = entry.isIntersecting; });
+                    var first = panels.filter(function (p) { return !p.hidden && seen[p.getAttribute("data-step")]; })[0];
+                    if (first) {
+                        current = parseInt(first.getAttribute("data-step"), 10);
+                        renderSections(visibleSteps());
+                    }
+                }, { rootMargin: "-90px 0px -60% 0px" });
+                panels.forEach(function (p) { observer.observe(p); });
+            }
+
+            // Coming back from a postback (test connection ...): scroll to the section that was open.
+            if (current > 1) {
+                var target = panelOf(current);
+                if (target) { setTimeout(function () { target.scrollIntoView({ block: "start" }); }, 50); }
+            }
         }
 
         function go(step) {
             current = step;
+            if (sectionsMode) {
+                var target = panelOf(step);
+                renderSections(visibleSteps());
+                if (target) {
+                    if (phone.matches) { panels.forEach(function (p) { setCollapsed(p, p !== target); }); }
+                    target.scrollIntoView({ block: "start", behavior: "smooth" });
+                }
+                return;
+            }
             render();
             form.scrollIntoView({ block: "start", behavior: "smooth" });
         }
@@ -81,8 +172,8 @@
             if (pos >= 0 && pos < visible.length) { go(visible[pos]); }
         }
 
-        backBtn.addEventListener("click", function () { step(-1); });
-        nextBtn.addEventListener("click", function () { step(1); });
+        if (backBtn) { backBtn.addEventListener("click", function () { step(-1); }); }
+        if (nextBtn) { nextBtn.addEventListener("click", function () { step(1); }); }
         steps.forEach(function (chip) {
             chip.addEventListener("click", function () {
                 var target = parseInt(chip.getAttribute("data-goto"), 10);
@@ -145,6 +236,7 @@
 
         syncPostAction();
         render();
+        if (sectionsMode) { wireSections(); }
 
         // The source picker dialog lives in browse-dialog.js (shared with the storage-location
         // editor); the preview below reuses its request helper.

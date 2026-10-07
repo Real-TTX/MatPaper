@@ -1600,3 +1600,62 @@ html.has-scanner { overflow: hidden; }
 .import-group__meta { color: var(--color-text-muted); font-size: 0.85rem; flex: 1; }
 .import-group__table { margin: 0; }
 .import-group--singles .import-group__head { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+
+/* ---------- Import rule editor: all sections on one page (editing), jump list on the left ---------- */
+.wizard[data-mode="sections"] #wizard-back,
+.wizard[data-mode="sections"] #wizard-next { display: none; }
+.wizard[data-mode="sections"] .wizard__panel { margin-bottom: 1rem; scroll-margin-top: 80px; }
+.wizard[data-mode="sections"] .wizard__panel[hidden] { display: none; }
+.wizard[data-mode="sections"] .wizard__title { cursor: default; }
+
+@media (min-width: 1100px) {
+    .wizard[data-mode="sections"] {
+        display: grid;
+        grid-template-columns: 13rem minmax(0, 1fr);
+        column-gap: 1.5rem;
+        align-items: start;
+    }
+    .wizard[data-mode="sections"] > * { grid-column: 2; }
+    .wizard[data-mode="sections"] > .wizard__steps {
+        grid-column: 1; grid-row: 1 / span 40; position: sticky; top: 1rem;
+        flex-direction: column; flex-wrap: nowrap; align-items: stretch; margin: 0;
+    }
+    .wizard[data-mode="sections"] .wizard__step { border-radius: var(--radius-md); }
+    .wizard[data-mode="sections"] .wizard__step .wizard__label { display: inline; }
+}
+
+/* Between phone and wide desktop the jump list is a sticky bar. */
+@media (max-width: 1099px) {
+    .wizard[data-mode="sections"] > .wizard__steps {
+        position: sticky; top: 0; z-index: 8; padding: 0.5rem 0; background: var(--color-bg); overflow-x: auto; flex-wrap: nowrap;
+    }
+    .wizard[data-mode="sections"] .wizard__step { flex: none; }
+}
+
+/* Phones: a section is a heading you tap to open or close. */
+@media (max-width: 800px) {
+    .wizard[data-mode="sections"] .wizard__title {
+        display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 0.75rem; min-height: 40px;
+    }
+    .wizard[data-mode="sections"] .wizard__title::after {
+        content: ""; width: 9px; height: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+        transform: rotate(225deg); margin-right: 4px; transition: transform 0.15s; flex: none;
+    }
+    .wizard[data-mode="sections"] .wizard__panel.is-collapsed .wizard__title { margin-bottom: 0; }
+    .wizard[data-mode="sections"] .wizard__panel.is-collapsed .wizard__title::after { transform: rotate(45deg); }
+    .wizard[data-mode="sections"] .wizard__panel.is-collapsed > :not(.wizard__title) { display: none !important; }
+    .wizard[data-mode="sections"] .wizard__step:not(.is-active) .wizard__label { display: none; }
+}
+
+/* Editing: the save bar stays in reach while the sections scroll. */
+.wizard[data-mode="sections"] .wizard__nav {
+    position: sticky; bottom: 0; z-index: 7; margin-top: 0.5rem; padding: 0.7rem 0.25rem;
+    padding-bottom: max(0.7rem, env(safe-area-inset-bottom));
+    background: var(--color-bg); border-top: 1px solid var(--color-border);
+}
+.wizard[data-mode="sections"] { max-width: none; }
+@media (min-width: 1100px) { .wizard[data-mode="sections"] { max-width: 70rem; } }
+@media (max-width: 800px) {
+    .wizard[data-mode="sections"] .wizard__nav > .btn, .wizard[data-mode="sections"] .wizard__nav > button { flex: 1; min-height: 44px; }
+    .wizard[data-mode="sections"] .wizard__nav-spacer { display: none; }
+}

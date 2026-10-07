@@ -8,12 +8,7 @@
 @* The wizard walks through type → connection → credentials → source → rules →
    preview → filing. Steps that do not apply to the chosen type hide themselves
    (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
-@if (Model.IsEdit)
-{
-    <p class="runs-panel__more" style="margin-top:0"><a href="/System/ImportTasks/Details?id=@Model.Id">← @L["Back to the task"]</a></p>
-}
-
-<form class="form wizard" id="import-wizard" method="post" data-mode="@(Model.IsEdit ? "sections" : "wizard")"
+<form class="form form--wide wizard" id="import-wizard" method="post" data-mode="@(Model.IsEdit ? "sections" : "wizard")"
       data-browse-url="/System/ImportTasks/Edit?handler=Browse"
       data-preview-url="/System/ImportTasks/Edit?handler=Preview"
       data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'

@@ -778,7 +778,56 @@ public class IndexModel : PageModel
                 d.Owner != null ? d.Owner.DisplayName : null))
             .ToListAsync(ct);
 
+        await TakeOverExactCorrespondentsAsync(ct);
         await LoadOptionsAsync(ct);
+    }
+
+    /// <summary>
+    /// A document without a correspondent whose text names one that already exists (the same name, legal form and
+    /// punctuation aside) gets that correspondent right away - it is not a "suggestion" anymore. This also catches
+    /// documents that were analysed before the correspondent existed.
+    /// </summary>
+    private async Task TakeOverExactCorrespondentsAsync(CancellationToken ct)
+    {
+        var missing = Rows.Where(r => r.CorrespondentId is null && r.OcrState != OcrState.Pending && r.OcrState != OcrState.Deferred)
+            .Select(r => r.Id).ToList();
+        if (missing.Count == 0) { return; }
+
+        var known = (await _db.Correspondents.AsNoTracking()
+                .Where(c => c.UpdateState != UpdateState.Deleted)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync(ct))
+            .Select(c => (c.Id, c.Name)).ToList();
+        if (known.Count == 0) { return; }
+
+        var texts = await _db.Documents.AsNoTracking()
+            .Where(d => missing.Contains(d.Id) && d.OcrText != null && d.OcrText != "")
+            .Select(d => new { d.Id, d.OcrText })
+            .ToListAsync(ct);
+
+        var assigned = new Dictionary<long, long>();
+        foreach (var text in texts)
+        {
+            foreach (var name in CorrespondentSuggester.Suggest(text.OcrText, 4))
+            {
+                var hit = known.FirstOrDefault(k => CorrespondentSuggester.SameName(k.Name, name));
+                if (hit.Id != 0) { assigned[text.Id] = hit.Id; break; }
+            }
+        }
+
+        if (assigned.Count == 0) { return; }
+
+        var now = DateTime.UtcNow;
+        foreach (var (documentId, correspondentId) in assigned)
+        {
+            await _db.Documents
+                .Where(d => d.Id == documentId && d.CorrespondentId == null)
+                .ExecuteUpdateAsync(u => u
+                    .SetProperty(d => d.CorrespondentId, correspondentId)
+                    .SetProperty(d => d.UpdateDate, now), ct);
+        }
+
+        Rows = Rows.Select(r => assigned.TryGetValue(r.Id, out var id) ? r with { CorrespondentId = id } : r).ToList();
     }
 
     private async Task LoadOptionsAsync(CancellationToken ct)

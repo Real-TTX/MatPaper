@@ -54,7 +54,8 @@
             <div class="inbox-grid">
                 <div class="inbox-field inbox-field--corr">
                     <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="m.CorrespondentOptions"
-                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
+                               value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]'
+                               suggest-doc="@(!processing && !deferred ? row.Id : (long?)null)" />
                 </div>
                 <div class="inbox-field">
                     <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="m.DocumentTypeOptions"
@@ -117,29 +118,6 @@
                     }
                 </div>
             </div>
-
-            @if (row.CorrespondentId is null)
-            {
-                <div class="inbox-suggest">
-                    <span class="inbox-suggest__label">@L["Correspondent suggestions:"]</span>
-                    @if (processing)
-                    {
-                        <span class="inbox-suggest__note">@L["The text is still being recognised …"]</span>
-                    }
-                    else if (deferred)
-                    {
-                        <span class="inbox-suggest__note">@L["Analyze the file first, then there are suggestions."]</span>
-                    }
-                    else
-                    {
-                        <div class="suggest-box">
-                            <span class="inbox-suggest__note">@L["Looking for suggestions …"]</span>
-                        </div>
-                        <button type="button" class="btn btn--secondary suggest-btn" data-suggest-correspondent="@row.Id"
-                                data-none='@L["No suggestion found."]' hidden>@L["Suggest"]</button>
-                    }
-                </div>
-            }
 
             <div class="inbox-item__actions">
                 <button class="btn btn--primary" type="submit" disabled="@(processing || (!found && !m.HasStorage))"

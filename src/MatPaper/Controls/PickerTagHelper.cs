@@ -77,6 +77,13 @@ public sealed class PickerTagHelper : TagHelper
     [HtmlAttributeName("create")]
     public string? Create { get; set; }
 
+    /// <summary>
+    /// A document id: the dropdown then offers the correspondents (or names) its text suggests, on top of the list.
+    /// Only for the correspondent picker; leave unset elsewhere.
+    /// </summary>
+    [HtmlAttributeName("suggest-doc")]
+    public long? SuggestDoc { get; set; }
+
     /// <summary>Suffix appended to the widget id so repeated pickers keep unique ids.</summary>
     [HtmlAttributeName("id-suffix")]
     public string? IdSuffix { get; set; }
@@ -124,6 +131,15 @@ public sealed class PickerTagHelper : TagHelper
         widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\"");
         widget.Append($" data-close-label=\"{enc.Encode(_l["Close"].Value)}\"");
         widget.Append($" data-remove-label=\"{enc.Encode(_l["Remove"].Value)}\"");
+        if (SuggestDoc is long suggestDoc && !Multiple && selected.Count == 0)
+        {
+            widget.Append($" data-suggest-doc=\"{suggestDoc}\"");
+            widget.Append($" data-suggest-hint=\"{enc.Encode(_l["{0} suggestions"].Value)}\"");
+            widget.Append($" data-suggest-hint-one=\"{enc.Encode(_l["1 suggestion"].Value)}\"");
+            widget.Append($" data-suggest-heading=\"{enc.Encode(_l["Suggestions"].Value)}\"");
+            widget.Append($" data-suggest-all=\"{enc.Encode(_l["All"].Value)}\"");
+        }
+
         string? createKind = CreateKind(fullName);
         if (createKind is not null)
         {

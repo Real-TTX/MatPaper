@@ -224,10 +224,28 @@
 
     // ------------------------------------------------------------------ open / close
 
+    // The area behind the status bar belongs to the scanner while it is open (black, like its bars) and is given
+    // back to the app when it closes: the browser colour is set explicitly both ways and the root is repainted,
+    // so nothing dark is left behind the status bar afterwards.
+    function barColor(scanning) {
+        var html = document.documentElement;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+            var surface = getComputedStyle(html).getPropertyValue("--color-surface").trim();
+            meta.setAttribute("content", scanning ? "#000000" : (surface || "#ffffff"));
+        }
+        if (!scanning) {
+            html.style.backgroundColor = "var(--color-surface)";
+            void html.offsetHeight;
+            html.style.removeProperty("background-color");
+        }
+    }
+
     function open(options) {
         onDone = (options && options.onDone) || onDone;
         if (!root) { build(); }
         root.hidden = false;
+        barColor(true);
         document.documentElement.classList.add("has-scanner");
         if (options && options.pages && pages.length) { showPages(); } else { showCamera(); }
     }
@@ -236,6 +254,7 @@
         stopCamera();
         if (root) { root.hidden = true; }
         document.documentElement.classList.remove("has-scanner");
+        barColor(false);
     }
 
     // Closing keeps what was scanned; the page that opened the scanner decides what to do with it.

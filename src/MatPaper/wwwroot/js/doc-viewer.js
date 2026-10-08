@@ -35,10 +35,12 @@
             '<span class="doc-viewer__title"></span>' +
             '<button type="button" class="doc-viewer__btn" data-act="out">−</button>' +
             '<button type="button" class="doc-viewer__btn" data-act="in">+</button>' +
+            '<button type="button" class="doc-viewer__btn" data-act="share"></button>' +
             '<a class="doc-viewer__btn" data-act="download"></a>' +
             '</div>' +
             '<div class="doc-viewer__scroll"><div class="doc-viewer__pages"></div></div>' +
-            '<div class="doc-viewer__page" aria-live="polite"></div>';
+            '<div class="doc-viewer__page" aria-live="polite"></div>' +
+            '<div class="doc-viewer__toast" role="status" hidden></div>';
         document.body.appendChild(dialog);
 
         parts = {
@@ -47,12 +49,17 @@
             pages: dialog.querySelector(".doc-viewer__pages"),
             indicator: dialog.querySelector(".doc-viewer__page"),
             download: dialog.querySelector('[data-act="download"]'),
+            share: dialog.querySelector('[data-act="share"]'),
+            toast: dialog.querySelector(".doc-viewer__toast"),
             close: dialog.querySelector('[data-act="close"]')
         };
         parts.close.textContent = "✕";
         parts.close.setAttribute("aria-label", text("close", "Close"));
         parts.download.textContent = "⤓";
         parts.download.setAttribute("aria-label", text("download", "Download"));
+        parts.share.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
+        parts.share.setAttribute("aria-label", text("share", "Share"));
+        parts.share.setAttribute("title", text("share", "Share"));
 
         dialog.addEventListener("click", function (event) {
             var act = event.target && event.target.closest ? event.target.closest("[data-act]") : null;
@@ -61,6 +68,7 @@
             if (name === "close") { dialog.close(); }
             else if (name === "in") { setZoom(zoom + 0.5); }
             else if (name === "out") { setZoom(zoom - 0.5); }
+            else if (name === "share") { share(); }
         });
 
         // Double-tap: fit width <-> 2x.
@@ -76,6 +84,7 @@
         });
 
         dialog.addEventListener("close", function () {
+            current = null;
             if (observer) { observer.disconnect(); observer = null; }
             parts.pages.innerHTML = "";
             document.documentElement.classList.remove("has-viewer");
@@ -83,6 +92,88 @@
 
         parts.scroll.addEventListener("scroll", updateIndicator, { passive: true });
         wirePinch();
+    }
+
+    // ---- Share ----------------------------------------------------------------
+    // The file itself goes to another app (mail, messenger ...) through the phone's share sheet. Not every
+    // browser can do that with a file; then a link that works for a few days is created and shared (or copied).
+    var current = null;
+    var toastTimer = null;
+
+    function toast(message) {
+        if (!parts || !parts.toast) { return; }
+        parts.toast.textContent = message;
+        parts.toast.hidden = false;
+        if (toastTimer) { clearTimeout(toastTimer); }
+        toastTimer = setTimeout(function () { parts.toast.hidden = true; }, 3500);
+    }
+
+    function fileNameOf(response, fallback) {
+        var disposition = response.headers.get("Content-Disposition") || "";
+        var star = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+        if (star) { try { return decodeURIComponent(star[1]); } catch (e) { /* fall through */ } }
+        var plain = /filename="?([^";]+)"?/i.exec(disposition);
+        return plain ? plain[1] : fallback;
+    }
+
+    function loadFile(token, title) {
+        return fetch("/Documents/" + token + "/download", { credentials: "same-origin" }).then(function (response) {
+            if (!response.ok) { throw new Error("download"); }
+            return response.blob().then(function (blob) {
+                return new File([blob], fileNameOf(response, (title || "document") + ".pdf"), { type: blob.type || "application/pdf" });
+            });
+        });
+    }
+
+    function canShareFiles() {
+        return typeof navigator.canShare === "function" && typeof navigator.share === "function" && typeof File === "function";
+    }
+
+    function copyLink(url, days) {
+        var done = function () { toast(text("link-copied", "Link copied - valid for {0} days").replace("{0}", String(days))); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(done, function () { window.prompt(text("link", "Link"), url); });
+        } else {
+            window.prompt(text("link", "Link"), url);
+        }
+    }
+
+    function shareLink(shown) {
+        var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+        var body = new FormData();
+        body.append("__RequestVerificationToken", tokenEl ? tokenEl.value : "");
+        body.append("days", "7");
+        return fetch("/Documents/" + shown.token + "/share", { method: "POST", body: body, credentials: "same-origin" })
+            .then(function (response) { return response.json().catch(function () { return null; }); })
+            .then(function (result) {
+                if (!result || !result.ok) {
+                    toast(result && result.forbidden ? text("share-forbidden", "Only the owner can share this document.") : text("share-failed", "The document could not be shared."));
+                    return;
+                }
+                if (typeof navigator.share === "function") {
+                    return navigator.share({ title: shown.title || "", url: result.url }).catch(function (error) {
+                        if (error && error.name === "AbortError") { return; }
+                        copyLink(result.url, result.days);
+                    });
+                }
+                copyLink(result.url, result.days);
+            })
+            .catch(function () { toast(text("share-failed", "The document could not be shared.")); });
+    }
+
+    function share() {
+        if (!current) { return; }
+        var shown = current;
+        // The file is fetched while the viewer opens, so the share sheet can open at once (a phone only allows it
+        // right after a tap).
+        if (shown.file && canShareFiles() && navigator.canShare({ files: [shown.file] })) {
+            navigator.share({ files: [shown.file], title: shown.title || "" }).catch(function (error) {
+                if (error && error.name === "AbortError") { return; }
+                shareLink(shown);
+            });
+            return;
+        }
+        shareLink(shown);
     }
 
     function setZoom(value) {
@@ -164,6 +255,12 @@
         var token = options.token;
 
         parts.title.textContent = options.title || "";
+        current = { token: token, title: options.title || "", file: null };
+        if (canShareFiles()) {
+            loadFile(token, options.title).then(function (file) {
+                if (current && current.token === token) { current.file = file; }
+            }).catch(function () { /* the link route stays */ });
+        }
         parts.download.setAttribute("href", "/Documents/" + token + "/download");
         parts.pages.innerHTML = "";
         parts.indicator.textContent = "";

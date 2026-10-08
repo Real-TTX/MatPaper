@@ -1026,4 +1026,11 @@
   <data name="The text is still being recognised …" xml:space="preserve"><value>Der Text wird noch erkannt …</value></data>
   <data name="Analyze the file first, then there are suggestions." xml:space="preserve"><value>Erst die Datei analysieren, dann gibt es Vorschläge.</value></data>
   <data name="Looking for suggestions …" xml:space="preserve"><value>Suche Vorschläge …</value></data>
+  <data name="Share document" xml:space="preserve"><value>Dokument teilen</value></data>
+  <data name="Link copied - valid for {0} days" xml:space="preserve"><value>Link kopiert – gültig für {0} Tage</value></data>
+  <data name="The document could not be shared." xml:space="preserve"><value>Das Dokument konnte nicht geteilt werden.</value></data>
+  <data name="Only the owner can share this document." xml:space="preserve"><value>Nur der Besitzer kann dieses Dokument teilen.</value></data>
+  <data name="{0} suggestions" xml:space="preserve"><value>{0} Vorschläge</value></data>
+  <data name="Suggestions" xml:space="preserve"><value>Vorschläge</value></data>
+  <data name="1 suggestion" xml:space="preserve"><value>1 Vorschlag</value></data>
 </root>

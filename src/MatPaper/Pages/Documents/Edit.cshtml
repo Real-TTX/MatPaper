@@ -94,15 +94,9 @@
         <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]'
                    asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
 
-        <div class="suggest-field">
-            <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
-                       asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
-            @if (Model.Input.CorrespondentId is null && Model.Id != 0)
-            {
-                <button type="button" class="btn btn--secondary suggest-btn" data-suggest-correspondent="@Model.Id" data-none='@L["No suggestion found."]'>@L["Suggest"]</button>
-                <div class="suggest-box" hidden></div>
-            }
-        </div>
+        <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
+                   asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]'
+                   suggest-doc="@(Model.Id != 0 ? Model.Id : (long?)null)" />
 
         <mp-picker asp-for="Input.ProjectId" label='@L["Project"]'
                    asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />

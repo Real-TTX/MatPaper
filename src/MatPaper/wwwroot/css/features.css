@@ -1453,10 +1453,10 @@ dialog.quick-connection [hidden] { display: none !important; }
 html.has-scanner { overflow: hidden; }
 .scn { position: fixed; inset: 0; z-index: 3000; background: #000; color: #fff; font-family: inherit; touch-action: manipulation; }
 .scn[hidden], .scn [hidden] { display: none !important; }
-.scn__view { position: absolute; inset: 0; display: flex; flex-direction: column; background: #0e1014; }
-.scn__top, .scn__bottom { flex: none; display: flex; align-items: center; gap: 0.25rem; background: #14171c; }
-.scn__top { min-height: 56px; padding: 0 0.5rem; padding-top: env(safe-area-inset-top); border-bottom: 1px solid rgba(255,255,255,0.08); }
-.scn__bottom { padding: 0.55rem 0.75rem; padding-bottom: max(0.55rem, env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,0.08); }
+.scn__view { position: absolute; inset: 0; display: flex; flex-direction: column; background: #000; }
+.scn__top, .scn__bottom { flex: none; display: flex; align-items: center; gap: 0.25rem; background: #000; }
+.scn__top { min-height: 56px; padding: 0 0.5rem; padding-top: env(safe-area-inset-top); border-bottom: 1px solid rgba(255,255,255,0.14); }
+.scn__bottom { padding: 0.55rem 0.75rem; padding-bottom: max(0.55rem, env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,0.14); }
 .scn__heading { flex: 1; min-width: 0; padding: 0 0.5rem; font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scn__icon { width: 24px; height: 24px; flex: none; }
 .scn__tool { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; min-width: 44px; min-height: 44px; padding: 0 0.6rem; border: 0; border-radius: var(--radius-md, 10px); background: transparent; color: #fff; font: inherit; font-size: 0.85rem; cursor: pointer; }
@@ -1664,14 +1664,6 @@ html.has-scanner { overflow: hidden; }
 .mp-picker-dialog__create.is-busy { opacity: 0.55; pointer-events: none; }
 .mp-picker-dialog__more { padding: 0.55rem 0.9rem; color: var(--color-text-muted); font-size: 0.85rem; list-style: none; }
 
-/* "Suggest" for a correspondent that does not exist yet */
-.suggest-field { position: relative; }
-.suggest-btn { margin-top: 0.4rem; padding: 0.3rem 0.8rem; font-size: 0.85rem; }
-.suggest-box { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
-.suggest-box[hidden] { display: none; }
-.suggest-chip { border: 1px solid var(--color-primary); background: transparent; color: var(--color-primary); border-radius: 999px; padding: 0.25rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
-.suggest-chip:hover { background: var(--color-primary); color: #fff; }
-.suggest-chip:disabled { opacity: 0.5; cursor: default; }
 
 /* Nothing flashes before the page script has arranged the steps; without script the page shows everything. */
 .wizard.is-booting, [data-tabs].is-booting { visibility: hidden; }
@@ -1693,7 +1685,6 @@ html.has-scanner { overflow: hidden; }
 
 
 
-.suggest-chip.is-known { background: var(--color-primary); color: #fff; }
 
 /* ---------- Inbox: one orderly card per document ---------- */
 .inbox-item {
@@ -1739,12 +1730,6 @@ html.has-scanner { overflow: hidden; }
 .inbox-grid .mp-picker__chips { order: 2; margin-top: 0.45rem; }
 .inbox-radios { display: flex; align-items: center; gap: 1.25rem; min-height: var(--control-height); }
 
-/* suggestions for the correspondent, a line of their own */
-.inbox-suggest { display: flex; align-items: center; flex-wrap: wrap; gap: 0.45rem 0.6rem; margin-top: 0.85rem; }
-.inbox-suggest[hidden] { display: none; }
-.inbox-suggest__label { color: var(--color-text-muted); font-size: 0.85rem; }
-.inbox-suggest .suggest-box:not([hidden]) { display: contents; }
-.inbox-suggest .suggest-btn { margin: 0; }
 
 /* actions: the main one first, the rest after it, the tools at the end */
 .inbox-item__actions {
@@ -1807,7 +1792,6 @@ html.has-scanner { overflow: hidden; }
     .inbox-item__path { font-size: 0.8rem; }
 }
 
-.inbox-suggest__note { color: var(--color-text-muted); font-size: 0.85rem; }
 .inbox-item--found { border-left-width: 1px; }
 
 /* the filter bar and the list header on a phone: search across, then the filter button and the count; the buttons wrap */
@@ -1916,3 +1900,16 @@ html.has-scanner { overflow: hidden; }
     .list-header__actions > .btn, .list-header__actions > form > .btn { min-height: 46px; width: 100%; }
 }
 
+
+.doc-viewer__toast {
+    position: absolute; left: 50%; bottom: max(3.2rem, calc(env(safe-area-inset-bottom) + 2.6rem)); transform: translateX(-50%);
+    max-width: calc(100% - 2rem); padding: 0.6rem 1rem; border-radius: 999px; background: rgba(20, 24, 30, 0.92); color: #fff;
+    font-size: 0.9rem; text-align: center; z-index: 3;
+}
+.doc-viewer__toast[hidden] { display: none; }
+
+/* The dropdown of a correspondent picker offers the suggestions of the document on top */
+.mp-picker-dialog__heading { padding: 0.5rem 0.9rem 0.2rem; color: var(--color-text-muted); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; list-style: none; }
+.mp-picker-dialog__suggest { color: var(--color-primary); font-weight: 600; }
+/* ... and the field says there are some, as long as it is empty */
+.mp-picker[data-has-suggestions="true"] .mp-picker__trigger[data-placeholder-shown="true"] .mp-picker__label::after { content: var(--hint); color: var(--color-primary); font-weight: 600; }

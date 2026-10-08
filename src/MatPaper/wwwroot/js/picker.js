@@ -175,8 +175,19 @@
             multiple: widget.getAttribute("data-multiple") === "true",
             options: readOptions(widget),
             selected: currentSelection(widget),
-            placeholder: widget.getAttribute("data-placeholder") || ""
+            placeholder: widget.getAttribute("data-placeholder") || "",
+            suggestions: widget.hasAttribute("data-suggest-doc") ? (suggestCache[widget.getAttribute("data-suggest-doc")] || null) : []
         };
+        // Not asked for yet (the page-wide request failed or is still on its way): ask for this one document.
+        if (mp.active.suggestions === null) {
+            var openedFor = mp.active;
+            suggestionsFor([widget.getAttribute("data-suggest-doc")]).then(function () {
+                if (dialog._mp.active === openedFor) {
+                    openedFor.suggestions = suggestCache[widget.getAttribute("data-suggest-doc")] || [];
+                    renderList(dialog, mp.search.value);
+                }
+            });
+        }
 
         dialog.classList.toggle("mp-picker-dialog--multiple", mp.active.multiple);
         mp.footer.style.display = mp.active.multiple ? "" : "none";
@@ -209,6 +220,33 @@
                 t: active.placeholder,
                 clear: true
             }, isEmpty(active.selected)));
+        }
+
+        // What the document's text suggests, above the full list (not while searching).
+        if (!needle && active.suggestions && active.suggestions.length > 0) {
+            var heading = document.createElement("li");
+            heading.className = "mp-picker-dialog__heading";
+            heading.textContent = active.widget.getAttribute("data-suggest-heading") || "Suggestions";
+            list.appendChild(heading);
+            active.suggestions.forEach(function (item) {
+                var row = document.createElement("li");
+                row.className = "mp-picker-dialog__item mp-picker-dialog__suggest";
+                row.setAttribute("role", "option");
+                row.textContent = (item.id ? "" : "+ ") + (item.existing || item.name);
+                row.addEventListener("click", function () {
+                    if (item.id) {
+                        commitSingle(dialog, { v: String(item.id), t: item.existing || item.name });
+                        dialog.close();
+                    } else {
+                        createEntry(dialog, "correspondent", item.name, row);
+                    }
+                });
+                list.appendChild(row);
+            });
+            var all = document.createElement("li");
+            all.className = "mp-picker-dialog__heading";
+            all.textContent = active.widget.getAttribute("data-suggest-all") || "All";
+            list.appendChild(all);
         }
 
         for (var i = 0; i < active.options.length; i++) {
@@ -470,88 +508,37 @@
         return chip;
     }
 
-    // Correspondent suggestions: names proposed from the document's text. A click takes one (an existing entry
-    // is selected, a new name is created first). The inbox asks once for the whole page and shows them right away.
-    function suggestWidget(btn) {
-        var scope = btn.closest("[data-doc-id], form, body");
-        return (scope || document).querySelector('.mp-picker[data-create="correspondent"]');
-    }
+    // Suggestions for the correspondent of a document: names proposed from its text. The page asks once for all
+    // documents it shows; a picker that has some marks itself ("2 suggestions") and offers them in its dropdown.
+    var suggestCache = Object.create(null);
 
-    function renderSuggestions(btn, items) {
-        var box = btn.parentNode.querySelector(".suggest-box");
-        var widget = suggestWidget(btn);
-        if (!box || !widget) { return; }
-        box.innerHTML = "";
-        box.hidden = false;
-        if (!items || items.length === 0) {
-            var none = document.createElement("span");
-            none.className = "inbox-suggest__note";
-            none.textContent = btn.getAttribute("data-none") || "No suggestion found.";
-            box.appendChild(none);
-            return;
-        }
-        items.forEach(function (item) {
-            var chip = document.createElement("button");
-            chip.type = "button";
-            chip.className = "suggest-chip" + (item.id ? " is-known" : "");
-            chip.textContent = (item.id ? "" : "+ ") + (item.existing || item.name);
-            chip.addEventListener("click", function () {
-                if (item.id) {
-                    window.MpPicker.select(widget, { v: String(item.id), t: item.existing || item.name });
-                    box.hidden = true;
-                    return;
-                }
-                var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
-                var body = new FormData();
-                body.append("__RequestVerificationToken", tokenEl ? tokenEl.value : "");
-                body.append("kind", "correspondent");
-                body.append("name", item.name);
-                chip.disabled = true;
-                fetch("/QuickCreate", { method: "POST", body: body, credentials: "same-origin" })
-                    .then(function (r) { return r.json(); })
-                    .then(function (created) {
-                        if (created && created.ok) {
-                            window.MpPicker.select(widget, { v: String(created.id), t: created.name });
-                            box.hidden = true;
-                        } else { chip.disabled = false; }
-                    })
-                    .catch(function () { chip.disabled = false; });
-            });
-            box.appendChild(chip);
-        });
-    }
-
-    document.addEventListener("click", function (ev) {
-        var btn = ev.target.closest ? ev.target.closest("[data-suggest-correspondent]") : null;
-        if (!btn) { return; }
-        ev.preventDefault();
-        btn.disabled = true;
-        fetch("/QuickCreate?handler=Suggest&documentId=" + encodeURIComponent(btn.getAttribute("data-suggest-correspondent")), { credentials: "same-origin" })
-            .then(function (r) { return r.json(); })
-            .then(function (result) { btn.disabled = false; renderSuggestions(btn, (result && result.items) || []); })
-            .catch(function () { btn.disabled = false; });
-    });
-
-    ready(function () {
-        var buttons = Array.prototype.slice.call(document.querySelectorAll(".inbox-item:not(.is-processing) [data-suggest-correspondent]"));
-        if (buttons.length === 0) { return; }
-        var ids = buttons.map(function (b) { return b.getAttribute("data-suggest-correspondent"); });
-        fetch("/QuickCreate?handler=SuggestMany&ids=" + encodeURIComponent(ids.join(",")), { credentials: "same-origin" })
+    function suggestionsFor(ids) {
+        var wanted = ids.filter(function (id) { return id && suggestCache[id] === undefined; });
+        if (wanted.length === 0) { return Promise.resolve(); }
+        return fetch("/QuickCreate?handler=SuggestMany&ids=" + encodeURIComponent(wanted.join(",")), { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
             .then(function (result) {
                 var docs = (result && result.documents) || {};
-                buttons.forEach(function (btn) {
-                    btn.hidden = true;
-                    renderSuggestions(btn, docs[btn.getAttribute("data-suggest-correspondent")] || []);
-                });
+                wanted.forEach(function (id) { suggestCache[id] = docs[id] || []; });
             })
-            .catch(function () {
-                // Could not ask: the button is there for a manual try.
-                buttons.forEach(function (btn) {
-                    btn.hidden = false;
-                    var box = btn.parentNode.querySelector(".suggest-box");
-                    if (box) { box.innerHTML = ""; }
-                });
-            });
+            .catch(function () { /* no suggestions this time */ });
+    }
+
+    function markSuggestions(widget) {
+        var items = suggestCache[widget.getAttribute("data-suggest-doc")] || [];
+        var trigger = widget.querySelector(".mp-picker__trigger");
+        if (!trigger || items.length === 0) { return; }
+        var hint = items.length === 1
+            ? (widget.getAttribute("data-suggest-hint-one") || "1 suggestion")
+            : (widget.getAttribute("data-suggest-hint") || "{0} suggestions").replace("{0}", String(items.length));
+        trigger.style.setProperty("--hint", JSON.stringify(" · " + hint));
+        widget.setAttribute("data-has-suggestions", "true");
+    }
+
+    ready(function () {
+        var widgets = Array.prototype.slice.call(document.querySelectorAll(".mp-picker[data-suggest-doc]"));
+        if (widgets.length === 0) { return; }
+        var ids = widgets.map(function (w) { return w.getAttribute("data-suggest-doc"); });
+        suggestionsFor(ids).then(function () { widgets.forEach(markSuggestions); });
     });
 })();

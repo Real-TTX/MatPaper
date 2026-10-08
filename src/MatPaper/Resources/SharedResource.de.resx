@@ -1049,4 +1049,15 @@
   <data name="All {0} selected" xml:space="preserve"><value>Alle {0} ausgewählt</value></data>
   <data name="Select all {0}" xml:space="preserve"><value>Alle {0} auswählen</value></data>
   <data name="Only this page" xml:space="preserve"><value>Nur diese Seite</value></data>
+  <data name="Preparing the file …" xml:space="preserve"><value>Datei wird vorbereitet …</value></data>
+  <data name="Save or share" xml:space="preserve"><value>Sichern oder teilen</value></data>
+  <data name="This device cannot save files from the app. Open MatPaper in the browser to download." xml:space="preserve"><value>Dieses Gerät kann Dateien nicht aus der App sichern. Öffne MatPaper im Browser, um sie herunterzuladen.</value></data>
+  <data name="The file could not be saved." xml:space="preserve"><value>Die Datei konnte nicht gesichert werden.</value></data>
+  <data name="Choose a date" xml:space="preserve"><value>Datum wählen</value></data>
+  <data name="Today" xml:space="preserve"><value>Heute</value></data>
+  <data name="Clear" xml:space="preserve"><value>Löschen</value></data>
+  <data name="Previous month" xml:space="preserve"><value>Voriger Monat</value></data>
+  <data name="Next month" xml:space="preserve"><value>Nächster Monat</value></data>
+  <data name="Month" xml:space="preserve"><value>Monat</value></data>
+  <data name="Year" xml:space="preserve"><value>Jahr</value></data>
 </root>

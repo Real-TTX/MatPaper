@@ -21,6 +21,12 @@
         return window.matchMedia("(max-width: 800px)").matches;
     }
 
+    // The installed app has no back button: a file link must open the viewer there, not take over the window.
+    function isStandalone() {
+        return window.navigator.standalone === true
+            || (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches);
+    }
+
     function text(key, fallback) {
         var el = document.getElementById("viewer-i18n");
         return (el && el.getAttribute("data-" + key)) || fallback;
@@ -36,7 +42,7 @@
             '<button type="button" class="doc-viewer__btn" data-act="out">−</button>' +
             '<button type="button" class="doc-viewer__btn" data-act="in">+</button>' +
             '<button type="button" class="doc-viewer__btn" data-act="share"></button>' +
-            '<a class="doc-viewer__btn" data-act="download"></a>' +
+            '<a class="doc-viewer__btn" data-act="download" data-viewer-download></a>' +
             '</div>' +
             '<div class="doc-viewer__scroll"><div class="doc-viewer__pages"></div></div>' +
             '<div class="doc-viewer__page" aria-live="polite"></div>' +
@@ -69,6 +75,15 @@
             else if (name === "in") { setZoom(zoom + 0.5); }
             else if (name === "out") { setZoom(zoom - 0.5); }
             else if (name === "share") { share(); }
+            else if (name === "download" && isStandalone()) {
+                // no download in the installed app's window: the share sheet saves the file ("Save to Files")
+                event.preventDefault();
+                if (current && current.file && canShareFiles() && navigator.canShare({ files: [current.file] })) {
+                    navigator.share({ files: [current.file], title: current.title || "" }).catch(function () { });
+                } else if (current && window.MatPaperDownload) {
+                    window.MatPaperDownload.open("/Documents/" + current.token + "/download");
+                }
+            }
         });
 
         // Double-tap: fit width <-> 2x.
@@ -304,7 +319,7 @@
 
     document.addEventListener("click", function (event) {
         var el = event.target && event.target.closest ? event.target.closest("[data-viewer-token]") : null;
-        if (!el || !isPhone()) { return; }
+        if (!el || !(isPhone() || isStandalone())) { return; }
         event.preventDefault();
         event.stopImmediatePropagation();
         open({ token: el.getAttribute("data-viewer-token"), title: el.getAttribute("data-viewer-title") || "" });

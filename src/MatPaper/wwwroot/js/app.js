@@ -700,6 +700,93 @@
     }
 })();
 
+// ---- Files in the installed app ------------------------------------------------------------------------
+// The installed app (home-screen icon) has no address bar and no back button. A link to a file - a download,
+// the XML of an e-invoice - would open the file in the app's own window and trap the user there until the app is
+// restarted. Here such a link fetches the file and hands it to the share sheet ("Save to Files", Mail ...)
+// instead; the page stays where it is. In a normal browser tab nothing changes.
+(function () {
+    "use strict";
+
+    function isStandalone() {
+        return window.navigator.standalone === true
+            || (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches);
+    }
+
+    function text(key, fallback) {
+        var el = document.getElementById("viewer-i18n");
+        return (el && el.getAttribute("data-" + key)) || fallback;
+    }
+
+    function fileNameOf(response, fallback) {
+        var disposition = response.headers.get("Content-Disposition") || "";
+        var star = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+        if (star) { try { return decodeURIComponent(star[1]); } catch (e) { /* fall through */ } }
+        var plain = /filename="?([^";]+)"?/i.exec(disposition);
+        return plain ? plain[1] : fallback;
+    }
+
+    var sheet = null;
+
+    function buildSheet() {
+        sheet = document.createElement("dialog");
+        sheet.className = "confirm download-sheet";
+        sheet.innerHTML = '<div class="confirm__inner"><p class="confirm__text"></p><div class="confirm__actions">' +
+            '<button type="button" class="btn btn--secondary" data-sheet="close"></button>' +
+            '<button type="button" class="btn btn--primary" data-sheet="save" hidden></button></div></div>';
+        document.body.appendChild(sheet);
+        sheet.querySelector('[data-sheet="close"]').addEventListener("click", function () { sheet.close(); });
+        sheet.querySelector('[data-sheet="close"]').textContent = text("close", "Close");
+    }
+
+    // Prepares the file, then waits for a tap on "Save / share": the share sheet only opens straight after a tap.
+    function openSheet(url) {
+        if (!sheet) { buildSheet(); }
+        var message = sheet.querySelector(".confirm__text");
+        var save = sheet.querySelector('[data-sheet="save"]');
+        message.textContent = text("dl-preparing", "Preparing the file …");
+        save.hidden = true;
+        if (!sheet.open) { sheet.showModal(); }
+
+        fetch(url, { credentials: "same-origin" })
+            .then(function (response) {
+                if (!response.ok) { throw new Error("download"); }
+                return response.blob().then(function (blob) {
+                    return new File([blob], fileNameOf(response, "document"), { type: blob.type || "application/octet-stream" });
+                });
+            })
+            .then(function (file) {
+                var canShare = typeof navigator.canShare === "function" && typeof navigator.share === "function" && navigator.canShare({ files: [file] });
+                if (!canShare) {
+                    message.textContent = text("dl-unsupported", "This device cannot save files from the app. Open MatPaper in the browser to download.");
+                    return;
+                }
+                message.textContent = file.name;
+                save.textContent = text("dl-save", "Save or share");
+                save.hidden = false;
+                save.onclick = function () {
+                    navigator.share({ files: [file], title: file.name })
+                        .then(function () { sheet.close(); })
+                        .catch(function (error) { if (!error || error.name !== "AbortError") { message.textContent = text("dl-failed", "The file could not be saved."); } });
+                };
+            })
+            .catch(function () { message.textContent = text("dl-failed", "The file could not be saved."); });
+    }
+
+    window.MatPaperDownload = { open: openSheet, isStandalone: isStandalone };
+
+    if (!isStandalone()) { return; }
+    document.addEventListener("click", function (event) {
+        var link = event.target.closest && event.target.closest("a[href]");
+        if (!link || link.hasAttribute("data-viewer-download") || link.hasAttribute("data-viewer-token")) { return; }
+        var href = link.getAttribute("href") || "";
+        if (!/\/download(\?|$)|\/xml(\?|$)|[?&]download=true/.test(href)) { return; }
+        event.preventDefault();
+        event.stopPropagation();
+        openSheet(link.href);
+    }, true);
+})();
+
 // The installed app does not zoom the page by pinching or double-tapping (iOS ignores the viewport hint
 // in Safari). Places that need zoom - the page viewer, the scanner - bring their own.
 (function () {

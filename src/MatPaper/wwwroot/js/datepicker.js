@@ -1,6 +1,8 @@
 // Date fields: every <input type="date"> becomes a field that looks like the other pickers and opens a calendar
-// in a dialog (a full-screen one on a phone). The native input stays in the form - hidden, holding yyyy-MM-dd -
-// so server code, validation and scripts that read it do not change. A pick sets it and fires input/change.
+// in a dialog (a full-screen one on a phone). The dialog is built like the other dialogs: the label of the field
+// on the left of the header, the close cross on the right, the calendar below. The native input stays in the
+// form - hidden, holding yyyy-MM-dd - so server code, validation and scripts that read it do not change. A pick
+// sets it and fires input/change.
 //
 //   MatPaperDate.enhance(root)   enhance the date inputs inside root (done for the whole page on load)
 (function () {
@@ -35,9 +37,9 @@
     function sameDay(a, b) { return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
 
     var ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
-    var PREV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
-    var NEXT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
-    var CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    var PREV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
+    var NEXT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+    var CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
     var dialog = null;
     var parts = null;
@@ -47,11 +49,15 @@
         dialog = document.createElement("dialog");
         dialog.className = "mp-date-dialog";
         dialog.innerHTML =
-            '<div class="mp-date-dialog__head">' +
-            '<button type="button" class="icon-btn" data-nav="-1"></button>' +
-            '<div class="mp-date-dialog__title"><select class="form-control" data-role="month"></select><select class="form-control" data-role="year"></select></div>' +
-            '<button type="button" class="icon-btn" data-nav="1"></button>' +
-            '<button type="button" class="icon-btn mp-date-dialog__close" data-act="close"></button>' +
+            '<div class="filter-dialog__head">' +
+            '<h2 class="filter-dialog__title"></h2>' +
+            '<button type="button" class="icon-btn filter-dialog__close" data-act="close"></button>' +
+            '</div>' +
+            '<div class="mp-date-dialog__nav">' +
+            '<button type="button" class="mp-date-dialog__step" data-nav="-1"></button>' +
+            '<select class="form-control" data-role="month"></select>' +
+            '<select class="form-control" data-role="year"></select>' +
+            '<button type="button" class="mp-date-dialog__step" data-nav="1"></button>' +
             '</div>' +
             '<div class="mp-date-dialog__weekdays"></div>' +
             '<div class="mp-date-dialog__grid" role="grid"></div>' +
@@ -59,6 +65,7 @@
         document.body.appendChild(dialog);
 
         parts = {
+            label: dialog.querySelector(".filter-dialog__title"),
             prev: dialog.querySelector('[data-nav="-1"]'),
             next: dialog.querySelector('[data-nav="1"]'),
             month: dialog.querySelector('[data-role="month"]'),
@@ -69,9 +76,10 @@
             today: dialog.querySelector('[data-act="today"]'),
             close: dialog.querySelector('[data-act="close"]')
         };
-        parts.prev.innerHTML = PREV; parts.prev.setAttribute("aria-label", text("date-prev", "Previous month"));
-        parts.next.innerHTML = NEXT; parts.next.setAttribute("aria-label", text("date-next", "Next month"));
-        parts.close.innerHTML = CLOSE; parts.close.setAttribute("aria-label", text("close", "Close"));
+        parts.close.innerHTML = CLOSE;
+        parts.prev.innerHTML = PREV; parts.prev.setAttribute("aria-label", text("date-prev", "Previous month")); parts.prev.title = text("date-prev", "Previous month");
+        parts.next.innerHTML = NEXT; parts.next.setAttribute("aria-label", text("date-next", "Next month")); parts.next.title = text("date-next", "Next month");
+        parts.close.setAttribute("aria-label", text("close", "Close"));
         parts.clear.textContent = text("date-clear", "Clear");
         parts.today.textContent = text("date-today", "Today");
         parts.month.setAttribute("aria-label", text("date-month", "Month"));
@@ -177,8 +185,12 @@
         if (!dialog) { build(); }
         var selected = fromIso(input.value) || new Date();
         state = { input: input, view: new Date(selected.getFullYear(), selected.getMonth(), 1), focus: selected };
+        parts.label.textContent = input._mpLabel || text("date-placeholder", "Choose a date");
         render();
         dialog.showModal();
+        // the keyboard starts on the chosen day (arrow keys move from there)
+        var start = parts.grid.querySelector('[tabindex="0"]');
+        if (start) { start.focus(); }
     }
 
     function commit(date) {
@@ -220,8 +232,15 @@
             trigger.id = input.id + "_date";
             var label = document.querySelector('label[for="' + input.id + '"]');
             if (label) {
+                input._mpLabel = label.textContent.trim();
                 label.setAttribute("for", trigger.id);
             }
+        }
+        if (!input._mpLabel) {
+            // no label of its own (a field inside a row): the label above it, or what the field itself says
+            var row = input.closest(".form-row, .toolbar__group, .field");
+            var near = row && row.querySelector("label");
+            input._mpLabel = (near && near.textContent.trim()) || input.getAttribute("aria-label") || input.getAttribute("title") || "";
         }
     }
 

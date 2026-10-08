@@ -1451,6 +1451,8 @@ dialog.quick-connection [hidden] { display: none !important; }
 /* ---------- Document scanner (scanner.js) ---------- */
 /* Same frame on every screen: a bar on top, a bar at the bottom, the picture in between. */
 html.has-scanner { overflow: hidden; }
+/* The root colour shows behind the status bar: black while the scanner is open, like the scanner's bars. */
+html.has-scanner, html.has-scanner body { background: #000; }
 .scn { position: fixed; inset: 0; z-index: 3000; background: #000; color: #fff; font-family: inherit; touch-action: manipulation; }
 .scn[hidden], .scn [hidden] { display: none !important; }
 .scn__view { position: absolute; inset: 0; display: flex; flex-direction: column; background: #000; }
@@ -1953,18 +1955,26 @@ dialog.filter-dialog--bulk .filter-dialog__body { align-content: start; }
 .mp-date__icon svg { width: 18px; height: 18px; }
 
 dialog.mp-date-dialog {
-    width: min(21rem, calc(100vw - 2rem)); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+    width: min(22rem, calc(100vw - 2rem)); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md);
     background: var(--color-surface); color: var(--color-text); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
 }
 dialog.mp-date-dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 dialog.mp-date-dialog[open] { display: flex; flex-direction: column; }
-.mp-date-dialog__head { display: flex; align-items: center; gap: 0.35rem; padding: 0.6rem 0.6rem 0.4rem; }
-.mp-date-dialog__title { flex: 1; display: flex; gap: 0.4rem; min-width: 0; }
-.mp-date-dialog__title select { height: 38px; min-height: 38px; padding: 0 28px 0 10px; font-size: 0.95rem; }
-.mp-date-dialog__title select[data-role="month"] { flex: 1; min-width: 0; }
-.mp-date-dialog__title select[data-role="year"] { width: 5.8rem; flex: none; }
-.mp-date-dialog__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 0.6rem; color: var(--color-text-muted); font-size: 0.78rem; text-align: center; }
-.mp-date-dialog__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 0.3rem 0.6rem 0.6rem; }
+/* paging: previous / month / year / next, all as tall as the input fields */
+.mp-date-dialog__nav { display: flex; align-items: center; gap: 8px; padding: 0.9rem 1rem 0.6rem; }
+.mp-date-dialog__nav select { flex: 1 1 0; min-width: 0; height: var(--control-height); min-height: var(--control-height); padding-top: 0; padding-bottom: 0; }
+.mp-date-dialog__nav select[data-role="year"] { flex: 0 0 6.4rem; }
+.mp-date-dialog__step {
+    flex: none; display: inline-grid; place-items: center; width: var(--control-height); height: var(--control-height); padding: 0;
+    border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); cursor: pointer;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.mp-date-dialog__step:hover { background: var(--color-hover); border-color: var(--color-primary); color: var(--color-primary); }
+.mp-date-dialog__step:focus-visible { outline: none; border-color: var(--color-primary); box-shadow: var(--focus-ring); }
+.mp-date-dialog__step:active { transform: scale(0.96); }
+.mp-date-dialog__step svg { width: 18px; height: 18px; }
+.mp-date-dialog__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 1rem; color: var(--color-text-muted); font-size: 0.78rem; font-weight: 600; text-align: center; }
+.mp-date-dialog__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 0.35rem 1rem 0.8rem; }
 .mp-date-dialog__day { height: 40px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .mp-date-dialog__day:hover { background: var(--color-surface-alt); }
 .mp-date-dialog__day:focus-visible { outline: none; box-shadow: var(--focus-ring); }
@@ -1972,11 +1982,10 @@ dialog.mp-date-dialog[open] { display: flex; flex-direction: column; }
 .mp-date-dialog__day.is-today { box-shadow: inset 0 0 0 1.5px var(--color-primary); }
 .mp-date-dialog__day.is-selected { background: var(--color-primary); color: var(--color-primary-contrast, #fff); font-weight: 700; opacity: 1; }
 .mp-date-dialog__day:disabled { opacity: 0.3; cursor: default; }
-.mp-date-dialog__foot { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.6rem; border-top: 1px solid var(--color-border); }
+.mp-date-dialog__foot { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.8rem 1rem; border-top: 1px solid var(--color-border); }
 @media (max-width: 800px) {
     dialog.mp-date-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
-    .mp-date-dialog__head { padding-top: max(0.6rem, env(safe-area-inset-top)); }
-    .mp-date-dialog__title select { height: 44px; min-height: 44px; }
+    .mp-date-dialog__nav { padding: 1rem 0.75rem 0.5rem; }
     .mp-date-dialog__weekdays { padding: 0.4rem 0.75rem 0; font-size: 0.85rem; }
     .mp-date-dialog__grid { flex: 1; grid-auto-rows: 56px; align-content: start; padding: 0.4rem 0.75rem; }
     .mp-date-dialog__day { height: 100%; font-size: 1.05rem; }
@@ -2073,3 +2082,16 @@ a.doc-table__name:hover { color: var(--color-primary); }
     .list-bar--end.list-bar--solo { display: flex; }
     .view-choice__opt { min-height: 46px; }
 }
+
+/* ---------- Correspondents on a phone: the name and the buttons; email and last document are no columns there ---------- */
+.corr-last-btn { display: none; }
+@media (max-width: 800px) {
+    .corr-col--email, .corr-col--last { display: none; }
+    .corr-last-btn { display: inline-flex; }
+}
+
+/* ---------- The buttons beside a document preview: edit, share, download, open in a tab, close ---------- */
+.doc-actions { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.icon-btn[hidden] { display: none; }
+/* the note "link copied" on a page (inside a dialog it sits in the dialog) */
+.doc-viewer__toast--page { position: fixed; bottom: 1.5rem; z-index: 2000; }

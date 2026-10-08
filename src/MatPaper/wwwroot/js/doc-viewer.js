@@ -8,6 +8,9 @@
 //   MatPaperViewer.open({ token, title })       open it
 //   MatPaperViewer.isPhone()                    true on narrow screens (where it should be used)
 //   <button data-viewer-token="…" data-viewer-title="…">   opens it on click (phones only)
+//   MatPaperViewer.share({ token, title, host })   share a document from anywhere (not only from the viewer);
+//   <button data-doc-share data-doc-token="…" data-doc-title="…">   does it on click - the buttons beside the
+//   desktop preview use it; host = the dialog or page the "link copied" note appears in
 (function () {
     "use strict";
 
@@ -115,12 +118,23 @@
     var current = null;
     var toastTimer = null;
 
-    function toast(message) {
-        if (!parts || !parts.toast) { return; }
-        parts.toast.textContent = message;
-        parts.toast.hidden = false;
+    function toast(message, host) {
+        var el = parts && parts.toast;
+        if (host) {
+            el = host.querySelector(":scope > .doc-viewer__toast");
+            if (!el) {
+                el = document.createElement("div");
+                el.className = "doc-viewer__toast" + (host === document.body ? " doc-viewer__toast--page" : "");
+                el.setAttribute("role", "status");
+                el.hidden = true;
+                host.appendChild(el);
+            }
+        }
+        if (!el) { return; }
+        el.textContent = message;
+        el.hidden = false;
         if (toastTimer) { clearTimeout(toastTimer); }
-        toastTimer = setTimeout(function () { parts.toast.hidden = true; }, 3500);
+        toastTimer = setTimeout(function () { el.hidden = true; }, 3500);
     }
 
     function fileNameOf(response, fallback) {
@@ -144,8 +158,8 @@
         return typeof navigator.canShare === "function" && typeof navigator.share === "function" && typeof File === "function";
     }
 
-    function copyLink(url, days) {
-        var done = function () { toast(text("link-copied", "Link copied - valid for {0} days").replace("{0}", String(days))); };
+    function copyLink(url, days, host) {
+        var done = function () { toast(text("link-copied", "Link copied - valid for {0} days").replace("{0}", String(days)), host); };
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(done, function () { window.prompt(text("link", "Link"), url); });
         } else {
@@ -162,23 +176,25 @@
             .then(function (response) { return response.json().catch(function () { return null; }); })
             .then(function (result) {
                 if (!result || !result.ok) {
-                    toast(result && result.forbidden ? text("share-forbidden", "Only the owner can share this document.") : text("share-failed", "The document could not be shared."));
+                    toast(result && result.forbidden ? text("share-forbidden", "Only the owner can share this document.") : text("share-failed", "The document could not be shared."), shown.host);
                     return;
                 }
                 if (typeof navigator.share === "function") {
                     return navigator.share({ title: shown.title || "", url: result.url }).catch(function (error) {
                         if (error && error.name === "AbortError") { return; }
-                        copyLink(result.url, result.days);
+                        copyLink(result.url, result.days, shown.host);
                     });
                 }
-                copyLink(result.url, result.days);
+                copyLink(result.url, result.days, shown.host);
             })
-            .catch(function () { toast(text("share-failed", "The document could not be shared.")); });
+            .catch(function () { toast(text("share-failed", "The document could not be shared."), shown.host); });
     }
 
     function share() {
-        if (!current) { return; }
-        var shown = current;
+        if (current) { shareDocument(current); }
+    }
+
+    function shareDocument(shown) {
         // The file is fetched while the viewer opens, so the share sheet can open at once (a phone only allows it
         // right after a tap).
         if (shown.file && canShareFiles() && navigator.canShare({ files: [shown.file] })) {
@@ -325,5 +341,19 @@
         open({ token: el.getAttribute("data-viewer-token"), title: el.getAttribute("data-viewer-title") || "" });
     }, true);
 
-    window.MatPaperViewer = { open: open, isPhone: isPhone };
+    // The buttons beside the desktop preview (the dialog of the document list, the document page).
+    document.addEventListener("click", function (event) {
+        var el = event.target && event.target.closest ? event.target.closest("[data-doc-share]") : null;
+        if (!el) { return; }
+        event.preventDefault();
+        shareDocument({ token: el.getAttribute("data-doc-token"), title: el.getAttribute("data-doc-title") || "", file: null, host: el.closest("dialog") || document.body });
+    });
+
+    window.MatPaperViewer = {
+        open: open,
+        isPhone: isPhone,
+        share: function (options) {
+            if (options && options.token) { shareDocument({ token: options.token, title: options.title || "", file: null, host: options.host || document.body }); }
+        }
+    };
 })();

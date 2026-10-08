@@ -20,8 +20,8 @@
     <thead>
         <tr>
             <th>@L["Name"]</th>
-            <th>@L["Email"]</th>
-            <th>@L["Last document"]</th>
+            <th class="corr-col--email">@L["Email"]</th>
+            <th class="corr-col--last">@L["Last document"]</th>
             <th class="is-actions"></th>
         </tr>
     </thead>
@@ -31,8 +31,8 @@
             Model.Stats.TryGetValue(c.Id, out var st);
             <tr data-row-href="/Correspondents/Edit?id=@c.Id" tabindex="0">
                 <td><a href="/Documents?CorrespondentIds=@c.Id" title='@L["Show documents"]'>@c.Name</a></td>
-                <td>@(string.IsNullOrWhiteSpace(c.Email) ? "—" : c.Email)</td>
-                <td>
+                <td class="corr-col--email">@(string.IsNullOrWhiteSpace(c.Email) ? "—" : c.Email)</td>
+                <td class="corr-col--last">
                     @if (st != null && st.LatestId != null)
                     {
                         <a href="/Documents/Edit?id=@st.LatestId" title="@st.LatestTitle">@st.LatestTitle</a>
@@ -45,6 +45,12 @@
                 </td>
                 <td class="is-actions">
                     <span class="icon-actions">
+                        @if (st != null && st.LatestId != null)
+                        {
+                            <a class="icon-btn corr-last-btn" href="/Documents/Edit?id=@st.LatestId" title='@L["Last document"]: @st.LatestTitle' aria-label='@L["Last document"]: @st.LatestTitle'>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /><path d="M9 13h6M9 17h4" /></svg>
+                            </a>
+                        }
                         <a class="icon-btn" href="/Documents?CorrespondentIds=@c.Id" title='@L["Documents"]' aria-label='@L["Documents"]'>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
                         </a>

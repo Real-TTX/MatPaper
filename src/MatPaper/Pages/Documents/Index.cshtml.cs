@@ -84,6 +84,9 @@ public class IndexModel : PageModel
 
     public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
 
+    /// <summary>Whether the signed-in user may publish a link to the document (its owner, or an administrator).</summary>
+    public bool CanShare(Document document) => DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin);
+
     /// <summary>True while the list shows the bin instead of the archive.</summary>
     public bool ShowingDeleted => string.Equals(Review, "deleted", StringComparison.OrdinalIgnoreCase);
 

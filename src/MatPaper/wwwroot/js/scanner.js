@@ -224,21 +224,34 @@
 
     // ------------------------------------------------------------------ open / close
 
-    // The area behind the status bar belongs to the scanner while it is open (black, like its bars) and is given
-    // back to the app when it closes: the browser colour is set explicitly both ways and the root is repainted,
-    // so nothing dark is left behind the status bar afterwards.
+    // The status bar belongs to the scanner while it is open and goes back to the app when it closes. A phone
+    // paints the status bar from two places: the browser colour (theme-color) and the colour of the root element
+    // (the app's root has the header's colour, so it is light in the light theme). Both are black while the scanner
+    // is open - the root through html.has-scanner in the style sheet - and both are set explicitly on the way
+    // back, with a repaint, so nothing dark is left behind the status bar afterwards.
+    function themeColor(color) {
+        // a new tag, not a changed attribute: some browsers only look again when the tag is inserted
+        var old = document.querySelector('meta[name="theme-color"]');
+        var meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        meta.setAttribute("content", color);
+        if (old && old.parentNode) { old.parentNode.replaceChild(meta, old); } else { document.head.appendChild(meta); }
+    }
+
     function barColor(scanning) {
         var html = document.documentElement;
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) {
-            var surface = getComputedStyle(html).getPropertyValue("--color-surface").trim();
-            meta.setAttribute("content", scanning ? "#000000" : (surface || "#ffffff"));
-        }
-        if (!scanning) {
+        var surface = getComputedStyle(html).getPropertyValue("--color-surface").trim() || "#ffffff";
+        if (scanning) {
+            html.classList.add("has-scanner");
+            themeColor("#000000");
+        } else {
+            html.classList.remove("has-scanner");
+            themeColor(surface);
             html.style.backgroundColor = "var(--color-surface)";
             void html.offsetHeight;
             html.style.removeProperty("background-color");
         }
+        void html.offsetHeight;
     }
 
     function open(options) {
@@ -246,14 +259,12 @@
         if (!root) { build(); }
         root.hidden = false;
         barColor(true);
-        document.documentElement.classList.add("has-scanner");
         if (options && options.pages && pages.length) { showPages(); } else { showCamera(); }
     }
 
     function hide() {
         stopCamera();
         if (root) { root.hidden = true; }
-        document.documentElement.classList.remove("has-scanner");
         barColor(false);
     }
 

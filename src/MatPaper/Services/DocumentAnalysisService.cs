@@ -369,6 +369,18 @@ public sealed class DocumentAnalysisService
             }
         }
 
+        // 4) Same, ignoring the legal form and punctuation ("Stadtwerke Köln" in the text, "Stadtwerke Köln GmbH" in the list).
+        var normalizedText = " " + CorrespondentSuggester.Normalize(matchText) + " ";
+        foreach (var candidate in candidates)
+        {
+            var normalizedName = CorrespondentSuggester.Normalize(name(candidate));
+            if (normalizedName.Length >= 4 && normalizedText.Contains(" " + normalizedName + " ", StringComparison.Ordinal))
+            {
+                assign(candidate.Id);
+                return true;
+            }
+        }
+
         return false;
     }
 

@@ -470,61 +470,81 @@
         return chip;
     }
 
-    // "Vorschlag erstellen": proposes correspondent names from the document's text; a click takes one
-    // (an existing entry is selected, a new name is created first).
+    // Correspondent suggestions: names proposed from the document's text. A click takes one (an existing entry
+    // is selected, a new name is created first). The inbox asks once for the whole page and shows them right away.
+    function suggestWidget(btn) {
+        var scope = btn.closest("[data-doc-id], form, body");
+        return (scope || document).querySelector('.mp-picker[data-create="correspondent"]');
+    }
+
+    function renderSuggestions(btn, items) {
+        var box = btn.parentNode.querySelector(".suggest-box");
+        var widget = suggestWidget(btn);
+        if (!box || !widget) { return; }
+        box.innerHTML = "";
+        box.hidden = false;
+        if (!items || items.length === 0) {
+            var none = document.createElement("span");
+            none.className = "form-help";
+            none.textContent = btn.getAttribute("data-none") || "No suggestion found.";
+            box.appendChild(none);
+            return;
+        }
+        items.forEach(function (item) {
+            var chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "suggest-chip" + (item.id ? " is-known" : "");
+            chip.textContent = (item.id ? "" : "+ ") + (item.existing || item.name);
+            chip.addEventListener("click", function () {
+                if (item.id) {
+                    window.MpPicker.select(widget, { v: String(item.id), t: item.existing || item.name });
+                    box.hidden = true;
+                    return;
+                }
+                var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+                var body = new FormData();
+                body.append("__RequestVerificationToken", tokenEl ? tokenEl.value : "");
+                body.append("kind", "correspondent");
+                body.append("name", item.name);
+                chip.disabled = true;
+                fetch("/QuickCreate", { method: "POST", body: body, credentials: "same-origin" })
+                    .then(function (r) { return r.json(); })
+                    .then(function (created) {
+                        if (created && created.ok) {
+                            window.MpPicker.select(widget, { v: String(created.id), t: created.name });
+                            box.hidden = true;
+                        } else { chip.disabled = false; }
+                    })
+                    .catch(function () { chip.disabled = false; });
+            });
+            box.appendChild(chip);
+        });
+    }
+
     document.addEventListener("click", function (ev) {
         var btn = ev.target.closest ? ev.target.closest("[data-suggest-correspondent]") : null;
         if (!btn) { return; }
         ev.preventDefault();
-        var box = btn.parentNode.querySelector(".suggest-box");
-        var scope = btn.closest("[data-doc-id], form, body");
-        var widget = (scope || document).querySelector('.mp-picker[data-create="correspondent"]');
-        if (!box || !widget) { return; }
         btn.disabled = true;
         fetch("/QuickCreate?handler=Suggest&documentId=" + encodeURIComponent(btn.getAttribute("data-suggest-correspondent")), { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
+            .then(function (result) { btn.disabled = false; renderSuggestions(btn, (result && result.items) || []); })
+            .catch(function () { btn.disabled = false; });
+    });
+
+    ready(function () {
+        var buttons = Array.prototype.slice.call(document.querySelectorAll(".inbox-item [data-suggest-correspondent]"));
+        if (buttons.length === 0) { return; }
+        var ids = buttons.map(function (b) { return b.getAttribute("data-suggest-correspondent"); });
+        fetch("/QuickCreate?handler=SuggestMany&ids=" + encodeURIComponent(ids.join(",")), { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
             .then(function (result) {
-                btn.disabled = false;
-                box.innerHTML = "";
-                box.hidden = false;
-                var items = (result && result.items) || [];
-                if (items.length === 0) {
-                    var none = document.createElement("span");
-                    none.className = "form-help";
-                    none.textContent = btn.getAttribute("data-none") || "No suggestion found.";
-                    box.appendChild(none);
-                    return;
-                }
-                items.forEach(function (item) {
-                    var chip = document.createElement("button");
-                    chip.type = "button";
-                    chip.className = "suggest-chip";
-                    chip.textContent = (item.id ? "" : "+ ") + (item.existing || item.name);
-                    chip.addEventListener("click", function () {
-                        if (item.id) {
-                            window.MpPicker.select(widget, { v: String(item.id), t: item.existing || item.name });
-                            box.hidden = true;
-                            return;
-                        }
-                        var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
-                        var body = new FormData();
-                        body.append("__RequestVerificationToken", tokenEl ? tokenEl.value : "");
-                        body.append("kind", "correspondent");
-                        body.append("name", item.name);
-                        chip.disabled = true;
-                        fetch("/QuickCreate", { method: "POST", body: body, credentials: "same-origin" })
-                            .then(function (r) { return r.json(); })
-                            .then(function (created) {
-                                if (created && created.ok) {
-                                    window.MpPicker.select(widget, { v: String(created.id), t: created.name });
-                                    box.hidden = true;
-                                } else { chip.disabled = false; }
-                            })
-                            .catch(function () { chip.disabled = false; });
-                    });
-                    box.appendChild(chip);
+                var docs = (result && result.documents) || {};
+                buttons.forEach(function (btn) {
+                    var items = docs[btn.getAttribute("data-suggest-correspondent")] || [];
+                    if (items.length > 0) { btn.hidden = true; renderSuggestions(btn, items); }
                 });
             })
-            .catch(function () { btn.disabled = false; });
+            .catch(function () { /* the buttons stay for a manual try */ });
     });
 })();

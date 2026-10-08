@@ -102,6 +102,14 @@ else
         {
             <span class="list-header__actions" style="margin-left:auto">
                 <a class="btn btn--secondary" href="/Blocklist">@L["Blocklist"]</a>
+                <form method="post" asp-page-handler="SuggestAll"
+                      asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
+                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" style="display:inline">
+                    <button class="btn btn--secondary" type="submit"
+                            data-confirm='@L["Take the best correspondent suggestion for every document without one? Unknown names are created."]'>
+                        @L["Assign correspondents"]
+                    </button>
+                </form>
                 @if (Model.LocationId is long filteredLocation && Model.FoundCount > 0)
                 {
                     <form method="post" asp-page-handler="IgnoreAllFound" asp-route-LocationId="@Model.LocationId"

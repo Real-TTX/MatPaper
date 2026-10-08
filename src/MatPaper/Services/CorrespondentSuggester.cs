@@ -76,6 +76,21 @@ public static class CorrespondentSuggester
         return result.Take(max).ToList();
     }
 
+    /// <summary>Lower case, without legal form, punctuation and extra spaces: "Stadtwerke Köln GmbH" and "stadtwerke köln" are the same.</summary>
+    public static string Normalize(string? name)
+    {
+        var s = LegalForm.Replace(name ?? string.Empty, " ");
+        s = Regex.Replace(s, @"[^\p{L}\p{N}]+", " ").Trim().ToLowerInvariant();
+        return Regex.Replace(s, @"\s+", " ");
+    }
+
+    public static bool SameName(string? a, string? b)
+    {
+        var x = Normalize(a);
+        var y = Normalize(b);
+        return x.Length >= 3 && x == y;
+    }
+
     private static string? Clean(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) { return null; }

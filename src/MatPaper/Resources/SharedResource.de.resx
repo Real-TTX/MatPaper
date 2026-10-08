@@ -997,4 +997,8 @@
   <data name="Only the newest entries are shown; narrow it down with the search." xml:space="preserve"><value>Es werden nur die neuesten Einträge gezeigt; mit der Suche eingrenzen.</value></data>
   <data name="Only unread mail" xml:space="preserve"><value>Nur ungelesene Mails</value></data>
   <data name="The mail server picks the unread ones (UNSEEN), so read mail is not even looked at." xml:space="preserve"><value>Der Mailserver sucht die ungelesenen heraus (UNSEEN), gelesene Mails werden gar nicht erst angesehen.</value></data>
+  <data name="No correspondents could be suggested." xml:space="preserve"><value>Es konnten keine Korrespondenten vorgeschlagen werden.</value></data>
+  <data name="{0} document(s) got a correspondent ({1} new)." xml:space="preserve"><value>{0} Dokument(e) haben einen Korrespondenten bekommen ({1} neu).</value></data>
+  <data name="Take the best correspondent suggestion for every document without one? Unknown names are created." xml:space="preserve"><value>Für jedes Dokument ohne Korrespondent den besten Vorschlag übernehmen? Unbekannte Namen werden neu angelegt.</value></data>
+  <data name="Assign correspondents" xml:space="preserve"><value>Korrespondenten zuordnen</value></data>
 </root>

@@ -304,6 +304,46 @@ public class IndexModel : PageModel
         return RedirectBack();
     }
 
+    /// <summary>
+    /// For every document of the list that has no correspondent: the best fitting existing one, else the best
+    /// suggestion from the text as a new correspondent.
+    /// </summary>
+    public async Task<IActionResult> OnPostSuggestAllAsync(CancellationToken ct)
+    {
+        var documents = await FilteredQuery(tracked: true)
+            .Where(d => d.CorrespondentId == null && d.OcrText != null && d.OcrText != "")
+            .OrderBy(d => d.CreateDate)
+            .Take(BatchLimit)
+            .ToListAsync(ct);
+
+        var known = await _db.Correspondents.Where(c => c.UpdateState != UpdateState.Deleted).ToListAsync(ct);
+        var now = DateTime.UtcNow;
+        int assigned = 0, created = 0;
+        foreach (var document in documents)
+        {
+            var name = CorrespondentSuggester.Suggest(document.OcrText, 1).FirstOrDefault();
+            if (name is null) { continue; }
+
+            var match = known.FirstOrDefault(k => CorrespondentSuggester.SameName(k.Name, name));
+            if (match is null)
+            {
+                match = new Correspondent { Name = name, UpdateState = UpdateState.Created, CreateDate = now, CreateUserId = _currentUser.UserId, UpdateDate = now, UpdateUserId = _currentUser.UserId };
+                _db.Correspondents.Add(match);
+                known.Add(match);
+                created++;
+            }
+
+            document.Correspondent = match;
+            assigned++;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        this.Notify(assigned == 0
+            ? _l["No correspondents could be suggested."].Value
+            : _l["{0} document(s) got a correspondent ({1} new).", assigned, created].Value);
+        return RedirectBack();
+    }
+
     /// <summary>Delete and put the content on the blocklist: it is skipped when it turns up again.</summary>
     public async Task<IActionResult> OnPostBlockAsync(long id, CancellationToken ct)
     {

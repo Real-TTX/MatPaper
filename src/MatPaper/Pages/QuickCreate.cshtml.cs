@@ -35,20 +35,38 @@ public class QuickCreateModel : PageModel
             .Select(d => d.OcrText)
             .FirstOrDefaultAsync();
 
-        var suggestions = CorrespondentSuggester.Suggest(text);
-        var known = await _db.Correspondents.AsNoTracking()
-            .Where(c => c.UpdateState != UpdateState.Deleted)
-            .Select(c => new { c.Id, c.Name })
+        var known = await LoadKnownAsync();
+        return new JsonResult(new { ok = true, items = Describe(text, known) });
+    }
+
+    /// <summary>The same for a list of documents (the inbox asks once for the whole page).</summary>
+    public async Task<IActionResult> OnGetSuggestManyAsync(string ids)
+    {
+        var wanted = (ids ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => long.TryParse(s, out var id) ? id : 0).Where(id => id > 0).Take(100).ToList();
+        var texts = await _db.Documents.AsNoTracking()
+            .AccessibleTo(_currentUser)
+            .Where(d => wanted.Contains(d.Id))
+            .Select(d => new { d.Id, d.OcrText })
             .ToListAsync();
 
-        var items = suggestions.Select(name =>
-        {
-            var hit = known.FirstOrDefault(k => k.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                ?? known.FirstOrDefault(k => k.Name.Length >= 4 && (name.Contains(k.Name, StringComparison.OrdinalIgnoreCase) || k.Name.Contains(name, StringComparison.OrdinalIgnoreCase)));
-            return new { name, id = hit?.Id, existing = hit?.Name };
-        }).ToList();
-        return new JsonResult(new { ok = true, items });
+        var known = await LoadKnownAsync();
+        var result = texts.ToDictionary(t => t.Id.ToString(), t => Describe(t.OcrText, known));
+        return new JsonResult(new { ok = true, documents = result });
     }
+
+    private async Task<List<(long Id, string Name)>> LoadKnownAsync()
+        => (await _db.Correspondents.AsNoTracking()
+            .Where(c => c.UpdateState != UpdateState.Deleted)
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync()).Select(c => (c.Id, c.Name)).ToList();
+
+    private static List<object> Describe(string? text, List<(long Id, string Name)> known)
+        => CorrespondentSuggester.Suggest(text).Select(name =>
+        {
+            var hit = known.Cast<(long Id, string Name)?>().FirstOrDefault(k => CorrespondentSuggester.SameName(k!.Value.Name, name));
+            return (object)new { name, id = hit?.Id, existing = hit?.Name };
+        }).ToList();
 
     public async Task<IActionResult> OnPostAsync(string kind, string name)
     {

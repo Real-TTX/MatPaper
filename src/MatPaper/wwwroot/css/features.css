@@ -1735,3 +1735,5 @@ html.has-scanner { overflow: hidden; }
     .inbox-item__tools { margin-left: 0; }
     .inbox-item__path { font-size: 0.8rem; }
 }
+
+.suggest-chip.is-known { background: var(--color-primary); color: #fff; }

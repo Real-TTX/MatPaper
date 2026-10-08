@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
 
-namespace MatPaper.Pages.Blocklist;
+namespace MatPaper.Pages.System.Blocklist;
 
 public class IndexModel : PageModel
 {

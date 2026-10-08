@@ -308,46 +308,6 @@ public class IndexModel : PageModel
         return RedirectBack();
     }
 
-    /// <summary>
-    /// For every document of the list that has no correspondent: the best fitting existing one, else the best
-    /// suggestion from the text as a new correspondent.
-    /// </summary>
-    public async Task<IActionResult> OnPostSuggestAllAsync(CancellationToken ct)
-    {
-        var documents = await FilteredQuery(tracked: true)
-            .Where(d => d.CorrespondentId == null && d.OcrText != null && d.OcrText != "")
-            .OrderBy(d => d.CreateDate)
-            .Take(BatchLimit)
-            .ToListAsync(ct);
-
-        var known = await _db.Correspondents.Where(c => c.UpdateState != UpdateState.Deleted).ToListAsync(ct);
-        var now = DateTime.UtcNow;
-        int assigned = 0, created = 0;
-        foreach (var document in documents)
-        {
-            var name = CorrespondentSuggester.Suggest(document.OcrText, 1).FirstOrDefault();
-            if (name is null) { continue; }
-
-            var match = known.FirstOrDefault(k => CorrespondentSuggester.SameName(k.Name, name));
-            if (match is null)
-            {
-                match = new Correspondent { Name = name, UpdateState = UpdateState.Created, CreateDate = now, CreateUserId = _currentUser.UserId, UpdateDate = now, UpdateUserId = _currentUser.UserId };
-                _db.Correspondents.Add(match);
-                known.Add(match);
-                created++;
-            }
-
-            document.Correspondent = match;
-            assigned++;
-        }
-
-        await _db.SaveChangesAsync(ct);
-        this.Notify(assigned == 0
-            ? _l["No correspondents could be suggested."].Value
-            : _l["{0} document(s) got a correspondent ({1} new).", assigned, created].Value);
-        return RedirectBack();
-    }
-
     /// <summary>Delete and put the content on the blocklist: it is skipped when it turns up again.</summary>
     public async Task<IActionResult> OnPostBlockAsync(long id, CancellationToken ct)
     {
@@ -406,27 +366,50 @@ public class IndexModel : PageModel
         long? bulkProjectId,
         long[]? bulkTagIds,
         string? mode,
+        bool allMatching,
         CancellationToken ct)
     {
-        var ids = (selectedIds ?? Array.Empty<long>()).Distinct().ToList();
-        if (ids.Count == 0)
-        {
-            this.Notify(_l["Nothing was selected."].Value, NoticeKind.Warn);
-            return RedirectBack();
-        }
-
-        if (ids.Count > BatchLimit)
-        {
-            this.Notify(_l["Select at most {0} documents at once.", BatchLimit].Value, NoticeKind.Warn);
-            return RedirectBack();
-        }
-
         var uid = _currentUser.UserId;
-        var documents = await _db.Documents
-            .Include(d => d.DocumentTags)
-            .AccessibleTo(_currentUser)
-            .Where(d => ids.Contains(d.Id) && d.UpdateState != UpdateState.Deleted)
-            .ToListAsync(ct);
+        List<Document> documents;
+        if (allMatching)
+        {
+            // "Select all N": everything the list shows on every page, one batch at a time.
+            // Without a filter a large backlog would be a single endless request.
+            var query = FilteredQuery(tracked: true);
+            var total = await query.CountAsync(ct);
+            if (total > BatchLimit && !HasFilter)
+            {
+                this.Notify(_l["Narrow the list with a filter before taking everything over."].Value, NoticeKind.Warn);
+                return RedirectBack();
+            }
+
+            documents = await query
+                .Include(d => d.DocumentTags)
+                .OrderBy(d => d.CreateDate)
+                .Take(BatchLimit)
+                .ToListAsync(ct);
+        }
+        else
+        {
+            var ids = (selectedIds ?? Array.Empty<long>()).Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                this.Notify(_l["Nothing was selected."].Value, NoticeKind.Warn);
+                return RedirectBack();
+            }
+
+            if (ids.Count > BatchLimit)
+            {
+                this.Notify(_l["Select at most {0} documents at once.", BatchLimit].Value, NoticeKind.Warn);
+                return RedirectBack();
+            }
+
+            documents = await _db.Documents
+                .Include(d => d.DocumentTags)
+                .AccessibleTo(_currentUser)
+                .Where(d => ids.Contains(d.Id) && d.UpdateState != UpdateState.Deleted)
+                .ToListAsync(ct);
+        }
 
         var editable = new List<Document>(documents.Count);
         foreach (var candidate in documents)
@@ -590,97 +573,6 @@ public class IndexModel : PageModel
         }
 
         this.Notify(_l["Text recognition started for {0} document(s).", started.Count].Value);
-        return RedirectBack();
-    }
-
-    /// <summary>
-    /// Takes over everything the current filter shows, up to <see cref="BatchLimit"/>.
-    /// Without a filter a large backlog would be a single endless request.
-    /// </summary>
-    public async Task<IActionResult> OnPostConfirmAllAsync(CancellationToken ct)
-    {
-        if (ShowingIgnored)
-        {
-            return RedirectBack();
-        }
-
-        var uid = _currentUser.UserId;
-        var query = FilteredQuery(tracked: true);
-        var total = await query.CountAsync(ct);
-
-        if (total > BatchLimit && !HasFilter)
-        {
-            this.Notify(_l["Narrow the list with a filter before taking everything over."].Value, NoticeKind.Warn);
-            return RedirectBack();
-        }
-
-        var pending = await query
-            .Include(d => d.DocumentTags)
-            .OrderBy(d => d.CreateDate)
-            .Take(BatchLimit)
-            .ToListAsync(ct);
-
-        int filed = 0, skipped = 0;
-        string? firstError = null;
-
-        foreach (var document in pending)
-        {
-            if (document.OcrState == OcrState.Pending)
-            {
-                skipped++;
-                continue;
-            }
-
-            var filingMode = document.IsStaged ? FilingMode.FromStaging : FilingMode.KeepInPlace;
-            var result = await _filing.FileAsync(document, null, filingMode, uid, ct);
-            if (result.Success)
-            {
-                filed++;
-            }
-            else
-            {
-                firstError ??= result.Error;
-            }
-        }
-
-        var remaining = Math.Max(0, total - filed);
-        var message = _l["{0} taken over, {1} still open.", filed, remaining].Value;
-        if (skipped > 0)
-        {
-            message += " " + _l["{0} still processing", skipped].Value + ".";
-        }
-        if (firstError is not null)
-        {
-            message += " " + firstError;
-        }
-
-        this.Notify(message, firstError is null ? NoticeKind.Ok : NoticeKind.Warn);
-        return RedirectBack();
-    }
-
-    /// <summary>
-    /// Clears a mis-aimed search in one statement: every found, still open document of one
-    /// location becomes ignored. Moves no files, so it is safe as a mass update.
-    /// </summary>
-    public async Task<IActionResult> OnPostIgnoreAllFoundAsync(long locationId, CancellationToken ct)
-    {
-        var uid = _currentUser.UserId;
-        var now = DateTime.UtcNow;
-
-        // Exactly the rows the list was showing — the confirmation named that number,
-        // and an active folder or search filter must not silently widen the action.
-        var query = FilteredQuery(tracked: false)
-            .Where(d => !d.IsStaged
-                && d.Origin == DocumentOrigin.StorageScan
-                && d.StorageLocationId == locationId);
-
-        var count = await query.ExecuteUpdateAsync(set => set
-            .SetProperty(d => d.ReviewState, ReviewState.Ignored)
-            .SetProperty(d => d.UpdateState, UpdateState.Updated)
-            .SetProperty(d => d.UpdateDate, now)
-            .SetProperty(d => d.UpdateUserId, uid), ct);
-
-        this.Notify(_l["{0} found file(s) ignored. The files stay where they are.", count].Value);
         return RedirectBack();
     }
 

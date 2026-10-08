@@ -92,44 +92,6 @@
 }
 else
 {
-    @* The numbers are in the toolbar (hits); here only the actions, and only for the open inbox. *@
-    <div class="list-header"@(Model.ShowingIgnored ? " hidden" : "")>
-        @if (!Model.ShowingIgnored)
-        {
-            <span class="list-header__actions" style="margin-left:auto">
-                <a class="btn btn--secondary" href="/Blocklist">@L["Blocklist"]</a>
-                <form method="post" asp-page-handler="SuggestAll"
-                      asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
-                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" style="display:inline">
-                    <button class="btn btn--secondary" type="submit"
-                            data-confirm='@L["Take the best correspondent suggestion for every document without one? Unknown names are created."]'>
-                        @L["Assign correspondents"]
-                    </button>
-                </form>
-                @if (Model.LocationId is long filteredLocation && Model.FoundCount > 0)
-                {
-                    <form method="post" asp-page-handler="IgnoreAllFound" asp-route-LocationId="@Model.LocationId"
-                          asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-Folder="@Model.Folder"
-                          asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" style="display:inline">
-                        <input type="hidden" name="locationId" value="@filteredLocation" />
-                        <button class="btn btn--secondary" type="submit"
-                                data-confirm='@L["Ignore {0} found file(s) in \"{1}\"? The files stay where they are.", Model.FoundCount, locationLabel ?? string.Empty]'>
-                            @L["Ignore all found files in this location"]
-                        </button>
-                    </form>
-                }
-                <form method="post" asp-page-handler="ConfirmAll"
-                      asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
-                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" style="display:inline">
-                    <button class="btn btn--secondary" type="submit" disabled="@(!Model.HasStorage)"
-                            data-confirm='@L["File all processed documents with their current suggestions?"]'>
-                        @L["Confirm all"]
-                    </button>
-                </form>
-            </span>
-        }
-    </div>
-
     @* Shown by the script below once processing is done but the user is mid-edit: it takes the
        place of the first list entry instead of a bar above the list. *@
     <div id="inbox-refresh" class="inbox-refresh" role="status" hidden>
@@ -145,49 +107,68 @@ else
 
     @if (!Model.ShowingIgnored)
     {
-    <form method="post" id="inbox-bulk" class="form form--wide inbox-bulk" asp-page-handler="Bulk"
-          asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
-          asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
-          asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" asp-route-PageNumber="@Model.PageNumber">
-        <h2>@L["Apply to selection"]</h2>
-        <p class="form-help">
-            <label class="form-check">
-                <input type="checkbox" id="inbox-select-all" />
-                <span>@L["Select all on this page"]</span>
-            </label>
-        </p>
-
-        <div class="inbox-grid">
-            <mp-picker asp-for="BulkCorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
-                       placeholder='@L["— Unchanged —"]' />
-            <mp-picker asp-for="BulkDocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions"
-                       placeholder='@L["— Unchanged —"]' />
-            <mp-picker asp-for="BulkProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions"
-                       placeholder='@L["— Unchanged —"]' />
-            <mp-picker asp-for="BulkTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true"
-                       placeholder='@L["Add tags…"]' />
-            <div class="form-row">
-                <label>@L["Filing"]</label>
-                <div class="checkbox-group">
-                    <label class="form-check">
-                        <input type="radio" name="mode" value="keep" checked />
-                        <span>@L["Keep in place"]</span>
-                    </label>
-                    <label class="form-check">
-                        <input type="radio" name="mode" value="refile" />
-                        <span>@L["Re-file by template"]</span>
-                    </label>
-                </div>
+        @* Only while something is ticked: what to do with the selection. The values to set sit in a dialog. *@
+        <form method="post" id="inbox-bulk" class="inbox-bulk" asp-page-handler="Bulk"
+              asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
+              asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
+              asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" asp-route-PageNumber="@Model.PageNumber">
+            <div class="selection-bar" role="region" aria-label='@L["Selection"]' hidden
+                 data-t-selected='@L["{0} selected"]' data-t-all-selected='@L["All {0} selected"]'>
+                <label class="selection-bar__all">
+                    <input type="checkbox" id="inbox-select-all" aria-label='@L["Select all"]' />
+                    <span class="selection-bar__count"></span>
+                </label>
+                @* More than one page: the whole list can be taken in one go (the same batch limit as before). *@
+                <button type="button" class="selection-bar__link" id="inbox-select-matching" hidden
+                        data-total="@Model.TotalCount" data-t-all='@L["Select all {0}"]' data-t-page='@L["Only this page"]'></button>
+                <input type="hidden" name="allMatching" id="inbox-all-matching" value="false" />
+                <span class="selection-bar__actions">
+                    <button type="button" class="btn btn--secondary" id="inbox-bulk-open" data-t-label='@L["Set values …"]'>@L["Set values …"]</button>
+                    <button class="btn btn--secondary" type="submit" name="action" value="analyze">@L["Analyze selected"]</button>
+                    <button class="btn btn--secondary" type="submit" name="action" value="ignore">@L["Ignore"]</button>
+                    <button class="btn btn--primary" type="submit" name="action" value="confirm">@L["Take into archive"]</button>
+                </span>
             </div>
-        </div>
 
-        <mp-button-row>
-            <button class="btn btn--primary" type="submit" name="action" value="confirm">@L["Take into archive"]</button>
-            <button class="btn btn--secondary" type="submit" name="action" value="analyze">@L["Analyze selected"]</button>
-            <mp-button-spacer />
-            <button class="btn btn--secondary" type="submit" name="action" value="ignore">@L["Ignore"]</button>
-        </mp-button-row>
-    </form>
+            <dialog class="filter-dialog filter-dialog--bulk" id="inbox-bulk-dialog">
+                <div class="filter-dialog__head">
+                    <div>
+                        <h2 class="filter-dialog__title">@L["Apply to selection"]</h2>
+                        <div class="filter-dialog__sub">@L["What is left empty stays as it is."]</div>
+                    </div>
+                    <button type="button" class="icon-btn filter-dialog__close" data-close-dialog aria-label='@L["Close"]'>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                    </button>
+                </div>
+                <div class="filter-dialog__body">
+                    <mp-picker asp-for="BulkCorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
+                               placeholder='@L["— Unchanged —"]' />
+                    <mp-picker asp-for="BulkDocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions"
+                               placeholder='@L["— Unchanged —"]' />
+                    <mp-picker asp-for="BulkProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions"
+                               placeholder='@L["— Unchanged —"]' />
+                    <mp-picker asp-for="BulkTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true"
+                               placeholder='@L["Add tags…"]' />
+                    <div class="form-row">
+                        <label>@L["Filing"]</label>
+                        <div class="checkbox-group">
+                            <label class="form-check">
+                                <input type="radio" name="mode" value="keep" checked />
+                                <span>@L["Keep in place"]</span>
+                            </label>
+                            <label class="form-check">
+                                <input type="radio" name="mode" value="refile" />
+                                <span>@L["Re-file by template"]</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-dialog__foot">
+                    <span></span>
+                    <button type="button" class="btn btn--primary" data-close-dialog>@L["Done"]</button>
+                </div>
+            </dialog>
+        </form>
     }
 
     <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
@@ -238,14 +219,76 @@ else
             setTimeout(tick, 3000);
         })();
 
-        // "Select all on this page" drives the per-row checkboxes of the bulk form.
+        // The selection bar shows only while something is ticked; its box ticks or clears the whole page.
         (function () {
+            var bar = document.querySelector(".selection-bar");
+            if (!bar) { return; }
             var master = document.getElementById("inbox-select-all");
-            if (!master) { return; }
-            master.addEventListener("change", function () {
-                var boxes = document.querySelectorAll('input[name="selectedIds"]');
-                for (var i = 0; i < boxes.length; i++) { boxes[i].checked = master.checked; }
+            var count = bar.querySelector(".selection-bar__count");
+            var dialog = document.getElementById("inbox-bulk-dialog");
+
+            function boxes() { return Array.prototype.slice.call(document.querySelectorAll('input[name="selectedIds"]')); }
+
+            var matchingButton = document.getElementById("inbox-select-matching");
+            var matchingFlag = document.getElementById("inbox-all-matching");
+            var total = parseInt(matchingButton.getAttribute("data-total"), 10) || 0;
+            var matching = false;
+
+            function setMatching(on) {
+                matching = on;
+                matchingFlag.value = on ? "true" : "false";
+            }
+
+            function refresh() {
+                var all = boxes();
+                var n = all.filter(function (b) { return b.checked; }).length;
+                if (n < all.length) { setMatching(false); }
+                bar.hidden = n === 0;
+                document.documentElement.classList.toggle("has-selection", n > 0);
+                var shown = matching ? total : n;
+                count.textContent = (bar.getAttribute(matching ? "data-t-all-selected" : "data-t-selected") || "{0} selected").replace("{0}", String(shown));
+                master.checked = n > 0 && n === all.length;
+                master.indeterminate = n > 0 && n < all.length;
+                // the whole page is ticked and there is more behind it
+                matchingButton.hidden = !(all.length > 0 && n === all.length && total > all.length);
+                matchingButton.textContent = matching
+                    ? (matchingButton.getAttribute("data-t-page") || "Only this page")
+                    : (matchingButton.getAttribute("data-t-all") || "Select all {0}").replace("{0}", String(total));
+                all.forEach(function (b) {
+                    var card = b.closest(".inbox-item");
+                    if (card) { card.classList.toggle("is-selected", b.checked); }
+                });
+            }
+
+            document.addEventListener("change", function (event) {
+                if (event.target && event.target.name === "selectedIds") { setMatching(false); refresh(); }
             });
+            master.addEventListener("change", function () {
+                setMatching(false);
+                boxes().forEach(function (b) { b.checked = master.checked; });
+                refresh();
+            });
+            matchingButton.addEventListener("click", function () { setMatching(!matching); refresh(); });
+
+            // the values to set for the selection
+            var openButton = document.getElementById("inbox-bulk-open");
+            if (dialog && openButton) {
+                openButton.addEventListener("click", function () { dialog.showModal(); });
+                dialog.addEventListener("click", function (event) {
+                    if (event.target === dialog || (event.target.closest && event.target.closest("[data-close-dialog]"))) { dialog.close(); }
+                });
+                dialog.addEventListener("close", function () {
+                    var set = 0;
+                    dialog.querySelectorAll(".mp-picker").forEach(function (picker) {
+                        var hidden = picker.querySelector(".mp-picker__value");
+                        if (hidden ? hidden.value !== "" : picker.querySelector(".mp-picker__chip")) { set++; }
+                    });
+                    var label = openButton.getAttribute("data-t-label") || "";
+                    openButton.textContent = set > 0 ? label.replace(" …", "") + " (" + set + ")" : label;
+                });
+            }
+
+            refresh();
         })();
     </script>
 }

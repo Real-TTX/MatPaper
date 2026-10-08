@@ -1913,3 +1913,30 @@ html.has-scanner { overflow: hidden; }
 .mp-picker-dialog__suggest { color: var(--color-primary); font-weight: 600; }
 /* ... and the field says there are some, as long as it is empty */
 .mp-picker[data-has-suggestions="true"] .mp-picker__trigger[data-placeholder-shown="true"] .mp-picker__label::after { content: var(--hint); color: var(--color-primary); font-weight: 600; }
+
+/* ---------- Inbox: a selection bar only while something is ticked ---------- */
+/* pinned to the bottom of the screen (next to the sidebar), so it is there however far the list is scrolled */
+.selection-bar {
+    position: fixed; left: calc(var(--sidebar-width, 250px) + 24px); right: 24px; bottom: max(0.75rem, env(safe-area-inset-bottom)); z-index: 40;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem 1rem;
+    margin: 0; padding: 0.7rem 1rem; background: var(--color-surface); border: 1px solid var(--color-primary);
+    border-radius: 14px; box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+}
+html.has-selection .app-content { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+@media (max-width: 768px) { .selection-bar { left: 12px; right: 12px; } }
+.selection-bar[hidden] { display: none; }
+.selection-bar__all { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 600; cursor: pointer; }
+.selection-bar__all input { width: 20px; height: 20px; margin: 0; accent-color: var(--color-primary); }
+.selection-bar__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-left: auto; }
+.inbox-item.is-selected { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary); }
+dialog.filter-dialog--bulk .filter-dialog__body { align-content: start; }
+@media (min-width: 801px) { dialog.filter-dialog--bulk { width: min(34rem, calc(100vw - 2rem)); } }
+@media (max-width: 800px) {
+    .selection-bar { bottom: max(0.5rem, env(safe-area-inset-bottom)); padding: 0.75rem; }
+    html.has-selection .app-content { padding-bottom: calc(10rem + env(safe-area-inset-bottom)); }
+    .selection-bar__actions { margin-left: 0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+    .selection-bar__actions .btn { min-height: 46px; width: 100%; }
+}
+
+.selection-bar__link { border: 0; background: none; padding: 0 0.25rem; color: var(--color-primary); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.selection-bar__link[hidden] { display: none; }

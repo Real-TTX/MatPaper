@@ -1033,4 +1033,20 @@
   <data name="{0} suggestions" xml:space="preserve"><value>{0} Vorschläge</value></data>
   <data name="Suggestions" xml:space="preserve"><value>Vorschläge</value></data>
   <data name="1 suggestion" xml:space="preserve"><value>1 Vorschlag</value></data>
+  <data name="Actions" xml:space="preserve"><value>Aktionen</value></data>
+  <data name="Selection" xml:space="preserve"><value>Auswahl</value></data>
+  <data name="Select all" xml:space="preserve"><value>Alle auswählen</value></data>
+  <data name="{0} selected" xml:space="preserve"><value>{0} ausgewählt</value></data>
+  <data name="Set values …" xml:space="preserve"><value>Werte setzen …</value></data>
+  <data name="What is left empty stays as it is." xml:space="preserve"><value>Was leer bleibt, bleibt unverändert.</value></data>
+  <data name="Documents you deleted and blocked; they are not imported again" xml:space="preserve"><value>Gelöschte und gesperrte Dokumente, die nicht wieder importiert werden</value></data>
+  <data name="Tick every document on this page" xml:space="preserve"><value>Alle Dokumente dieser Seite ankreuzen</value></data>
+  <data name="The best suggestion for every document without a correspondent" xml:space="preserve"><value>Der beste Vorschlag für jedes Dokument ohne Korrespondent</value></data>
+  <data name="The files stay where they are" xml:space="preserve"><value>Die Dateien bleiben, wo sie sind</value></data>
+  <data name="File every processed document with its current values" xml:space="preserve"><value>Jedes fertig verarbeitete Dokument mit seinen aktuellen Werten ablegen</value></data>
+  <data name="System / Blocklist" xml:space="preserve"><value>System / Sperrliste</value></data>
+  <data name="Deleted documents that are not imported again" xml:space="preserve"><value>Gelöschte Dokumente, die nicht wieder importiert werden</value></data>
+  <data name="All {0} selected" xml:space="preserve"><value>Alle {0} ausgewählt</value></data>
+  <data name="Select all {0}" xml:space="preserve"><value>Alle {0} auswählen</value></data>
+  <data name="Only this page" xml:space="preserve"><value>Nur diese Seite</value></data>
 </root>

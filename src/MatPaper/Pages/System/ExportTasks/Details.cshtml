@@ -1,0 +1,68 @@
+@page "/System/ExportTasks/Details"
+@model MatPaper.Pages.System.ExportTasks.DetailsModel
+@using MatPaper.Data
+@using MatPaper.Services
+@{
+    var t = Model.Task;
+    var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone);
+}
+
+<div class="task-head">
+    <div class="task-head__main">
+        <h2 class="task-head__title">@t.Name</h2>
+        <div class="task-head__meta">
+            <span class="badge badge--muted">@(t.Type == ExportTaskType.Backup ? L["Full backup"].Value : L["Export documents"].Value)</span>
+            @if (t.IsEnabled)
+            {
+                <span class="badge badge--ok">@L["Enabled"]</span>
+            }
+            else
+            {
+                <span class="badge badge--warn">@L["Disabled"]</span>
+            }
+            <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
+            @if (sched.NextUtc is DateTime nextUtc && t.IsEnabled)
+            {
+                <span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
+            }
+        </div>
+    </div>
+    <div class="task-head__actions">
+        <a class="btn btn--secondary" href="/System/ExportTasks/Edit?id=@t.Id">@L["Edit"]</a>
+        <a class="btn btn--secondary" href="/System/ExportTasks">@L["Back"]</a>
+    </div>
+</div>
+
+<partial name="_TaskRunsPanel" model="Model.Runs" />
+
+<div class="task-grid">
+    <section class="task-card">
+        <h3>@(t.Type == ExportTaskType.Backup ? L["Backup settings"].Value : L["Which documents"].Value)</h3>
+        <dl class="task-facts">
+            @foreach (var (label, value) in Model.What)
+            {
+                <dt>@label</dt>
+                <dd>@value</dd>
+            }
+        </dl>
+    </section>
+    <section class="task-card">
+        <h3>@L["Where to"]</h3>
+        <dl class="task-facts">
+            @foreach (var (label, value) in Model.Destination)
+            {
+                <dt>@label</dt>
+                <dd>@value</dd>
+            }
+        </dl>
+    </section>
+</div>
+
+@if (Model.LastRun is { } last && (!string.IsNullOrWhiteSpace(last.Log) || Model.Runs.IsRunning))
+{
+    <section class="task-card task-card--wide" data-live="log">
+        <h3>@L["Log of the latest run"]</h3>
+        <pre class="task-log">@last.Log</pre>
+        <p class="runs-panel__more"><a href="/System/TaskRuns/Details?id=@last.Id">@Fmt.DateTimeSeconds(last.StartedAt)</a></p>
+    </section>
+}

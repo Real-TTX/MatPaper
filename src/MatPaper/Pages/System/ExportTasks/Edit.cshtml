@@ -4,11 +4,6 @@
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Export tasks / Edit"].Value : L["System / Export tasks / New"].Value;
 }
 
-@if (Model.IsEdit && Model.Runs is not null)
-{
-    <partial name="_TaskRunsPanel" model="Model.Runs" />
-}
-
 <form class="form form--wide" method="post">
     <input type="hidden" asp-for="Id" />
 
@@ -62,7 +57,7 @@
 
     <mp-button-row>
         <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/System/ExportTasks">@L["Back"]</mp-button>
+        <mp-button variant="secondary" href="@(Model.IsEdit ? "/System/ExportTasks/Details?id=" + Model.Id : "/System/ExportTasks")">@L["Cancel"]</mp-button>
         <mp-button-spacer />
         @if (Model.IsEdit)
         {

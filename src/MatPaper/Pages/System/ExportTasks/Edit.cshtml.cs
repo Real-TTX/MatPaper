@@ -247,7 +247,7 @@ public class EditModel : PageModel
 
         await _db.SaveChangesAsync();
 
-        return RedirectToPage("Index");
+        return IsEdit ? RedirectToPage("Details", new { id = Id }) : RedirectToPage("Index");
     }
 
     public async Task<IActionResult> OnPostRunAsync()
@@ -268,7 +268,7 @@ public class EditModel : PageModel
         _triggers.Enqueue(TaskRunKind.Export, Id);
         this.Notify(_l["Export task \"{0}\" queued to run now.", entity.Name].Value);
 
-        return RedirectToPage("Edit", new { id = Id });
+        return RedirectToPage("Details", new { id = Id });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()

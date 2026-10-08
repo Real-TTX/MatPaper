@@ -50,63 +50,96 @@
 
             <partial name="_RowPath" model="Model" />
 
+            @* Every field sits in a cell of one grid, labels on one line, controls of one height. *@
             <div class="inbox-grid">
-                <div class="suggest-field">
+                <div class="inbox-field inbox-field--corr">
                     <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="m.CorrespondentOptions"
                                value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                    @if (row.CorrespondentId is null)
-                    {
-                        <button type="button" class="btn btn--secondary suggest-btn" data-suggest-correspondent="@row.Id" data-none='@L["No suggestion found."]'>@L["Suggest"]</button>
-                        <div class="suggest-box" hidden></div>
-                    }
                 </div>
-                <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="m.DocumentTypeOptions"
-                           value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                <div class="form-row">
-                    <label for="documentDate_@suffix">@L["Date"]</label>
-                    <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
-                           value="@Fmt.InputDate(row.DocumentDate)" />
+                <div class="inbox-field">
+                    <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="m.DocumentTypeOptions"
+                               value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
                 </div>
+                <div class="inbox-field">
+                    <div class="form-row">
+                        <label for="documentDate_@suffix">@L["Date"]</label>
+                        <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
+                               value="@Fmt.InputDate(row.DocumentDate)" />
+                    </div>
+                </div>
+
                 <button type="button" class="inbox-more-toggle" aria-expanded="false">
                     <span>@L["More fields"]</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
                 </button>
-                <div class="inbox-more">
-                <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="m.ProjectOptions"
-                           value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="m.TagItems" multiple="true"
-                           value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder='@L["Add tags…"]' />
 
-                @if (found)
-                {
-                    <div class="form-row">
-                        <label>@L["Filing"]</label>
-                        <div class="checkbox-group">
-                            <label class="form-check">
-                                <input type="radio" name="mode" value="keep" checked />
-                                <span>@L["Keep in place"]</span>
-                            </label>
-                            <label class="form-check">
-                                <input type="radio" name="mode" value="refile" />
-                                <span>@L["Re-file by template"]</span>
-                            </label>
+                <div class="inbox-more">
+                    <div class="inbox-field">
+                        <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="m.ProjectOptions"
+                                   value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
+                    </div>
+                    <div class="inbox-field inbox-field--wide">
+                        <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="m.TagItems" multiple="true"
+                                   value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder='@L["Add tags…"]' />
+                    </div>
+
+                    @if (found)
+                    {
+                        <div class="inbox-field inbox-field--wide">
+                            <div class="form-row">
+                                <label>@L["Filing"]</label>
+                                <div class="checkbox-group inbox-radios">
+                                    <label class="form-check">
+                                        <input type="radio" name="mode" value="keep" checked />
+                                        <span>@L["Keep in place"]</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input type="radio" name="mode" value="refile" />
+                                        <span>@L["Re-file by template"]</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="form-row">
-                        <label for="storageLocationId_@suffix">@L["File to"]</label>
-                        <select class="form-control" id="storageLocationId_@suffix" name="storageLocationId">
-                            @foreach (var loc in m.StorageLocations)
-                            {
-                                <option value="@loc.Id" selected="@(loc.Id == selectedLocation)">@loc.Name</option>
-                            }
-                        </select>
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <div class="inbox-field inbox-field--wide">
+                            <div class="form-row">
+                                <label for="storageLocationId_@suffix">@L["File to"]</label>
+                                <select class="form-control" id="storageLocationId_@suffix" name="storageLocationId">
+                                    @foreach (var loc in m.StorageLocations)
+                                    {
+                                        <option value="@loc.Id" selected="@(loc.Id == selectedLocation)">@loc.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
+
+            @if (row.CorrespondentId is null)
+            {
+                <div class="inbox-suggest">
+                    <span class="inbox-suggest__label">@L["Correspondent suggestions:"]</span>
+                    @if (processing)
+                    {
+                        <span class="inbox-suggest__note">@L["The text is still being recognised …"]</span>
+                    }
+                    else if (deferred)
+                    {
+                        <span class="inbox-suggest__note">@L["Analyze the file first, then there are suggestions."]</span>
+                    }
+                    else
+                    {
+                        <div class="suggest-box">
+                            <span class="inbox-suggest__note">@L["Looking for suggestions …"]</span>
+                        </div>
+                        <button type="button" class="btn btn--secondary suggest-btn" data-suggest-correspondent="@row.Id"
+                                data-none='@L["No suggestion found."]' hidden>@L["Suggest"]</button>
+                    }
+                </div>
+            }
 
             <div class="inbox-item__actions">
                 <button class="btn btn--primary" type="submit" disabled="@(processing || (!found && !m.HasStorage))"
@@ -155,7 +188,7 @@
     }
     else
     {
-        <div class="inbox-item__head">
+        <div class="inbox-item__head inbox-item__head--plain">
             <partial name="_RowThumb" model="Model" />
             <span class="inbox-item__title inbox-item__title--static">@row.Title</span>
             <partial name="_RowBadges" model="Model" />

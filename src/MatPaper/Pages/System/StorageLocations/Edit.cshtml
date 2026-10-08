@@ -5,12 +5,6 @@
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
 }
 
-@if (Model.IsEdit && Model.Runs is not null)
-{
-    <partial name="_TaskRunsPanel" model="Model.Runs" />
-    <p class="runs-panel__more" style="margin-top:-0.5rem"><a href="/System/StorageLocations/Align?id=@Model.Id">@L["Align files to the template …"]</a></p>
-}
-
 <form class="form" method="post"
       data-browse-url="/System/StorageLocations/Edit?handler=Browse"
       data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]' data-t-folders='@L["Folders"]'

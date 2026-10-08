@@ -22,7 +22,19 @@
                     if (history.replaceState) { history.replaceState(null, "", "#" + name); }
                 });
             });
-            var wanted = (location.hash || "").slice(1);
+            // After a postback on the same page (e.g. "Test connection") the tab the user was on opens again.
+            var key = "mp-tab:" + location.pathname;
+            var remembered = null;
+            try {
+                var saved = JSON.parse(sessionStorage.getItem(key) || "null");
+                if (saved && Date.now() - saved.at < 15000) { remembered = saved.tab; }
+                sessionStorage.removeItem(key);
+            } catch (err) { /* storage unavailable */ }
+            root.addEventListener("submit", function () {
+                try { sessionStorage.setItem(key, JSON.stringify({ tab: root.getAttribute("data-active-tab"), at: Date.now() })); } catch (err) { }
+            }, true);
+
+            var wanted = (location.hash || "").slice(1) || remembered || "";
             var withError = panels.filter(function (p) { return p.querySelector(".field-error:not(:empty), .input-validation-error, .field-validation-error"); })[0];
             var valid = tabs.some(function (t) { return t.getAttribute("data-tab") === wanted; });
             show(withError ? withError.getAttribute("data-tab-panel") : valid ? wanted : tabs[0].getAttribute("data-tab"));

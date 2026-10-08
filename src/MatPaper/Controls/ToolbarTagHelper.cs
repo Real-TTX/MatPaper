@@ -41,6 +41,7 @@ public sealed class ToolbarTagHelper : TagHelper
         output.Attributes.SetAttribute("data-t-reset", _l["Reset filters"].Value);
         output.Attributes.SetAttribute("data-t-apply", _l["Apply"].Value);
         output.Attributes.SetAttribute("data-t-close", _l["Close"].Value);
+        output.Attributes.SetAttribute("data-t-sort", _l["Sort"].Value);
 
         TagHelperContent children = await output.GetChildContentAsync();
         output.Content.SetHtmlContent(children);

@@ -191,85 +191,226 @@
     // A list toolbar keeps search and sort in view; every other filter lives in a dialog behind one
     // "Filter (n)" button, on phones and desktops alike. The fields stay inside the toolbar's own GET
     // form (the <dialog> is a child of it), so they submit exactly as before.
+    // ----- List toolbar -------------------------------------------------------
+    // Every list has the same bar: a search field, the filters inline while they fit, otherwise behind a
+    // filter button, and the sorting always behind a sort button. Both open a dialog (a full-screen one
+    // on a phone). The markup comes from <mp-toolbar>; this arranges it. The fields stay in the form
+    // (inline or inside the closed dialog), so the GET request carries them either way.
+    var TOOLBAR_ICONS = {
+        search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+        filter: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+        sort: '<path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/>',
+        close: '<path d="M6 6l12 12M18 6L6 18"/>'
+    };
+
+    function toolbarIcon(name) {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + TOOLBAR_ICONS[name] + '</svg>';
+    }
+
     function wireToolbars() {
         var bars = document.querySelectorAll("form.toolbar");
         for (var i = 0; i < bars.length; i++) {
-            (function (bar) {
-                var kids = Array.prototype.slice.call(bar.children);
-                var apply = kids[kids.length - 1];
-                var search = null;
-                var inDialog = [];
-                kids.forEach(function (el) {
-                    if (el === apply) { return; }
-                    if (el.classList.contains("toolbar__search")) {
-                        // the first search stays; further text filters (folder ...) go into the dialog
-                        if (!search) { search = el; } else { inDialog.push(el); }
-                    } else if (el.classList.contains("toolbar__count") || el.classList.contains("toolbar__spacer")) {
-                        return;
-                    } else {
-                        var field = el.querySelector("select");
-                        if (field && field.name === "Sort") { return; } // sorting stays in the bar
-                        inDialog.push(el);
-                    }
-                });
-                var button = apply && apply.querySelector("button[type=submit]");
-                if (inDialog.length < 2 || !button) { return; }
-
-                function activeCount() {
-                    var n = 0;
-                    inDialog.forEach(function (el) {
-                        var picker = el.querySelector(".mp-picker");
-                        var field = el.querySelector("select, input:not([type=hidden])");
-                        if (picker) {
-                            if ((picker.getAttribute("data-selected") || "") !== "") { n++; }
-                        } else if (field) {
-                            if (field.tagName === "SELECT" ? field.selectedIndex > 0 : field.value !== "") { n++; }
-                        }
-                    });
-                    return n;
-                }
-
-                var t = function (key, fallback) { return bar.getAttribute("data-t-" + key) || fallback; };
-                var title = button.textContent.trim() || t("filters", "Filter");
-
-                var dialog = document.createElement("dialog");
-                dialog.className = "filter-dialog";
-                dialog.innerHTML =
-                    '<div class="filter-dialog__head"><h2 class="filter-dialog__title"></h2>' +
-                    '<button type="button" class="icon-btn filter-dialog__close" aria-label=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-                    '<div class="filter-dialog__body"></div>' +
-                    '<div class="filter-dialog__foot"><a class="btn btn--secondary filter-dialog__reset"></a>' +
-                    '<button type="submit" class="btn btn--primary filter-dialog__apply"></button></div>';
-                dialog.querySelector(".filter-dialog__title").textContent = title;
-                dialog.querySelector(".filter-dialog__close").setAttribute("aria-label", t("close", "Close"));
-                var reset = dialog.querySelector(".filter-dialog__reset");
-                reset.textContent = t("reset", "Reset");
-                reset.setAttribute("href", location.pathname);
-                dialog.querySelector(".filter-dialog__apply").textContent = t("apply", "Apply");
-                var body = dialog.querySelector(".filter-dialog__body");
-                inDialog.forEach(function (el) { body.appendChild(el); });
-                bar.appendChild(dialog);
-
-                // The original submit button stays as the form's default button (Enter in the search box)
-                // but is no longer shown.
-                apply.classList.add("visually-hidden");
-
-                var wrap = document.createElement("div");
-                wrap.className = "toolbar__group toolbar__toggle";
-                var toggle = document.createElement("button");
-                toggle.type = "button";
-                toggle.className = "btn btn--secondary toolbar__filters";
-                var n = activeCount();
-                toggle.textContent = title + (n ? " (" + n + ")" : "");
-                toggle.addEventListener("click", function () { dialog.showModal(); });
-                wrap.appendChild(toggle);
-                if (search) { search.insertAdjacentElement("afterend", wrap); } else { bar.insertBefore(wrap, bar.firstChild); }
-
-                dialog.querySelector(".filter-dialog__close").addEventListener("click", function () { dialog.close(); });
-                // a click on the backdrop closes it
-                dialog.addEventListener("mousedown", function (event) { if (event.target === dialog) { dialog.close(); } });
-            })(bars[i]);
+            try { enhanceToolbar(bars[i]); } catch (e) { /* the plain bar still works */ }
+            bars[i].classList.add("is-enhanced");
         }
+    }
+
+    function toolbarDialog(extraClass, title, subtitle, closeLabel) {
+        var dialog = document.createElement("dialog");
+        dialog.className = "filter-dialog " + extraClass;
+        dialog.innerHTML =
+            '<div class="filter-dialog__head"><div><h2 class="filter-dialog__title"></h2><div class="filter-dialog__sub"></div></div>' +
+            '<button type="button" class="icon-btn filter-dialog__close">' + toolbarIcon("close") + '</button></div>' +
+            '<div class="filter-dialog__body"></div>';
+        dialog.querySelector(".filter-dialog__title").textContent = title;
+        var sub = dialog.querySelector(".filter-dialog__sub");
+        sub.textContent = subtitle || "";
+        sub.hidden = !subtitle;
+        var close = dialog.querySelector(".filter-dialog__close");
+        close.setAttribute("aria-label", closeLabel);
+        close.addEventListener("click", function () { dialog.close(); });
+        // a click on the backdrop closes it
+        dialog.addEventListener("mousedown", function (event) { if (event.target === dialog) { dialog.close(); } });
+        return dialog;
+    }
+
+    function enhanceToolbar(bar) {
+        function t(key, fallback) { return bar.getAttribute("data-t-" + key) || fallback; }
+
+        var kids = Array.prototype.slice.call(bar.children);
+        var apply = kids[kids.length - 1];
+        var applyButton = apply && apply.querySelector("button[type=submit]");
+        if (!applyButton) { return; }
+
+        var search = null, count = null, sortGroup = null, filters = [];
+        kids.forEach(function (el) {
+            if (el === apply) { return; }
+            if (el.classList.contains("toolbar__count")) { count = el; return; }
+            if (el.classList.contains("toolbar__spacer")) { return; }
+            if (el.classList.contains("toolbar__search")) {
+                if (!search) { search = el; return; }
+                // a further text field (a folder ...) is a filter
+                el.classList.remove("toolbar__search");
+                el.classList.add("toolbar__filter");
+                filters.push(el);
+                return;
+            }
+            var select = el.querySelector("select");
+            if (select && select.name === "Sort") { sortGroup = el; return; }
+            filters.push(el);
+        });
+
+        // The submit button stays the form's default button (Enter in the search box) but is not shown.
+        apply.classList.add("visually-hidden");
+
+        // ---- search: a plain field with a magnifier; the label stays for screen readers
+        if (search) {
+            var label = search.querySelector("label");
+            var input = search.querySelector("input");
+            if (label) { label.classList.add("visually-hidden"); }
+            if (input) {
+                var box = document.createElement("div");
+                box.className = "toolbar__searchbox";
+                var icon = document.createElement("span");
+                icon.className = "toolbar__searchicon";
+                icon.innerHTML = toolbarIcon("search");
+                input.parentNode.insertBefore(box, input);
+                box.appendChild(icon);
+                box.appendChild(input);
+            }
+        }
+
+        var tools = document.createElement("div");
+        tools.className = "toolbar__tools";
+        bar.insertBefore(tools, count || apply);
+
+        function toolButton(kind, label) {
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "toolbar__btn toolbar__btn--" + kind;
+            button.setAttribute("aria-label", label);
+            button.title = label;
+            button.innerHTML = toolbarIcon(kind);
+            tools.appendChild(button);
+            return button;
+        }
+
+        // ---- sorting: always behind a button
+        if (sortGroup) {
+            var sortSelect = sortGroup.querySelector("select");
+            var sortLabel = (sortGroup.querySelector("label") || {}).textContent || t("sort", "Sort");
+            sortGroup.hidden = true; // the select stays in the form and carries the value
+            var sortButton = toolButton("sort", sortLabel);
+            var sortDialog = toolbarDialog("filter-dialog--sort", sortLabel, "", t("close", "Close"));
+            var list = document.createElement("div");
+            list.className = "sort-options";
+            Array.prototype.forEach.call(sortSelect.options, function (option) {
+                var row = document.createElement("label");
+                row.className = "sort-option" + (option.selected ? " is-current" : "");
+                var radio = document.createElement("input");
+                radio.type = "radio";
+                radio.value = option.value;
+                radio.checked = option.selected;
+                var text = document.createElement("span");
+                text.textContent = option.textContent;
+                row.appendChild(radio);
+                row.appendChild(text);
+                radio.addEventListener("change", function () {
+                    sortSelect.value = option.value;
+                    sortDialog.close();
+                    if (typeof bar.requestSubmit === "function") { bar.requestSubmit(); } else { bar.submit(); }
+                });
+                list.appendChild(row);
+            });
+            sortDialog.querySelector(".filter-dialog__body").appendChild(list);
+            bar.appendChild(sortDialog);
+            sortButton.addEventListener("click", function () { sortDialog.showModal(); });
+        }
+
+        // ---- filters: inline while there is room, otherwise behind a button
+        if (filters.length === 0) { return; }
+
+        var filterTitle = t("filters", "Filter");
+        var filterDialog = toolbarDialog("filter-dialog--filters", filterTitle, count ? count.textContent.trim() : "", t("close", "Close"));
+        var foot = document.createElement("div");
+        foot.className = "filter-dialog__foot";
+        foot.innerHTML = '<a class="btn btn--secondary filter-dialog__reset"></a><button type="submit" class="btn btn--primary filter-dialog__apply"></button>';
+        var reset = foot.querySelector(".filter-dialog__reset");
+        reset.textContent = t("reset", "Reset");
+        reset.setAttribute("href", location.pathname);
+        foot.querySelector(".filter-dialog__apply").textContent = t("apply", "Apply");
+        filterDialog.appendChild(foot);
+        var filterBody = filterDialog.querySelector(".filter-dialog__body");
+        bar.appendChild(filterDialog);
+
+        var filterButton = toolButton("filter", filterTitle);
+        tools.insertBefore(filterButton, tools.firstChild);
+        var badge = document.createElement("span");
+        badge.className = "toolbar__badge";
+        badge.hidden = true;
+        filterButton.appendChild(badge);
+        filterButton.hidden = true;
+        filterButton.addEventListener("click", function () { filterDialog.showModal(); });
+
+        function activeCount() {
+            var n = 0;
+            filters.forEach(function (el) {
+                var picker = el.querySelector(".mp-picker");
+                var field = el.querySelector("select, input:not([type=hidden])");
+                if (picker) {
+                    if ((picker.getAttribute("data-selected") || "") !== "") { n++; }
+                } else if (field) {
+                    if (field.type === "checkbox") { if (field.checked) { n++; } }
+                    else if (field.tagName === "SELECT" ? field.selectedIndex > 0 : field.value !== "") { n++; }
+                }
+            });
+            return n;
+        }
+
+        var collapsed = false;
+        var needed = 0;
+
+        function setCollapsed(on) {
+            if (on === collapsed) { return; }
+            collapsed = on;
+            if (on) {
+                filters.forEach(function (el) { filterBody.appendChild(el); });
+            } else {
+                filters.forEach(function (el) { bar.insertBefore(el, tools); });
+            }
+            bar.classList.toggle("is-collapsed", on);
+            filterButton.hidden = !on;
+        }
+
+        function overflows() { return bar.scrollWidth > bar.clientWidth + 1; }
+
+        function layout() {
+            if (!collapsed) {
+                if (overflows()) { needed = bar.scrollWidth; setCollapsed(true); }
+            } else if (bar.clientWidth >= needed) {
+                setCollapsed(false);
+                if (overflows()) { needed = bar.scrollWidth; setCollapsed(true); }
+            }
+            var n = activeCount();
+            badge.textContent = String(n);
+            badge.hidden = n === 0;
+        }
+
+        // Inline filters apply as soon as they change; in the dialog the user presses Apply.
+        bar.addEventListener("change", function (event) {
+            if (collapsed) { return; }
+            var target = event.target;
+            if (!target || !filters.some(function (el) { return el.contains(target); })) { return; }
+            if (typeof bar.requestSubmit === "function") { bar.requestSubmit(); } else { bar.submit(); }
+        });
+
+        layout();
+        if (typeof ResizeObserver === "function") {
+            new ResizeObserver(layout).observe(bar);
+        } else {
+            window.addEventListener("resize", layout);
+        }
+        window.addEventListener("load", layout);
     }
 
     function wireSidebarToggle() {

@@ -1001,4 +1001,29 @@
   <data name="{0} document(s) got a correspondent ({1} new)." xml:space="preserve"><value>{0} Dokument(e) haben einen Korrespondenten bekommen ({1} neu).</value></data>
   <data name="Take the best correspondent suggestion for every document without one? Unknown names are created." xml:space="preserve"><value>Für jedes Dokument ohne Korrespondent den besten Vorschlag übernehmen? Unbekannte Namen werden neu angelegt.</value></data>
   <data name="Assign correspondents" xml:space="preserve"><value>Korrespondenten zuordnen</value></data>
+  <data name="The folder exists." xml:space="preserve"><value>Der Ordner ist vorhanden.</value></data>
+  <data name="The folder does not exist." xml:space="preserve"><value>Der Ordner ist nicht vorhanden.</value></data>
+  <data name="Choose what the group imports from first." xml:space="preserve"><value>Wähle zuerst, woraus die Gruppe importiert.</value></data>
+  <data name="System / Export tasks / View" xml:space="preserve"><value>System / Export-Regeln / Ansicht</value></data>
+  <data name="System / Storage locations / View" xml:space="preserve"><value>System / Speicherorte / Ansicht</value></data>
+  <data name="Always included" xml:space="preserve"><value>Immer enthalten</value></data>
+  <data name="Included" xml:space="preserve"><value>Enthalten</value></data>
+  <data name="Configuration" xml:space="preserve"><value>Konfiguration</value></data>
+  <data name="{0} backups are kept" xml:space="preserve"><value>{0} Sicherungen werden aufbewahrt</value></data>
+  <data name="Yes" xml:space="preserve"><value>Ja</value></data>
+  <data name="No" xml:space="preserve"><value>Nein</value></data>
+  <data name="Cloud drive" xml:space="preserve"><value>Cloud-Laufwerk</value></data>
+  <data name="Search file types" xml:space="preserve"><value>Dateitypen der Suche</value></data>
+  <data name="All files" xml:space="preserve"><value>Alle Dateien</value></data>
+  <data name="Automatic search" xml:space="preserve"><value>Automatische Suche</value></data>
+  <data name="Found documents go to" xml:space="preserve"><value>Gefundene Dokumente gehen an</value></data>
+  <data name="Whoever starts the search" xml:space="preserve"><value>Wer die Suche startet</value></data>
+  <data name="In the archive" xml:space="preserve"><value>Im Archiv</value></data>
+  <data name="Found by the search" xml:space="preserve"><value>Von der Suche gefunden</value></data>
+  <data name="In the inbox" xml:space="preserve"><value>Im Eingang</value></data>
+  <data name="Suggestions:" xml:space="preserve"><value>Vorschläge:</value></data>
+  <data name="Correspondent suggestions:" xml:space="preserve"><value>Vorschläge für den Korrespondenten:</value></data>
+  <data name="The text is still being recognised …" xml:space="preserve"><value>Der Text wird noch erkannt …</value></data>
+  <data name="Analyze the file first, then there are suggestions." xml:space="preserve"><value>Erst die Datei analysieren, dann gibt es Vorschläge.</value></data>
+  <data name="Looking for suggestions …" xml:space="preserve"><value>Suche Vorschläge …</value></data>
 </root>

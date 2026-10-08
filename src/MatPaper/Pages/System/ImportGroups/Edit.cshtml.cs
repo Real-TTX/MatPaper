@@ -18,13 +18,18 @@ public class EditModel : PageModel
     private readonly TaskTriggerQueue _tasks;
     private readonly CurrentUser _currentUser;
     private readonly IStringLocalizer<SharedResource> _l;
+    private readonly ImportBrowser _browser;
+    private readonly ImportRunner _runner;
 
-    public EditModel(AppDbContext db, TaskTriggerQueue tasks, CurrentUser currentUser, IStringLocalizer<SharedResource> l)
+    public EditModel(AppDbContext db, TaskTriggerQueue tasks, CurrentUser currentUser, IStringLocalizer<SharedResource> l,
+        ImportBrowser browser, ImportRunner runner)
     {
         _db = db;
         _tasks = tasks;
         _currentUser = currentUser;
         _l = l;
+        _browser = browser;
+        _runner = runner;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -192,6 +197,77 @@ public class EditModel : PageModel
 
         this.Notify(_l["Saved"].Value);
         return RedirectToPage("Details", new { id = group.Id });
+    }
+
+    // ---- the source: browse (folders, shares, mailbox folders) and test, on what is typed in the form
+
+    private MailImportSettings MailSource() => new()
+    {
+        ConnectionId = Input.MailConnectionId,
+        Folder = string.IsNullOrWhiteSpace(Input.MailFolder) ? "INBOX" : Input.MailFolder.Trim()
+    };
+
+    private SmbImportSettings SmbSource() => new()
+    {
+        ConnectionId = Input.SmbConnectionId,
+        Share = Input.SourceShare?.Trim() ?? string.Empty,
+        Path = Input.SourcePath?.Trim() ?? string.Empty
+    };
+
+    public async Task<IActionResult> OnPostBrowseAsync(string scope, string? path, CancellationToken ct)
+    {
+        try
+        {
+            IReadOnlyList<BrowseEntry> entries = scope switch
+            {
+                "mail-folders" => await _browser.ListMailFoldersAsync(MailSource(), null, ct),
+                "smb-shares" => await _browser.ListSmbSharesAsync(SmbSource(), null, ct),
+                "smb-folders" => await _browser.ListSmbFoldersAsync(SmbSource(), null, path, ct),
+                "local-folders" => await _browser.ListLocalFoldersAsync(path, "*", ct),
+                _ => Array.Empty<BrowseEntry>()
+            };
+
+            return new JsonResult(new
+            {
+                ok = true,
+                entries = entries.Select(e => new { path = e.Path, name = e.Name, count = e.ItemCount, hasChildren = e.HasChildren })
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { ok = false, error = ex.Message });
+        }
+    }
+
+    public async Task<IActionResult> OnPostTestAsync(CancellationToken ct)
+    {
+        SetBreadcrumb();
+        (bool Ok, string Message) result;
+        switch (Input.SourceType is int t ? (ImportTaskType)t : (ImportTaskType?)null)
+        {
+            case ImportTaskType.Imap:
+            case ImportTaskType.Pop3:
+                result = await _runner.TestMailConnectionAsync(MailSource(), Input.SourceType == (int)ImportTaskType.Pop3, null, ct);
+                break;
+            case ImportTaskType.Smb:
+                result = await _runner.TestSmbConnectionAsync(SmbSource(), null, ct);
+                break;
+            case ImportTaskType.Filesystem:
+                var exists = !string.IsNullOrWhiteSpace(Input.SourcePath) && global::System.IO.Directory.Exists(Input.SourcePath.Trim());
+                result = (exists, exists ? _l["The folder exists."].Value : _l["The folder does not exist."].Value);
+                break;
+            default:
+                result = (false, _l["Choose what the group imports from first."].Value);
+                break;
+        }
+
+        this.NotifyNow(result.Ok, result.Message);
+        await LoadAsync();
+        return Page();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync()

@@ -278,7 +278,7 @@ public class EditModel : PageModel
 
         await _db.SaveChangesAsync();
 
-        return RedirectToPage("Index");
+        return IsEdit ? RedirectToPage("Details", new { id = Id }) : RedirectToPage("Index");
     }
 
     /// <summary>Checks that the folder exists (local) or the share/folder is reachable (SMB) without saving.</summary>

@@ -16,7 +16,12 @@
     }
 </div>
 
-<form class="form form--wide" method="post">
+<form class="form form--wide" method="post"
+      data-browse-url="/System/ImportGroups/Edit?handler=Browse"
+      data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'
+      data-t-folders='@L["Folders"]' data-t-shares='@L["Shares"]' data-t-up='@L["One level up"]'
+      data-t-showing='@L["showing the first {0}"]' data-t-more='@L["scan stopped at {0} — there may be more"]'
+      data-t-show-more='@L["Show more"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
     <input type="hidden" asp-for="Id" />
     <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
@@ -36,16 +41,51 @@
             <mp-picker asp-for="Input.MailConnectionId" label='@L["Saved connection"]' asp-items="Model.MailConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
         </div>
         <div data-show-when-field="Input.SourceType" data-show-when-value="0">
-            <mp-field asp-for="Input.MailFolder" label='@L["Mailbox folder"]' placeholder="INBOX" />
+            <div class="form-row">
+                <label asp-for="Input.MailFolder">@L["Mailbox folder"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.MailFolder" placeholder="INBOX" />
+                    <button class="btn btn--secondary" type="button" data-browse="mail-folders"
+                            data-browse-target="Input_MailFolder" data-browse-flat>@L["Show folders…"]</button>
+                </div>
+            </div>
         </div>
 
         <div data-show-when-field="Input.SourceType" data-show-when-value="3">
             <mp-picker asp-for="Input.SmbConnectionId" label='@L["Saved connection"]' asp-items="Model.SmbConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
-            <mp-field asp-for="Input.SourceShare" label='@L["SMB share"]' placeholder="documents" />
+            <div class="form-row">
+                <label asp-for="Input.SourceShare">@L["SMB share"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.SourceShare" placeholder="documents" />
+                    <button class="btn btn--secondary" type="button" data-browse="smb-shares"
+                            data-browse-target="Input_SourceShare" data-browse-flat data-browse-title='@L["Shares"]'>@L["List shares"]</button>
+                </div>
+                <span class="field-error" asp-validation-for="Input.SourceShare"></span>
+            </div>
         </div>
 
         <div data-show-when-field="Input.SourceType" data-show-when-value="2,3">
-            <mp-field asp-for="Input.SourcePath" label='@L["Folder"]' placeholder="/mnt/scan" />
+            <div class="form-row">
+                <label asp-for="Input.SourcePath">@L["Folder"]</label>
+                <div class="input-with-action">
+                    <input class="form-control" asp-for="Input.SourcePath" placeholder="/mnt/scan" />
+                    <span data-show-when-field="Input.SourceType" data-show-when-value="2">
+                        <button class="btn btn--secondary" type="button" data-browse="local-folders"
+                                data-browse-target="Input_SourcePath" data-browse-root="/">@L["Browse…"]</button>
+                    </span>
+                    <span data-show-when-field="Input.SourceType" data-show-when-value="3">
+                        <button class="btn btn--secondary" type="button" data-browse="smb-folders"
+                                data-browse-target="Input_SourcePath">@L["Browse…"]</button>
+                    </span>
+                </div>
+                <span class="field-error" asp-validation-for="Input.SourcePath"></span>
+            </div>
+        </div>
+
+        <div data-show-when-field="Input.SourceType" data-show-when-value="0,1,2,3">
+            <mp-button-row>
+                <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
+            </mp-button-row>
         </div>
     </section>
 
@@ -143,6 +183,9 @@
 }
 </div>
 
+<partial name="_BrowseDialog" />
+
 @section Scripts {
+    <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
     <script src="~/js/tabs.js" asp-append-version="true"></script>
 }

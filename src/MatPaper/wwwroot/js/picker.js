@@ -485,7 +485,7 @@
         box.hidden = false;
         if (!items || items.length === 0) {
             var none = document.createElement("span");
-            none.className = "form-help";
+            none.className = "inbox-suggest__note";
             none.textContent = btn.getAttribute("data-none") || "No suggestion found.";
             box.appendChild(none);
             return;
@@ -533,7 +533,7 @@
     });
 
     ready(function () {
-        var buttons = Array.prototype.slice.call(document.querySelectorAll(".inbox-item [data-suggest-correspondent]"));
+        var buttons = Array.prototype.slice.call(document.querySelectorAll(".inbox-item:not(.is-processing) [data-suggest-correspondent]"));
         if (buttons.length === 0) { return; }
         var ids = buttons.map(function (b) { return b.getAttribute("data-suggest-correspondent"); });
         fetch("/QuickCreate?handler=SuggestMany&ids=" + encodeURIComponent(ids.join(",")), { credentials: "same-origin" })
@@ -541,10 +541,17 @@
             .then(function (result) {
                 var docs = (result && result.documents) || {};
                 buttons.forEach(function (btn) {
-                    var items = docs[btn.getAttribute("data-suggest-correspondent")] || [];
-                    if (items.length > 0) { btn.hidden = true; renderSuggestions(btn, items); }
+                    btn.hidden = true;
+                    renderSuggestions(btn, docs[btn.getAttribute("data-suggest-correspondent")] || []);
                 });
             })
-            .catch(function () { /* the buttons stay for a manual try */ });
+            .catch(function () {
+                // Could not ask: the button is there for a manual try.
+                buttons.forEach(function (btn) {
+                    btn.hidden = false;
+                    var box = btn.parentNode.querySelector(".suggest-box");
+                    if (box) { box.innerHTML = ""; }
+                });
+            });
     });
 })();

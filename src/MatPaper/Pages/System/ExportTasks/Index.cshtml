@@ -29,7 +29,7 @@
     <tbody>
         @foreach (var t in Model.Rows)
         {
-            <tr data-row-href="/System/ExportTasks/Edit?id=@t.Id" tabindex="0">
+            <tr data-row-href="/System/ExportTasks/Details?id=@t.Id" tabindex="0">
                 <td>@t.Name</td>
                 <td>@(t.Type == MatPaper.Data.ExportTaskType.Backup ? L["Full backup"].Value : L["Export documents"].Value)</td>
                 <td>

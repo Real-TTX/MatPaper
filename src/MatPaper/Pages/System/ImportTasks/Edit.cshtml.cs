@@ -121,6 +121,9 @@ public class EditModel : PageModel
         public string? SenderRegex { get; set; }
         public string? SubjectRegex { get; set; }
         public string MailFilterWhere { get; set; } = "server";
+
+        /// <summary>IMAP: only mail that is still unread (asked on the server).</summary>
+        public bool OnlyUnread { get; set; }
         public string AttachmentExtensions { get; set; } = ".pdf";
         public bool ImportBodyAsPdf { get; set; }
         public bool MailMarkSeen { get; set; } = true;
@@ -708,6 +711,7 @@ public class EditModel : PageModel
                 : Input.AttachmentExtensions.Trim(),
             ImportBodyAsPdf = Input.ImportBodyAsPdf,
             FilterWhere = Input.MailFilterWhere is "server" or "local" ? Input.MailFilterWhere : "auto",
+            OnlyUnread = Input.Type == (int)ImportTaskType.Imap && Input.OnlyUnread,
             PostAction = new MailPostActions(
                 Input.MailMarkSeen, Input.MailMarkFlagged,
                 Input.MailPostAction == "move", Input.MailPostAction == "delete").Format(),
@@ -815,6 +819,7 @@ public class EditModel : PageModel
                 : mail.AttachmentExtensions;
             Input.ImportBodyAsPdf = mail.ImportBodyAsPdf;
             Input.MailFilterWhere = mail.FilterWhere;
+            Input.OnlyUnread = mail.OnlyUnread;
             var post = MailPostActions.Parse(mail.PostAction);
             Input.MailMarkSeen = post.MarkSeen;
             Input.MailMarkFlagged = post.Flag;

@@ -995,4 +995,6 @@
   <data name="Release" xml:space="preserve"><value>Freigeben</value></data>
   <data name="Release this entry? The document is imported again the next time it turns up." xml:space="preserve"><value>Diesen Eintrag freigeben? Das Dokument wird beim nächsten Auftauchen wieder importiert.</value></data>
   <data name="Only the newest entries are shown; narrow it down with the search." xml:space="preserve"><value>Es werden nur die neuesten Einträge gezeigt; mit der Suche eingrenzen.</value></data>
+  <data name="Only unread mail" xml:space="preserve"><value>Nur ungelesene Mails</value></data>
+  <data name="The mail server picks the unread ones (UNSEEN), so read mail is not even looked at." xml:space="preserve"><value>Der Mailserver sucht die ungelesenen heraus (UNSEEN), gelesene Mails werden gar nicht erst angesehen.</value></data>
 </root>

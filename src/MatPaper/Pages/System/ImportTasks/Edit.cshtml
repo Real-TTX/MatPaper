@@ -251,6 +251,10 @@
 
         @* Mail *@
         <div data-show-when-field="Input.Type" data-show-when-value="0,1">
+            <div data-show-when-field="Input.Type" data-show-when-value="0">
+                <mp-field asp-for="Input.OnlyUnread" kind="checkbox" label='@L["Only unread mail"]'
+                          help='@L["The mail server picks the unread ones (UNSEEN), so read mail is not even looked at."]' />
+            </div>
             <mp-field asp-for="Input.MailFilterMode" kind="select" label='@L["Messages"]'>
                 <option value="all">@L["Import all"]</option>
                 <option value="filter">@L["Filter…"]</option>

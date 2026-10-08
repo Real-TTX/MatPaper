@@ -115,6 +115,7 @@ public class DetailsModel : PageModel
                 connectionId = s.ConnectionId;
                 Source.Add((_l["Mailbox"].Value, string.IsNullOrWhiteSpace(s.Username) ? s.Host : $"{s.Username} @ {s.Host}"));
                 if (task.Type == ImportTaskType.Imap) { Source.Add((_l["Folder"].Value, s.Folder)); }
+                if (task.Type == ImportTaskType.Imap && s.OnlyUnread) { Source.Add((_l["Messages"].Value, _l["Only unread mail"].Value)); }
                 AddIfSet(Source, _l["From contains"].Value, s.FromFilter);
                 AddIfSet(Source, _l["To contains"].Value, s.ToFilter);
                 AddIfSet(Source, _l["Subject contains"].Value, s.SubjectFilter);

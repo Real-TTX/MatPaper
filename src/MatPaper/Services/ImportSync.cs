@@ -99,7 +99,7 @@ public static class ImportSync
             case ImportTaskType.Pop3:
                 var m = TaskSettingsJson.Read<MailImportSettings>(settingsJson);
                 return string.Join("|", type, m.ConnectionId, m.Host, m.Port, m.UseSsl, m.Username, m.Folder, m.FromFilter, m.ToFilter,
-                    m.SubjectFilter, m.SenderRegex, m.SubjectRegex, m.AttachmentExtensions, m.ImportBodyAsPdf, m.LookbackMode, m.LookbackDays, m.LookbackDate?.ToString("yyyy-MM-dd"));
+                    m.SubjectFilter, m.OnlyUnread, m.SenderRegex, m.SubjectRegex, m.AttachmentExtensions, m.ImportBodyAsPdf, m.LookbackMode, m.LookbackDays, m.LookbackDate?.ToString("yyyy-MM-dd"));
             case ImportTaskType.Smb:
                 var s = TaskSettingsJson.Read<SmbImportSettings>(settingsJson);
                 return string.Join("|", type, s.ConnectionId, s.Host, s.Share, s.Path, s.Pattern, s.Recursive, s.LookbackMode, s.LookbackDays, s.LookbackDate?.ToString("yyyy-MM-dd"));

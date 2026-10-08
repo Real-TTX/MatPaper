@@ -1147,7 +1147,8 @@ public sealed class ImportRunner
     /// </summary>
     internal static SearchQuery ServerFilter(MailImportSettings settings, ImapClient client)
     {
-        var query = SearchQuery.All;
+        // Unread is a flag the server keeps, so it is asked on the server whatever the other filters do.
+        var query = settings.OnlyUnread ? SearchQuery.NotSeen : SearchQuery.All;
 
         // Gmail matches whole words only ("Rechnung" misses "Rechnungen", "vodafone" misses
         // "x@kunde.vodafone.de"), so a server filter would drop mails the local check keeps.

@@ -5,15 +5,37 @@
     ViewData["Breadcrumb"] = L["System / Export tasks"].Value;
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
+    <mp-toolbar-select name="Type" label='@L["Type"]' value="@Model.Type">
+        <option value="all">@L["All"]</option>
+        <option value="export">@L["Export documents"]</option>
+        <option value="backup">@L["Full backup"]</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
+        <option value="all">@L["All"]</option>
+        <option value="enabled">@L["Enabled"]</option>
+        <option value="disabled">@L["Disabled"]</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="name_asc">@L["Name (A–Z)"]</option>
+        <option value="name_desc">@L["Name (Z–A)"]</option>
+        <option value="run_desc">@L["Last run (newest first)"]</option>
+        <option value="run_asc">@L["Last run (oldest first)"]</option>
+    </mp-toolbar-select>
 </mp-toolbar>
 
 @{
+    var typeLabel = Model.Type switch { "export" => L["Export documents"].Value, "backup" => L["Full backup"].Value, _ => null };
+    var statusLabel = Model.Status switch { "enabled" => L["Enabled"].Value, "disabled" => L["Disabled"].Value, _ => null };
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
-        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("Type", L["Type"].Value, typeLabel),
+        new MatPaper.Services.FilterSpec("Status", L["Status"].Value, statusLabel));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} export rule" plural="{0} export rules" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
 <mp-table item-count="Model.Rows.Count" empty-text='@L["No export tasks match your criteria."]'>
     <thead>
@@ -93,4 +115,4 @@
     <a class="btn btn--primary" href="/System/ExportTasks/Edit">@L["New export task"]</a>
 </div>
 
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<mp-list-bar position="bottom" />

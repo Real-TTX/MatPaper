@@ -86,7 +86,6 @@
   <data name="{0} in the inbox · {1} found · {2} being processed" xml:space="preserve"><value>{0} im Eingang · {1} gefunden · {2} in Arbeit</value></data>
   <data name="{0} link(s)" xml:space="preserve"><value>{0} Link(s)</value></data>
   <data name="{0} match(es)" xml:space="preserve"><value>{0} Treffer</value></data>
-  <data name="{0} matches" xml:space="preserve"><value>{0} Treffer</value></data>
   <data name="{0} new" xml:space="preserve"><value>{0} neu</value></data>
   <data name="{0} person(s)" xml:space="preserve"><value>{0} Person(en)</value></data>
   <data name="{0} scanned" xml:space="preserve"><value>{0} geprüft</value></data>
@@ -994,7 +993,6 @@
   <data name="Blocked on" xml:space="preserve"><value>Gesperrt am</value></data>
   <data name="Release" xml:space="preserve"><value>Freigeben</value></data>
   <data name="Release this entry? The document is imported again the next time it turns up." xml:space="preserve"><value>Diesen Eintrag freigeben? Das Dokument wird beim nächsten Auftauchen wieder importiert.</value></data>
-  <data name="Only the newest entries are shown; narrow it down with the search." xml:space="preserve"><value>Es werden nur die neuesten Einträge gezeigt; mit der Suche eingrenzen.</value></data>
   <data name="Only unread mail" xml:space="preserve"><value>Nur ungelesene Mails</value></data>
   <data name="The mail server picks the unread ones (UNSEEN), so read mail is not even looked at." xml:space="preserve"><value>Der Mailserver sucht die ungelesenen heraus (UNSEEN), gelesene Mails werden gar nicht erst angesehen.</value></data>
   <data name="No correspondents could be suggested." xml:space="preserve"><value>Es konnten keine Korrespondenten vorgeschlagen werden.</value></data>
@@ -1060,4 +1058,48 @@
   <data name="Next month" xml:space="preserve"><value>Nächster Monat</value></data>
   <data name="Month" xml:space="preserve"><value>Monat</value></data>
   <data name="Year" xml:space="preserve"><value>Jahr</value></data>
+  <data name="Owned by" xml:space="preserve"><value>Eigentümer</value></data>
+  <data name="Own" xml:space="preserve"><value>Eigene</value></data>
+  <data name="Name or file name" xml:space="preserve"><value>Name oder Dateiname</value></data>
+  <data name="Blocked on (newest first)" xml:space="preserve"><value>Gesperrt am (neueste zuerst)</value></data>
+  <data name="Blocked on (oldest first)" xml:space="preserve"><value>Gesperrt am (älteste zuerst)</value></data>
+  <data name="Narrow it down with the search." xml:space="preserve"><value>Mit der Suche eingrenzen.</value></data>
+  <data name="Last run (newest first)" xml:space="preserve"><value>Letzter Lauf (neueste zuerst)</value></data>
+  <data name="Last run (oldest first)" xml:space="preserve"><value>Letzter Lauf (älteste zuerst)</value></data>
+  <data name="Started (newest first)" xml:space="preserve"><value>Gestartet (neueste zuerst)</value></data>
+  <data name="Started (oldest first)" xml:space="preserve"><value>Gestartet (älteste zuerst)</value></data>
+  <data name="Task name" xml:space="preserve"><value>Aufgabenname</value></data>
+  <data name="Without group" xml:space="preserve"><value>Ohne Gruppe</value></data>
+  <data name="{0} result" xml:space="preserve"><value>{0} Ergebnis</value></data>
+  <data name="{0} results" xml:space="preserve"><value>{0} Ergebnisse</value></data>
+  <data name="{0} document" xml:space="preserve"><value>{0} Dokument</value></data>
+  <data name="{0} documents" xml:space="preserve"><value>{0} Dokumente</value></data>
+  <data name="{0} correspondent" xml:space="preserve"><value>{0} Korrespondent</value></data>
+  <data name="{0} correspondents" xml:space="preserve"><value>{0} Korrespondenten</value></data>
+  <data name="{0} tag" xml:space="preserve"><value>{0} Schlagwort</value></data>
+  <data name="{0} tags" xml:space="preserve"><value>{0} Schlagwörter</value></data>
+  <data name="{0} project" xml:space="preserve"><value>{0} Projekt</value></data>
+  <data name="{0} projects" xml:space="preserve"><value>{0} Projekte</value></data>
+  <data name="{0} document type" xml:space="preserve"><value>{0} Dokumenttyp</value></data>
+  <data name="{0} document types" xml:space="preserve"><value>{0} Dokumenttypen</value></data>
+  <data name="{0} user" xml:space="preserve"><value>{0} Benutzer</value></data>
+  <data name="{0} users" xml:space="preserve"><value>{0} Benutzer</value></data>
+  <data name="{0} storage location" xml:space="preserve"><value>{0} Speicherort</value></data>
+  <data name="{0} storage locations" xml:space="preserve"><value>{0} Speicherorte</value></data>
+  <data name="{0} export rule" xml:space="preserve"><value>{0} Export-Regel</value></data>
+  <data name="{0} export rules" xml:space="preserve"><value>{0} Export-Regeln</value></data>
+  <data name="{0} import rule" xml:space="preserve"><value>{0} Import-Regel</value></data>
+  <data name="{0} import rules" xml:space="preserve"><value>{0} Import-Regeln</value></data>
+  <data name="{0} connection" xml:space="preserve"><value>{0} Verbindung</value></data>
+  <data name="{0} connections" xml:space="preserve"><value>{0} Verbindungen</value></data>
+  <data name="{0} run" xml:space="preserve"><value>{0} Lauf</value></data>
+  <data name="{0} runs" xml:space="preserve"><value>{0} Läufe</value></data>
+  <data name="{0} entry" xml:space="preserve"><value>{0} Eintrag</value></data>
+  <data name="{0} entries" xml:space="preserve"><value>{0} Einträge</value></data>
+  <data name="First page" xml:space="preserve"><value>Erste Seite</value></data>
+  <data name="Previous page" xml:space="preserve"><value>Vorherige Seite</value></data>
+  <data name="Next page" xml:space="preserve"><value>Nächste Seite</value></data>
+  <data name="Last page" xml:space="preserve"><value>Letzte Seite</value></data>
+  <data name="Display as" xml:space="preserve"><value>Anzeigen als</value></data>
+  <data name="List" xml:space="preserve"><value>Liste</value></data>
 </root>

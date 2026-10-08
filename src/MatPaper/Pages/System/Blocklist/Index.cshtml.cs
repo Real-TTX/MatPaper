@@ -8,7 +8,7 @@ namespace MatPaper.Pages.System.Blocklist;
 
 public class IndexModel : PageModel
 {
-    private const int Limit = 300;
+    public const int Limit = 300;
 
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
@@ -22,7 +22,11 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string Sort { get; set; } = "date_desc";
+
     public IReadOnlyList<BlockedDocument> Rows { get; private set; } = Array.Empty<BlockedDocument>();
+    public int TotalCount { get; private set; }
     public bool Truncated { get; private set; }
 
     public async Task OnGetAsync()
@@ -34,12 +38,22 @@ public class IndexModel : PageModel
             query = query.Where(b => EF.Functions.ILike(b.Name, term) || (b.OriginalFileName != null && EF.Functions.ILike(b.OriginalFileName, term)));
         }
 
-        var rows = await query.OrderByDescending(b => b.CreateDate).Take(Limit + 1).ToListAsync();
+        TotalCount = await query.CountAsync();
+
+        query = Sort switch
+        {
+            "date_asc" => query.OrderBy(b => b.CreateDate),
+            "name_asc" => query.OrderBy(b => b.Name),
+            "name_desc" => query.OrderByDescending(b => b.Name),
+            _ => query.OrderByDescending(b => b.CreateDate)
+        };
+
+        var rows = await query.Take(Limit + 1).ToListAsync();
         Truncated = rows.Count > Limit;
         Rows = rows.Take(Limit).ToList();
     }
 
-    public async Task<IActionResult> OnPostReleaseAsync(long id, string? search)
+    public async Task<IActionResult> OnPostReleaseAsync(long id, string? search, string? sort)
     {
         var entry = await Mine().FirstOrDefaultAsync(b => b.Id == id);
         if (entry is not null)
@@ -48,7 +62,7 @@ public class IndexModel : PageModel
             await _db.SaveChangesAsync();
         }
 
-        return RedirectToPage(new { Search = search });
+        return RedirectToPage(new { Search = search, Sort = sort });
     }
 
     /// <summary>Everyone sees their own entries; an admin sees all.</summary>

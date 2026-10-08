@@ -27,10 +27,6 @@ public sealed class ToolbarTagHelper : TagHelper
     [HtmlAttributeName("apply-text")]
     public string? ApplyText { get; set; }
 
-    /// <summary>Number of matches to show next to the filter button. Omit to show none.</summary>
-    [HtmlAttributeName("count")]
-    public int? Count { get; set; }
-
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
         output.TagName = "form";
@@ -45,13 +41,6 @@ public sealed class ToolbarTagHelper : TagHelper
 
         TagHelperContent children = await output.GetChildContentAsync();
         output.Content.SetHtmlContent(children);
-
-        // Before the button, because the toolbar sizes its last group as the action cell.
-        if (Count is int count)
-        {
-            string text = HtmlEncoder.Default.Encode(_l["{0} matches", count].Value);
-            output.Content.AppendHtml($"<div class=\"toolbar__group toolbar__count\">{text}</div>");
-        }
 
         var applyText = ApplyText ?? _l["Filter"].Value;
         if (!string.IsNullOrEmpty(applyText))

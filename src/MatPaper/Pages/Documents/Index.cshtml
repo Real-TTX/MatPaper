@@ -6,8 +6,11 @@
     ViewData["Breadcrumb"] = L["Documents"].Value;
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Full-text search"]' />
+
+    @* A phone has no list bar: the gallery / list choice is the first field of the filter dialog. *@
+    <mp-toolbar-view name="View" value="@Model.View" />
 
     <mp-picker create="false" asp-for="CorrespondentIds" label='@L["Correspondent"]' multiple="true" placeholder='@L["All"]'
                asp-items="@(new[] { new SelectListItem(L["No correspondent"].Value, "0") }.Concat(Model.Correspondents.Select(c => new SelectListItem(c.Name, c.Id.ToString()))))" />
@@ -60,9 +63,127 @@
 
 <partial name="_FilterChips" model="Model.Filters" />
 
+<mp-list-bar count="Model.TotalCount" singular="{0} document" plural="{0} documents" current-page="Model.PageNumber" total-pages="Model.TotalPages">
+    <mp-view-switch current="@Model.View" />
+</mp-list-bar>
+
 @if (Model.Rows.Count == 0)
 {
     <div class="empty-state">@L["No documents match your criteria."]</div>
+}
+else if (Model.ListView)
+{
+    <div class="data-table-wrap">
+        <table class="data-table doc-table">
+            <thead>
+                <tr>
+                    <th class="doc-table__thumbcell"><span class="visually-hidden">@L["Preview"]</span></th>
+                    <th>@L["Title"]</th>
+                    <th class="doc-table__optional doc-table__optional--party">@L["Correspondent"]</th>
+                    <th class="doc-table__optional doc-table__optional--type">@L["Type"]</th>
+                    <th class="doc-table__optional doc-table__optional--project">@L["Project"]</th>
+                    <th>@L["Date"]</th>
+                    <th class="is-actions @(Model.ShowingDeleted ? null : "doc-table__edit")"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model.Rows)
+                {
+                    var rowTags = d.DocumentTags?.Where(t => t.Tag != null).Select(t => t.Tag!).ToList() ?? new List<MatPaper.Data.Tag>();
+                    <tr class="@(Model.ShowingDeleted ? "doc-row--deleted" : null)"
+                        data-row-href="@(Model.ShowingDeleted ? null : $"/Documents/Edit?id={d.Id}")"
+                        tabindex="@(Model.ShowingDeleted ? null : "0")">
+                        <td class="doc-table__thumbcell">
+                            @if (Model.ShowingDeleted)
+                            {
+                                <span class="doc-row__thumb doc-row__thumb--static" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
+                                </span>
+                            }
+                            else
+                            {
+                                <button type="button" class="doc-row__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" data-viewer-token="@d.Token" data-viewer-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
+                                    @if (d.ThumbnailPath != null)
+                                    {
+                                        <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
+                                    }
+                                </button>
+                            }
+                        </td>
+                        <td class="doc-table__title">
+                            @if (Model.ShowingDeleted)
+                            {
+                                <span class="doc-table__name" title="@d.Title">@d.Title</span>
+                                <span class="badge badge--warn">@L["Deleted"]</span>
+                            }
+                            else
+                            {
+                                <a class="doc-table__name" href="/Documents/Edit?id=@d.Id" title="@d.Title">@d.Title</a>
+                                @if (d.ReviewState == ReviewState.Pending)
+                                {
+                                    <span class="badge badge--warn">@L["Needs review"]</span>
+                                }
+                                else if (d.ReviewState == ReviewState.Ignored)
+                                {
+                                    <span class="badge badge--muted">@L["Ignored"]</span>
+                                }
+                            }
+                            @if (d.IsEInvoice)
+                            {
+                                <span class="badge badge--muted" title="@L["Structured invoice data (XRechnung / ZUGFeRD)"]">@L["E-invoice"]</span>
+                            }
+                            <div class="doc-table__sub">@(d.Correspondent?.Name ?? "—")@(d.DocumentType != null ? " · " + d.DocumentType.Name : "")</div>
+                            @if (rowTags.Count > 0)
+                            {
+                                <div class="doc-table__tags">
+                                    @foreach (var t in rowTags)
+                                    {
+                                        <span class="tag-label"><span class="tag-label__dot" style="background:@(string.IsNullOrWhiteSpace(t.Color) ? "#808080" : t.Color)"></span>@t.Name</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td class="doc-table__optional doc-table__optional--party">@(d.Correspondent?.Name ?? "—")</td>
+                        <td class="doc-table__optional doc-table__optional--type">@(d.DocumentType?.Name ?? "—")</td>
+                        <td class="doc-table__optional doc-table__optional--project">
+                            @if (d.Project != null)
+                            {
+                                <span class="project-label">
+                                    <svg class="project-label__icon" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>@d.Project.Name
+                                </span>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="doc-table__date">@Fmt.Date(d.DocumentDate ?? d.CreateDate)</td>
+                        <td class="is-actions @(Model.ShowingDeleted ? null : "doc-table__edit")">
+                            @if (Model.ShowingDeleted)
+                            {
+                                <form method="post" asp-page-handler="Restore" asp-route-Review="deleted" style="display:inline">
+                                    <input type="hidden" name="id" value="@d.Id" />
+                                    <button class="icon-btn" type="submit" title='@L["Restore"]' aria-label='@L["Restore"]'>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <a class="icon-btn" href="/Documents/Edit?id=@d.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 else
 {
@@ -181,7 +302,7 @@ else
     <a class="btn btn--primary" href="/Documents/Upload">@L["Add documents"]</a>
 </div>
 
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<mp-list-bar position="bottom" />
 
 <dialog id="doc-preview" class="preview-dialog" aria-label='@L["Document preview"]'>
     <div class="preview-dialog__head">

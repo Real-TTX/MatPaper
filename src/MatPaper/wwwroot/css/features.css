@@ -1810,8 +1810,6 @@ html.has-scanner { overflow: hidden; }
 .toolbar.is-enhanced { flex-wrap: nowrap; align-items: flex-end; gap: 12px; padding: 12px 14px; }
 .toolbar.is-enhanced > .toolbar__group[hidden] { display: none; }
 .toolbar.is-enhanced > .toolbar__search { flex: 1 1 280px; min-width: 150px; max-width: none; }
-.toolbar.is-enhanced > .toolbar__filter, .toolbar.is-enhanced > .form-row { flex: 0 0 172px; min-width: 150px; }
-.toolbar.is-enhanced > .toolbar__count { flex: 0 0 auto; min-width: 0; margin-left: auto; align-self: center; }
 .toolbar__searchbox { position: relative; }
 .toolbar__searchbox .form-control { padding-left: 38px; }
 .toolbar__searchicon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: inline-flex; color: var(--color-text-muted); pointer-events: none; }
@@ -1842,7 +1840,6 @@ html.has-scanner { overflow: hidden; }
 .sort-option input { accent-color: var(--color-primary); width: 18px; height: 18px; margin: 0; }
 .sort-option.is-current { font-weight: 600; }
 @media (min-width: 801px) { dialog.filter-dialog--sort { width: min(24rem, calc(100vw - 2rem)); } }
-@media (max-width: 600px) { .toolbar.is-enhanced > .toolbar__count { display: none; } }
 
 .list-header[hidden] { display: none; }
 
@@ -1985,4 +1982,94 @@ dialog.mp-date-dialog[open] { display: flex; flex-direction: column; }
     .mp-date-dialog__day { height: 100%; font-size: 1.05rem; }
     .mp-date-dialog__foot { padding: 0.8rem; padding-bottom: max(0.8rem, env(safe-area-inset-bottom)); }
     .mp-date-dialog__foot .btn { min-height: 46px; flex: 1; }
+}
+
+/* ---------- The line above a list: pages on the left, how many on the right ---------- */
+.list-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0 0 12px; min-height: 34px; }
+.list-bar .pagination { margin-top: 0; }
+.list-bar__count { margin-left: auto; color: var(--color-text-muted); font-size: 0.875rem; white-space: nowrap; }
+.list-bar > .view-switch { margin-left: auto; }
+.list-bar__count + .view-switch { margin-left: 0; }
+
+/* first / previous / next / last: an icon in a square */
+.pagination__link--step { padding: 0; }
+.pagination__link--step svg { width: 16px; height: 16px; }
+@media (max-width: 480px) {
+    .pagination { gap: 4px; }
+    .pagination__link { min-width: 32px; padding: 0 8px; }
+    .pagination__link--step { padding: 0; }
+}
+
+/* gallery / list */
+.view-switch { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); }
+.view-switch__btn { display: inline-grid; place-items: center; width: 38px; height: 32px; color: var(--color-text-muted); text-decoration: none; }
+.view-switch__btn + .view-switch__btn { border-left: 1px solid var(--color-border); }
+.view-switch__btn:hover { color: var(--color-text); background: var(--color-hover); }
+.view-switch__btn:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+.view-switch__btn.is-active { background: var(--color-primary); color: var(--color-primary-contrast, #fff); }
+.view-switch__btn svg { width: 18px; height: 18px; }
+
+/* ---------- Documents as a table ---------- */
+.doc-table__thumbcell { width: 56px; padding-right: 0 !important; }
+.doc-row__thumb {
+    display: grid; place-items: center; width: 40px; height: 52px; padding: 0; overflow: hidden; cursor: pointer;
+    border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface-alt); color: var(--color-text-muted);
+}
+.doc-row__thumb:hover { border-color: var(--color-primary); }
+.doc-row__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.doc-row__thumb svg { width: 22px; height: 22px; }
+.doc-row__thumb--static { cursor: default; }
+.doc-row__thumb--static:hover { border-color: var(--color-border); }
+.doc-table__name { font-weight: 600; color: var(--color-text); overflow-wrap: anywhere; text-decoration: none; }
+a.doc-table__name:hover { color: var(--color-primary); }
+.doc-table__title .badge { margin-left: 0.4rem; vertical-align: 1px; }
+.doc-table__sub { display: none; margin-top: 2px; color: var(--color-text-muted); font-size: 0.82rem; }
+.doc-table__date { white-space: nowrap; }
+.doc-table__title { min-width: 12rem; }
+.doc-table__optional--party { min-width: 8rem; }
+.doc-table__optional--type, .doc-table__optional--project { white-space: nowrap; }
+.doc-table__tags { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-top: 4px; }
+.doc-table .tag-label { white-space: nowrap; font-size: 0.82rem; }
+.doc-row--deleted .doc-table__name { color: var(--color-text-muted); }
+.doc-row--deleted { opacity: 0.8; }
+@media (max-width: 1100px) { .doc-table__optional--project { display: none; } }
+@media (max-width: 900px) {
+    .doc-table__optional { display: none; }
+    .doc-table__sub { display: block; }
+}
+/* a phone: the whole row opens the document, so the edit button goes; the title takes what is left */
+@media (max-width: 800px) {
+    .doc-table th, .doc-table td { padding-left: 8px; padding-right: 8px; }
+    .doc-table__thumbcell { width: 52px; }
+    .doc-table__title { min-width: 0; }
+    .doc-table__edit { display: none; }
+}
+
+/* ---------- The bottom of a list ---------- */
+/* A wide screen: the pager closes the list and the count is at the top. */
+.list-bar--end { margin: 16px 0 0; }
+.list-bar--end .list-bar__count { display: none; }
+.list-bar--end.list-bar--solo { display: none; }
+
+/* The gallery / list choice in the filter dialog: a wide screen has the switch in the list bar instead. */
+.toolbar__view-title { font-size: 12.5px; font-weight: 500; color: var(--color-text-muted); }
+.view-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.view-choice__opt {
+    position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--control-height);
+    border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text);
+    font-weight: 500; cursor: pointer;
+}
+.view-choice__opt input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.view-choice__opt svg { width: 18px; height: 18px; }
+.view-choice__opt:has(input:checked) { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-primary-contrast, #fff); }
+.view-choice__opt:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+@media (min-width: 801px) { .filter-dialog__body .toolbar__view { display: none; } }
+
+/* A phone: no line above the list; the count and the pager are at the bottom, the count above the pager. */
+@media (max-width: 800px) {
+    .list-bar:not(.list-bar--end) { display: none; }
+    .list-bar--end { flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
+    .list-bar--end .list-bar__count { display: block; order: -1; margin-left: 0; }
+    .list-bar--end.list-bar--solo { display: flex; }
+    .view-choice__opt { min-height: 46px; }
 }

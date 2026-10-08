@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = $"{L["System"].Value} / {L["Users"].Value}";
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Username, display name or email"]' />
     <mp-toolbar-select name="Role" label='@L["Role"]' value="@Model.Role">
         <option value="All">@L["All"]</option>
@@ -25,6 +25,8 @@
         new MatPaper.Services.FilterSpec("Role", L["Role"].Value, roleLabel));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} user" plural="{0} users" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
 <mp-table item-count="Model.Users.Count" empty-text='@L["No users match your criteria."]'>
     <thead>
@@ -80,4 +82,4 @@
     <a class="btn btn--primary" href="/System/Users/Edit">@L["New user"]</a>
 </div>
 
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<mp-list-bar position="bottom" />

@@ -16,8 +16,19 @@ public class IndexModel : PageModel
         _db = db;
     }
 
+    /// <summary>Part of the name of the task (or group, or storage location) a run belongs to.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
+
     [BindProperty(SupportsGet = true)]
     public string Kind { get; set; } = "all";
+
+    /// <summary>"all" or a <see cref="TaskRunState"/> name.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Status { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string Sort { get; set; } = "started_desc";
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
@@ -56,7 +67,29 @@ public class IndexModel : PageModel
             query = query.Where(r => r.Kind == kindFilter.Value);
         }
 
-        query = query.OrderByDescending(r => r.StartedAt);
+        if (Enum.TryParse<TaskRunState>(Status, true, out var state) && Enum.IsDefined(state))
+        {
+            query = query.Where(r => r.State == state);
+        }
+
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            // A run only knows the id of its task; the names live in four tables, one per kind.
+            var pattern = $"%{Search.Trim()}%";
+            var matchImport = await _db.ImportTasks.AsNoTracking().Where(t => EF.Functions.ILike(t.Name, pattern)).Select(t => t.Id).ToListAsync();
+            var matchExport = await _db.ExportTasks.AsNoTracking().Where(t => EF.Functions.ILike(t.Name, pattern)).Select(t => t.Id).ToListAsync();
+            var matchLocation = await _db.StorageLocations.AsNoTracking().Where(t => EF.Functions.ILike(t.Name, pattern)).Select(t => t.Id).ToListAsync();
+            var matchGroup = await _db.ImportGroups.AsNoTracking().Where(t => EF.Functions.ILike(t.Name, pattern)).Select(t => t.Id).ToListAsync();
+            query = query.Where(r =>
+                (r.Kind == TaskRunKind.Import && matchImport.Contains(r.TaskId))
+                || (r.Kind == TaskRunKind.Export && matchExport.Contains(r.TaskId))
+                || ((r.Kind == TaskRunKind.Scan || r.Kind == TaskRunKind.Align) && matchLocation.Contains(r.TaskId))
+                || (r.Kind == TaskRunKind.ImportGroup && matchGroup.Contains(r.TaskId)));
+        }
+
+        query = Sort == "started_asc"
+            ? query.OrderBy(r => r.StartedAt)
+            : query.OrderByDescending(r => r.StartedAt);
 
         TotalCount = await query.CountAsync();
         TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);

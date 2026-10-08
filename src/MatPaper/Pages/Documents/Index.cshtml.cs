@@ -9,7 +9,9 @@ namespace MatPaper.Pages.Documents;
 
 public class IndexModel : PageModel
 {
-    private const int PageSize = 24;
+    private const int GalleryPageSize = 24;
+    private const int ListPageSize = 50;
+    private const string ViewCookie = "mp_documents_view";
 
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
@@ -62,6 +64,14 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
+    /// <summary>"gallery" or "list". Set with the switch above the list; the choice is kept in a cookie.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string? View { get; set; }
+
+    public bool ListView => View == "list";
+
+    private int PageSize => ListView ? ListPageSize : GalleryPageSize;
+
     public IReadOnlyList<Document> Rows { get; private set; } = Array.Empty<Document>();
     public int TotalCount { get; private set; }
     public int TotalPages { get; private set; }
@@ -111,6 +121,7 @@ public class IndexModel : PageModel
     {
         ViewData["Breadcrumb"] = "Documents";
 
+        ResolveView();
         await LoadFilterOptionsAsync();
 
         IQueryable<Document> query = _db.Documents
@@ -228,6 +239,24 @@ public class IndexModel : PageModel
             .ToListAsync();
 
         BuildActiveFilters();
+    }
+
+    /// <summary>A view picked with the switch is used and remembered; without one the remembered view applies.</summary>
+    private void ResolveView()
+    {
+        if (View is "gallery" or "list")
+        {
+            Response.Cookies.Append(ViewCookie, View, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                IsEssential = true,
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax
+            });
+            return;
+        }
+
+        View = Request.Cookies[ViewCookie] == "list" ? "list" : "gallery";
     }
 
     private void BuildActiveFilters()

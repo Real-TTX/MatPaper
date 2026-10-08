@@ -19,6 +19,17 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
 
+    /// <summary>"all", "backup" or "export".</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Type { get; set; } = "all";
+
+    /// <summary>"all", "enabled" or "disabled".</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Status { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string Sort { get; set; } = "name_asc";
+
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
@@ -49,7 +60,34 @@ public class IndexModel : PageModel
             query = query.Where(t => EF.Functions.ILike(t.Name, pattern));
         }
 
-        query = query.OrderBy(t => t.Name);
+        query = Type switch
+        {
+            "backup" => query.Where(t => t.Type == ExportTaskType.Backup),
+            "export" => query.Where(t => t.Type == ExportTaskType.Export),
+            _ => query
+        };
+
+        query = Status switch
+        {
+            "enabled" => query.Where(t => t.IsEnabled),
+            "disabled" => query.Where(t => !t.IsEnabled),
+            _ => query
+        };
+
+        // Tasks that never ran come last in both directions.
+        query = Sort switch
+        {
+            "name_desc" => query.OrderByDescending(t => t.Name),
+            "run_desc" => query
+                .OrderBy(t => _db.TaskRuns.Where(r => r.Kind == TaskRunKind.Export && r.TaskId == t.Id).Max(r => (DateTime?)r.StartedAt) == null)
+                .ThenByDescending(t => _db.TaskRuns.Where(r => r.Kind == TaskRunKind.Export && r.TaskId == t.Id).Max(r => (DateTime?)r.StartedAt))
+                .ThenBy(t => t.Name),
+            "run_asc" => query
+                .OrderBy(t => _db.TaskRuns.Where(r => r.Kind == TaskRunKind.Export && r.TaskId == t.Id).Max(r => (DateTime?)r.StartedAt) == null)
+                .ThenBy(t => _db.TaskRuns.Where(r => r.Kind == TaskRunKind.Export && r.TaskId == t.Id).Max(r => (DateTime?)r.StartedAt))
+                .ThenBy(t => t.Name),
+            _ => query.OrderBy(t => t.Name)
+        };
 
         TotalCount = await query.CountAsync();
         TotalPages = TotalCount == 0 ? 1 : (int)Math.Ceiling(TotalCount / (double)PageSize);

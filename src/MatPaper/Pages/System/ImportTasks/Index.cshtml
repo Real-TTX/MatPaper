@@ -22,15 +22,54 @@
     };
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
+    <mp-toolbar-select name="Type" label='@L["Type"]' value="@Model.Type">
+        <option value="all">@L["All"]</option>
+        <option value="Imap">IMAP</option>
+        <option value="Pop3">POP3</option>
+        <option value="Smb">@L["SMB share"]</option>
+        <option value="Filesystem">@L["Watched folder"]</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
+        <option value="all">@L["All"]</option>
+        <option value="enabled">@L["Enabled"]</option>
+        <option value="disabled">@L["Disabled"]</option>
+    </mp-toolbar-select>
+    @if (Model.GroupOptions.Count > 0)
+    {
+        <mp-toolbar-select name="Group" label='@L["Group"]' value="@Model.Group">
+            <option value="all">@L["All"]</option>
+            <option value="none">@L["Without group"]</option>
+            @foreach (var option in Model.GroupOptions)
+            {
+                <option value="@option.Id">@option.Name</option>
+            }
+        </mp-toolbar-select>
+    }
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="name_asc">@L["Name (A–Z)"]</option>
+        <option value="name_desc">@L["Name (Z–A)"]</option>
+        <option value="run_desc">@L["Last run (newest first)"]</option>
+        <option value="run_asc">@L["Last run (oldest first)"]</option>
+    </mp-toolbar-select>
 </mp-toolbar>
 
 @{
+    var typeFilter = Enum.TryParse<ImportTaskType>(Model.Type, true, out var chosenType) && Enum.IsDefined(chosenType) ? TypeLabel(chosenType) : null;
+    var statusFilter = Model.Status switch { "enabled" => L["Enabled"].Value, "disabled" => L["Disabled"].Value, _ => null };
+    var groupFilter = Model.Group == "none"
+        ? L["Without group"].Value
+        : Model.GroupOptions.FirstOrDefault(o => o.Id.ToString() == Model.Group)?.Name;
     var activeFilters = FilterChipBar.From(ViewContext.HttpContext.Request,
-        new FilterSpec("Search", L["Search"].Value, Model.Search));
+        new FilterSpec("Search", L["Search"].Value, Model.Search),
+        new FilterSpec("Type", L["Type"].Value, typeFilter),
+        new FilterSpec("Status", L["Status"].Value, statusFilter),
+        new FilterSpec("Group", L["Group"].Value, groupFilter));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} import rule" plural="{0} import rules" />
 
 @* One table: a group is a header row, its rules sit indented below it in the order they run; single rules follow. *@
 <mp-table item-count="Model.TotalCount + Model.Groups.Count" empty-text='@L["No import tasks match your criteria."]'>
@@ -162,3 +201,5 @@
     <a class="btn btn--primary" href="/System/ImportTasks/Edit">@L["New import task"]</a>
     <a class="btn btn--secondary" href="/System/ImportGroups/Edit">@L["New group"]</a>
 </div>
+
+<mp-list-bar position="bottom" />

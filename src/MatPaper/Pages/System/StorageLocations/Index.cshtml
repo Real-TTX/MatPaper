@@ -6,8 +6,13 @@
     ViewData["Breadcrumb"] = L["System / Storage locations"].Value;
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or path"]' />
+    <mp-toolbar-select name="Kind" label='@L["Type"]' value="@Model.Kind">
+        <option value="all">@L["All"]</option>
+        <option value="Local">@L["Local"]</option>
+        <option value="Smb">SMB</option>
+    </mp-toolbar-select>
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
         <option value="name_desc">@L["Name (Z–A)"]</option>
@@ -15,10 +20,14 @@
 </mp-toolbar>
 
 @{
+    var kindLabel = Model.Kind switch { "Local" => L["Local"].Value, "Smb" => "SMB", _ => null };
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
-        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("Kind", L["Type"].Value, kindLabel));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} storage location" plural="{0} storage locations" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
 <form method="post">
     <mp-table item-count="Model.Rows.Count" empty-text='@L["No storage locations match your criteria."]'>
@@ -102,4 +111,4 @@
     </div>
 </form>
 
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<mp-list-bar position="bottom" />

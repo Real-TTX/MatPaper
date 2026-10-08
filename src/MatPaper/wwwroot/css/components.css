@@ -1214,14 +1214,6 @@ input[type="color"].form-control {
     max-width: 52rem;
 }
 
-.toolbar__count {
-    margin-left: auto;
-    align-self: center;
-    color: var(--color-text-muted);
-    font-size: 13px;
-    white-space: nowrap;
-}
-
 /* A row that opens its entry on click. */
 tr[data-row-href] {
     cursor: pointer;
@@ -1272,12 +1264,10 @@ tr[data-row-href]:focus-visible {
     }
 
     .toolbar--collapsible:not(.is-open) .toolbar__collapsible,
-    .toolbar--collapsible:not(.is-open) .toolbar__apply,
-    .toolbar--collapsible:not(.is-open) .toolbar__count {
+    .toolbar--collapsible:not(.is-open) .toolbar__apply {
         display: none;
     }
 
-    .toolbar--collapsible .toolbar__count,
     .toolbar--collapsible .toolbar__apply {
         flex: 1 1 100%;
     }

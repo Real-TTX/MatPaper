@@ -21,10 +21,11 @@
         new MatPaper.Services.FilterSpec("Origin", L["Origin"].Value, originLabel),
         new MatPaper.Services.FilterSpec("LocationId", L["Location"].Value, locationLabel),
         new MatPaper.Services.FilterSpec("Folder", L["Folder"].Value, Model.Folder),
-        new MatPaper.Services.FilterSpec("State", L["Status"].Value, Model.ShowingIgnored ? L["Ignored"].Value : null));
+        new MatPaper.Services.FilterSpec("State", L["Status"].Value, Model.ShowingIgnored ? L["Ignored"].Value : null),
+        new MatPaper.Services.FilterSpec("AllOwners", L["Owned by"].Value, Model.IsAdmin && Model.AllOwners ? L["All"].Value : null));
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title, file name or correspondent"]' />
     <mp-toolbar-select name="Origin" label='@L["Origin"]' value="@(Model.Origin?.ToString() ?? string.Empty)">
         <option value="">@L["All"]</option>
@@ -53,10 +54,11 @@
     </mp-toolbar-select>
     @if (Model.IsAdmin)
     {
-        <div class="toolbar__group toolbar__filter">
-            <label for="AllOwners">@L["All owners"]</label>
-            <input type="checkbox" id="AllOwners" name="AllOwners" value="true" checked="@Model.AllOwners" />
-        </div>
+        @* A filter is always a dropdown: whose documents the inbox shows. *@
+        <mp-toolbar-select name="AllOwners" label='@L["Owned by"]' value="@(Model.AllOwners ? "true" : "false")">
+            <option value="false">@L["Own"]</option>
+            <option value="true">@L["All"]</option>
+        </mp-toolbar-select>
     }
 </mp-toolbar>
 
@@ -92,6 +94,8 @@
 }
 else
 {
+    <mp-list-bar count="Model.TotalCount" singular="{0} document" plural="{0} documents" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+
     @* Shown by the script below once processing is done but the user is mid-edit: it takes the
        place of the first list entry instead of a bar above the list. *@
     <div id="inbox-refresh" class="inbox-refresh" role="status" hidden>
@@ -171,7 +175,7 @@ else
         </form>
     }
 
-    <mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+    <mp-list-bar position="bottom" />
 }
 
 @section Scripts {

@@ -4,7 +4,7 @@
     ViewData["Breadcrumb"] = L["System / Document types"].Value;
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="name_asc">@L["Name (A–Z)"]</option>
@@ -17,6 +17,8 @@
         new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} document type" plural="{0} document types" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
 <mp-table item-count="Model.Rows.Count" empty-text='@L["No document types match your criteria."]'>
     <thead>
@@ -40,4 +42,4 @@
     <a class="btn btn--primary" href="/System/DocumentTypes/Edit">@L["New document type"]</a>
 </div>
 
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<mp-list-bar position="bottom" />

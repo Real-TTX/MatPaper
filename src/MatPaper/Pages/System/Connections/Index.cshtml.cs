@@ -21,6 +21,13 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
 
+    /// <summary>"all" or a <see cref="ConnectionKind"/> name.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Kind { get; set; } = "all";
+
+    [BindProperty(SupportsGet = true)]
+    public string Sort { get; set; } = "name_asc";
+
     public IReadOnlyList<Connection> Rows { get; private set; } = Array.Empty<Connection>();
     public int TotalCount { get; private set; }
 
@@ -39,7 +46,14 @@ public class IndexModel : PageModel
                 || (c.Username != null && EF.Functions.ILike(c.Username, pattern)));
         }
 
-        Rows = await query.OrderBy(c => c.Name).ToListAsync();
+        if (Enum.TryParse<ConnectionKind>(Kind, true, out var kind) && Enum.IsDefined(kind))
+        {
+            query = query.Where(c => c.Kind == kind);
+        }
+
+        query = Sort == "name_desc" ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name);
+
+        Rows = await query.ToListAsync();
         TotalCount = Rows.Count;
     }
 }

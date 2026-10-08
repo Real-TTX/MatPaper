@@ -4,12 +4,23 @@
     ViewData["Breadcrumb"] = L["System / Blocklist"].Value;
 }
 
-<p class="form-help">@L["What you deleted and blocked is skipped by imports and searches when it turns up again. Release an entry to get it back."]</p>
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or file name"]' />
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="date_desc">@L["Blocked on (newest first)"]</option>
+        <option value="date_asc">@L["Blocked on (oldest first)"]</option>
+        <option value="name_asc">@L["Name (A–Z)"]</option>
+        <option value="name_desc">@L["Name (Z–A)"]</option>
+    </mp-toolbar-select>
+</mp-toolbar>
 
-<form method="get" class="toolbar-search" style="margin-bottom:1rem">
-    <input class="form-control" type="search" name="Search" value="@Model.Search" placeholder='@L["Search by name"]' />
-    <button class="btn btn--secondary" type="submit">@L["Search"]</button>
-</form>
+@{
+    var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+}
+<partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} entry" plural="{0} entries" />
 
 <mp-table item-count="Model.Rows.Count" empty-text='@L["Nothing is blocked."]'>
     <thead>
@@ -28,7 +39,7 @@
                 <td>@r.OriginalFileName</td>
                 <td>@Fmt.Date(r.CreateDate)</td>
                 <td class="is-actions">
-                    <form method="post" asp-page-handler="Release" asp-route-id="@r.Id" asp-route-Search="@Model.Search" style="display:inline">
+                    <form method="post" asp-page-handler="Release" asp-route-id="@r.Id" asp-route-Search="@Model.Search" asp-route-Sort="@Model.Sort" style="display:inline">
                         <button class="btn btn--secondary" type="submit"
                                 data-confirm='@L["Release this entry? The document is imported again the next time it turns up."]'>@L["Release"]</button>
                     </form>
@@ -37,7 +48,11 @@
         }
     </tbody>
 </mp-table>
+
+<mp-list-bar position="bottom" />
+
+<p class="form-help">@L["What you deleted and blocked is skipped by imports and searches when it turns up again. Release an entry to get it back."]</p>
 @if (Model.Truncated)
 {
-    <p class="form-help">@L["Only the newest entries are shown; narrow it down with the search."]</p>
+    <p class="form-help">@L["The first {0} of {1} are shown.", MatPaper.Pages.System.Blocklist.IndexModel.Limit, Model.TotalCount] @L["Narrow it down with the search."]</p>
 }

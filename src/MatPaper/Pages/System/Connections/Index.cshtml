@@ -15,15 +15,31 @@
     };
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
     <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or username"]' />
+    <mp-toolbar-select name="Kind" label='@L["Type"]' value="@Model.Kind">
+        <option value="all">@L["All"]</option>
+        <option value="Smb">SMB</option>
+        <option value="Imap">IMAP</option>
+        <option value="Pop3">POP3</option>
+        <option value="GoogleDrive">Google Drive</option>
+        <option value="OneDrive">OneDrive</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="name_asc">@L["Name (A–Z)"]</option>
+        <option value="name_desc">@L["Name (Z–A)"]</option>
+    </mp-toolbar-select>
 </mp-toolbar>
 
 @{
+    var kindFilter = Enum.TryParse<ConnectionKind>(Model.Kind, true, out var chosenKind) && Enum.IsDefined(chosenKind) ? KindLabel(chosenKind) : null;
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
-        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("Kind", L["Type"].Value, kindFilter));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} connection" plural="{0} connections" />
 
 <mp-table item-count="Model.Rows.Count" empty-text='@L["No connections yet."]'>
     <thead>
@@ -76,3 +92,5 @@
 <div class="list-actions">
     <a class="btn btn--primary" href="/System/Connections/Edit">@L["New connection"]</a>
 </div>
+
+<mp-list-bar position="bottom" />

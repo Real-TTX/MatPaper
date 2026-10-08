@@ -37,6 +37,10 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
 
+    /// <summary>"all", "Local" or "Smb".</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Kind { get; set; } = "all";
+
     [BindProperty(SupportsGet = true)]
     public string Sort { get; set; } = "name_asc";
 
@@ -65,6 +69,11 @@ public class IndexModel : PageModel
             query = query.Where(s =>
                 EF.Functions.ILike(s.Name, pattern) ||
                 EF.Functions.ILike(s.RootPath, pattern));
+        }
+
+        if (Enum.TryParse<StorageKind>(Kind, true, out var kind) && Enum.IsDefined(kind))
+        {
+            query = query.Where(s => s.Kind == kind);
         }
 
         query = Sort == "name_desc"
@@ -130,5 +139,5 @@ public class IndexModel : PageModel
     }
 
     private IActionResult RedirectBack()
-        => RedirectToPage(new { Search, Sort, PageNumber = PageNumber > 1 ? PageNumber : (int?)null });
+        => RedirectToPage(new { Search, Kind = Kind == "all" ? null : Kind, Sort, PageNumber = PageNumber > 1 ? PageNumber : (int?)null });
 }

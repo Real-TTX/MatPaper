@@ -4,7 +4,8 @@
     ViewData["Breadcrumb"] = L["System / Task history"].Value;
 }
 
-<mp-toolbar count="Model.TotalCount">
+<mp-toolbar>
+    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Task name"]' />
     <mp-toolbar-select name="Kind" label='@L["Kind"]' value="@Model.Kind">
         <option value="all">@L["All"]</option>
         <option value="import">@L["Import"]</option>
@@ -12,6 +13,17 @@
         <option value="scan">@L["Storage search"]</option>
         <option value="align">@L["Align to template"]</option>
         <option value="importgroup">@L["Import group"]</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
+        <option value="all">@L["All"]</option>
+        <option value="Success">@L["Success"]</option>
+        <option value="Failed">@L["Failed"]</option>
+        <option value="Cancelled">@L["Cancelled"]</option>
+        <option value="Running">@L["Running"]</option>
+    </mp-toolbar-select>
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="started_desc">@L["Started (newest first)"]</option>
+        <option value="started_asc">@L["Started (oldest first)"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
@@ -36,10 +48,22 @@
         "importgroup" => L["Import group"].Value,
         _ => null
     };
+    var statusLabel = Model.Status switch
+    {
+        "Success" => L["Success"].Value,
+        "Failed" => L["Failed"].Value,
+        "Cancelled" => L["Cancelled"].Value,
+        "Running" => L["Running"].Value,
+        _ => null
+    };
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
-        new MatPaper.Services.FilterSpec("Kind", L["Kind"].Value, kindLabel));
+        new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
+        new MatPaper.Services.FilterSpec("Kind", L["Kind"].Value, kindLabel),
+        new MatPaper.Services.FilterSpec("Status", L["Status"].Value, statusLabel));
 }
 <partial name="_FilterChips" model="activeFilters" />
+
+<mp-list-bar count="Model.TotalCount" singular="{0} run" plural="{0} runs" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
 <mp-table item-count="Model.Rows.Count" empty-text='@L["No task runs recorded yet."]'>
     <thead>
@@ -92,4 +116,4 @@
     </tbody>
 </mp-table>
 
-<mp-pagination current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<mp-list-bar position="bottom" />

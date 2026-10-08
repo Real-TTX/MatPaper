@@ -215,17 +215,14 @@
         }
     }
 
-    function toolbarDialog(extraClass, title, subtitle, closeLabel) {
+    function toolbarDialog(extraClass, title, closeLabel) {
         var dialog = document.createElement("dialog");
         dialog.className = "filter-dialog " + extraClass;
         dialog.innerHTML =
-            '<div class="filter-dialog__head"><div><h2 class="filter-dialog__title"></h2><div class="filter-dialog__sub"></div></div>' +
+            '<div class="filter-dialog__head"><h2 class="filter-dialog__title"></h2>' +
             '<button type="button" class="icon-btn filter-dialog__close">' + toolbarIcon("close") + '</button></div>' +
             '<div class="filter-dialog__body"></div>';
         dialog.querySelector(".filter-dialog__title").textContent = title;
-        var sub = dialog.querySelector(".filter-dialog__sub");
-        sub.textContent = subtitle || "";
-        sub.hidden = !subtitle;
         var close = dialog.querySelector(".filter-dialog__close");
         close.setAttribute("aria-label", closeLabel);
         close.addEventListener("click", function () { dialog.close(); });
@@ -242,10 +239,9 @@
         var applyButton = apply && apply.querySelector("button[type=submit]");
         if (!applyButton) { return; }
 
-        var search = null, count = null, sortGroup = null, filters = [];
+        var search = null, sortGroup = null, filters = [];
         kids.forEach(function (el) {
             if (el === apply) { return; }
-            if (el.classList.contains("toolbar__count")) { count = el; return; }
             if (el.classList.contains("toolbar__spacer")) { return; }
             if (el.classList.contains("toolbar__search")) {
                 if (!search) { search = el; return; }
@@ -282,7 +278,7 @@
 
         var tools = document.createElement("div");
         tools.className = "toolbar__tools";
-        bar.insertBefore(tools, count || apply);
+        bar.insertBefore(tools, apply);
 
         function toolButton(kind, label) {
             var button = document.createElement("button");
@@ -301,7 +297,7 @@
             var sortLabel = (sortGroup.querySelector("label") || {}).textContent || t("sort", "Sort");
             sortGroup.hidden = true; // the select stays in the form and carries the value
             var sortButton = toolButton("sort", sortLabel);
-            var sortDialog = toolbarDialog("filter-dialog--sort", sortLabel, "", t("close", "Close"));
+            var sortDialog = toolbarDialog("filter-dialog--sort", sortLabel, t("close", "Close"));
             var list = document.createElement("div");
             list.className = "sort-options";
             Array.prototype.forEach.call(sortSelect.options, function (option) {
@@ -327,11 +323,11 @@
             sortButton.addEventListener("click", function () { sortDialog.showModal(); });
         }
 
-        // ---- filters: inline while there is room, otherwise behind a button
+        // ---- filters: always behind the funnel button, in a dialog
         if (filters.length === 0) { return; }
 
         var filterTitle = t("filters", "Filter");
-        var filterDialog = toolbarDialog("filter-dialog--filters", filterTitle, count ? count.textContent.trim() : "", t("close", "Close"));
+        var filterDialog = toolbarDialog("filter-dialog--filters", filterTitle, t("close", "Close"));
         var foot = document.createElement("div");
         foot.className = "filter-dialog__foot";
         foot.innerHTML = '<a class="btn btn--secondary filter-dialog__reset"></a><button type="submit" class="btn btn--primary filter-dialog__apply"></button>';
@@ -341,76 +337,33 @@
         foot.querySelector(".filter-dialog__apply").textContent = t("apply", "Apply");
         filterDialog.appendChild(foot);
         var filterBody = filterDialog.querySelector(".filter-dialog__body");
+        // the fields stay inside the form (inside the closed dialog), so the GET request carries them
+        filters.forEach(function (el) { filterBody.appendChild(el); });
         bar.appendChild(filterDialog);
 
         var filterButton = toolButton("filter", filterTitle);
         tools.insertBefore(filterButton, tools.firstChild);
-        var badge = document.createElement("span");
-        badge.className = "toolbar__badge";
-        badge.hidden = true;
-        filterButton.appendChild(badge);
-        filterButton.hidden = true;
         filterButton.addEventListener("click", function () { filterDialog.showModal(); });
 
-        function activeCount() {
-            var n = 0;
-            filters.forEach(function (el) {
-                var picker = el.querySelector(".mp-picker");
-                var field = el.querySelector("select, input:not([type=hidden])");
-                if (picker) {
-                    if ((picker.getAttribute("data-selected") || "") !== "") { n++; }
-                } else if (field) {
-                    if (field.type === "checkbox") { if (field.checked) { n++; } }
-                    else if (field.tagName === "SELECT" ? field.selectedIndex > 0 : field.value !== "") { n++; }
-                }
-            });
-            return n;
-        }
-
-        var collapsed = false;
-        var needed = 0;
-
-        function setCollapsed(on) {
-            if (on === collapsed) { return; }
-            collapsed = on;
-            if (on) {
-                filters.forEach(function (el) { filterBody.appendChild(el); });
-            } else {
-                filters.forEach(function (el) { bar.insertBefore(el, tools); });
+        // how many filters are set, on the button
+        var active = 0;
+        filters.forEach(function (el) {
+            if (el.getAttribute("data-badge") === "off") { return; }
+            var picker = el.querySelector(".mp-picker");
+            var field = el.querySelector("select, input:not([type=hidden])");
+            if (picker) {
+                if ((picker.getAttribute("data-selected") || "") !== "") { active++; }
+            } else if (field) {
+                if (field.type === "checkbox") { if (field.checked) { active++; } }
+                else if (field.tagName === "SELECT" ? field.selectedIndex > 0 : field.value !== "") { active++; }
             }
-            bar.classList.toggle("is-collapsed", on);
-            filterButton.hidden = !on;
-        }
-
-        function overflows() { return bar.scrollWidth > bar.clientWidth + 1; }
-
-        function layout() {
-            if (!collapsed) {
-                if (overflows()) { needed = bar.scrollWidth; setCollapsed(true); }
-            } else if (bar.clientWidth >= needed) {
-                setCollapsed(false);
-                if (overflows()) { needed = bar.scrollWidth; setCollapsed(true); }
-            }
-            var n = activeCount();
-            badge.textContent = String(n);
-            badge.hidden = n === 0;
-        }
-
-        // Inline filters apply as soon as they change; in the dialog the user presses Apply.
-        bar.addEventListener("change", function (event) {
-            if (collapsed) { return; }
-            var target = event.target;
-            if (!target || !filters.some(function (el) { return el.contains(target); })) { return; }
-            if (typeof bar.requestSubmit === "function") { bar.requestSubmit(); } else { bar.submit(); }
         });
-
-        layout();
-        if (typeof ResizeObserver === "function") {
-            new ResizeObserver(layout).observe(bar);
-        } else {
-            window.addEventListener("resize", layout);
+        if (active > 0) {
+            var badge = document.createElement("span");
+            badge.className = "toolbar__badge";
+            badge.textContent = String(active);
+            filterButton.appendChild(badge);
         }
-        window.addEventListener("load", layout);
     }
 
     function wireSidebarToggle() {

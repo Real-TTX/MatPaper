@@ -305,6 +305,80 @@ public sealed class DocumentIngestService(
         return IngestResult.Created(document.Id);
     }
 
+    /// <summary>
+    /// Ingests a file that may be an archive: a .zip is opened and each document in it is ingested like a file of its
+    /// own (PDFs, images and XML, or what <paramref name="archiveExtensions"/> lists; folders, hidden files and other
+    /// types are left out). Anything else is ingested as it is. An entry that cannot be read or stored does not stop
+    /// the others - it is reported in the batch - while a plain file that fails throws, as <see cref="IngestAsync"/> does.
+    /// The archive itself is not kept, only what was in it.
+    /// </summary>
+    public async Task<IngestBatch> IngestFileAsync(
+        Stream content,
+        string originalFileName,
+        long? storageLocationId,
+        long? correspondentId,
+        long? documentTypeId,
+        long? projectId,
+        IReadOnlyCollection<long> tagIds,
+        long? actingUserId,
+        CancellationToken ct,
+        ReviewState reviewState = ReviewState.Pending,
+        bool isCommon = false,
+        DocumentOrigin origin = DocumentOrigin.Upload,
+        long? importTaskId = null,
+        DocumentSidecar? sidecar = null,
+        IReadOnlyCollection<string>? archiveExtensions = null)
+    {
+        if (!DocumentArchive.IsArchive(originalFileName))
+        {
+            var single = new IngestBatch(fromArchive: false);
+            var result = await IngestAsync(
+                content, originalFileName, storageLocationId, correspondentId, documentTypeId, projectId, tagIds,
+                actingUserId, ct, reviewState, isCommon, origin, importTaskId, sidecar).ConfigureAwait(false);
+            single.Add(originalFileName, result);
+            return single;
+        }
+
+        var batch = new IngestBatch(fromArchive: true);
+        await foreach (var item in DocumentArchive.ReadAsync(content, originalFileName, archiveExtensions, ct).ConfigureAwait(false))
+        {
+            switch (item.Kind)
+            {
+                case ArchiveItemKind.Skipped:
+                    batch.Skip(item.Label, item.Reason ?? string.Empty);
+                    break;
+                case ArchiveItemKind.Problem:
+                    batch.Fail(item.Label, item.Reason ?? DocumentArchive.Unreadable);
+                    break;
+                default:
+                    try
+                    {
+                        await using var stream = new MemoryStream(item.Content!, writable: false);
+                        var result = await IngestAsync(
+                            stream, item.Name, storageLocationId, correspondentId, documentTypeId, projectId, tagIds,
+                            actingUserId, ct, reviewState, isCommon, origin, importTaskId, item.Sidecar).ConfigureAwait(false);
+                        batch.Add(item.Label, result);
+                        if (result.Status == IngestStatus.NoStorage)
+                        {
+                            return batch; // there is nowhere to put any of the others either
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        batch.Fail(item.Label, ex.Message);
+                    }
+
+                    break;
+            }
+        }
+
+        return batch;
+    }
+
     private static async Task<string> ComputeHashAsync(Stream stream, CancellationToken ct)
     {
         using var sha256 = SHA256.Create();

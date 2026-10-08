@@ -154,34 +154,22 @@ public sealed class ImportRunner
                         ? DocumentSidecar.TryParse(session.ReadAllBytes(file + DocumentStorageService.MetadataCompanion))
                         : null;
                     await using var stream = new MemoryStream(bytes);
-                    var result = await _ingest.IngestAsync(
+                    var batch = await _ingest.IngestFileAsync(
                         stream, fileName, locationId,
                         settings.CorrespondentId, settings.DocumentTypeId, settings.ProjectId,
                         settings.TagIds ?? new List<long>(), ownerId, ct, reviewState, settings.IsCommon,
                         origin: DocumentOrigin.ImportFolder, importTaskId: task.Id, sidecar: sidecar).ConfigureAwait(false);
 
-                    switch (result.Status)
+                    count += batch.Created;
+                    LogBatch(log, batch, "Imported", "Skipped");
+                    if (batch.Outcome == IngestOutcome.Done)
                     {
-                        case IngestStatus.Created:
-                            count++;
-                            log.AppendLine($"Imported: {fileName}");
-                            ApplySmbPostAction(session, settings, file, log);
-                            if (leavesFile) { keep.Add(fingerprint); }
-                            break;
-                        case IngestStatus.Blocked:
-                            log.AppendLine($"Skipped (on the blocklist): {fileName}");
-                            ApplySmbPostAction(session, settings, file, log);
-                            if (leavesFile) { keep.Add(fingerprint); }
-                            break;
-                        case IngestStatus.Duplicate:
-                            log.AppendLine($"Skipped (duplicate): {fileName}");
-                            ApplySmbPostAction(session, settings, file, log);
-                            if (leavesFile) { keep.Add(fingerprint); }
-                            break;
-                        case IngestStatus.NoStorage:
-                            log.AppendLine($"Skipped (no storage): {fileName}");
-                            break;
+                        ApplySmbPostAction(session, settings, file, log);
                     }
+
+                    // What could not be stored or read is tried again next time; an archive without a document in it
+                    // is remembered like any file, but never removed.
+                    if (leavesFile && batch.Outcome != IngestOutcome.Incomplete) { keep.Add(fingerprint); }
                 }
                 catch (OperationCanceledException)
                 {
@@ -375,10 +363,10 @@ public sealed class ImportRunner
                 var sidecarFile = file + DocumentStorageService.MetadataCompanion;
                 var sidecar = File.Exists(sidecarFile) ? DocumentSidecar.TryParse(await File.ReadAllBytesAsync(sidecarFile, ct).ConfigureAwait(false)) : null;
 
-                IngestResult result;
+                IngestBatch batch;
                 await using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    result = await _ingest.IngestAsync(
+                    batch = await _ingest.IngestFileAsync(
                         stream,
                         fileName,
                         locationId,
@@ -393,28 +381,16 @@ public sealed class ImportRunner
                         origin: DocumentOrigin.ImportFolder, importTaskId: task.Id, sidecar: sidecar).ConfigureAwait(false);
                 }
 
-                switch (result.Status)
+                count += batch.Created;
+                LogBatch(log, batch, "Imported", "Skipped");
+                if (batch.Outcome == IngestOutcome.Done)
                 {
-                    case IngestStatus.Created:
-                        count++;
-                        log.AppendLine($"Imported: {fileName}");
-                        ApplyFilesystemPostAction(settings, file, log);
-                        if (leavesFile) { keep.Add(fingerprint); }
-                        break;
-                    case IngestStatus.Blocked:
-                        log.AppendLine($"Skipped (on the blocklist): {fileName}");
-                        ApplyFilesystemPostAction(settings, file, log);
-                        if (leavesFile) { keep.Add(fingerprint); }
-                        break;
-                    case IngestStatus.Duplicate:
-                        log.AppendLine($"Skipped (duplicate): {fileName}");
-                        ApplyFilesystemPostAction(settings, file, log);
-                        if (leavesFile) { keep.Add(fingerprint); }
-                        break;
-                    case IngestStatus.NoStorage:
-                        log.AppendLine($"Skipped (no storage): {fileName}");
-                        break;
+                    ApplyFilesystemPostAction(settings, file, log);
                 }
+
+                // What could not be stored or read is tried again next time; an archive without a document in it
+                // is remembered like any file, but never removed.
+                if (leavesFile && batch.Outcome != IngestOutcome.Incomplete) { keep.Add(fingerprint); }
             }
             catch (OperationCanceledException)
             {
@@ -925,6 +901,42 @@ public sealed class ImportRunner
         }
     }
 
+    /// <summary>
+    /// The log lines of one file: what became of it, or - for an archive - of each document in it, then what could not
+    /// be read and how many entries were no documents.
+    /// </summary>
+    private static void LogBatch(StringBuilder log, IngestBatch batch, string imported, string skipped)
+    {
+        foreach (var item in batch.Items)
+        {
+            switch (item.Result.Status)
+            {
+                case IngestStatus.Created:
+                    log.AppendLine($"{imported}: {item.Label}");
+                    break;
+                case IngestStatus.Blocked:
+                    log.AppendLine($"{skipped} (on the blocklist): {item.Label}");
+                    break;
+                case IngestStatus.Duplicate:
+                    log.AppendLine($"{skipped} (duplicate): {item.Label}");
+                    break;
+                case IngestStatus.NoStorage:
+                    log.AppendLine($"{skipped} (no storage): {item.Label}");
+                    break;
+            }
+        }
+
+        foreach (var (label, reason) in batch.Failed)
+        {
+            log.AppendLine($"Error ({label}): {reason}");
+        }
+
+        if (batch.Skipped.Count > 0)
+        {
+            log.AppendLine($"{batch.Skipped.Count} file(s) in the archive are no documents and were left out.");
+        }
+    }
+
     private static string SanitizeFileName(string name)
     {
         var cleaned = new string(name.Select(ch => Array.IndexOf(Path.GetInvalidFileNameChars(), ch) >= 0 ? '_' : ch).ToArray()).Trim();
@@ -982,7 +994,9 @@ public sealed class ImportRunner
 
                 buffer.Position = 0;
 
-                var result = await _ingest.IngestAsync(
+                // A .zip attachment (when the rule lists ".zip") is opened; the files in it count as documents
+                // when their type is in the same list.
+                var batch = await _ingest.IngestFileAsync(
                     buffer,
                     fileName,
                     locationId,
@@ -994,24 +1008,11 @@ public sealed class ImportRunner
                     ct,
                     reviewState: reviewState,
                     isCommon: isCommon,
-                    origin: DocumentOrigin.Mail, importTaskId: importTaskId).ConfigureAwait(false);
+                    origin: DocumentOrigin.Mail, importTaskId: importTaskId,
+                    archiveExtensions: extensions).ConfigureAwait(false);
 
-                switch (result.Status)
-                {
-                    case IngestStatus.Created:
-                        count++;
-                        log.AppendLine($"Imported attachment: {fileName}");
-                        break;
-                    case IngestStatus.Blocked:
-                        log.AppendLine($"Skipped attachment (on the blocklist): {fileName}");
-                        break;
-                    case IngestStatus.Duplicate:
-                        log.AppendLine($"Skipped attachment (duplicate): {fileName}");
-                        break;
-                    case IngestStatus.NoStorage:
-                        log.AppendLine($"Skipped attachment (no storage): {fileName}");
-                        break;
-                }
+                count += batch.Created;
+                LogBatch(log, batch, "Imported attachment", "Skipped attachment");
             }
             catch (OperationCanceledException)
             {

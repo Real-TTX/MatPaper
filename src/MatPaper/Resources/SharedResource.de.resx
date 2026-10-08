@@ -852,7 +852,6 @@
   <data name="{0} page(s) ready" xml:space="preserve"><value>{0} Seite(n) bereit</value></data>
   <data name="Document" xml:space="preserve"><value>Dokument</value></data>
   <data name="Choose what to add" xml:space="preserve"><value>Auswählen</value></data>
-  <data name="PDF, images or XRechnung (XML)." xml:space="preserve"><value>PDF, Bilder oder XRechnung (XML).</value></data>
   <data name="or" xml:space="preserve"><value>oder</value></data>
   <data name="Scan with the camera" xml:space="preserve"><value>Mit der Kamera scannen</value></data>
   <data name="Photograph pages; they are cropped and straightened automatically." xml:space="preserve"><value>Seiten fotografieren; sie werden automatisch zugeschnitten und begradigt.</value></data>
@@ -1102,4 +1101,19 @@
   <data name="Last page" xml:space="preserve"><value>Letzte Seite</value></data>
   <data name="Display as" xml:space="preserve"><value>Anzeigen als</value></data>
   <data name="List" xml:space="preserve"><value>Liste</value></data>
+  <data name="Drop files to add them" xml:space="preserve"><value>Dateien hier ablegen</value></data>
+  <data name="PDF, images, XML or ZIP – they land in your inbox" xml:space="preserve"><value>PDF, Bilder, XML oder ZIP – sie landen in deinem Eingang</value></data>
+  <data name="Adding documents …" xml:space="preserve"><value>Dokumente werden hinzugefügt …</value></data>
+  <data name="Only the first {0} files are added." xml:space="preserve"><value>Es werden nur die ersten {0} Dateien hinzugefügt.</value></data>
+  <data name="PDF, images, XRechnung (XML) or a ZIP archive with them." xml:space="preserve"><value>PDF, Bilder, XRechnung (XML) oder ein ZIP-Archiv damit.</value></data>
+  <data name="{0} file(s) are no documents" xml:space="preserve"><value>{0} Datei(en) sind keine Dokumente</value></data>
+  <data name="The archive contains no documents." xml:space="preserve"><value>Das Archiv enthält keine Dokumente.</value></data>
+  <data name="This is not a readable ZIP archive." xml:space="preserve"><value>Das ist kein lesbares ZIP-Archiv.</value></data>
+  <data name="The archive holds too many files (limit 2000)." xml:space="preserve"><value>Das Archiv enthält zu viele Dateien (Grenze 2000).</value></data>
+  <data name="The archive is too large when unpacked (limit 1 GB)." xml:space="preserve"><value>Das Archiv ist entpackt zu groß (Grenze 1 GB).</value></data>
+  <data name="A file in the archive is larger than 200 MB." xml:space="preserve"><value>Eine Datei im Archiv ist größer als 200 MB.</value></data>
+  <data name="The file could not be read (damaged or password-protected)." xml:space="preserve"><value>Die Datei konnte nicht gelesen werden (beschädigt oder passwortgeschützt).</value></data>
+  <data name="A .zip in the list is opened: the documents in it are imported, as far as their type is listed." xml:space="preserve"><value>Ein .zip in der Liste wird geöffnet: die Dokumente darin werden importiert, soweit ihr Typ in der Liste steht.</value></data>
+  <data name="A ZIP archive is opened: the PDFs, images and XML files in it are imported." xml:space="preserve"><value>Ein ZIP-Archiv wird geöffnet: die PDFs, Bilder und XML-Dateien darin werden importiert.</value></data>
+  <data name="Processing …" xml:space="preserve"><value>Wird verarbeitet …</value></data>
 </root>

@@ -24,6 +24,7 @@
           data-t-show-existing='@L["Show existing document"]' data-t-network-error='@L["Network error"]'
           data-t-summary-added='@L["{0} added"]' data-t-summary-duplicates='@L["{0} duplicate(s) skipped"]'
           data-t-summary-failed='@L["{0} failed"]' data-t-review-link='@L["Review them in your inbox →"]'
+          data-t-archive-skipped='@L["{0} file(s) are no documents"]' data-t-processing='@L["Processing …"]'
           data-t-scan-pages='@L["Scan: {0} page(s)"]' data-t-remove='@L["Remove"]'>
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="form-summary"></div>
@@ -42,9 +43,9 @@
                         <strong>@L["Drag & drop"]</strong> @L["files here, or"]
                         <button type="button" class="uploader__browse" id="uploader-browse">@L["choose files"]</button>
                     </p>
-                    <p class="form-help">@L["PDF, images or XRechnung (XML)."]</p>
+                    <p class="form-help">@L["PDF, images, XRechnung (XML) or a ZIP archive with them."]</p>
                 </div>
-                <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,.xml,image/*" />
+                <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,.xml,.zip,image/*" />
             </div>
             <span class="field-error" asp-validation-for="Files"></span>
 

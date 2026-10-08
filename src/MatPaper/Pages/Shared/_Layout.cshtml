@@ -254,11 +254,26 @@
          data-share='@L["Share document"]' data-link='@L["Link"]' data-link-copied='@L["Link copied - valid for {0} days"]'
          data-share-failed='@L["The document could not be shared."]' data-share-forbidden='@L["Only the owner can share this document."]'
          data-no-preview='@L["There is no preview for this file type."]' data-failed='@L["The document could not be shown."]'></div>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @* Files dropped anywhere on a page go to the inbox (global-drop.js). *@
+        <div id="drop-i18n" hidden data-url="/Documents/Upload?handler=Ajax" data-inbox="/Inbox"
+             data-t-title='@L["Drop files to add them"]' data-t-hint='@L["PDF, images, XML or ZIP – they land in your inbox"]'
+             data-t-adding='@L["Adding documents …"]' data-t-done='@L["Done"]' data-t-close='@L["Close"]'
+             data-t-queued='@L["Queued"]' data-t-uploading='@L["Uploading…"]' data-t-added='@L["Added"]'
+             data-t-duplicate='@L["Duplicate — skipped"]' data-t-failed='@L["Failed"]' data-t-network-error='@L["Network error"]'
+             data-t-show-existing='@L["Show existing document"]' data-t-summary-added='@L["{0} added"]'
+             data-t-summary-duplicates='@L["{0} duplicate(s) skipped"]' data-t-summary-failed='@L["{0} failed"]'
+             data-t-archive-skipped='@L["{0} file(s) are no documents"]' data-t-to-inbox='@L["Review them in your inbox →"]'
+             data-t-reload='@L["Reload"]' data-t-too-many='@L["Only the first {0} files are added."]'
+             data-t-processing='@L["Processing …"]'></div>
+    }
     <script src="~/js/app.js" asp-append-version="true"></script>
     <script src="~/js/doc-viewer.js" asp-append-version="true"></script>
     <script src="~/js/picker.js" asp-append-version="true"></script>
     <script src="~/js/datepicker.js" asp-append-version="true"></script>
     <script src="~/js/schedule.js" asp-append-version="true"></script>
+    <script src="~/js/global-drop.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

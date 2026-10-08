@@ -2095,3 +2095,53 @@ a.doc-table__name:hover { color: var(--color-primary); }
 .icon-btn[hidden] { display: none; }
 /* the note "link copied" on a page (inside a dialog it sits in the dialog) */
 .doc-viewer__toast--page { position: fixed; bottom: 1.5rem; z-index: 2000; }
+
+/* ---------- Drop files anywhere (global-drop.js): the drop target of the window and the panel with the progress ---------- */
+.drop-overlay {
+    position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+    overflow: hidden; pointer-events: none; z-index: 5000;
+    background: color-mix(in srgb, var(--color-surface) 78%, var(--color-primary) 22%);
+    color: var(--color-text);
+}
+/* shown as a popover, or - in a browser without them - as a plain element until it is hidden */
+.drop-overlay:popover-open { display: grid; place-items: center; }
+.drop-overlay:not([popover]):not([hidden]) { display: grid; place-items: center; }
+.drop-overlay::before {
+    content: ""; position: absolute; inset: 14px; border: 3px dashed var(--color-primary); border-radius: 18px;
+}
+.drop-overlay__card { position: relative; display: grid; justify-items: center; gap: 0.6rem; padding: 2rem; text-align: center; }
+.drop-overlay__card svg { width: 64px; height: 64px; color: var(--color-primary); }
+.drop-overlay__title { font-size: 1.5rem; }
+.drop-overlay__hint { color: var(--color-text-muted); }
+
+.drop-tray {
+    position: fixed; inset: auto 1.25rem 1.25rem auto; width: min(26rem, calc(100vw - 2rem)); max-height: min(28rem, 70vh);
+    margin: 0; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden;
+    flex-direction: column; z-index: 4500;
+    background: var(--color-surface); color: var(--color-text); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+}
+.drop-tray:popover-open { display: flex; }
+.drop-tray:not([popover]):not([hidden]) { display: flex; }
+.drop-tray__head { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.8rem 0.7rem 1rem; border-bottom: 1px solid var(--color-border); }
+.drop-tray__title { flex: 1; min-width: 0; }
+.drop-tray__count { color: var(--color-text-muted); font-size: 0.85rem; }
+.drop-tray__list { list-style: none; margin: 0; padding: 0.4rem 0; overflow-y: auto; }
+.drop-tray__item { padding: 0.45rem 1rem; }
+.drop-tray__line { display: flex; gap: 0.6rem; align-items: baseline; }
+.drop-tray__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.92rem; }
+.drop-tray__size { color: var(--color-text-muted); font-size: 0.8rem; white-space: nowrap; }
+.drop-tray__bar { height: 4px; margin: 0.35rem 0; border-radius: 2px; background: var(--color-surface-alt); overflow: hidden; }
+.drop-tray__fill { display: block; height: 100%; width: 0; background: var(--color-primary); transition: width 0.15s linear; }
+.drop-tray__status { color: var(--color-text-muted); font-size: 0.82rem; }
+.drop-tray__item--created .drop-tray__status { color: var(--color-success, #1b7f3b); }
+.drop-tray__item--duplicate .drop-tray__status { color: var(--color-warning, #a15c00); }
+.drop-tray__item--failed .drop-tray__status { color: var(--color-danger); }
+.drop-tray__item--created .drop-tray__fill, .drop-tray__item--duplicate .drop-tray__fill { background: var(--color-success, #1b7f3b); }
+.drop-tray__item--failed .drop-tray__fill { background: var(--color-danger); }
+.drop-tray__note { padding: 0.45rem 1rem; color: var(--color-text-muted); font-size: 0.82rem; }
+.drop-tray__foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.7rem 1rem; border-top: 1px solid var(--color-border); }
+.drop-tray__foot[hidden] { display: none; }
+.drop-tray__summary { color: var(--color-text-muted); font-size: 0.88rem; }
+@media (max-width: 800px) {
+    .drop-tray { inset: auto 0.75rem max(0.75rem, env(safe-area-inset-bottom)) 0.75rem; width: auto; }
+}

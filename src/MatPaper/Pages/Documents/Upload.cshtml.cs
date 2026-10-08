@@ -107,18 +107,59 @@ public class UploadModel : PageModel
 
         var meta = await ReadMetaAsync(correspondentId, documentTypeId, projectId, tagIds, title, ct);
         await using var stream = file.OpenReadStream();
-        var result = await _ingest.IngestAsync(
+
+        // A .zip is opened: every PDF, image and XML in it becomes a document of its own.
+        var batch = await _ingest.IngestFileAsync(
             stream, file.FileName,
             storageLocationId: null,
             meta.CorrespondentId, meta.DocumentTypeId, meta.ProjectId, meta.TagIds,
             _currentUser.UserId, ct);
 
-        if (result.Status == IngestStatus.Created && meta.Title is not null)
+        // A title only makes sense for a single new document.
+        if (batch.Created == 1 && meta.Title is not null
+            && batch.Items.FirstOrDefault(i => i.Result.Status == IngestStatus.Created) is { } created)
         {
-            await SetTitleAsync(result.DocumentId, meta.Title, ct);
+            await SetTitleAsync(created.Result.DocumentId, meta.Title, ct);
         }
 
-        return new JsonResult(new { status = result.Status.ToString().ToLowerInvariant(), id = result.DocumentId, name = file.FileName });
+        return new JsonResult(Describe(batch, file.FileName));
+    }
+
+    /// <summary>What the uploader shows for one file: the outcome of a plain file, the counts of an archive.</summary>
+    private object Describe(IngestBatch batch, string name)
+    {
+        if (!batch.FromArchive)
+        {
+            var only = batch.Items[0].Result;
+            return new { status = only.Status.ToString().ToLowerInvariant(), id = only.DocumentId, name };
+        }
+
+        var status = batch.Created > 0 ? "created"
+            : batch.NoStorage > 0 ? "nostorage"
+            : batch.Failed.Count > 0 ? "failed"
+            : batch.Duplicates > 0 ? "duplicate"
+            : "failed";
+
+        string? message = null;
+        if (status == "failed")
+        {
+            message = batch.Failed.Count > 0
+                ? _l[batch.Failed[0].Reason].Value
+                : _l["The archive contains no documents."].Value;
+        }
+
+        return new
+        {
+            status,
+            id = batch.Items.Count == 1 ? batch.FirstDocumentId : null,
+            name,
+            archive = true,
+            created = batch.Created,
+            duplicates = batch.Duplicates,
+            skipped = batch.Skipped.Count,
+            failed = batch.Failed.Count + batch.NoStorage,
+            message
+        };
     }
 
     /// <summary>The pages of an in-browser scan (already cropped and filtered) become one PDF.</summary>
@@ -189,25 +230,35 @@ public class UploadModel : PageModel
             }
 
             await using var stream = file.OpenReadStream();
-            var result = await _ingest.IngestAsync(
+            var batch = await _ingest.IngestFileAsync(
                 stream, file.FileName,
                 storageLocationId: null, correspondentId: null, documentTypeId: null, projectId: null,
                 tagIds: Array.Empty<long>(),
                 _currentUser.UserId, ct);
 
-            switch (result.Status)
+            created += batch.Created;
+            duplicate += batch.Duplicates;
+            failed += batch.Failed.Count + batch.NoStorage;
+            foreach (var item in batch.Items)
             {
-                case IngestStatus.Created:
-                    created++;
-                    break;
-                case IngestStatus.Duplicate:
-                    duplicate++;
-                    Messages.Add(_l["\"{0}\" was skipped as a duplicate of an existing document.", file.FileName].Value);
-                    break;
-                default:
-                    failed++;
-                    Messages.Add(_l["\"{0}\" could not be stored.", file.FileName].Value);
-                    break;
+                if (item.Result.Status == IngestStatus.Duplicate)
+                {
+                    Messages.Add(_l["\"{0}\" was skipped as a duplicate of an existing document.", item.Label].Value);
+                }
+                else if (item.Result.Status != IngestStatus.Created)
+                {
+                    Messages.Add(_l["\"{0}\" could not be stored.", item.Label].Value);
+                }
+            }
+
+            foreach (var (label, reason) in batch.Failed)
+            {
+                Messages.Add($"{label}: {_l[reason].Value}");
+            }
+
+            if (batch.FromArchive && batch.Items.Count == 0 && batch.Failed.Count == 0)
+            {
+                Messages.Add($"{file.FileName}: {_l["The archive contains no documents."].Value}");
             }
         }
 

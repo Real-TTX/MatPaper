@@ -201,6 +201,18 @@ the wizard looks at the newest 200 to 5000 items (POP3: at most 500, as it has t
 each message) and shows 25 at a time; it ignores the remembered position so it always shows
 what the filters would catch.
 
+**Adding files.** Drop files anywhere in the app - on any page - and they go to your inbox in the
+background; a small panel shows the progress and what became of each file (a folder is read, too). On
+the *Add document* page the files join the list there, where title, correspondent, type, project and
+tags can be set first. PDFs, images (PNG, JPEG, TIFF, BMP, WebP) and XML (XRechnung) are documents; a
+**ZIP archive** is opened and each PDF, image and XML in it becomes a document of its own (folders,
+hidden files and other types are left out; archives inside an archive are opened one level deep; the
+archive itself is not kept). The same goes for every way a file comes in: a ZIP in a watched folder or on an
+SMB share is opened with the task's file pattern (`*` takes it), a ZIP attached to a mail when `.zip`
+is in the task's attachment extensions (new tasks have it). With *After import: delete / move* the
+archive is only removed once everything in it was imported or known already. Limits against
+oversized archives: 2000 files, 200 MB per file, 1 GB unpacked.
+
 **E-invoices.** A PDF with embedded invoice data (ZUGFeRD, Factur-X) and a standalone XRechnung
 `.xml` are recognised everywhere a file comes in (upload, import tasks, storage search). The invoice
 facts - gross, net and VAT amount, due date, VAT ID, IBAN, buyer, buyer reference - are stored with

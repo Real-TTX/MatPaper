@@ -79,7 +79,7 @@ public class MailImportSettings
     public string? SenderRegex { get; set; }
     public string? SubjectRegex { get; set; }
 
-    public string AttachmentExtensions { get; set; } = ".pdf,.png,.jpg,.jpeg,.tif,.tiff";
+    public string AttachmentExtensions { get; set; } = ".pdf,.png,.jpg,.jpeg,.tif,.tiff,.zip";
 
     /// <summary>Also render the e-mail body itself into an archival PDF and import it.</summary>
     public bool ImportBodyAsPdf { get; set; } = false;

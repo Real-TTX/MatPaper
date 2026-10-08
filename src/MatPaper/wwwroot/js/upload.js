@@ -179,25 +179,49 @@
             xhr.upload.onprogress = function (e) {
                 if (e.lengthComputable) { setProgress(holder.row, Math.round((e.loaded / e.total) * 100)); }
             };
+            xhr.upload.onload = function () {
+                setProgress(holder.row, 100);
+                var cell = holder.row.querySelector(".upload-item__status");
+                if (cell) { cell.textContent = t("processing", "Processing …"); }
+            };
             xhr.onload = function () {
                 setProgress(holder.row, 100);
                 var res = null;
                 try { res = JSON.parse(xhr.responseText); } catch (err) { res = null; }
+                // how many documents this file stands for: one, or what an archive held
+                holder.docs = { created: 0, duplicates: 0, failed: 0 };
                 if (xhr.status >= 200 && xhr.status < 300 && res) {
-                    if (res.status === "created") {
+                    if (res.archive) {
+                        holder.docs = { created: res.created || 0, duplicates: res.duplicates || 0, failed: res.failed || 0 };
+                        var parts = [];
+                        if (res.created > 0) { parts.push(fill(t("summary-added", "{0} added"), res.created)); }
+                        if (res.duplicates > 0) { parts.push(fill(t("summary-duplicates", "{0} duplicate(s) skipped"), res.duplicates)); }
+                        if (res.skipped > 0) { parts.push(fill(t("archive-skipped", "{0} file(s) are no documents"), res.skipped)); }
+                        if (res.failed > 0) { parts.push(fill(t("summary-failed", "{0} failed"), res.failed)); }
+                        var text = parts.join(", ");
+                        if (res.status === "created" || res.status === "duplicate") {
+                            setStatus(holder, res.status, text, res.status === "duplicate" && res.id ? "/Documents/Edit?id=" + encodeURIComponent(res.id) : null);
+                        } else {
+                            setStatus(holder, "failed", res.message || text || t("failed", "Failed"));
+                        }
+                    } else if (res.status === "created") {
+                        holder.docs.created = 1;
                         setStatus(holder, "created", t("added", "Added"));
                     } else if (res.status === "duplicate") {
+                        holder.docs.duplicates = 1;
                         setStatus(holder, "duplicate", t("duplicate", "Duplicate — skipped"),
                             res.id ? "/Documents/Edit?id=" + encodeURIComponent(res.id) : null);
                     } else {
+                        holder.docs.failed = 1;
                         setStatus(holder, "failed", res.message || t("failed", "Failed"));
                     }
                 } else {
+                    holder.docs.failed = 1;
                     setStatus(holder, "failed", t("failed", "Failed") + " (" + xhr.status + ")");
                 }
                 resolve();
             };
-            xhr.onerror = function () { setStatus(holder, "failed", t("network-error", "Network error")); resolve(); };
+            xhr.onerror = function () { holder.docs = { created: 0, duplicates: 0, failed: 1 }; setStatus(holder, "failed", t("network-error", "Network error")); resolve(); };
             xhr.send(data);
         });
     }
@@ -216,9 +240,10 @@
     }
 
     function summarize(results) {
-        var created = results.filter(function (i) { return i.status === "created"; }).length;
-        var dupes = results.filter(function (i) { return i.status === "duplicate"; }).length;
-        var failed = results.filter(function (i) { return i.status === "failed"; }).length;
+        function sum(key) { return results.reduce(function (n, i) { return n + ((i.docs && i.docs[key]) || 0); }, 0); }
+        var created = sum("created");
+        var dupes = sum("duplicates");
+        var failed = sum("failed");
         var summary = document.getElementById("upload-summary");
         if (!summary) {
             summary = document.createElement("div");
@@ -300,6 +325,10 @@
         addFiles(input.files);
         input.value = ""; // allow re-selecting the same file
     });
+
+    // Files dropped anywhere on this page (global-drop.js) join the list here instead of being sent at once:
+    // this is the page where the details are filled in.
+    window.MatPaperUpload = { addFiles: addFiles };
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();

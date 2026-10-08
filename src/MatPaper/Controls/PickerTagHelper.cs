@@ -192,7 +192,8 @@ public sealed class PickerTagHelper : TagHelper
 
         var field = fullName.Contains('.') ? fullName[(fullName.LastIndexOf('.') + 1)..] : fullName;
         if (field.Contains("Correspondent", StringComparison.OrdinalIgnoreCase)) { return "correspondent"; }
-        if (field.Contains("DocumentType", StringComparison.OrdinalIgnoreCase)) { return "document-type"; }
+        // Document types belong to the administrators (System): only they get the "+" for them.
+        if (field.Contains("DocumentType", StringComparison.OrdinalIgnoreCase)) { return ViewContext.HttpContext.User.IsInRole("Admin") ? "document-type" : null; }
         if (field.Contains("Project", StringComparison.OrdinalIgnoreCase)) { return "project"; }
         if (field.Contains("Tag", StringComparison.OrdinalIgnoreCase)) { return "tag"; }
         return null;

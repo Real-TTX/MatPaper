@@ -76,6 +76,12 @@ public class QuickCreateModel : PageModel
             return new JsonResult(new { ok = false });
         }
 
+        // Document types are managed by administrators (System); everything else any user may add.
+        if (kind == "document-type" && !_currentUser.IsAdmin)
+        {
+            return new JsonResult(new { ok = false, forbidden = true }) { StatusCode = StatusCodes.Status403Forbidden };
+        }
+
         var now = DateTime.UtcNow;
         var uid = _currentUser.UserId;
         var lower = name.ToLower();

@@ -32,7 +32,7 @@
     {
         <form method="post" asp-page-handler="Confirm"
               asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"
-              asp-route-Folder="@m.Folder" asp-route-AllOwners="@m.AllOwners" asp-route-PageNumber="@m.PageNumber">
+              asp-route-Folder="@m.Folder" asp-route-AllOwners="@m.AllOwners" asp-route-Sort="@m.Sort" asp-route-PageNumber="@m.PageNumber">
             <input type="hidden" name="id" value="@row.Id" />
 
             <div class="inbox-item__head">
@@ -213,7 +213,7 @@
         <form method="post" id="inbox-@handler.ToLowerInvariant()-@row.Id" asp-page-handler="@handler"
               asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"
               asp-route-Folder="@m.Folder" asp-route-State="@(ignored ? "ignored" : null)"
-              asp-route-AllOwners="@m.AllOwners" asp-route-PageNumber="@m.PageNumber">
+              asp-route-AllOwners="@m.AllOwners" asp-route-Sort="@m.Sort" asp-route-PageNumber="@m.PageNumber">
             <input type="hidden" name="id" value="@row.Id" />
         </form>
     }

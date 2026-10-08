@@ -68,6 +68,10 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Folder { get; set; }
 
+    /// <summary>Order of the list: added (newest first), oldest, date (document date), title.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Sort { get; set; } = "added";
+
     /// <summary>"open" (waiting) or "ignored" (waved away).</summary>
     [BindProperty(SupportsGet = true)]
     public string State { get; set; } = "open";
@@ -740,8 +744,15 @@ public class IndexModel : PageModel
         ProcessingCount = await query.CountAsync(d => d.OcrState == OcrState.Pending, ct);
         FoundCount = await query.CountAsync(d => d.Origin == DocumentOrigin.StorageScan, ct);
 
-        Rows = await query
-            .OrderByDescending(d => d.CreateDate)
+        var ordered = Sort switch
+        {
+            "oldest" => query.OrderBy(d => d.CreateDate),
+            "title" => query.OrderBy(d => d.Title).ThenByDescending(d => d.CreateDate),
+            "date" => query.OrderByDescending(d => d.DocumentDate).ThenByDescending(d => d.CreateDate),
+            _ => query.OrderByDescending(d => d.CreateDate)
+        };
+
+        Rows = await ordered
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
             .Select(d => new InboxRow(
@@ -853,6 +864,7 @@ public class IndexModel : PageModel
             Origin,
             LocationId,
             Folder,
+            Sort = string.Equals(Sort, "added", StringComparison.OrdinalIgnoreCase) ? null : Sort,
             State = ShowingIgnored ? "ignored" : null,
             AllOwners = AllOwners ? true : (bool?)null,
             PageNumber = PageNumber > 1 ? PageNumber : (int?)null

@@ -45,6 +45,12 @@
         <option value="open">@L["Waiting"]</option>
         <option value="ignored">@L["Ignored"]</option>
     </mp-toolbar-select>
+    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
+        <option value="added">@L["Recently added"]</option>
+        <option value="oldest">@L["Oldest first"]</option>
+        <option value="date">@L["Document date"]</option>
+        <option value="title">@L["Title"]</option>
+    </mp-toolbar-select>
     @if (Model.IsAdmin)
     {
         <div class="toolbar__group toolbar__filter">
@@ -86,25 +92,15 @@
 }
 else
 {
-    <div class="list-header">
-        <span class="form-help" style="margin:0">
-            @if (Model.ShowingIgnored)
-            {
-                @L["{0} ignored", Model.TotalCount]
-            }
-            else
-            {
-                @L["{0} in the inbox · {1} found · {2} being processed", Model.TotalCount, Model.FoundCount, Model.ProcessingCount]
-            }
-        </span>
-
+    @* The numbers are in the toolbar (hits); here only the actions, and only for the open inbox. *@
+    <div class="list-header"@(Model.ShowingIgnored ? " hidden" : "")>
         @if (!Model.ShowingIgnored)
         {
             <span class="list-header__actions" style="margin-left:auto">
                 <a class="btn btn--secondary" href="/Blocklist">@L["Blocklist"]</a>
                 <form method="post" asp-page-handler="SuggestAll"
                       asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
-                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" style="display:inline">
+                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" style="display:inline">
                     <button class="btn btn--secondary" type="submit"
                             data-confirm='@L["Take the best correspondent suggestion for every document without one? Unknown names are created."]'>
                         @L["Assign correspondents"]
@@ -114,7 +110,7 @@ else
                 {
                     <form method="post" asp-page-handler="IgnoreAllFound" asp-route-LocationId="@Model.LocationId"
                           asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-Folder="@Model.Folder"
-                          asp-route-AllOwners="@Model.AllOwners" style="display:inline">
+                          asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" style="display:inline">
                         <input type="hidden" name="locationId" value="@filteredLocation" />
                         <button class="btn btn--secondary" type="submit"
                                 data-confirm='@L["Ignore {0} found file(s) in \"{1}\"? The files stay where they are.", Model.FoundCount, locationLabel ?? string.Empty]'>
@@ -124,7 +120,7 @@ else
                 }
                 <form method="post" asp-page-handler="ConfirmAll"
                       asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
-                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" style="display:inline">
+                      asp-route-Folder="@Model.Folder" asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" style="display:inline">
                     <button class="btn btn--secondary" type="submit" disabled="@(!Model.HasStorage)"
                             data-confirm='@L["File all processed documents with their current suggestions?"]'>
                         @L["Confirm all"]
@@ -152,7 +148,7 @@ else
     <form method="post" id="inbox-bulk" class="form form--wide inbox-bulk" asp-page-handler="Bulk"
           asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
           asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
-          asp-route-AllOwners="@Model.AllOwners" asp-route-PageNumber="@Model.PageNumber">
+          asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" asp-route-PageNumber="@Model.PageNumber">
         <h2>@L["Apply to selection"]</h2>
         <p class="form-help">
             <label class="form-check">

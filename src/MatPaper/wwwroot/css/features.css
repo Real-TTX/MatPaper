@@ -1859,3 +1859,60 @@ html.has-scanner { overflow: hidden; }
 .sort-option.is-current { font-weight: 600; }
 @media (min-width: 801px) { dialog.filter-dialog--sort { width: min(24rem, calc(100vw - 2rem)); } }
 @media (max-width: 600px) { .toolbar.is-enhanced > .toolbar__count { display: none; } }
+
+.list-header[hidden] { display: none; }
+
+/* ---------- Pickers look like selects: the same chevron everywhere ---------- */
+.mp-picker__trigger:not(.mp-picker__trigger--add) {
+    padding-right: 34px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7482' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
+.mp-picker__trigger:not(.mp-picker__trigger--add) .mp-picker__caret { display: none; }
+
+/* ---------- Inbox on a phone: one column, every field the same ---------- */
+@media (max-width: 800px) {
+    /* title across the top; thumbnail, origin and the tick below it */
+    .inbox-item__head {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "title title title" "thumb meta pick";
+        align-items: center;
+        row-gap: 0.75rem;
+        column-gap: 0.85rem;
+    }
+    .inbox-item__head--plain { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "title title" "thumb meta"; }
+    .inbox-item__title { grid-area: title; width: 100%; }
+    .inbox-item__head > .inbox-item__thumb { grid-area: thumb; }
+    .inbox-item__meta { grid-area: meta; align-self: center; }
+    .inbox-item__pick { grid-area: pick; justify-self: end; align-self: center; padding: 0.35rem; }
+    .inbox-item__pick input { width: 22px; height: 22px; margin: 0; }
+
+    /* one column: the fields are all as wide as the card */
+    .inbox-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+    .inbox-field, .inbox-field--corr, .inbox-field--wide, .inbox-more-toggle, .inbox-more { grid-column: 1 / -1; }
+    .inbox-more { grid-template-columns: 1fr; gap: 0.9rem; }
+
+    /* every control: same height, same radius, same text size */
+    .inbox-item .form-control,
+    .inbox-item .mp-picker__trigger,
+    .inbox-item .inbox-more-toggle {
+        height: 46px; min-height: 46px; border-radius: 10px; font-size: 16px; line-height: 1.25;
+    }
+    .inbox-item .form-control:not(select), .inbox-item .mp-picker__trigger { padding-left: 14px; }
+    .inbox-item input[type="date"].form-control { padding-top: 0; padding-bottom: 0; }
+    .inbox-item select.form-control { padding-left: 14px; }
+    .inbox-grid .form-row > label { font-size: 13px; }
+
+    /* actions: the main one across, the rest equal beside each other */
+    .inbox-item__actions { gap: 0.6rem; }
+    .inbox-item__actions > .btn--primary { min-height: 48px; }
+    .inbox-item__actions > .btn--secondary { min-height: 46px; }
+    .inbox-item__tools .icon-btn { width: 46px; height: 46px; }
+
+    /* the buttons above the list: two beside each other, the last one across */
+    .list-header__actions { display: grid !important; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .list-header__actions > form:last-child { grid-column: 1 / -1; }
+    .list-header__actions > .btn, .list-header__actions > form > .btn { min-height: 46px; width: 100%; }
+}
+

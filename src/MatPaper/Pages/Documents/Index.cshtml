@@ -102,7 +102,7 @@ else if (Model.ListView)
                             }
                             else
                             {
-                                <button type="button" class="doc-row__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" data-viewer-token="@d.Token" data-viewer-title="@d.Title" data-preview-edit="/Documents/Edit?id=@d.Id" data-preview-share="@(Model.CanShare(d) ? "true" : "false")" aria-label='@L["Preview"] @d.Title'>
+                                <button type="button" class="doc-row__thumb" data-doc-preview="@d.Token" data-doc-preview-title="@d.Title" data-doc-preview-edit="/Documents/Edit?id=@d.Id" data-doc-preview-share="@(Model.CanShare(d) ? "true" : "false")" data-viewer-token="@d.Token" data-viewer-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
                                     @if (d.ThumbnailPath != null)
                                     {
                                         <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
@@ -205,7 +205,7 @@ else
                     }
                     else
                     {
-                        <button type="button" class="doc-card__thumb" data-preview-url="/Documents/@d.Token/view" data-preview-title="@d.Title" data-viewer-token="@d.Token" data-viewer-title="@d.Title" data-preview-edit="/Documents/Edit?id=@d.Id" data-preview-share="@(Model.CanShare(d) ? "true" : "false")" aria-label='@L["Preview"] @d.Title'>
+                        <button type="button" class="doc-card__thumb" data-doc-preview="@d.Token" data-doc-preview-title="@d.Title" data-doc-preview-edit="/Documents/Edit?id=@d.Id" data-doc-preview-share="@(Model.CanShare(d) ? "true" : "false")" data-viewer-token="@d.Token" data-viewer-title="@d.Title" aria-label='@L["Preview"] @d.Title'>
                             @if (d.ThumbnailPath != null)
                             {
                                 <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
@@ -303,69 +303,3 @@ else
 </div>
 
 <mp-list-bar position="bottom" />
-
-<dialog id="doc-preview" class="preview-dialog" aria-label='@L["Document preview"]'>
-    <div class="preview-dialog__head">
-        <span class="preview-dialog__title" id="doc-preview-title"></span>
-        <div class="doc-actions">
-            <a class="icon-btn" id="doc-preview-edit" title='@L["Edit"]' aria-label='@L["Edit"]'>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
-            </a>
-            @* The link is made on the server and only the owner may; the script shows the button for those documents. *@
-            <button type="button" class="icon-btn" id="doc-preview-share" data-doc-share data-doc-token="" data-doc-title="" title='@L["Share document"]' aria-label='@L["Share document"]' hidden>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>
-            </button>
-            <a class="icon-btn" id="doc-preview-download" title='@L["Download"]' aria-label='@L["Download"]'>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
-            </a>
-            <a class="icon-btn" id="doc-preview-open" target="_blank" rel="noopener" title='@L["Open in tab"]' aria-label='@L["Open in tab"]'>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7" /><path d="M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
-            </a>
-            <button type="button" class="icon-btn" id="doc-preview-close" title='@L["Close"]' aria-label='@L["Close"]' autofocus>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-        </div>
-    </div>
-    <iframe class="preview-dialog__frame" id="doc-preview-frame" title='@L["Document preview"]' src="about:blank"></iframe>
-</dialog>
-
-@section Scripts {
-    <script>
-        (function () {
-            var dlg = document.getElementById("doc-preview");
-            if (!dlg || typeof dlg.showModal !== "function") { return; }
-            var frame = document.getElementById("doc-preview-frame");
-            var titleEl = document.getElementById("doc-preview-title");
-            var openEl = document.getElementById("doc-preview-open");
-            var downloadEl = document.getElementById("doc-preview-download");
-            var editEl = document.getElementById("doc-preview-edit");
-            var shareEl = document.getElementById("doc-preview-share");
-
-            function open(btn) {
-                var url = btn.getAttribute("data-preview-url");
-                var token = btn.getAttribute("data-viewer-token");
-                var title = btn.getAttribute("data-preview-title");
-                frame.src = url;
-                openEl.href = url;
-                downloadEl.href = "/Documents/" + token + "/download";
-                editEl.href = btn.getAttribute("data-preview-edit");
-                shareEl.hidden = btn.getAttribute("data-preview-share") !== "true";
-                shareEl.setAttribute("data-doc-token", token);
-                shareEl.setAttribute("data-doc-title", title || "");
-                titleEl.textContent = title || "@L["Preview"]";
-                dlg.showModal();
-            }
-            function close() {
-                dlg.close();
-                frame.src = "about:blank";
-            }
-
-            document.querySelectorAll("[data-preview-url]").forEach(function (btn) {
-                btn.addEventListener("click", function () { open(btn); });
-            });
-            document.getElementById("doc-preview-close").addEventListener("click", close);
-            dlg.addEventListener("click", function (e) { if (e.target === dlg) { close(); } });
-            dlg.addEventListener("cancel", function () { frame.src = "about:blank"; });
-        })();
-    </script>
-}

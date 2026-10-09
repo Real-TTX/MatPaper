@@ -126,7 +126,8 @@
                 </button>
 
                 <a class="btn btn--secondary inbox-view-btn" href="/Documents/@row.Token/view" target="_blank" rel="noopener"
-                   data-viewer-token="@row.Token" data-viewer-title="@row.Title">@L["View"]</a>
+                   data-viewer-token="@row.Token" data-viewer-title="@row.Title"
+                   data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="/Documents/Edit?id=@row.Id&returnUrl=@(Model.Page.ShowingIgnored ? "%2FInbox%3FState%3Dignored" : "%2FInbox")" data-doc-preview-share="true">@L["View"]</a>
                 <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">@L["Open"]</a>
 
                 @if (deferred)
@@ -177,7 +178,8 @@
         <div class="inbox-item__actions">
             <button class="btn btn--secondary" type="submit" form="inbox-restore-@row.Id">@L["Back to the inbox"]</button>
             <a class="btn btn--secondary inbox-view-btn" href="/Documents/@row.Token/view" target="_blank" rel="noopener"
-               data-viewer-token="@row.Token" data-viewer-title="@row.Title">@L["View"]</a>
+               data-viewer-token="@row.Token" data-viewer-title="@row.Title"
+                   data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="/Documents/Edit?id=@row.Id&returnUrl=@(Model.Page.ShowingIgnored ? "%2FInbox%3FState%3Dignored" : "%2FInbox")" data-doc-preview-share="true">@L["View"]</a>
             <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox%3FState%3Dignored">@L["Open"]</a>
             @if (deferred)
             {

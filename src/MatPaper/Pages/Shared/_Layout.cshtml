@@ -267,6 +267,7 @@
              data-t-archive-skipped='@L["{0} file(s) are no documents"]' data-t-to-inbox='@L["Review them in your inbox →"]'
              data-t-reload='@L["Reload"]' data-t-too-many='@L["Only the first {0} files are added."]'
              data-t-processing='@L["Processing …"]'></div>
+        <partial name="_DocPreviewDialog" />
     }
     <script src="~/js/app.js" asp-append-version="true"></script>
     <script src="~/js/doc-viewer.js" asp-append-version="true"></script>
@@ -274,6 +275,7 @@
     <script src="~/js/datepicker.js" asp-append-version="true"></script>
     <script src="~/js/schedule.js" asp-append-version="true"></script>
     <script src="~/js/global-drop.js" asp-append-version="true"></script>
+    <script src="~/js/doc-preview.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

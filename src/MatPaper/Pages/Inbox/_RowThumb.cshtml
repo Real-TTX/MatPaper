@@ -1,6 +1,7 @@
 @model MatPaper.Pages.Inbox.IndexModel.RowContext
 @{
     var row = Model.Row;
+    var back = Model.Page.ShowingIgnored ? "%2FInbox%3FState%3Dignored" : "%2FInbox";
 }
 @if (row.ThumbnailPath == null)
 {
@@ -13,9 +14,11 @@
 }
 else
 {
-    @* On a phone the page viewer opens (doc-viewer.js); elsewhere the link opens the file in a tab. *@
+    @* On a phone the page viewer opens (doc-viewer.js); elsewhere the preview dialog (doc-preview.js). The link stays
+       for a click with a modifier key (a new tab) and for a browser without script. *@
     <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'
-       data-viewer-token="@row.Token" data-viewer-title="@row.Title">
+       data-viewer-token="@row.Token" data-viewer-title="@row.Title"
+       data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="/Documents/Edit?id=@row.Id&returnUrl=@back" data-doc-preview-share="true">
         <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
     </a>
 }

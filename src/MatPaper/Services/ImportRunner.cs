@@ -167,9 +167,9 @@ public sealed class ImportRunner
                         ApplySmbPostAction(session, settings, file, log);
                     }
 
-                    // What could not be stored or read is tried again next time; an archive without a document in it
-                    // is remembered like any file, but never removed.
-                    if (leavesFile && batch.Outcome != IngestOutcome.Incomplete) { keep.Add(fingerprint); }
+                    // What could not be stored or read is tried again next time; a file with nothing to import in it (an archive
+                    // without documents, a scan of separator sheets only) is remembered even when files are removed, but never removed.
+                    if ((leavesFile && batch.Outcome != IngestOutcome.Incomplete) || batch.Outcome == IngestOutcome.NothingToImport) { keep.Add(fingerprint); }
                 }
                 catch (OperationCanceledException)
                 {
@@ -388,9 +388,9 @@ public sealed class ImportRunner
                     ApplyFilesystemPostAction(settings, file, log);
                 }
 
-                // What could not be stored or read is tried again next time; an archive without a document in it
-                // is remembered like any file, but never removed.
-                if (leavesFile && batch.Outcome != IngestOutcome.Incomplete) { keep.Add(fingerprint); }
+                // What could not be stored or read is tried again next time; a file with nothing to import in it (an archive
+                // without documents, a scan of separator sheets only) is remembered even when files are removed, but never removed.
+                if ((leavesFile && batch.Outcome != IngestOutcome.Incomplete) || batch.Outcome == IngestOutcome.NothingToImport) { keep.Add(fingerprint); }
             }
             catch (OperationCanceledException)
             {
@@ -912,7 +912,7 @@ public sealed class ImportRunner
             switch (item.Result.Status)
             {
                 case IngestStatus.Created:
-                    log.AppendLine($"{imported}: {item.Label}");
+                    log.AppendLine($"{imported}: {item.Label}{NumberNote(item.Result)}");
                     break;
                 case IngestStatus.Blocked:
                     log.AppendLine($"{skipped} (on the blocklist): {item.Label}");
@@ -931,11 +931,25 @@ public sealed class ImportRunner
             log.AppendLine($"Error ({label}): {reason}");
         }
 
-        if (batch.Skipped.Count > 0)
+        if (batch.FromArchive && batch.Skipped.Count > 0)
         {
             log.AppendLine($"{batch.Skipped.Count} file(s) in the archive are no documents and were left out.");
         }
+        else
+        {
+            // a file that is no archive: why nothing was made of it (e.g. nothing but separator sheets)
+            foreach (var (label, reason) in batch.Skipped)
+            {
+                log.AppendLine($"{skipped} ({reason}): {label}");
+            }
+        }
     }
+
+    /// <summary>What the log says about the archive number of an imported document: the one it got, or why it did not get the one on its paper.</summary>
+    private static string NumberNote(IngestResult result)
+        => result.RefusedNumber is long refused ? $" (archive number {refused} belongs to another document - filed without a number)"
+            : result.ArchiveSerialNumber is long number ? $" (archive number {number})"
+            : string.Empty;
 
     private static string SanitizeFileName(string name)
     {

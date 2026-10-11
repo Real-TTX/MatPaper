@@ -157,6 +157,12 @@ public class AppDbContext : DbContext
 
             // Duplicate detection when a found document is analysed.
             entity.HasIndex(d => d.ContentHash);
+
+            // The number of the paper original is the number of one document - a deleted one gives it up
+            // (UpdateState 0 = Deleted), so the sticker can go on the next sheet.
+            entity.HasIndex(d => d.ArchiveSerialNumber)
+                .IsUnique()
+                .HasFilter("\"ArchiveSerialNumber\" IS NOT NULL AND \"UpdateState\" <> 0");
         });
 
         var seedTimestamp = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using MatPaper.Configuration;
 using MatPaper.Data;
 using MatPaper.Services;
+using MatPaper.Services.Barcodes;
 using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Documents;
@@ -17,13 +19,15 @@ public class IndexModel : PageModel
     private readonly CurrentUser _currentUser;
     private readonly IStringLocalizer<SharedResource> _l;
     private readonly Fmt _fmt;
+    private readonly BarcodeOptions _barcodes;
 
-    public IndexModel(AppDbContext db, CurrentUser currentUser, IStringLocalizer<SharedResource> l, Fmt fmt)
+    public IndexModel(AppDbContext db, CurrentUser currentUser, IStringLocalizer<SharedResource> l, Fmt fmt, AppConfig config)
     {
         _db = db;
         _currentUser = currentUser;
         _l = l;
         _fmt = fmt;
+        _barcodes = config.ResolveBarcodeOptions();
     }
 
     [BindProperty(SupportsGet = true)]
@@ -61,6 +65,10 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Review { get; set; } = "all";
 
+    /// <summary>Archive number: all | with | without.</summary>
+    [BindProperty(SupportsGet = true)]
+    public string Asn { get; set; } = "all";
+
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
@@ -83,6 +91,10 @@ public class IndexModel : PageModel
     public IReadOnlyList<StorageLocation> StorageLocations { get; private set; } = Array.Empty<StorageLocation>();
 
     public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
+
+    /// <summary>The archive number of a document as it is written on its label (ASN 00017), or null when it has none.</summary>
+    public string? AsnText(Document document)
+        => document.ArchiveSerialNumber is long number ? _barcodes.AsnReadable(number) : null;
 
     /// <summary>Whether the signed-in user may publish a link to the document (its owner, or an administrator).</summary>
     public bool CanShare(Document document) => DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin);
@@ -111,12 +123,22 @@ public class IndexModel : PageModel
             return RedirectToPage(new { Review });
         }
 
+        // the number of its paper may have been given to another document while this one was in the bin
+        long? numberLost = null;
+        if (document.ArchiveSerialNumber is long held
+            && await _db.Documents.AsNoTracking().AnyAsync(d => d.ArchiveSerialNumber == held && d.UpdateState != UpdateState.Deleted, ct))
+        {
+            numberLost = held;
+            document.ArchiveSerialNumber = null;
+        }
+
         document.UpdateState = UpdateState.Updated;
         document.UpdateDate = DateTime.UtcNow;
         document.UpdateUserId = _currentUser.UserId;
         await _db.SaveChangesAsync(ct);
 
-        this.Notify(_l["\"{0}\" restored.", document.Title].Value);
+        this.Notify(_l["\"{0}\" restored.", document.Title].Value
+            + (numberLost is long lost ? " " + _l["Its archive number {0} belongs to another document now: it is back without a number.", lost].Value : string.Empty));
         return RedirectToPage(new { Review });
     }
 
@@ -163,10 +185,23 @@ public class IndexModel : PageModel
         if (!string.IsNullOrWhiteSpace(Search))
         {
             var term = Search.Trim();
-            query = query.Where(d =>
-                d.SearchVector != null &&
-                d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term)));
+
+            // a number (ASN 00017, asn17, or just 17) is looked up as an archive number as well as in the text
+            var asn = _barcodes.ParseAsn(term) ?? (long.TryParse(term, out var plain) && plain > 0 ? plain : (long?)null);
+            query = asn is long wanted
+                ? query.Where(d => d.ArchiveSerialNumber == wanted
+                    || (d.SearchVector != null && d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term))))
+                : query.Where(d =>
+                    d.SearchVector != null &&
+                    d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term)));
         }
+
+        query = Asn switch
+        {
+            "with" => query.Where(d => d.ArchiveSerialNumber != null),
+            "without" => query.Where(d => d.ArchiveSerialNumber == null),
+            _ => query,
+        };
 
         // An id of 0 means "none": documents without a value in that field.
         if (CorrespondentIds.Length > 0)
@@ -221,6 +256,8 @@ public class IndexModel : PageModel
             "newest" => query.OrderByDescending(d => d.DocumentDate ?? d.CreateDate).ThenByDescending(d => d.Id),
             "oldest" => query.OrderBy(d => d.DocumentDate ?? d.CreateDate).ThenBy(d => d.Id),
             "title" => query.OrderBy(d => d.Title).ThenBy(d => d.Id),
+            // the papers in the order of their numbers; documents without one at the end
+            "asn" => query.OrderBy(d => d.ArchiveSerialNumber == null).ThenBy(d => d.ArchiveSerialNumber).ThenBy(d => d.Id),
             _ => query.OrderByDescending(d => d.CreateDate).ThenByDescending(d => d.Id),
         };
 
@@ -282,6 +319,11 @@ public class IndexModel : PageModel
         if (scopeLabel != null)
         {
             chips.Add(new FilterChip($"{_l["Scope"]}: {scopeLabel}", FilterUrl.Without(req, "Scope")));
+        }
+
+        if (Asn is "with" or "without")
+        {
+            chips.Add(new FilterChip($"{_l["Archive number"]}: {(Asn == "with" ? _l["With a number"].Value : _l["Without a number"].Value)}", FilterUrl.Without(req, "Asn")));
         }
 
         var reviewLabel = Review switch

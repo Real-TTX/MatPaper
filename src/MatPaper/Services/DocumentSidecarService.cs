@@ -28,6 +28,9 @@ public sealed class DocumentSidecar
     public string? OriginalFileName { get; set; }
     public string? ContentHash { get; set; }
 
+    /// <summary>The number of the paper original (archive serial number); a number someone else holds is not taken over.</summary>
+    public long? ArchiveSerialNumber { get; set; }
+
     public string? InvoiceNumber { get; set; }
     public bool IsEInvoice { get; set; }
     public decimal? NetAmount { get; set; }
@@ -120,6 +123,7 @@ public sealed class DocumentSidecarService
             Reviewed = document.ReviewState == ReviewState.Reviewed,
             OriginalFileName = document.OriginalFileName,
             ContentHash = document.ContentHash,
+            ArchiveSerialNumber = document.ArchiveSerialNumber,
             InvoiceNumber = document.InvoiceNumber,
             IsEInvoice = document.IsEInvoice,
             NetAmount = document.NetAmount,
@@ -269,6 +273,14 @@ public sealed class DocumentSidecarService
                     UpdateUserId = actingUserId
                 });
             }
+        }
+
+        // the number of the paper original comes along, unless another document has it by now
+        if (document.ArchiveSerialNumber is null && sidecar.ArchiveSerialNumber is long number and > 0
+            && !await _db.Documents.AsNoTracking().AnyAsync(
+                d => d.ArchiveSerialNumber == number && d.UpdateState != UpdateState.Deleted && d.Id != document.Id, ct).ConfigureAwait(false))
+        {
+            document.ArchiveSerialNumber = number;
         }
 
         document.InvoiceNumber = sidecar.InvoiceNumber ?? document.InvoiceNumber;

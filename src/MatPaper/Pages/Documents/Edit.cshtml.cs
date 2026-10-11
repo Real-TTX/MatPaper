@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MatPaper.Data;
 using MatPaper.Services;
+using MatPaper.Services.Barcodes;
 using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Pages.Documents;
@@ -17,6 +18,8 @@ public class EditModel : PageModel
     private readonly DocumentAnalysisService _analysis;
     private readonly DocumentFilingService _filing;
     private readonly DocumentProcessingQueue _queue;
+    private readonly ArchiveNumberService _numbers;
+    private readonly MatPaper.Configuration.AppConfig _config;
     private readonly IStringLocalizer<SharedResource> _l;
 
     public EditModel(
@@ -27,6 +30,8 @@ public class EditModel : PageModel
         DocumentAnalysisService analysis,
         DocumentFilingService filing,
         DocumentProcessingQueue queue,
+        ArchiveNumberService numbers,
+        MatPaper.Configuration.AppConfig config,
         IStringLocalizer<SharedResource> l)
     {
         _db = db;
@@ -36,6 +41,8 @@ public class EditModel : PageModel
         _analysis = analysis;
         _filing = filing;
         _queue = queue;
+        _numbers = numbers;
+        _config = config;
         _l = l;
     }
 
@@ -101,10 +108,25 @@ public class EditModel : PageModel
     public List<TagOption> TagOptions { get; private set; } = new();
     public List<SelectListItem> TagItems { get; private set; } = new();
 
+    /// <summary>The number the "Next free number" button puts into the field (only for those who may edit).</summary>
+    public long NextFreeNumber { get; private set; }
+
+    /// <summary>The number as it is written on a label (ASN 00017), or null when the document has none.</summary>
+    public string? ArchiveNumberText { get; private set; }
+
+    /// <summary>A copy with the number printed on it can be made: the document is a PDF.</summary>
+    public bool CanStamp { get; private set; }
+
+    /// <summary>A label can be looked for on the document: it is a PDF or an image.</summary>
+    public bool CanReadNumber { get; private set; }
+
     public class InputModel
     {
         public string Title { get; set; } = string.Empty;
         public DateTime? DocumentDate { get; set; }
+
+        /// <summary>The number of the paper original (the sticker on it); empty = none.</summary>
+        public long? ArchiveSerialNumber { get; set; }
         public long? DocumentTypeId { get; set; }
         public long? CorrespondentId { get; set; }
         public long? ProjectId { get; set; }
@@ -141,6 +163,7 @@ public class EditModel : PageModel
         {
             Title = document.Title,
             DocumentDate = document.DocumentDate,
+            ArchiveSerialNumber = document.ArchiveSerialNumber,
             DocumentTypeId = document.DocumentTypeId,
             CorrespondentId = document.CorrespondentId,
             ProjectId = document.ProjectId,
@@ -174,6 +197,14 @@ public class EditModel : PageModel
         await BuildAccessViewAsync(document, HttpContext.RequestAborted);
         ShareLinks = await _shareLinks.ListForDocumentAsync(Id, HttpContext.RequestAborted);
         ShareBaseUrl = $"{Request.Scheme}://{Request.Host}";
+
+        ArchiveNumberText = document.ArchiveSerialNumber is long number ? _config.ResolveBarcodeOptions().AsnReadable(number) : null;
+        CanStamp = string.Equals(Path.GetExtension(document.OriginalFileName), ".pdf", StringComparison.OrdinalIgnoreCase);
+        CanReadNumber = BarcodeReader.Supports(Path.GetExtension(document.OriginalFileName));
+        if (CanEdit)
+        {
+            NextFreeNumber = await _numbers.NextFreeAsync(HttpContext.RequestAborted);
+        }
     }
 
     /// <summary>Populates the ownership / sharing / review view-model for the current viewer.</summary>
@@ -438,6 +469,12 @@ public class EditModel : PageModel
             ModelState.AddModelError("Input.StorageLocationId", _l["A storage location is required."]);
         }
 
+        // The archive number is the number of one document: a positive number nobody else has.
+        if (Input.ArchiveSerialNumber is long wantedNumber && wantedNumber != document.ArchiveSerialNumber)
+        {
+            await ValidateArchiveNumberAsync(wantedNumber, document.Id);
+        }
+
         if (!ModelState.IsValid)
         {
             await RenderAsync(document);
@@ -563,6 +600,7 @@ public class EditModel : PageModel
         document.CorrespondentId = Input.CorrespondentId;
         document.ProjectId = Input.ProjectId;
         document.StorageLocationId = Input.StorageLocationId;
+        document.ArchiveSerialNumber = Input.ArchiveSerialNumber;
         document.UpdateState = UpdateState.Updated;
         document.UpdateDate = now;
         document.UpdateUserId = _currentUser.UserId;
@@ -570,25 +608,37 @@ public class EditModel : PageModel
         // Sync tags to the selected set.
         SyncTags(document, now);
 
-        try
+        // The file already moved when the save fails: put it back so file and database keep agreeing.
+        async Task PutFileBackAsync()
         {
-            await _db.SaveChangesAsync();
-        }
-        catch
-        {
-            // The file already moved: put it back so file and database keep agreeing.
             if (movedFromLoc != null && movedFromPath != null && newLoc != null)
             {
                 try
                 {
-                    await _storage.RelocateAsync(newLoc, document.RelativePath, movedFromLoc, movedFromPath, CancellationToken.None, cleanupEmptyDirectories: false);
+                    document.RelativePath = await _storage.RelocateAsync(newLoc, document.RelativePath, movedFromLoc, movedFromPath, CancellationToken.None, cleanupEmptyDirectories: false);
                 }
                 catch
                 {
                     // nothing more to do here; the original error is what gets reported
                 }
             }
+        }
 
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (DocumentIngestService.IsNumberTaken(ex))
+        {
+            // somebody took the number between the check above and the save
+            await PutFileBackAsync();
+            ModelState.AddModelError("Input.ArchiveSerialNumber", _l["This archive number is used by another document."]);
+            await RenderAsync(document);
+            return Page();
+        }
+        catch
+        {
+            await PutFileBackAsync();
             throw;
         }
 
@@ -617,6 +667,112 @@ public class EditModel : PageModel
         }
 
         return LocalRedirect(BackUrl);
+    }
+
+    /// <summary>
+    /// Looks for a label on the first sheet of the document and puts its number into the field - as a suggestion: the
+    /// page is shown again with the values as they were typed, nothing is saved.
+    /// </summary>
+    public async Task<IActionResult> OnPostReadNumberAsync()
+    {
+        ViewData["Breadcrumb"] = "Documents / Edit";
+        if (Id == 0)
+        {
+            return NotFound();
+        }
+
+        var document = await _db.Documents
+            .Include(d => d.DocumentTags)
+            .Include(d => d.Owner)
+            .Include(d => d.StorageLocation).ThenInclude(s => s!.Connection)
+            .Include(d => d.Shares).ThenInclude(s => s.User)
+            .AsSplitQuery()
+            .AccessibleTo(_currentUser)
+            .FirstOrDefaultAsync(d => d.Id == Id && d.UpdateState != UpdateState.Deleted);
+        if (document is null)
+        {
+            return NotFound();
+        }
+
+        if (!await DocumentAccess.CanEditAsync(_db, document, _currentUser.UserId, _currentUser.IsAdmin, HttpContext.RequestAborted))
+        {
+            return Forbid();
+        }
+
+        var extension = Path.GetExtension(document.OriginalFileName);
+        if (!BarcodeReader.Supports(extension))
+        {
+            this.NotifyNow(_l["Only a PDF or an image can be searched for a label."].Value, NoticeKind.Warn);
+            await RenderAsync(document);
+            return Page();
+        }
+
+        byte[] bytes;
+        try
+        {
+            await using var stream = await _storage.OpenDocumentReadAsync(document, HttpContext.RequestAborted);
+            using var copy = new MemoryStream();
+            await stream.CopyToAsync(copy, HttpContext.RequestAborted);
+            bytes = copy.ToArray();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            this.NotifyNow(_l["The document file could not be read."].Value, NoticeKind.Danger);
+            await RenderAsync(document);
+            return Page();
+        }
+
+        // only the label matters here: no need to look for separator sheets
+        var options = _config.ResolveBarcodeOptions() with { Enabled = true, SplitAtSeparators = false };
+        var scan = await Task.Run(() => BarcodeReader.Scan(bytes, extension, options, HttpContext.RequestAborted), HttpContext.RequestAborted);
+        var found = scan?.AsnOn(new[] { 1 });
+
+        // the field shows what was found, not what was in it
+        ModelState.Remove("Input.ArchiveSerialNumber");
+        if (found is long number)
+        {
+            Input.ArchiveSerialNumber = number;
+            this.NotifyNow(_l["Found {0} on the first page. Save to take it over.", options.AsnReadable(number)].Value, NoticeKind.Info);
+            if (number != document.ArchiveSerialNumber)
+            {
+                await ValidateArchiveNumberAsync(number, document.Id);
+            }
+        }
+        else
+        {
+            this.NotifyNow(_l["No archive number found on the first page."].Value, NoticeKind.Warn);
+        }
+
+        await RenderAsync(document);
+        return Page();
+    }
+
+    /// <summary>
+    /// Checks a number typed into the field: a positive number that no other document has. When another one has it,
+    /// the message names it if the user may see it.
+    /// </summary>
+    private async Task ValidateArchiveNumberAsync(long number, long documentId)
+    {
+        const string field = "Input.ArchiveSerialNumber";
+        if (number < 1 || number > 999_999_999_999)
+        {
+            ModelState.AddModelError(field, _l["Enter a whole number greater than zero."]);
+            return;
+        }
+
+        var holder = await _db.Documents.AsNoTracking()
+            .Where(d => d.ArchiveSerialNumber == number && d.UpdateState != UpdateState.Deleted && d.Id != documentId)
+            .Select(d => new { d.Id, d.Title })
+            .FirstOrDefaultAsync(HttpContext.RequestAborted);
+        if (holder is null)
+        {
+            return;
+        }
+
+        var visible = await _db.Documents.AsNoTracking().AccessibleTo(_currentUser).AnyAsync(d => d.Id == holder.Id, HttpContext.RequestAborted);
+        ModelState.AddModelError(field, visible
+            ? _l["This archive number is used by \"{0}\".", holder.Title]
+            : _l["This archive number is used by another document."]);
     }
 
     public async Task<IActionResult> OnPostReanalyzeAsync(bool overwrite)

@@ -1116,4 +1116,100 @@
   <data name="A .zip in the list is opened: the documents in it are imported, as far as their type is listed." xml:space="preserve"><value>Ein .zip in der Liste wird geöffnet: die Dokumente darin werden importiert, soweit ihr Typ in der Liste steht.</value></data>
   <data name="A ZIP archive is opened: the PDFs, images and XML files in it are imported." xml:space="preserve"><value>Ein ZIP-Archiv wird geöffnet: die PDFs, Bilder und XML-Dateien darin werden importiert.</value></data>
   <data name="Processing …" xml:space="preserve"><value>Wird verarbeitet …</value></data>
+  <data name="Use 1 to 8 letters." xml:space="preserve"><value>1 bis 8 Buchstaben verwenden.</value></data>
+  <data name="Enter a number between 1 and 12." xml:space="preserve"><value>Zahl zwischen 1 und 12 eingeben.</value></data>
+  <data name="Enter 1 to 32 characters." xml:space="preserve"><value>1 bis 32 Zeichen eingeben.</value></data>
+  <data name="The separator text must differ from a label: it would be read as an archive number." xml:space="preserve"><value>Der Text muss sich von einem Etikett unterscheiden: Er würde als Archivnummer gelesen.</value></data>
+  <data name="Archive numbers and barcodes" xml:space="preserve"><value>Archivnummern und Barcodes</value></data>
+  <data name="Labels with archive numbers (see Documents - Print labels) and separator sheets are read from every PDF and image that is added: the number goes to the document, and a stack of papers is cut at the separator sheets." xml:space="preserve"><value>Etiketten mit Archivnummern (siehe Dokumente – Etiketten drucken) und Trennblätter werden in jedem neuen PDF und Bild erkannt: Die Nummer geht an das Dokument, und ein Stapel Papier wird an den Trennblättern geteilt.</value></data>
+  <data name="Read barcodes and QR codes on incoming documents" xml:space="preserve"><value>Barcodes und QR-Codes auf neuen Dokumenten lesen</value></data>
+  <data name="Letters before the number" xml:space="preserve"><value>Buchstaben vor der Nummer</value></data>
+  <data name="A label says ASN00017 with the letters ASN. Labels that were printed with other letters are not recognised anymore after a change." xml:space="preserve"><value>Ein Etikett sagt ASN00017 mit den Buchstaben ASN. Etiketten, die mit anderen Buchstaben gedruckt wurden, werden nach einer Änderung nicht mehr erkannt.</value></data>
+  <data name="Digits of the number" xml:space="preserve"><value>Stellen der Nummer</value></data>
+  <data name="The number is filled up with zeros: 5 digits give 00017." xml:space="preserve"><value>Die Nummer wird mit Nullen aufgefüllt: 5 Stellen ergeben 00017.</value></data>
+  <data name="Cut a scan at separator sheets" xml:space="preserve"><value>Scan an Trennblättern teilen</value></data>
+  <data name="Text of the separator code" xml:space="preserve"><value>Text des Trennblatt-Codes</value></data>
+  <data name="PATCHT is what Paperless uses; its separator sheets work here, too." xml:space="preserve"><value>PATCHT verwendet auch Paperless; dessen Trennblätter funktionieren hier ebenfalls.</value></data>
+  <data name="Look for small labels more thoroughly (slower)" xml:space="preserve"><value>Kleine Etiketten gründlicher suchen (langsamer)</value></data>
+  <data name="Archive number {0}" xml:space="preserve"><value>Archivnummer {0}</value></data>
+  <data name="Archive numbers {0}" xml:space="preserve"><value>Archivnummern {0}</value></data>
+  <data name="Archive number {0} belongs to another document - filed without a number" xml:space="preserve"><value>Archivnummer {0} gehört schon einem anderen Dokument – ohne Nummer abgelegt</value></data>
+  <data name="The file contains only separator sheets." xml:space="preserve"><value>Die Datei enthält nur Trennblätter.</value></data>
+  <data name="The document could not be stored." xml:space="preserve"><value>Das Dokument konnte nicht gespeichert werden.</value></data>
+  <data name="A label with an archive number on the paper is read, and a stack of papers scanned in one go is cut at separator sheets." xml:space="preserve"><value>Ein Etikett mit Archivnummer auf dem Papier wird gelesen, und ein in einem Durchgang gescannter Stapel wird an Trennblättern geteilt.</value></data>
+  <data name="Print labels and separator sheets" xml:space="preserve"><value>Etiketten und Trennblätter drucken</value></data>
+  <data name="Archive number" xml:space="preserve"><value>Archivnummer</value></data>
+  <data name="Next free number" xml:space="preserve"><value>Nächste freie Nummer</value></data>
+  <data name="The number on the sticker of the paper original: it finds the document in the folder." xml:space="preserve"><value>Die Nummer auf dem Etikett des Papieroriginals: Damit findest du das Papier im Ordner wieder.</value></data>
+  <data name="Print with archive number" xml:space="preserve"><value>Mit Archivnummer drucken</value></data>
+  <data name="no number yet" xml:space="preserve"><value>noch keine Nummer</value></data>
+  <data name="A copy of this PDF with the archive number as a code and as text in one corner, ready to print and file. The document itself is not changed." xml:space="preserve"><value>Eine Kopie dieses PDFs mit der Archivnummer als Code und als Text in einer Ecke, zum Ausdrucken und Abheften. Das Dokument selbst wird nicht verändert.</value></data>
+  <data name="Position" xml:space="preserve"><value>Position</value></data>
+  <data name="Top right" xml:space="preserve"><value>Oben rechts</value></data>
+  <data name="Top left" xml:space="preserve"><value>Oben links</value></data>
+  <data name="Bottom right" xml:space="preserve"><value>Unten rechts</value></data>
+  <data name="Bottom left" xml:space="preserve"><value>Unten links</value></data>
+  <data name="Code" xml:space="preserve"><value>Code</value></data>
+  <data name="QR code" xml:space="preserve"><value>QR-Code</value></data>
+  <data name="Barcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="Give it the next free number ({0})" xml:space="preserve"><value>Nächste freie Nummer vergeben ({0})</value></data>
+  <data name="This archive number is used by another document." xml:space="preserve"><value>Diese Archivnummer gehört schon einem anderen Dokument.</value></data>
+  <data name="This archive number is used by &quot;{0}&quot;." xml:space="preserve"><value>Diese Archivnummer gehört schon zu „{0}“.</value></data>
+  <data name="Enter a whole number greater than zero." xml:space="preserve"><value>Ganze Zahl größer als null eingeben.</value></data>
+  <data name="Only a PDF can be printed with its archive number." xml:space="preserve"><value>Nur ein PDF kann mit seiner Archivnummer gedruckt werden.</value></data>
+  <data name="This document has no archive number yet." xml:space="preserve"><value>Dieses Dokument hat noch keine Archivnummer.</value></data>
+  <data name="No free archive number could be given. Please try again." xml:space="preserve"><value>Es konnte keine freie Archivnummer vergeben werden. Bitte erneut versuchen.</value></data>
+  <data name="The number could not be put on this PDF (it may be protected or damaged)." xml:space="preserve"><value>Die Nummer konnte nicht auf dieses PDF gesetzt werden (es ist evtl. geschützt oder beschädigt).</value></data>
+  <data name="Documents / Labels" xml:space="preserve"><value>Dokumente / Etiketten</value></data>
+  <data name="Reading barcodes is switched off in the settings: a number on a label is not recognised when a scan is added." xml:space="preserve"><value>Das Lesen von Barcodes ist in den Einstellungen ausgeschaltet: Eine Nummer auf einem Etikett wird beim Hinzufügen eines Scans nicht erkannt.</value></data>
+  <data name="Labels with archive numbers" xml:space="preserve"><value>Etiketten mit Archivnummern</value></data>
+  <data name="Print the labels on sticker sheets and stick one on every paper original. When the paper is scanned, MatPaper reads the number and gives it to the document - and you find the paper again by its number." xml:space="preserve"><value>Drucke die Etiketten auf Klebeetiketten-Bögen und klebe auf jedes Papieroriginal eines. Beim Scannen liest MatPaper die Nummer und gibt sie dem Dokument – und du findest das Papier an seiner Nummer wieder.</value></data>
+  <data name="Printed so far" xml:space="preserve"><value>Bisher gedruckt bis</value></data>
+  <data name="A label says" xml:space="preserve"><value>Ein Etikett sagt</value></data>
+  <data name="Sticker sheet" xml:space="preserve"><value>Etikettenbogen</value></data>
+  <data name="Other sheet or label printer ..." xml:space="preserve"><value>Anderer Bogen oder Etikettendrucker …</value></data>
+  <data name="Labels across" xml:space="preserve"><value>Etiketten nebeneinander</value></data>
+  <data name="Labels down" xml:space="preserve"><value>Etiketten untereinander</value></data>
+  <data name="Label width (mm)" xml:space="preserve"><value>Etikettenbreite (mm)</value></data>
+  <data name="Label height (mm)" xml:space="preserve"><value>Etikettenhöhe (mm)</value></data>
+  <data name="Gap between columns (mm)" xml:space="preserve"><value>Abstand zwischen den Spalten (mm)</value></data>
+  <data name="Gap between rows (mm)" xml:space="preserve"><value>Abstand zwischen den Zeilen (mm)</value></data>
+  <data name="Label printer: one label per page, the page as big as the label" xml:space="preserve"><value>Etikettendrucker: ein Etikett pro Seite, die Seite so groß wie das Etikett</value></data>
+  <data name="First number" xml:space="preserve"><value>Erste Nummer</value></data>
+  <data name="How many labels" xml:space="preserve"><value>Wie viele Etiketten</value></data>
+  <data name="Labels already used on the first sheet" xml:space="preserve"><value>Bereits benutzte Etiketten auf dem ersten Bogen</value></data>
+  <data name="Print the number as text next to the code" xml:space="preserve"><value>Nummer als Text neben dem Code drucken</value></data>
+  <data name="Test print and adjustment" xml:space="preserve"><value>Testdruck und Feinjustierung</value></data>
+  <data name="Frame around every label (test print on plain paper; uses up no numbers)" xml:space="preserve"><value>Rahmen um jedes Etikett (Testdruck auf normalem Papier; verbraucht keine Nummern)</value></data>
+  <data name="Hold the test print against a sticker sheet in the light: the frames show whether the labels fit. If not, shift the print here." xml:space="preserve"><value>Halte den Testdruck gegen das Licht an einen Etikettenbogen: Die Rahmen zeigen, ob die Etiketten passen. Wenn nicht, verschiebe den Druck hier.</value></data>
+  <data name="Shift to the right (mm)" xml:space="preserve"><value>Nach rechts verschieben (mm)</value></data>
+  <data name="Shift down (mm)" xml:space="preserve"><value>Nach unten verschieben (mm)</value></data>
+  <data name="Print at 100 % (not &quot;fit to page&quot;)." xml:space="preserve"><value>In 100 % drucken (nicht „An Seite anpassen“).</value></data>
+  <data name="Separator sheets" xml:space="preserve"><value>Trennblätter</value></data>
+  <data name="Scan a whole stack of papers in one go: put a separator sheet between two documents. MatPaper cuts the scan at the sheets - every document of the stack is added on its own - and leaves the sheets out." xml:space="preserve"><value>Scanne einen ganzen Stapel Papier in einem Durchgang: Lege zwischen zwei Dokumente ein Trennblatt. MatPaper teilt den Scan an den Blättern – jedes Dokument des Stapels wird einzeln hinzugefügt – und lässt die Blätter weg.</value></data>
+  <data name="The code on the sheet says {0}." xml:space="preserve"><value>Der Code auf dem Blatt lautet {0}.</value></data>
+  <data name="How many sheets" xml:space="preserve"><value>Wie viele Blätter</value></data>
+  <data name="Separator sheet" xml:space="preserve"><value>Trennblatt</value></data>
+  <data name="Scan stacks of papers in one go: put this sheet between two documents." xml:space="preserve"><value>Stapel in einem Durchgang scannen: dieses Blatt zwischen zwei Dokumente legen.</value></data>
+  <data name="MatPaper cuts the scan at this sheet and leaves the sheet out." xml:space="preserve"><value>MatPaper teilt den Scan an diesem Blatt und lässt das Blatt weg.</value></data>
+  <data name="Barcode (Code 128)" xml:space="preserve"><value>Barcode (Code 128)</value></data>
+  <data name="Choose a sheet from the list." xml:space="preserve"><value>Bogen aus der Liste wählen.</value></data>
+  <data name="Enter a number between 1 and {0}." xml:space="preserve"><value>Zahl zwischen 1 und {0} eingeben.</value></data>
+  <data name="The labels could not be made: {0}" xml:space="preserve"><value>Die Etiketten konnten nicht erstellt werden: {0}</value></data>
+  <data name="A label is between 5 and 400 mm." xml:space="preserve"><value>Ein Etikett ist zwischen 5 und 400 mm groß.</value></data>
+  <data name="The labels do not fit on an A4 sheet." xml:space="preserve"><value>Die Etiketten passen nicht auf ein A4-Blatt.</value></data>
+  <data name="With a number" xml:space="preserve"><value>Mit Nummer</value></data>
+  <data name="Without a number" xml:space="preserve"><value>Ohne Nummer</value></data>
+  <data name="Archive no." xml:space="preserve"><value>Archivnr.</value></data>
+  <data name="Print labels" xml:space="preserve"><value>Etiketten drucken</value></data>
+  <data name="Its archive number {0} belongs to another document now: it is back without a number." xml:space="preserve"><value>Seine Archivnummer {0} gehört jetzt einem anderen Dokument: Es ist ohne Nummer zurück.</value></data>
+  <data name="Labels of the first sheet that are used already: a sheet that was started is filled up." xml:space="preserve"><value>Etiketten des ersten Bogens, die schon benutzt sind: Ein angefangener Bogen wird aufgefüllt.</value></data>
+  <data name="Already used (first sheet)" xml:space="preserve"><value>Schon benutzt (1. Bogen)</value></data>
+  <data name="Only a PDF or an image can be searched for a label." xml:space="preserve"><value>Nur ein PDF oder ein Bild kann nach einem Etikett durchsucht werden.</value></data>
+  <data name="The document file could not be read." xml:space="preserve"><value>Die Datei des Dokuments konnte nicht gelesen werden.</value></data>
+  <data name="Found {0} on the first page. Save to take it over." xml:space="preserve"><value>{0} auf der ersten Seite gefunden. Zum Übernehmen speichern.</value></data>
+  <data name="No archive number found on the first page." xml:space="preserve"><value>Keine Archivnummer auf der ersten Seite gefunden.</value></data>
+  <data name="Look for a label on the first page of the document" xml:space="preserve"><value>Ein Etikett auf der ersten Seite des Dokuments suchen</value></data>
+  <data name="Read from document" xml:space="preserve"><value>Vom Dokument lesen</value></data>
+  <data name="Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more." xml:space="preserve"><value>Kleine Etiketten (unter 15 mm) werden beim Scannen zuverlässig ab 300 dpi gelesen.</value></data>
 </root>

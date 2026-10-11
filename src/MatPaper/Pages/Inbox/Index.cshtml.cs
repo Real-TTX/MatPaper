@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using MatPaper.Configuration;
 using MatPaper.Data;
 using MatPaper.Services;
 using Microsoft.Extensions.Localization;
@@ -32,6 +33,7 @@ public class IndexModel : PageModel
     private readonly DocumentFilingService _filing;
     private readonly DocumentStorageService _storage;
     private readonly DocumentProcessingQueue _queue;
+    private readonly AppConfig _config;
     private readonly IStringLocalizer<SharedResource> _l;
 
     public IndexModel(
@@ -40,6 +42,7 @@ public class IndexModel : PageModel
         DocumentFilingService filing,
         DocumentStorageService storage,
         DocumentProcessingQueue queue,
+        AppConfig config,
         IStringLocalizer<SharedResource> l)
     {
         _db = db;
@@ -47,8 +50,12 @@ public class IndexModel : PageModel
         _filing = filing;
         _storage = storage;
         _queue = queue;
+        _config = config;
         _l = l;
     }
+
+    /// <summary>An archive number as it is written on a label (ASN 00017).</summary>
+    public string AsnText(long number) => _config.ResolveBarcodeOptions().AsnReadable(number);
 
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
@@ -130,7 +137,8 @@ public class IndexModel : PageModel
         string? LocationName,
         long FileSize,
         DateTime? FileModifiedUtc,
-        string? OwnerName);
+        string? OwnerName,
+        long? ArchiveSerialNumber);
 
     public record LocationOption(long Id, string Name, bool IsDefault);
 
@@ -667,7 +675,8 @@ public class IndexModel : PageModel
                 d.StorageLocation != null ? d.StorageLocation.Name : null,
                 d.FileSize,
                 d.FileModifiedUtc,
-                d.Owner != null ? d.Owner.DisplayName : null))
+                d.Owner != null ? d.Owner.DisplayName : null,
+                d.ArchiveSerialNumber))
             .ToListAsync(ct);
 
         await TakeOverExactCorrespondentsAsync(ct);

@@ -125,13 +125,17 @@ public class UploadModel : PageModel
         return new JsonResult(Describe(batch, file.FileName));
     }
 
-    /// <summary>What the uploader shows for one file: the outcome of a plain file, the counts of an archive.</summary>
+    /// <summary>
+    /// What the uploader shows for one file: the outcome of a plain file, the counts of an archive - or of a stack of
+    /// papers that was cut into documents at the separator sheets. <c>note</c> tells about archive numbers.
+    /// </summary>
     private object Describe(IngestBatch batch, string name)
     {
-        if (!batch.FromArchive)
+        var note = NumberNote(batch);
+        if (!batch.FromArchive && batch.Items.Count == 1 && batch.Failed.Count == 0)
         {
             var only = batch.Items[0].Result;
-            return new { status = only.Status.ToString().ToLowerInvariant(), id = only.DocumentId, name };
+            return new { status = only.Status.ToString().ToLowerInvariant(), id = only.DocumentId, name, note };
         }
 
         var status = batch.Created > 0 ? "created"
@@ -145,7 +149,9 @@ public class UploadModel : PageModel
         {
             message = batch.Failed.Count > 0
                 ? _l[batch.Failed[0].Reason].Value
-                : _l["The archive contains no documents."].Value;
+                : !batch.FromArchive && batch.Skipped.Count > 0
+                    ? _l[batch.Skipped[0].Reason].Value
+                    : _l["The archive contains no documents."].Value;
         }
 
         return new
@@ -156,10 +162,36 @@ public class UploadModel : PageModel
             archive = true,
             created = batch.Created,
             duplicates = batch.Duplicates,
-            skipped = batch.Skipped.Count,
+            skipped = batch.FromArchive ? batch.Skipped.Count : 0,
             failed = batch.Failed.Count + batch.NoStorage,
-            message
+            message,
+            note
         };
+    }
+
+    /// <summary>One line about the archive numbers of the new documents: which they got, and which of the papers had one that is taken.</summary>
+    private string? NumberNote(IngestBatch batch)
+    {
+        var given = batch.Items.Select(i => i.Result).Where(r => r.Status == IngestStatus.Created && r.ArchiveSerialNumber != null)
+            .Select(r => r.ArchiveSerialNumber!.Value).ToList();
+        var refused = batch.Items.Select(i => i.Result).Where(r => r.RefusedNumber != null).Select(r => r.RefusedNumber!.Value).ToList();
+
+        var lines = new List<string>();
+        if (given.Count == 1)
+        {
+            lines.Add(_l["Archive number {0}", given[0]].Value);
+        }
+        else if (given.Count > 1)
+        {
+            lines.Add(_l["Archive numbers {0}", string.Join(", ", given)].Value);
+        }
+
+        if (refused.Count > 0)
+        {
+            lines.Add(_l["Archive number {0} belongs to another document - filed without a number", string.Join(", ", refused)].Value);
+        }
+
+        return lines.Count == 0 ? null : string.Join(" · ", lines);
     }
 
     /// <summary>The pages of an in-browser scan (already cropped and filtered) become one PDF.</summary>
@@ -198,15 +230,16 @@ public class UploadModel : PageModel
         var meta = await ReadMetaAsync(correspondentId, documentTypeId, projectId, tagIds, title, ct);
         var fileName = $"{Sanitize(meta.Title ?? "Scan")}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pdf";
 
+        // the photos may show a sticker with an archive number, or separator sheets: the PDF is read like an upload
         await using var pdfStream = new MemoryStream(pdf);
-        var result = await _ingest.IngestAsync(
+        var batch = await _ingest.IngestFileAsync(
             pdfStream, fileName,
             storageLocationId: null,
             meta.CorrespondentId, meta.DocumentTypeId, meta.ProjectId, meta.TagIds,
             _currentUser.UserId, ct,
             origin: DocumentOrigin.CameraScan);
 
-        return new JsonResult(new { status = result.Status.ToString().ToLowerInvariant(), id = result.DocumentId, name = fileName });
+        return new JsonResult(Describe(batch, fileName));
     }
 
     /// <summary>Plain form post (no JavaScript): files only.</summary>
@@ -222,6 +255,7 @@ public class UploadModel : PageModel
         }
 
         int created = 0, duplicate = 0, failed = 0;
+        var numberNotes = new List<string>();
         foreach (var file in Files)
         {
             if (file.Length == 0)
@@ -260,6 +294,18 @@ public class UploadModel : PageModel
             {
                 Messages.Add($"{file.FileName}: {_l["The archive contains no documents."].Value}");
             }
+            else if (!batch.FromArchive)
+            {
+                foreach (var (label, reason) in batch.Skipped)
+                {
+                    Messages.Add($"{label}: {_l[reason].Value}");
+                }
+            }
+
+            if (NumberNote(batch) is { } numberNote)
+            {
+                numberNotes.Add(numberNote);
+            }
         }
 
         if (created > 0)
@@ -267,7 +313,7 @@ public class UploadModel : PageModel
             var parts = new List<string> { _l["{0} document(s) added to your inbox", created].Value };
             if (duplicate > 0) { parts.Add(_l["{0} duplicate(s) skipped", duplicate].Value); }
             if (failed > 0) { parts.Add(_l["{0} failed", failed].Value); }
-            this.Notify(string.Join(", ", parts) + ".");
+            this.Notify(string.Join(", ", parts) + "." + (numberNotes.Count > 0 ? " " + string.Join(" ", numberNotes.Select(n => n + ".")) : string.Empty));
             return RedirectToPage("/Inbox/Index");
         }
 

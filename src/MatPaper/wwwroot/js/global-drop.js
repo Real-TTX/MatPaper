@@ -217,7 +217,7 @@
         return row;
     }
 
-    function setStatus(item, status, text, href) {
+    function setStatus(item, status, text, href, note) {
         item.status = status;
         item.row.className = "drop-tray__item drop-tray__item--" + status;
         var cell = item.row.querySelector(".drop-tray__status");
@@ -228,6 +228,8 @@
             cell.appendChild(document.createTextNode(" "));
             cell.appendChild(link);
         }
+        // what the server has to say about the archive numbers (read from a sticker on the paper)
+        if (note) { cell.appendChild(element("span", "upload-note", note)); }
     }
 
     function updateHead() {
@@ -299,11 +301,11 @@
                         if (res.skipped > 0) { parts.push(fill(t("archive-skipped", "{0} file(s) are no documents"), res.skipped)); }
                         if (res.failed > 0) { parts.push(fill(t("summary-failed", "{0} failed"), res.failed)); }
                         var text = parts.join(", ");
-                        if (res.status === "created" || res.status === "duplicate") { setStatus(item, res.status, text); }
+                        if (res.status === "created" || res.status === "duplicate") { setStatus(item, res.status, text, null, res.note); }
                         else { setStatus(item, "failed", res.message || text || t("failed", "Failed")); }
                     } else if (res.status === "created") {
                         item.docs.created = 1;
-                        setStatus(item, "created", t("added", "Added"));
+                        setStatus(item, "created", t("added", "Added"), null, res.note);
                     } else if (res.status === "duplicate") {
                         item.docs.duplicates = 1;
                         setStatus(item, "duplicate", t("duplicate", "Duplicate — skipped"), res.id ? "/Documents/Edit?id=" + encodeURIComponent(res.id) : null);

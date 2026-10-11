@@ -748,3 +748,28 @@
         document.addEventListener(name, function (event) { event.preventDefault(); }, { passive: false });
     });
 })();
+
+// Archive numbers: "Next free number" fills the field beside it; printing a copy with a number that was just
+// given (the box "give it the next free number") makes the page show it afterwards.
+(function () {
+    "use strict";
+    document.addEventListener("click", function (event) {
+        var button = event.target.closest && event.target.closest("[data-asn-next]");
+        if (!button) { return; }
+        var input = button.parentElement && button.parentElement.querySelector("input");
+        if (!input) { return; }
+        input.value = button.getAttribute("data-asn-next");
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+    });
+
+    document.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!form.matches || !form.matches("[data-stamp-form]")) { return; }
+        var assign = form.querySelector("input[name=assign]");
+        if (assign && assign.checked) {
+            // the PDF opens in a new tab; this page learns about the new number by loading again
+            window.setTimeout(function () { window.location.reload(); }, 1500);
+        }
+    });
+})();

@@ -116,6 +116,9 @@
 .upload-item--created .upload-item__fill { background: var(--color-ok); }
 .upload-item--failed .upload-item__fill { background: var(--color-danger); }
 
+/* A line under the status of a file (upload list, drop tray): the archive numbers its papers carried. */
+.upload-note { display: block; margin-top: 0.15rem; color: var(--color-text-muted); }
+
 /* ==========================================================================
    Active filter chips (all list/gallery toolbars)
    ========================================================================== */
@@ -2036,7 +2039,7 @@ a.doc-table__name:hover { color: var(--color-primary); }
 .doc-table__date { white-space: nowrap; }
 .doc-table__title { min-width: 12rem; }
 .doc-table__optional--party { min-width: 8rem; }
-.doc-table__optional--type, .doc-table__optional--project { white-space: nowrap; }
+.doc-table__optional--type, .doc-table__optional--project, .doc-table__optional--asn { white-space: nowrap; }
 .doc-table__tags { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-top: 4px; }
 .doc-table .tag-label { white-space: nowrap; font-size: 0.82rem; }
 .doc-row--deleted .doc-table__name { color: var(--color-text-muted); }
@@ -2145,3 +2148,44 @@ a.doc-table__name:hover { color: var(--color-primary); }
 @media (max-width: 800px) {
     .drop-tray { inset: auto 0.75rem max(0.75rem, env(safe-area-inset-bottom)) 0.75rem; width: auto; }
 }
+
+/* ==========================================================================
+   Archive numbers: the field on the document page, the copy with the number
+   printed on it, and the labels page
+   ========================================================================== */
+.form-row[hidden] { display: none; }
+
+.asn-field { display: flex; gap: 0.5rem; align-items: stretch; }
+.asn-field .form-control { flex: 1 1 8rem; min-width: 0; }
+.asn-field .btn { flex: 0 0 auto; white-space: nowrap; }
+
+.asn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.85rem; }
+
+.doc-stamp__form { display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem; margin-top: 0.9rem; }
+.doc-stamp__form .form-control { width: auto; min-width: 9rem; }
+.doc-stamp .doc-reanalyze__opt { flex: 1 1 100%; }
+
+.labels-facts { margin: 0 0 1.1rem; }
+.labels-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0.85rem;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+}
+.labels-custom[hidden] { display: none; }
+.labels-more { border-top: 1px solid var(--color-border); padding-top: 0.75rem; }
+.labels-more > summary { cursor: pointer; font-weight: 600; font-size: var(--font-size-sm); margin-bottom: 0.5rem; }
+.labels-more > :not(summary) { margin-top: 0.6rem; }
+
+@media (max-width: 600px) {
+    .asn-field { flex-wrap: wrap; }
+    .asn-field .btn { flex: 1 1 100%; }
+    .doc-stamp__form .form-row, .doc-stamp__form .form-control { width: 100%; }
+    .doc-stamp__form .btn { width: 100%; }
+}
+
+/* a link in a help text is still a link */
+.form-help a { color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
+.form-section > .form-help { margin-bottom: 0.85rem; }

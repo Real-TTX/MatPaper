@@ -103,6 +103,24 @@
             <span class="field-error" asp-validation-for="Input.DocumentDate"></span>
         </div>
 
+        <div class="form-row">
+            <label asp-for="Input.ArchiveSerialNumber">@L["Archive number"]</label>
+            <div class="asn-field">
+                <input class="form-control" type="number" min="1" step="1" inputmode="numeric" asp-for="Input.ArchiveSerialNumber" placeholder='@L["None"]' />
+                @if (Model.CanEdit)
+                {
+                    <button type="button" class="btn btn--secondary" data-asn-next="@Model.NextFreeNumber">@L["Next free number"]</button>
+                    @if (Model.CanReadNumber)
+                    {
+                        <button type="submit" class="btn btn--secondary" asp-page-handler="ReadNumber" formnovalidate
+                                title='@L["Look for a label on the first page of the document"]'>@L["Read from document"]</button>
+                    }
+                }
+            </div>
+            <span class="field-error" asp-validation-for="Input.ArchiveSerialNumber"></span>
+            <span class="form-help">@L["The number on the sticker of the paper original: it finds the document in the folder."]</span>
+        </div>
+
         <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]'
                    asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
 
@@ -187,6 +205,42 @@
             </li>
         </ul>
     </aside>
+
+    @if (Model.CanStamp)
+    {
+    <details class="doc-shares doc-stamp">
+        <summary class="doc-shares__summary">
+            <span class="doc-shares__title">@L["Print with archive number"]</span>
+            <span class="doc-shares__state">@(Model.ArchiveNumberText ?? L["no number yet"].Value)</span>
+        </summary>
+        <p class="form-help">@L["A copy of this PDF with the archive number as a code and as text in one corner, ready to print and file. The document itself is not changed."]</p>
+        <form method="post" asp-page="Stamp" asp-route-token="@Model.Token" target="_blank" class="doc-stamp__form form" data-stamp-form>
+            <div class="form-row">
+                <label for="stamp-corner">@L["Position"]</label>
+                <select id="stamp-corner" name="corner" class="form-control">
+                    <option value="TopRight">@L["Top right"]</option>
+                    <option value="TopLeft">@L["Top left"]</option>
+                    <option value="BottomRight">@L["Bottom right"]</option>
+                    <option value="BottomLeft">@L["Bottom left"]</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="stamp-kind">@L["Code"]</label>
+                <select id="stamp-kind" name="kind" class="form-control">
+                    <option value="Qr">@L["QR code"]</option>
+                    <option value="Code128">@L["Barcode"]</option>
+                </select>
+            </div>
+            @if (Model.ArchiveNumberText is null && Model.CanEdit)
+            {
+                <label class="doc-reanalyze__opt">
+                    <input type="checkbox" name="assign" value="true" checked /> @L["Give it the next free number ({0})", Model.NextFreeNumber]
+                </label>
+            }
+            <button class="btn btn--primary" type="submit" @(Model.ArchiveNumberText is null && !Model.CanEdit ? "disabled" : "")>@L["Create PDF"]</button>
+        </form>
+    </details>
+    }
 
     @if (Model.EInvoice is { } inv)
     {

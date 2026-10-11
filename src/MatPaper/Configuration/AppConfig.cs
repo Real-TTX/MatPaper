@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MatPaper.Services.Barcodes;
 
 namespace MatPaper.Configuration;
 
@@ -63,12 +64,46 @@ public class OAuthConfig
     public string? PublicBaseUrl { get; set; }
 }
 
+/// <summary>
+/// Archive numbers and barcodes: what a sticker says, and whether incoming scans are searched for codes.
+/// See <see cref="BarcodeOptions"/> for what the values mean.
+/// </summary>
+public class BarcodeConfig
+{
+    public bool Enabled { get; set; } = true;
+    public string AsnPrefix { get; set; } = "ASN";
+    public int AsnDigits { get; set; } = 5;
+    public bool SplitAtSeparators { get; set; } = true;
+    public string SeparatorText { get; set; } = "PATCHT";
+    public bool HighResolution { get; set; }
+
+    /// <summary>
+    /// The highest number that was printed on labels. The next sheet starts behind it, even when the
+    /// labels are not on a document yet (they sit on paper, waiting to be scanned).
+    /// </summary>
+    public long LastPrintedAsn { get; set; }
+
+    public BarcodeOptions ToOptions() => new()
+    {
+        Enabled = Enabled,
+        AsnPrefix = string.IsNullOrWhiteSpace(AsnPrefix) ? "ASN" : AsnPrefix.Trim(),
+        AsnDigits = Math.Clamp(AsnDigits, 1, 12),
+        SplitAtSeparators = SplitAtSeparators,
+        SeparatorText = string.IsNullOrWhiteSpace(SeparatorText) ? "PATCHT" : SeparatorText.Trim(),
+        HighResolution = HighResolution
+    };
+}
+
 public class AppConfig
 {
     public DatabaseConfig Database { get; set; } = new();
     public StorageConfig Storage { get; set; } = new();
     public DisplayConfig Display { get; set; } = new();
     public OAuthConfig OAuth { get; set; } = new();
+    public BarcodeConfig Barcodes { get; set; } = new();
+
+    /// <summary>The barcode settings as the engine takes them (the defaults when app.json has none).</summary>
+    public BarcodeOptions ResolveBarcodeOptions() => (Barcodes ?? new BarcodeConfig()).ToOptions();
 
     /// <summary>Effective public base URL: env MATPAPER_PUBLIC_URL → config → null.</summary>
     public string? ResolvePublicBaseUrl()

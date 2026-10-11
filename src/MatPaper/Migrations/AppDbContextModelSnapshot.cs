@@ -190,6 +190,9 @@ namespace MatPaper.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("ArchiveSerialNumber")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("BuyerName")
                         .HasColumnType("text");
 
@@ -317,6 +320,10 @@ namespace MatPaper.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ArchiveSerialNumber")
+                        .IsUnique()
+                        .HasFilter("\"ArchiveSerialNumber\" IS NOT NULL AND \"UpdateState\" <> 0");
 
                     b.HasIndex("ContentHash");
 

@@ -48,6 +48,7 @@
                 <input class="form-control uploader__input" type="file" id="Files" name="Files" multiple accept=".pdf,.xml,.zip,image/*" />
             </div>
             <span class="field-error" asp-validation-for="Files"></span>
+            <p class="form-help">@L["A label with an archive number on the paper is read, and a stack of papers scanned in one go is cut at separator sheets."] <a href="/Documents/Labels">@L["Print labels and separator sheets"]</a></p>
 
             <div class="add-doc__or">@L["or"]</div>
 

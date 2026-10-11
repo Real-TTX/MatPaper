@@ -53,11 +53,18 @@
         <option value="deleted">@L["Deleted"]</option>
     </mp-toolbar-select>
 
+    <mp-toolbar-select name="Asn" label='@L["Archive number"]' value="@Model.Asn">
+        <option value="all">@L["All"]</option>
+        <option value="with">@L["With a number"]</option>
+        <option value="without">@L["Without a number"]</option>
+    </mp-toolbar-select>
+
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="added">@L["Recently added"]</option>
         <option value="newest">@L["Document date"]</option>
         <option value="oldest">@L["Oldest first"]</option>
         <option value="title">@L["Title"]</option>
+        <option value="asn">@L["Archive number"]</option>
     </mp-toolbar-select>
 </mp-toolbar>
 
@@ -82,6 +89,7 @@ else if (Model.ListView)
                     <th class="doc-table__optional doc-table__optional--party">@L["Correspondent"]</th>
                     <th class="doc-table__optional doc-table__optional--type">@L["Type"]</th>
                     <th class="doc-table__optional doc-table__optional--project">@L["Project"]</th>
+                    <th class="doc-table__optional doc-table__optional--asn">@L["Archive no."]</th>
                     <th>@L["Date"]</th>
                     <th class="is-actions @(Model.ShowingDeleted ? null : "doc-table__edit")"></th>
                 </tr>
@@ -136,7 +144,7 @@ else if (Model.ListView)
                             {
                                 <span class="badge badge--muted" title="@L["Structured invoice data (XRechnung / ZUGFeRD)"]">@L["E-invoice"]</span>
                             }
-                            <div class="doc-table__sub">@(d.Correspondent?.Name ?? "—")@(d.DocumentType != null ? " · " + d.DocumentType.Name : "")</div>
+                            <div class="doc-table__sub">@(d.Correspondent?.Name ?? "—")@(d.DocumentType != null ? " · " + d.DocumentType.Name : "")@(Model.AsnText(d) is { } subNumber ? " · " + subNumber : "")</div>
                             @if (rowTags.Count > 0)
                             {
                                 <div class="doc-table__tags">
@@ -161,6 +169,7 @@ else if (Model.ListView)
                                 <span>—</span>
                             }
                         </td>
+                        <td class="doc-table__optional doc-table__optional--asn">@(Model.AsnText(d) ?? "—")</td>
                         <td class="doc-table__date">@Fmt.Date(d.DocumentDate ?? d.CreateDate)</td>
                         <td class="is-actions @(Model.ShowingDeleted ? null : "doc-table__edit")">
                             @if (Model.ShowingDeleted)
@@ -275,6 +284,10 @@ else
                         {
                             <span class="badge badge--muted" title="@L["Structured invoice data (XRechnung / ZUGFeRD)"]">@L["E-invoice"]</span>
                         }
+                        @if (Model.AsnText(d) is { } cardNumber)
+                        {
+                            <span class="badge badge--muted" title='@L["Archive number"]'>@cardNumber</span>
+                        }
                         <span class="doc-card__date"><svg class="doc-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>@displayDate</span>
                     </div>
                     @if (d.Project != null)
@@ -300,6 +313,7 @@ else
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/Documents/Upload">@L["Add documents"]</a>
+    <a class="btn btn--secondary" href="/Documents/Labels">@L["Print labels"]</a>
 </div>
 
 <mp-list-bar position="bottom" />

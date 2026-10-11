@@ -26,6 +26,10 @@
     {
         <span class="badge badge--muted">@L["Not analyzed yet"]</span>
     }
+    @if (row.ArchiveSerialNumber is long asn)
+    {
+        <span class="badge badge--muted" title='@L["Archive number"]'>@m.AsnText(asn)</span>
+    }
     @if (m.IsAdmin && m.AllOwners && row.OwnerName != null)
     {
         <span class="badge badge--muted">@row.OwnerName</span>

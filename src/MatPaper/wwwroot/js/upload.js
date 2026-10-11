@@ -98,7 +98,7 @@
         if (fillBar) { fillBar.style.width = pct + "%"; }
     }
 
-    function setStatus(holder, status, text, href, linkText) {
+    function setStatus(holder, status, text, href, linkText, note) {
         holder.status = status;
         holder.row.className = "upload-item upload-item--" + status;
         var cell = holder.row.querySelector(".upload-item__status");
@@ -111,6 +111,13 @@
             link.href = href; link.target = "_blank"; link.rel = "noopener";
             link.textContent = linkText || t("show-existing", "Show existing document");
             cell.appendChild(link);
+        }
+        // what the server has to say about the archive numbers (read from a sticker on the paper)
+        if (note) {
+            var line = document.createElement("span");
+            line.className = "upload-note";
+            line.textContent = note;
+            cell.appendChild(line);
         }
     }
 
@@ -200,13 +207,13 @@
                         if (res.failed > 0) { parts.push(fill(t("summary-failed", "{0} failed"), res.failed)); }
                         var text = parts.join(", ");
                         if (res.status === "created" || res.status === "duplicate") {
-                            setStatus(holder, res.status, text, res.status === "duplicate" && res.id ? "/Documents/Edit?id=" + encodeURIComponent(res.id) : null);
+                            setStatus(holder, res.status, text, res.status === "duplicate" && res.id ? "/Documents/Edit?id=" + encodeURIComponent(res.id) : null, null, res.note);
                         } else {
                             setStatus(holder, "failed", res.message || text || t("failed", "Failed"));
                         }
                     } else if (res.status === "created") {
                         holder.docs.created = 1;
-                        setStatus(holder, "created", t("added", "Added"));
+                        setStatus(holder, "created", t("added", "Added"), null, null, res.note);
                     } else if (res.status === "duplicate") {
                         holder.docs.duplicates = 1;
                         setStatus(holder, "duplicate", t("duplicate", "Duplicate — skipped"),

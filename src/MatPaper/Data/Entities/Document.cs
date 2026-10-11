@@ -45,6 +45,12 @@ public class Document : BaseEntity
     public long FileSize { get; set; }
     public string? ContentHash { get; set; }
 
+    /// <summary>
+    /// The number of the paper original (archive serial number, ASN): a sticker with this number is on the
+    /// sheet in the folder, and the document is found there by it. Unique among the documents that are not deleted.
+    /// </summary>
+    public long? ArchiveSerialNumber { get; set; }
+
     /// <summary>The user who owns this document. Null = ownerless (visible to admins only).</summary>
     public long? OwnerId { get; set; }
 

@@ -22,6 +22,9 @@ public sealed record IngestItem(string Label, IngestResult Result);
 /// </summary>
 public sealed class IngestBatch
 {
+    /// <summary>The reason given for a file that holds nothing but separator sheets (a key of the translations).</summary>
+    public const string OnlySeparatorSheets = "The file contains only separator sheets.";
+
     private readonly List<IngestItem> _items = new();
     private readonly List<(string Label, string Reason)> _failed = new();
     private readonly List<(string Label, string Reason)> _skipped = new();

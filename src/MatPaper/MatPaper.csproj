@@ -34,6 +34,8 @@
     <PackageReference Include="ZUGFeRD-csharp" Version="*" />
     <!-- In-app SMB/CIFS client for network-share import (no host mount needed) -->
     <PackageReference Include="SMBLibrary" Version="1.*" />
+    <!-- Archive serial numbers: read barcodes / QR codes (separator sheets, labels) and write them -->
+    <PackageReference Include="ZXing.Net" Version="0.16.*" />
   </ItemGroup>
 
 </Project>

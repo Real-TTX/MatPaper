@@ -26,7 +26,7 @@
     {
         <span class="badge badge--muted">@L["Not analyzed yet"]</span>
     }
-    @if (row.ArchiveSerialNumber is long asn)
+    @if (m.AsnEnabled && row.ArchiveSerialNumber is long asn)
     {
         <span class="badge badge--muted" title='@L["Archive number"]'>@m.AsnText(asn)</span>
     }

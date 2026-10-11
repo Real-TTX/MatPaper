@@ -135,8 +135,9 @@ sign-in page.
   — with a password / app password or **OAuth** (Gmail, Office 365, Google Drive, OneDrive) —
   and reused by storage locations and import tasks
 - Full-text search over title and OCR text
-- **Archive numbers**: labels with QR codes / bar codes to stick on the paper originals, read again when a
-  scan is added; separator sheets cut a scanned stack into documents; a stamp copy of a PDF with its number
+- **Archive numbers** (optional, System → Archive numbers): labels with QR codes / bar codes to stick on the paper
+  originals, read again when a scan is added or with the phone camera; separator sheets cut a scanned stack into
+  documents; a stamp copy of a PDF with its number
 - **E-invoices** (XRechnung, ZUGFeRD, Factur-X): amounts, due date, VAT ID, IBAN and buyer are read from
   the structured data; a bare XRechnung XML becomes a readable PDF with the XML kept next to it
 - **Metadata files** (`.matpaper.json`) next to the documents, so an archive can be read back into a
@@ -150,31 +151,39 @@ See [PLAN.md](PLAN.md) for the full roadmap and phase breakdown.
 
 ## Archive numbers, labels and separator sheets
 
-Paper originals get a number that finds them again in the folder (an *archive serial number*, ASN), as in Paperless:
+Paper originals get a number that finds them again in the folder (an *archive serial number*, ASN), as in Paperless.
+It is a feature that is **off until you switch it on**: *System → Archive numbers → General → Use archive numbers*.
+Switched off, nothing of it shows anywhere in the app and no file is searched for codes. The page has the tabs
+*General* (the letters in front of the number, its digits, a slower and more thorough search for small labels),
+*Labels* and *Separator sheets*.
 
 - **Archive number** — every document can have one, unique among the documents that are not deleted.
-  It is set on the document's page (with a button for the next free number), and is shown in the lists,
-  searchable (`ASN 17`, `asn17` or just `17`), filterable (with / without a number) and sortable.
-- **Labels** (Documents → *Print labels*): a PDF with sticker sheets (Avery L4731 / L7651 / L7160 / L7163, an
-  own grid, or one label per page for a label printer), each with a QR code or Code 128 bar code of
-  `ASN00017` and the number as text. The numbers continue where the last sheet ended; a test print with
-  frames on plain paper uses up no numbers.
+  It is set on the document's page (a button gives the next free number, one reads it from the document, one
+  scans the label with the camera), and is shown in the lists and the inbox, searchable (`ASN 17`, `asn17` or just
+  `17`), filterable (with / without a number, from – to) and sortable (up or down).
+- **Labels** (tab *Labels*): a PDF with sticker sheets (Avery L4731 / L7651 / L7160 / L7163, an own grid, or one
+  label per page for a label printer), each with a QR code or Code 128 bar code of `ASN00017` and the number as
+  text. The numbers continue where the last sheet ended; a test print with frames on plain paper uses up no numbers.
 - **Reading them**: every PDF and image that is added (upload, drop, camera, folder / mail / SMB import, also
   inside ZIP archives) is searched for codes. A label on the first sheet gives the document its number; a
   number that another document has is not given twice — the document is filed without it and the
   upload / import log says so.
-- **Separator sheets**: scan a whole stack in one go with a separator sheet (code `PATCHT`, the Paperless
-  value — its own sheets work as well) between the documents. MatPaper cuts the scan at the sheets, adds
-  every document on its own (with the number on its first sheet) and leaves the sheets out.
+- **Separator sheets** (tab *Separator sheets*): scan a whole stack in one go with a separator sheet (code `PATCHT`,
+  the Paperless value — its own sheets work as well) between the documents. MatPaper cuts the scan at the sheets,
+  adds every document on its own (with the number on its first sheet) and leaves the sheets out.
+- **Scanning a label with the phone**: the barcode icon in the header (and on the document page, beside the
+  field) opens the camera; a label in the frame opens the document that has the number. The picture is read on
+  the server by the same reader that reads uploaded files, so it works on every phone — also where the browser
+  has no barcode detection (Safari). Without a live camera (no HTTPS, no permission) a photo taken with the
+  camera app does the same. A USB bar code scanner needs nothing: it types the code into the search field.
 - **In file names**: the placeholder `{Asn}` in the path template of a storage location (or of an export rule) becomes
   `ASN00017` and nothing for a document without a number. Giving or taking away a number moves the file like any
   other change of the metadata (`{Asn} {Title}{Ext}`, `{Year}/{Asn} - {Title}{Ext}`).
 - **Stamp copy** (document page → *Print with archive number*): a copy of the PDF with the number as a
   code and as text in a corner, to print and file; the stored document is not touched.
 
-System → Settings → *Archive numbers and barcodes* switches reading on or off and sets the letters
-in front of the number (`ASN`), its digits, the separator text and a slower, more thorough search for
-small labels. A 9 mm label is read reliably from 300 dpi on; separator sheets from 100 dpi.
+A small label (under 15 mm) is read reliably when the paper is scanned at 300 dpi or more; separator sheets from
+100 dpi.
 
 ## Data
 

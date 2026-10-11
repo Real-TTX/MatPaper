@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using MatPaper.Configuration;
 using MatPaper.Services;
 using Microsoft.AspNetCore.Localization;
@@ -57,14 +56,6 @@ public class IndexModel : PageModel
         public string? ThemeMode { get; set; }
         public string? ThemeScheme { get; set; }
         public string? ThemeAccent { get; set; }
-
-        // archive numbers and barcodes
-        public bool BarcodesEnabled { get; set; } = true;
-        public string? AsnPrefix { get; set; }
-        public int AsnDigits { get; set; } = 5;
-        public bool SplitAtSeparators { get; set; } = true;
-        public string? SeparatorText { get; set; }
-        public bool HighResolution { get; set; }
     }
 
     public List<SelectListItem> TimeZoneOptions { get; private set; } = new();
@@ -99,12 +90,6 @@ public class IndexModel : PageModel
             ThemeMode = _config.Display?.ThemeMode,
             ThemeScheme = _config.Display?.ThemeScheme,
             ThemeAccent = _config.Display?.ThemeAccent,
-            BarcodesEnabled = (_config.Barcodes ?? new BarcodeConfig()).Enabled,
-            AsnPrefix = (_config.Barcodes ?? new BarcodeConfig()).AsnPrefix,
-            AsnDigits = (_config.Barcodes ?? new BarcodeConfig()).AsnDigits,
-            SplitAtSeparators = (_config.Barcodes ?? new BarcodeConfig()).SplitAtSeparators,
-            SeparatorText = (_config.Barcodes ?? new BarcodeConfig()).SeparatorText,
-            HighResolution = (_config.Barcodes ?? new BarcodeConfig()).HighResolution,
         };
         BuildOptions();
     }
@@ -131,25 +116,6 @@ public class IndexModel : PageModel
             ModelState.AddModelError("Input.Culture", _l["Choose a language from the list."]);
         }
 
-        var asnPrefix = (Input.AsnPrefix ?? string.Empty).Trim();
-        var separatorText = (Input.SeparatorText ?? string.Empty).Trim();
-        if (!Regex.IsMatch(asnPrefix, "^[A-Za-z]{1,8}$"))
-        {
-            ModelState.AddModelError("Input.AsnPrefix", _l["Use 1 to 8 letters."]);
-        }
-        if (Input.AsnDigits is < 1 or > 12)
-        {
-            ModelState.AddModelError("Input.AsnDigits", _l["Enter a number between 1 and 12."]);
-        }
-        if (separatorText.Length is < 1 or > 32)
-        {
-            ModelState.AddModelError("Input.SeparatorText", _l["Enter 1 to 32 characters."]);
-        }
-        else if (ModelState.IsValid && new BarcodeConfig { AsnPrefix = asnPrefix }.ToOptions().ParseAsn(separatorText) is not null)
-        {
-            ModelState.AddModelError("Input.SeparatorText", _l["The separator text must differ from a label: it would be read as an archive number."]);
-        }
-
         if (!ModelState.IsValid)
         {
             BuildOptions();
@@ -161,13 +127,6 @@ public class IndexModel : PageModel
         var updated = AppConfigLoader.Clone(_config);
         updated.OAuth ??= new OAuthConfig();
         updated.Display ??= new DisplayConfig();
-        updated.Barcodes ??= new BarcodeConfig();
-        updated.Barcodes.Enabled = Input.BarcodesEnabled;
-        updated.Barcodes.AsnPrefix = asnPrefix;
-        updated.Barcodes.AsnDigits = Input.AsnDigits;
-        updated.Barcodes.SplitAtSeparators = Input.SplitAtSeparators;
-        updated.Barcodes.SeparatorText = separatorText;
-        updated.Barcodes.HighResolution = Input.HighResolution;
         updated.OAuth.PublicBaseUrl = publicUrl;
         updated.Display.TimeZone = timeZone!;
         updated.Display.Culture = culture!.Name;
@@ -190,13 +149,6 @@ public class IndexModel : PageModel
 
         _config.OAuth ??= new OAuthConfig();
         _config.Display ??= new DisplayConfig();
-        _config.Barcodes ??= new BarcodeConfig();
-        _config.Barcodes.Enabled = Input.BarcodesEnabled;
-        _config.Barcodes.AsnPrefix = asnPrefix;
-        _config.Barcodes.AsnDigits = Input.AsnDigits;
-        _config.Barcodes.SplitAtSeparators = Input.SplitAtSeparators;
-        _config.Barcodes.SeparatorText = separatorText;
-        _config.Barcodes.HighResolution = Input.HighResolution;
         _config.OAuth.PublicBaseUrl = publicUrl;
         _config.Display.TimeZone = timeZone!;
         _config.Display.Culture = culture.Name;

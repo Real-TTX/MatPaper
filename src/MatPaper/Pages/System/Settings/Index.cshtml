@@ -59,21 +59,6 @@
                   help='@L["Used for the sign-in page and for users without their own choice."]' />
     </section>
 
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Archive numbers and barcodes"]</h2>
-        <p class="form-section__hint">@L["Labels with archive numbers (see Documents - Print labels) and separator sheets are read from every PDF and image that is added: the number goes to the document, and a stack of papers is cut at the separator sheets."]</p>
-
-        <mp-field asp-for="Input.BarcodesEnabled" kind="checkbox" label='@L["Read barcodes and QR codes on incoming documents"]' />
-        <mp-field asp-for="Input.AsnPrefix" label='@L["Letters before the number"]' autocomplete="off"
-                  help='@L["A label says ASN00017 with the letters ASN. Labels that were printed with other letters are not recognised anymore after a change."]' />
-        <mp-field asp-for="Input.AsnDigits" kind="number" label='@L["Digits of the number"]'
-                  help='@L["The number is filled up with zeros: 5 digits give 00017."]' />
-        <mp-field asp-for="Input.SplitAtSeparators" kind="checkbox" label='@L["Cut a scan at separator sheets"]' />
-        <mp-field asp-for="Input.SeparatorText" label='@L["Text of the separator code"]' autocomplete="off"
-                  help='@L["PATCHT is what Paperless uses; its separator sheets work here, too."]' />
-        <mp-field asp-for="Input.HighResolution" kind="checkbox" label='@L["Look for small labels more thoroughly (slower)"]' />
-    </section>
-
     <mp-button-row>
         <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
         <mp-button variant="secondary" href="/System">@L["Back"]</mp-button>

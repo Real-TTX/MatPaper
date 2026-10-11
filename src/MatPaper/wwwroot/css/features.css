@@ -1650,7 +1650,8 @@ html.has-scanner, html.has-scanner body { background: #000; }
 @media (max-width: 520px) { .type-tiles--two { grid-template-columns: 1fr; } }
 
 /* The rules tab has its own buttons; the save bar belongs to the form tabs. */
-[data-tabs][data-active-tab="rules"] > form .btn-row { display: none; }
+[data-tabs][data-active-tab="rules"] > form .btn-row,
+[data-tabs][data-active-tab="labels"] > form .btn-row { display: none; }
 
 .wizard[data-mode="sections"] .wizard__step:not(.is-active) .wizard__label { display: inline !important; }
 .wizard[data-mode="sections"] .wizard__step:not(.is-active) { padding: 0.65rem 1rem !important; }
@@ -2158,6 +2159,7 @@ a.doc-table__name:hover { color: var(--color-primary); }
 .asn-field { display: flex; gap: 0.5rem; align-items: stretch; }
 .asn-field .form-control { flex: 1 1 8rem; min-width: 0; }
 .asn-field .btn { flex: 0 0 auto; white-space: nowrap; }
+.asn-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
 .asn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.85rem; }
 
@@ -2180,8 +2182,7 @@ a.doc-table__name:hover { color: var(--color-primary); }
 .labels-more > :not(summary) { margin-top: 0.6rem; }
 
 @media (max-width: 600px) {
-    .asn-field { flex-wrap: wrap; }
-    .asn-field .btn { flex: 1 1 100%; }
+    .asn-actions .btn { flex: 1 1 100%; }
     .doc-stamp__form .form-row, .doc-stamp__form .form-control { width: 100%; }
     .doc-stamp__form .btn { width: 100%; }
 }
@@ -2189,3 +2190,35 @@ a.doc-table__name:hover { color: var(--color-primary); }
 /* a link in a help text is still a link */
 .form-help a { color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
 .form-section > .form-help { margin-bottom: 0.85rem; }
+
+/* ---------- Scanning a label (code-scan.js; the frame and bars are the document scanner's) ---------- */
+.header-code {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; margin-left: auto; padding: 0; border-radius: 50%;
+    border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); cursor: pointer;
+}
+.header-code:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.header-code svg { width: 22px; height: 22px; }
+@media (max-width: 768px) { .header-code ~ .header-add { margin-left: 0.5rem; } }
+
+.btn--icon { padding-left: 0.7rem; padding-right: 0.7rem; }
+.btn--icon svg { width: 20px; height: 20px; display: block; }
+
+.code-scan__stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; background: #000; overflow: hidden; }
+.code-scan__frame { position: relative; overflow: hidden; background: #111; }
+.code-scan__frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.code-scan__reticle {
+    position: absolute; left: 15%; top: 25%; width: 70%; height: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.92); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4); pointer-events: none;
+}
+.code-scan__status {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 1.4rem 1rem 0.8rem; text-align: center; font-size: 0.95rem;
+    color: #fff; background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+.code-scan__status:empty { display: none; }
+.code-scan__status.is-warn { color: #ffd54a; }
+.code-scan__status.is-ok { color: #8be28b; font-weight: 600; }
+
+/* the fields that wait for a switch sit a little apart from it; the settings' buttons keep their distance from the print panel below */
+.form-section > [data-show-when-field] { margin-top: 1rem; }
+[data-tabs] > form > .btn-row { margin-bottom: 1.15rem; }

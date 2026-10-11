@@ -1120,9 +1120,6 @@
   <data name="Enter a number between 1 and 12." xml:space="preserve"><value>Zahl zwischen 1 und 12 eingeben.</value></data>
   <data name="Enter 1 to 32 characters." xml:space="preserve"><value>1 bis 32 Zeichen eingeben.</value></data>
   <data name="The separator text must differ from a label: it would be read as an archive number." xml:space="preserve"><value>Der Text muss sich von einem Etikett unterscheiden: Er würde als Archivnummer gelesen.</value></data>
-  <data name="Archive numbers and barcodes" xml:space="preserve"><value>Archivnummern und Barcodes</value></data>
-  <data name="Labels with archive numbers (see Documents - Print labels) and separator sheets are read from every PDF and image that is added: the number goes to the document, and a stack of papers is cut at the separator sheets." xml:space="preserve"><value>Etiketten mit Archivnummern (siehe Dokumente – Etiketten drucken) und Trennblätter werden in jedem neuen PDF und Bild erkannt: Die Nummer geht an das Dokument, und ein Stapel Papier wird an den Trennblättern geteilt.</value></data>
-  <data name="Read barcodes and QR codes on incoming documents" xml:space="preserve"><value>Barcodes und QR-Codes auf neuen Dokumenten lesen</value></data>
   <data name="Letters before the number" xml:space="preserve"><value>Buchstaben vor der Nummer</value></data>
   <data name="A label says ASN00017 with the letters ASN. Labels that were printed with other letters are not recognised anymore after a change." xml:space="preserve"><value>Ein Etikett sagt ASN00017 mit den Buchstaben ASN. Etiketten, die mit anderen Buchstaben gedruckt wurden, werden nach einer Änderung nicht mehr erkannt.</value></data>
   <data name="Digits of the number" xml:space="preserve"><value>Stellen der Nummer</value></data>
@@ -1136,8 +1133,6 @@
   <data name="Archive number {0} belongs to another document - filed without a number" xml:space="preserve"><value>Archivnummer {0} gehört schon einem anderen Dokument – ohne Nummer abgelegt</value></data>
   <data name="The file contains only separator sheets." xml:space="preserve"><value>Die Datei enthält nur Trennblätter.</value></data>
   <data name="The document could not be stored." xml:space="preserve"><value>Das Dokument konnte nicht gespeichert werden.</value></data>
-  <data name="A label with an archive number on the paper is read, and a stack of papers scanned in one go is cut at separator sheets." xml:space="preserve"><value>Ein Etikett mit Archivnummer auf dem Papier wird gelesen, und ein in einem Durchgang gescannter Stapel wird an Trennblättern geteilt.</value></data>
-  <data name="Print labels and separator sheets" xml:space="preserve"><value>Etiketten und Trennblätter drucken</value></data>
   <data name="Archive number" xml:space="preserve"><value>Archivnummer</value></data>
   <data name="Next free number" xml:space="preserve"><value>Nächste freie Nummer</value></data>
   <data name="The number on the sticker of the paper original: it finds the document in the folder." xml:space="preserve"><value>Die Nummer auf dem Etikett des Papieroriginals: Damit findest du das Papier im Ordner wieder.</value></data>
@@ -1160,8 +1155,6 @@
   <data name="This document has no archive number yet." xml:space="preserve"><value>Dieses Dokument hat noch keine Archivnummer.</value></data>
   <data name="No free archive number could be given. Please try again." xml:space="preserve"><value>Es konnte keine freie Archivnummer vergeben werden. Bitte erneut versuchen.</value></data>
   <data name="The number could not be put on this PDF (it may be protected or damaged)." xml:space="preserve"><value>Die Nummer konnte nicht auf dieses PDF gesetzt werden (es ist evtl. geschützt oder beschädigt).</value></data>
-  <data name="Documents / Labels" xml:space="preserve"><value>Dokumente / Etiketten</value></data>
-  <data name="Reading barcodes is switched off in the settings: a number on a label is not recognised when a scan is added." xml:space="preserve"><value>Das Lesen von Barcodes ist in den Einstellungen ausgeschaltet: Eine Nummer auf einem Etikett wird beim Hinzufügen eines Scans nicht erkannt.</value></data>
   <data name="Labels with archive numbers" xml:space="preserve"><value>Etiketten mit Archivnummern</value></data>
   <data name="Print the labels on sticker sheets and stick one on every paper original. When the paper is scanned, MatPaper reads the number and gives it to the document - and you find the paper again by its number." xml:space="preserve"><value>Drucke die Etiketten auf Klebeetiketten-Bögen und klebe auf jedes Papieroriginal eines. Beim Scannen liest MatPaper die Nummer und gibt sie dem Dokument – und du findest das Papier an seiner Nummer wieder.</value></data>
   <data name="Printed so far" xml:space="preserve"><value>Bisher gedruckt bis</value></data>
@@ -1201,7 +1194,6 @@
   <data name="With a number" xml:space="preserve"><value>Mit Nummer</value></data>
   <data name="Without a number" xml:space="preserve"><value>Ohne Nummer</value></data>
   <data name="Archive no." xml:space="preserve"><value>Archivnr.</value></data>
-  <data name="Print labels" xml:space="preserve"><value>Etiketten drucken</value></data>
   <data name="Its archive number {0} belongs to another document now: it is back without a number." xml:space="preserve"><value>Seine Archivnummer {0} gehört jetzt einem anderen Dokument: Es ist ohne Nummer zurück.</value></data>
   <data name="Labels of the first sheet that are used already: a sheet that was started is filled up." xml:space="preserve"><value>Etiketten des ersten Bogens, die schon benutzt sind: Ein angefangener Bogen wird aufgefüllt.</value></data>
   <data name="Already used (first sheet)" xml:space="preserve"><value>Schon benutzt (1. Bogen)</value></data>
@@ -1213,4 +1205,26 @@
   <data name="Read from document" xml:space="preserve"><value>Vom Dokument lesen</value></data>
   <data name="Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more." xml:space="preserve"><value>Kleine Etiketten (unter 15 mm) werden beim Scannen zuverlässig ab 300 dpi gelesen.</value></data>
   <data name="Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} is the archive number as on the label (ASN00017) and empty for a document without one." xml:space="preserve"><value>Platzhalter: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} ist die Archivnummer wie auf dem Etikett (ASN00017) und leer bei einem Dokument ohne Nummer.</value></data>
+  <data name="System / Archive numbers" xml:space="preserve"><value>System / Archivnummern</value></data>
+  <data name="Archive numbers" xml:space="preserve"><value>Archivnummern</value></data>
+  <data name="Labels, separator sheets and barcodes for the paper originals" xml:space="preserve"><value>Etiketten, Trennblätter und Barcodes für die Papieroriginale</value></data>
+  <data name="An archive number marks a paper original: a label with the number is stuck on the paper and read again when the paper is scanned. So you find the paper in the folder by its number, and the document on the screen. Switched off, nothing of it shows anywhere in the app." xml:space="preserve"><value>Eine Archivnummer kennzeichnet ein Papieroriginal: Ein Etikett mit der Nummer wird auf das Papier geklebt und beim Scannen wieder gelesen. So findest du das Papier im Ordner an seiner Nummer und das Dokument am Bildschirm. Ausgeschaltet zeigt sich davon nichts in der App.</value></data>
+  <data name="Use archive numbers" xml:space="preserve"><value>Archivnummern verwenden</value></data>
+  <data name="Turns everything on: the number on a document, labels and separator sheets, reading codes when a file is added, and scanning a label with the camera." xml:space="preserve"><value>Schaltet alles ein: die Nummer am Dokument, Etiketten und Trennblätter, das Lesen von Codes beim Hinzufügen und das Scannen eines Etiketts mit der Kamera.</value></data>
+  <data name="After saving, the tabs Labels and Separator sheets appear here." xml:space="preserve"><value>Nach dem Speichern erscheinen hier die Tabs Etiketten und Trennblätter.</value></data>
+  <data name="Labels" xml:space="preserve"><value>Etiketten</value></data>
+  <data name="Print separator sheets" xml:space="preserve"><value>Trennblätter drucken</value></data>
+  <data name="Scan a label" xml:space="preserve"><value>Etikett scannen</value></data>
+  <data name="Hold the label in the frame" xml:space="preserve"><value>Etikett in den Rahmen halten</value></data>
+  <data name="Take a photo" xml:space="preserve"><value>Foto aufnehmen</value></data>
+  <data name="The camera is not available here (it needs HTTPS). Take a photo of the label instead." xml:space="preserve"><value>Die Kamera ist hier nicht verfügbar (sie braucht HTTPS). Mach stattdessen ein Foto vom Etikett.</value></data>
+  <data name="No document has the number {0}." xml:space="preserve"><value>Kein Dokument hat die Nummer {0}.</value></data>
+  <data name="Read &quot;{0}&quot; - that is no archive number." xml:space="preserve"><value>„{0}“ gelesen – das ist keine Archivnummer.</value></data>
+  <data name="The code could not be read. Please try again." xml:space="preserve"><value>Der Code konnte nicht gelesen werden. Bitte noch einmal versuchen.</value></data>
+  <data name="Reading …" xml:space="preserve"><value>Wird gelesen …</value></data>
+  <data name="No code found in the photo. Try again, closer to the label." xml:space="preserve"><value>Im Foto wurde kein Code gefunden. Versuche es noch einmal, näher am Etikett.</value></data>
+  <data name="Scan the label with the camera" xml:space="preserve"><value>Etikett mit der Kamera scannen</value></data>
+  <data name="Archive number from" xml:space="preserve"><value>Archivnummer ab</value></data>
+  <data name="Archive number to" xml:space="preserve"><value>Archivnummer bis</value></data>
+  <data name="Archive number (highest first)" xml:space="preserve"><value>Archivnummer (höchste zuerst)</value></data>
 </root>

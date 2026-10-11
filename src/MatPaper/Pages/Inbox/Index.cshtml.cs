@@ -54,6 +54,9 @@ public class IndexModel : PageModel
         _l = l;
     }
 
+    /// <summary>The archive number feature is switched on (System, Archive numbers).</summary>
+    public bool AsnEnabled => _config.ArchiveNumbersEnabled;
+
     /// <summary>An archive number as it is written on a label (ASN 00017).</summary>
     public string AsnText(long number) => _config.ResolveBarcodeOptions().AsnReadable(number);
 
@@ -602,10 +605,14 @@ public class IndexModel : PageModel
         if (!string.IsNullOrWhiteSpace(Search))
         {
             var pattern = $"%{Search.Trim()}%";
+            // a number (ASN 00017, asn17, or just 17) finds the paper as well
+            var options = _config.ResolveBarcodeOptions();
+            var asn = !options.Enabled ? null : options.ParseAsn(Search.Trim()) ?? (long.TryParse(Search.Trim(), out var plain) && plain > 0 ? plain : (long?)null);
             query = query.Where(d =>
                 EF.Functions.ILike(d.Title, pattern) ||
                 EF.Functions.ILike(d.OriginalFileName, pattern) ||
-                (d.Correspondent != null && EF.Functions.ILike(d.Correspondent.Name, pattern)));
+                (d.Correspondent != null && EF.Functions.ILike(d.Correspondent.Name, pattern)) ||
+                (asn != null && d.ArchiveSerialNumber == asn));
         }
 
         if (Origin is DocumentOrigin origin)

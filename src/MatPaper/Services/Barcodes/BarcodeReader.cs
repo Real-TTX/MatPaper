@@ -160,6 +160,23 @@ public static class BarcodeReader
         return null;
     }
 
+    /// <summary>
+    /// The codes in one picture - a frame of a camera, a photo of a label: every format that is read here, any
+    /// rotation. Nothing found (or a picture that cannot be read) is an empty list; this never throws.
+    /// </summary>
+    public static IReadOnlyList<string> DecodeImage(byte[] image)
+    {
+        try
+        {
+            using var bitmap = SKBitmap.Decode(image);
+            return bitmap is null ? Array.Empty<string>() : DecodeBitmap(bitmap, tryHarder: true).Distinct().ToList();
+        }
+        catch (Exception)
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     private static BarcodeScan ScanPdf(byte[] pdf, BarcodeOptions options, CancellationToken ct)
     {
         int pageCount;

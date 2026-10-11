@@ -756,7 +756,8 @@
     document.addEventListener("click", function (event) {
         var button = event.target.closest && event.target.closest("[data-asn-next]");
         if (!button) { return; }
-        var input = button.parentElement && button.parentElement.querySelector("input");
+        var row = button.closest ? button.closest(".form-row") : null;
+        var input = row && row.querySelector("input");
         if (!input) { return; }
         input.value = button.getAttribute("data-asn-next");
         input.dispatchEvent(new Event("input", { bubbles: true }));

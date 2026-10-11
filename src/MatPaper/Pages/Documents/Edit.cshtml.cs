@@ -108,6 +108,9 @@ public class EditModel : PageModel
     public List<TagOption> TagOptions { get; private set; } = new();
     public List<SelectListItem> TagItems { get; private set; } = new();
 
+    /// <summary>The archive number feature is switched on (System, Archive numbers): only then the page has anything of it.</summary>
+    public bool AsnEnabled => _config.ArchiveNumbersEnabled;
+
     /// <summary>The number the "Next free number" button puts into the field (only for those who may edit).</summary>
     public long NextFreeNumber { get; private set; }
 
@@ -198,12 +201,15 @@ public class EditModel : PageModel
         ShareLinks = await _shareLinks.ListForDocumentAsync(Id, HttpContext.RequestAborted);
         ShareBaseUrl = $"{Request.Scheme}://{Request.Host}";
 
-        ArchiveNumberText = document.ArchiveSerialNumber is long number ? _config.ResolveBarcodeOptions().AsnReadable(number) : null;
-        CanStamp = string.Equals(Path.GetExtension(document.OriginalFileName), ".pdf", StringComparison.OrdinalIgnoreCase);
-        CanReadNumber = BarcodeReader.Supports(Path.GetExtension(document.OriginalFileName));
-        if (CanEdit)
+        if (AsnEnabled)
         {
-            NextFreeNumber = await _numbers.NextFreeAsync(HttpContext.RequestAborted);
+            ArchiveNumberText = document.ArchiveSerialNumber is long number ? _config.ResolveBarcodeOptions().AsnReadable(number) : null;
+            CanStamp = string.Equals(Path.GetExtension(document.OriginalFileName), ".pdf", StringComparison.OrdinalIgnoreCase);
+            CanReadNumber = BarcodeReader.Supports(Path.GetExtension(document.OriginalFileName));
+            if (CanEdit)
+            {
+                NextFreeNumber = await _numbers.NextFreeAsync(HttpContext.RequestAborted);
+            }
         }
     }
 
@@ -469,8 +475,10 @@ public class EditModel : PageModel
             ModelState.AddModelError("Input.StorageLocationId", _l["A storage location is required."]);
         }
 
-        // The archive number is the number of one document: a positive number nobody else has.
-        if (Input.ArchiveSerialNumber is long wantedNumber && wantedNumber != document.ArchiveSerialNumber)
+        // The archive number is the number of one document: a positive number nobody else has. (Switched off, the
+        // page has no such field and the number the document has stays as it is.)
+        var archiveNumber = AsnEnabled ? Input.ArchiveSerialNumber : document.ArchiveSerialNumber;
+        if (AsnEnabled && Input.ArchiveSerialNumber is long wantedNumber && wantedNumber != document.ArchiveSerialNumber)
         {
             await ValidateArchiveNumberAsync(wantedNumber, document.Id);
         }
@@ -564,7 +572,7 @@ public class EditModel : PageModel
             {
                 var effectiveDate = Input.DocumentDate ?? document.FileModifiedUtc ?? document.CreateDate;
                 var desiredRelativePath = _storage.BuildRelativePath(
-                    newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName, document.Token, Input.ArchiveSerialNumber);
+                    newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName, document.Token, archiveNumber);
 
                 try
                 {
@@ -600,7 +608,7 @@ public class EditModel : PageModel
         document.CorrespondentId = Input.CorrespondentId;
         document.ProjectId = Input.ProjectId;
         document.StorageLocationId = Input.StorageLocationId;
-        document.ArchiveSerialNumber = Input.ArchiveSerialNumber;
+        document.ArchiveSerialNumber = archiveNumber;
         document.UpdateState = UpdateState.Updated;
         document.UpdateDate = now;
         document.UpdateUserId = _currentUser.UserId;
@@ -676,7 +684,7 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnPostReadNumberAsync()
     {
         ViewData["Breadcrumb"] = "Documents / Edit";
-        if (Id == 0)
+        if (Id == 0 || !AsnEnabled)
         {
             return NotFound();
         }

@@ -51,6 +51,11 @@ public class StampModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(Guid token, string? corner, string? kind, bool assign, CancellationToken ct)
     {
+        if (!_config.ArchiveNumbersEnabled)
+        {
+            return NotFound();
+        }
+
         var document = await _db.Documents
             .Include(d => d.StorageLocation).ThenInclude(s => s!.Connection)
             .AccessibleTo(_currentUser)

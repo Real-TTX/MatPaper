@@ -70,7 +70,12 @@ public class OAuthConfig
 /// </summary>
 public class BarcodeConfig
 {
-    public bool Enabled { get; set; } = true;
+    /// <summary>
+    /// The archive number feature as a whole: the number on a document, labels and separator sheets, reading codes on
+    /// everything that is added, scanning a label with the camera. Off until someone turns it on (System, Archive
+    /// numbers); while it is off nothing of it shows in the app and no file is searched for codes.
+    /// </summary>
+    public bool Enabled { get; set; }
     public string AsnPrefix { get; set; } = "ASN";
     public int AsnDigits { get; set; } = 5;
     public bool SplitAtSeparators { get; set; } = true;
@@ -101,6 +106,10 @@ public class AppConfig
     public DisplayConfig Display { get; set; } = new();
     public OAuthConfig OAuth { get; set; } = new();
     public BarcodeConfig Barcodes { get; set; } = new();
+
+    /// <summary>True while the archive number feature is switched on.</summary>
+    [JsonIgnore]
+    public bool ArchiveNumbersEnabled => Barcodes?.Enabled ?? false;
 
     /// <summary>The barcode settings as the engine takes them (the defaults when app.json has none).</summary>
     public BarcodeOptions ResolveBarcodeOptions() => (Barcodes ?? new BarcodeConfig()).ToOptions();

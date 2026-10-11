@@ -53,18 +53,34 @@
         <option value="deleted">@L["Deleted"]</option>
     </mp-toolbar-select>
 
-    <mp-toolbar-select name="Asn" label='@L["Archive number"]' value="@Model.Asn">
-        <option value="all">@L["All"]</option>
-        <option value="with">@L["With a number"]</option>
-        <option value="without">@L["Without a number"]</option>
-    </mp-toolbar-select>
+    @if (Model.AsnEnabled)
+    {
+        <mp-toolbar-select name="Asn" label='@L["Archive number"]' value="@Model.Asn">
+            <option value="all">@L["All"]</option>
+            <option value="with">@L["With a number"]</option>
+            <option value="without">@L["Without a number"]</option>
+        </mp-toolbar-select>
+
+        <div class="toolbar__group toolbar__filter">
+            <label for="AsnFrom">@L["Archive number from"]</label>
+            <input class="form-control" type="number" min="1" step="1" inputmode="numeric" id="AsnFrom" name="AsnFrom" value="@Model.AsnFrom" />
+        </div>
+        <div class="toolbar__group toolbar__filter">
+            <label for="AsnTo">@L["Archive number to"]</label>
+            <input class="form-control" type="number" min="1" step="1" inputmode="numeric" id="AsnTo" name="AsnTo" value="@Model.AsnTo" />
+        </div>
+    }
 
     <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
         <option value="added">@L["Recently added"]</option>
         <option value="newest">@L["Document date"]</option>
         <option value="oldest">@L["Oldest first"]</option>
         <option value="title">@L["Title"]</option>
-        <option value="asn">@L["Archive number"]</option>
+        @if (Model.AsnEnabled)
+        {
+            <option value="asn">@L["Archive number"]</option>
+            <option value="asn_desc">@L["Archive number (highest first)"]</option>
+        }
     </mp-toolbar-select>
 </mp-toolbar>
 
@@ -89,7 +105,10 @@ else if (Model.ListView)
                     <th class="doc-table__optional doc-table__optional--party">@L["Correspondent"]</th>
                     <th class="doc-table__optional doc-table__optional--type">@L["Type"]</th>
                     <th class="doc-table__optional doc-table__optional--project">@L["Project"]</th>
-                    <th class="doc-table__optional doc-table__optional--asn">@L["Archive no."]</th>
+                    @if (Model.AsnEnabled)
+                    {
+                        <th class="doc-table__optional doc-table__optional--asn">@L["Archive no."]</th>
+                    }
                     <th>@L["Date"]</th>
                     <th class="is-actions @(Model.ShowingDeleted ? null : "doc-table__edit")"></th>
                 </tr>
@@ -169,7 +188,10 @@ else if (Model.ListView)
                                 <span>—</span>
                             }
                         </td>
-                        <td class="doc-table__optional doc-table__optional--asn">@(Model.AsnText(d) ?? "—")</td>
+                        @if (Model.AsnEnabled)
+                        {
+                            <td class="doc-table__optional doc-table__optional--asn">@(Model.AsnText(d) ?? "—")</td>
+                        }
                         <td class="doc-table__date">@Fmt.Date(d.DocumentDate ?? d.CreateDate)</td>
                         <td class="is-actions @(Model.ShowingDeleted ? null : "doc-table__edit")">
                             @if (Model.ShowingDeleted)
@@ -313,7 +335,6 @@ else
 
 <div class="list-actions">
     <a class="btn btn--primary" href="/Documents/Upload">@L["Add documents"]</a>
-    <a class="btn btn--secondary" href="/Documents/Labels">@L["Print labels"]</a>
 </div>
 
 <mp-list-bar position="bottom" />

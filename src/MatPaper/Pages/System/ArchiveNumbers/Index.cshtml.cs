@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using MatPaper.Configuration;
 using MatPaper.Services;
 using MatPaper.Services.Barcodes;
@@ -8,32 +9,49 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Net.Http.Headers;
 
-namespace MatPaper.Pages.Documents;
+namespace MatPaper.Pages.System.ArchiveNumbers;
 
 /// <summary>
-/// Sheets of labels with archive numbers (a QR code or bar code and the number) to print and stick on the papers, and
-/// separator sheets to put between the documents of a stack that is scanned in one go. The numbers continue where the
-/// last sheet ended, so no number is printed twice.
+/// The archive numbers (ASN) of the paper originals as a feature of its own: switched on or off here, with the way
+/// the number is written, the labels to stick on the papers and the separator sheets for a stack that is scanned in
+/// one go. While the feature is off nothing of it shows anywhere else in the app and no codes are read.
 /// </summary>
-public class LabelsModel : PageModel
+public class IndexModel : PageModel
 {
     private const string CustomFormat = "custom";
 
     private readonly ArchiveNumberService _numbers;
     private readonly AppConfig _config;
+    private readonly ILogger<IndexModel> _logger;
     private readonly IStringLocalizer<SharedResource> _l;
 
-    public LabelsModel(ArchiveNumberService numbers, AppConfig config, IStringLocalizer<SharedResource> l)
+    public IndexModel(ArchiveNumberService numbers, AppConfig config, ILogger<IndexModel> logger, IStringLocalizer<SharedResource> l)
     {
         _numbers = numbers;
         _config = config;
+        _logger = logger;
         _l = l;
     }
 
+    /// <summary>The settings (tab General and the settings of the tab Separator sheets).</summary>
     [BindProperty]
-    public InputModel Input { get; set; } = new();
+    public SetupModel Setup { get; set; } = new();
 
-    public class InputModel
+    /// <summary>What the labels and separator sheets are printed with.</summary>
+    [BindProperty]
+    public PrintModel Input { get; set; } = new();
+
+    public class SetupModel
+    {
+        public bool Enabled { get; set; }
+        public string? AsnPrefix { get; set; }
+        public int AsnDigits { get; set; } = 5;
+        public bool HighResolution { get; set; }
+        public bool SplitAtSeparators { get; set; } = true;
+        public string? SeparatorText { get; set; }
+    }
+
+    public class PrintModel
     {
         /// <summary>The id of a sheet in the list, or "custom".</summary>
         public string Format { get; set; } = "avery-l4731";
@@ -75,9 +93,11 @@ public class LabelsModel : PageModel
         public string SeparatorKind { get; set; } = "Qr";
     }
 
+    /// <summary>The feature as it is saved (the tabs Labels and Separator sheets exist only while it is on).</summary>
+    public bool Enabled { get; private set; }
+
     public long NextFree { get; private set; }
     public long LastPrinted { get; private set; }
-    public bool Enabled { get; private set; }
     public string SeparatorText { get; private set; } = string.Empty;
     public string ExampleText { get; private set; } = string.Empty;
 
@@ -92,12 +112,101 @@ public class LabelsModel : PageModel
     public async Task OnGetAsync(CancellationToken ct)
     {
         await FillAsync(ct);
+        var barcodes = _config.Barcodes ?? new BarcodeConfig();
+        Setup = new SetupModel
+        {
+            Enabled = barcodes.Enabled,
+            AsnPrefix = barcodes.AsnPrefix,
+            AsnDigits = barcodes.AsnDigits,
+            HighResolution = barcodes.HighResolution,
+            SplitAtSeparators = barcodes.SplitAtSeparators,
+            SeparatorText = barcodes.SeparatorText
+        };
         Input.Start = NextFree;
+    }
+
+    /// <summary>Saves the settings. Switched off, only the switch is saved: the other values stay as they were.</summary>
+    public async Task<IActionResult> OnPostSaveAsync(CancellationToken ct)
+    {
+        var prefix = (Setup.AsnPrefix ?? string.Empty).Trim();
+        var separatorText = (Setup.SeparatorText ?? string.Empty).Trim();
+
+        if (Setup.Enabled)
+        {
+            if (!Regex.IsMatch(prefix, "^[A-Za-z]{1,8}$"))
+            {
+                ModelState.AddModelError("Setup.AsnPrefix", _l["Use 1 to 8 letters."]);
+            }
+
+            if (Setup.AsnDigits is < 1 or > 12)
+            {
+                ModelState.AddModelError("Setup.AsnDigits", _l["Enter a number between 1 and 12."]);
+            }
+
+            if (separatorText.Length is < 1 or > 32)
+            {
+                ModelState.AddModelError("Setup.SeparatorText", _l["Enter 1 to 32 characters."]);
+            }
+            else if (ModelState.IsValid && new BarcodeConfig { AsnPrefix = prefix }.ToOptions().ParseAsn(separatorText) is not null)
+            {
+                ModelState.AddModelError("Setup.SeparatorText", _l["The separator text must differ from a label: it would be read as an archive number."]);
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await FillAsync(ct);
+            return Page();
+        }
+
+        // Validate + save a copy first; only touch the running app once the file is written.
+        var updated = AppConfigLoader.Clone(_config);
+        updated.Barcodes ??= new BarcodeConfig();
+        Apply(updated.Barcodes, prefix, separatorText);
+
+        try
+        {
+            AppConfigLoader.Save(AppInfo.DataDir, updated);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            var path = AppConfigLoader.ConfigPath(AppInfo.DataDir);
+            _logger.LogWarning(ex, "Could not write {ConfigPath}.", path);
+            ModelState.AddModelError(string.Empty, _l["The settings could not be saved: {0} is not writable. Nothing was changed.", path]);
+            await FillAsync(ct);
+            return Page();
+        }
+
+        _config.Barcodes ??= new BarcodeConfig();
+        Apply(_config.Barcodes, prefix, separatorText);
+
+        this.Notify(_l["Settings saved."].Value);
+        return RedirectToPage();
+    }
+
+    private void Apply(BarcodeConfig target, string prefix, string separatorText)
+    {
+        target.Enabled = Setup.Enabled;
+        if (!Setup.Enabled)
+        {
+            return;
+        }
+
+        target.AsnPrefix = prefix;
+        target.AsnDigits = Setup.AsnDigits;
+        target.HighResolution = Setup.HighResolution;
+        target.SplitAtSeparators = Setup.SplitAtSeparators;
+        target.SeparatorText = separatorText;
     }
 
     /// <summary>The sheets of labels as a PDF (shown in the browser, ready to print).</summary>
     public async Task<IActionResult> OnPostLabelsAsync(CancellationToken ct)
     {
+        if (!_config.ArchiveNumbersEnabled)
+        {
+            return NotFound();
+        }
+
         await FillAsync(ct);
         var options = _config.ResolveBarcodeOptions();
 
@@ -149,9 +258,12 @@ public class LabelsModel : PageModel
     /// <summary>Separator sheets as a PDF.</summary>
     public async Task<IActionResult> OnPostSeparatorsAsync(CancellationToken ct)
     {
-        await FillAsync(ct);
-        var options = _config.ResolveBarcodeOptions();
+        if (!_config.ArchiveNumbersEnabled)
+        {
+            return NotFound();
+        }
 
+        var options = _config.ResolveBarcodeOptions();
         var texts = new SeparatorTexts(
             _l["Separator sheet"].Value,
             _l["Scan stacks of papers in one go: put this sheet between two documents."].Value,
@@ -164,7 +276,7 @@ public class LabelsModel : PageModel
 
     private async Task FillAsync(CancellationToken ct)
     {
-        ViewData["Breadcrumb"] = "Documents / Labels";
+        ViewData["Breadcrumb"] = "System / Archive numbers";
         var options = _config.ResolveBarcodeOptions();
         Enabled = options.Enabled;
         SeparatorText = options.SeparatorText;
@@ -225,5 +337,4 @@ public class LabelsModel : PageModel
         Response.Headers.CacheControl = "no-store";
         return File(pdf, "application/pdf");
     }
-
 }

@@ -69,6 +69,13 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Asn { get; set; } = "all";
 
+    /// <summary>Only the documents whose archive number lies in this range (a binder holds the numbers 100 to 199).</summary>
+    [BindProperty(SupportsGet = true)]
+    public long? AsnFrom { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public long? AsnTo { get; set; }
+
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
@@ -92,9 +99,12 @@ public class IndexModel : PageModel
 
     public FilterChipBar Filters { get; private set; } = FilterChipBar.Empty;
 
-    /// <summary>The archive number of a document as it is written on its label (ASN 00017), or null when it has none.</summary>
+    /// <summary>The archive number feature is switched on (System, Archive numbers): only then the list shows anything of it.</summary>
+    public bool AsnEnabled => _barcodes.Enabled;
+
+    /// <summary>The archive number of a document as it is written on its label (ASN 00017), or null when it has none (or the feature is off).</summary>
     public string? AsnText(Document document)
-        => document.ArchiveSerialNumber is long number ? _barcodes.AsnReadable(number) : null;
+        => AsnEnabled && document.ArchiveSerialNumber is long number ? _barcodes.AsnReadable(number) : null;
 
     /// <summary>Whether the signed-in user may publish a link to the document (its owner, or an administrator).</summary>
     public bool CanShare(Document document) => DocumentAccess.IsOwnerOrAdmin(document, _currentUser.UserId, _currentUser.IsAdmin);
@@ -187,7 +197,7 @@ public class IndexModel : PageModel
             var term = Search.Trim();
 
             // a number (ASN 00017, asn17, or just 17) is looked up as an archive number as well as in the text
-            var asn = _barcodes.ParseAsn(term) ?? (long.TryParse(term, out var plain) && plain > 0 ? plain : (long?)null);
+            var asn = !AsnEnabled ? null : _barcodes.ParseAsn(term) ?? (long.TryParse(term, out var plain) && plain > 0 ? plain : (long?)null);
             query = asn is long wanted
                 ? query.Where(d => d.ArchiveSerialNumber == wanted
                     || (d.SearchVector != null && d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term))))
@@ -196,12 +206,25 @@ public class IndexModel : PageModel
                     d.SearchVector.Matches(EF.Functions.WebSearchToTsQuery("german", term)));
         }
 
-        query = Asn switch
+        if (AsnEnabled)
         {
-            "with" => query.Where(d => d.ArchiveSerialNumber != null),
-            "without" => query.Where(d => d.ArchiveSerialNumber == null),
-            _ => query,
-        };
+            query = Asn switch
+            {
+                "with" => query.Where(d => d.ArchiveSerialNumber != null),
+                "without" => query.Where(d => d.ArchiveSerialNumber == null),
+                _ => query,
+            };
+
+            if (AsnFrom is long from)
+            {
+                query = query.Where(d => d.ArchiveSerialNumber >= from);
+            }
+
+            if (AsnTo is long upTo)
+            {
+                query = query.Where(d => d.ArchiveSerialNumber <= upTo);
+            }
+        }
 
         // An id of 0 means "none": documents without a value in that field.
         if (CorrespondentIds.Length > 0)
@@ -257,7 +280,8 @@ public class IndexModel : PageModel
             "oldest" => query.OrderBy(d => d.DocumentDate ?? d.CreateDate).ThenBy(d => d.Id),
             "title" => query.OrderBy(d => d.Title).ThenBy(d => d.Id),
             // the papers in the order of their numbers; documents without one at the end
-            "asn" => query.OrderBy(d => d.ArchiveSerialNumber == null).ThenBy(d => d.ArchiveSerialNumber).ThenBy(d => d.Id),
+            "asn" when AsnEnabled => query.OrderBy(d => d.ArchiveSerialNumber == null).ThenBy(d => d.ArchiveSerialNumber).ThenBy(d => d.Id),
+            "asn_desc" when AsnEnabled => query.OrderBy(d => d.ArchiveSerialNumber == null).ThenByDescending(d => d.ArchiveSerialNumber).ThenByDescending(d => d.Id),
             _ => query.OrderByDescending(d => d.CreateDate).ThenByDescending(d => d.Id),
         };
 
@@ -321,9 +345,18 @@ public class IndexModel : PageModel
             chips.Add(new FilterChip($"{_l["Scope"]}: {scopeLabel}", FilterUrl.Without(req, "Scope")));
         }
 
-        if (Asn is "with" or "without")
+        if (AsnEnabled && Asn is "with" or "without")
         {
             chips.Add(new FilterChip($"{_l["Archive number"]}: {(Asn == "with" ? _l["With a number"].Value : _l["Without a number"].Value)}", FilterUrl.Without(req, "Asn")));
+        }
+
+        if (AsnEnabled && AsnFrom is long fromNumber)
+        {
+            chips.Add(new FilterChip($"{_l["Archive number from"]}: {fromNumber}", FilterUrl.Without(req, "AsnFrom")));
+        }
+        if (AsnEnabled && AsnTo is long toNumber)
+        {
+            chips.Add(new FilterChip($"{_l["Archive number to"]}: {toNumber}", FilterUrl.Without(req, "AsnTo")));
         }
 
         var reviewLabel = Review switch

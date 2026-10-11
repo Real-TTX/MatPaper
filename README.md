@@ -166,6 +166,9 @@ Paper originals get a number that finds them again in the folder (an *archive se
 - **Separator sheets**: scan a whole stack in one go with a separator sheet (code `PATCHT`, the Paperless
   value — its own sheets work as well) between the documents. MatPaper cuts the scan at the sheets, adds
   every document on its own (with the number on its first sheet) and leaves the sheets out.
+- **In file names**: the placeholder `{Asn}` in the path template of a storage location (or of an export rule) becomes
+  `ASN00017` and nothing for a document without a number. Giving or taking away a number moves the file like any
+  other change of the metadata (`{Asn} {Title}{Ext}`, `{Year}/{Asn} - {Title}{Ext}`).
 - **Stamp copy** (document page → *Print with archive number*): a copy of the PDF with the number as a
   code and as text in a corner, to print and file; the stored document is not touched.
 

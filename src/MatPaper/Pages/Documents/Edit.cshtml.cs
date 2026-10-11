@@ -564,7 +564,7 @@ public class EditModel : PageModel
             {
                 var effectiveDate = Input.DocumentDate ?? document.FileModifiedUtc ?? document.CreateDate;
                 var desiredRelativePath = _storage.BuildRelativePath(
-                    newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName, document.Token);
+                    newLoc, title, effectiveDate, correspondentName, documentTypeName, document.OriginalFileName, document.Token, Input.ArchiveSerialNumber);
 
                 try
                 {

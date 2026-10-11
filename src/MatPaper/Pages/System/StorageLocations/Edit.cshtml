@@ -48,7 +48,8 @@
         </div>
 
         <mp-field asp-for="Input.PathTemplate" label='@L["Path template"]'
-                  placeholder="{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}" />
+                  placeholder="{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}"
+                  help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} is the archive number as on the label (ASN00017) and empty for a document without one."]' />
     </section>
 
     <section class="form-section">

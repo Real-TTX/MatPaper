@@ -66,7 +66,7 @@ public sealed class DocumentAlignService
             .Select(d => new
             {
                 d.Id, d.Token, d.Title, d.OriginalFileName, d.RelativePath, d.DocumentDate, d.FileModifiedUtc, d.CreateDate,
-                d.CorrespondentId, d.DocumentTypeId, d.Origin
+                d.CorrespondentId, d.DocumentTypeId, d.Origin, d.ArchiveSerialNumber
             })
             .ToListAsync(ct);
 
@@ -82,7 +82,7 @@ public sealed class DocumentAlignService
                 location, d.Title, d.DocumentDate ?? d.FileModifiedUtc ?? d.CreateDate,
                 d.CorrespondentId is long cid && correspondents.TryGetValue(cid, out var cn) ? cn : null,
                 d.DocumentTypeId is long tid && types.TryGetValue(tid, out var tn) ? tn : null,
-                d.OriginalFileName, d.Token);
+                d.OriginalFileName, d.Token, d.ArchiveSerialNumber);
 
             if (string.Equals(desired, d.RelativePath, StringComparison.Ordinal))
             {

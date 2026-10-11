@@ -144,8 +144,8 @@ public class StampModel : PageModel
             document.UpdateUserId = _currentUser.UserId;
             try
             {
-                await _db.SaveChangesAsync(ct);
-                await _filing.WriteMetadataFileAsync(document, ct);
+                // saves, and moves the file when the template of its location has the number in it
+                await _filing.RefileAndSaveAsync(document, ct);
                 return next;
             }
             catch (DbUpdateException ex) when (DocumentIngestService.IsNumberTaken(ex))

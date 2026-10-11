@@ -955,7 +955,7 @@
   <data name="Where to" xml:space="preserve"><value>Wohin</value></data>
   <data name="Target location" xml:space="preserve"><value>Zielort</value></data>
   <data name="Path in the target" xml:space="preserve"><value>Pfad im Ziel</value></data>
-  <data name="Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone." xml:space="preserve"><value>Platzhalter: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Ext} {Id}. Beispiel: {Year}/{Title}{Ext}. Bereits vorhandene Kopien bleiben unverändert.</value></data>
+  <data name="Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone." xml:space="preserve"><value>Platzhalter: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. Beispiel: {Year}/{Title}{Ext}. Bereits vorhandene Kopien bleiben unverändert.</value></data>
   <data name="Pick the location the copies go to." xml:space="preserve"><value>Wähle den Speicherort, in den kopiert wird.</value></data>
   <data name="A rule needs a target location." xml:space="preserve"><value>Die Regel braucht einen Zielort.</value></data>
   <data name="Choose a different target: the copies would land in the location the documents come from." xml:space="preserve"><value>Wähle einen anderen Zielort: sonst landen die Kopien im Speicherort der Dokumente.</value></data>
@@ -1212,4 +1212,5 @@
   <data name="Look for a label on the first page of the document" xml:space="preserve"><value>Ein Etikett auf der ersten Seite des Dokuments suchen</value></data>
   <data name="Read from document" xml:space="preserve"><value>Vom Dokument lesen</value></data>
   <data name="Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more." xml:space="preserve"><value>Kleine Etiketten (unter 15 mm) werden beim Scannen zuverlässig ab 300 dpi gelesen.</value></data>
+  <data name="Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} is the archive number as on the label (ASN00017) and empty for a document without one." xml:space="preserve"><value>Platzhalter: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} ist die Archivnummer wie auf dem Etikett (ASN00017) und leer bei einem Dokument ohne Nummer.</value></data>
 </root>

@@ -267,7 +267,8 @@ public sealed class DocumentIngestService(
                 correspondentName,
                 documentTypeName,
                 safeFileName,
-                token);
+                token,
+                assignedNumber);
 
             actualRelativePath = await storage
                 .SaveNewAsync(location!, desiredRelativePath, buffer, ct)

@@ -164,6 +164,8 @@ public sealed class DocumentStorageService
     /// <summary>
     /// Resolves the template tokens for the given metadata into a sanitized,
     /// forward-slash relative path (no leading slash, no traversal).
+    /// <paramref name="archiveNumber"/> is the number of the paper original: <c>{Asn}</c> becomes the code as the label
+    /// writes it (ASN00017) and nothing for a document that has none.
     /// </summary>
     public string BuildRelativePath(
         StorageLocation loc,
@@ -172,7 +174,8 @@ public sealed class DocumentStorageService
         string? correspondentName,
         string? documentTypeName,
         string originalFileName,
-        Guid? documentToken = null)
+        Guid? documentToken = null,
+        long? archiveNumber = null)
     {
         ArgumentNullException.ThrowIfNull(loc);
 
@@ -195,7 +198,8 @@ public sealed class DocumentStorageService
             ["{Date}"] = date.ToString("yyyy-MM-dd"),
             ["{Title}"] = SanitizeTokenValue(string.IsNullOrWhiteSpace(titleValue) ? noTitle : titleValue),
             // Keep the leading dot; only strip separators/invalid chars.
-            ["{Ext}"] = SanitizeTokenValue(extension)
+            ["{Ext}"] = SanitizeTokenValue(extension),
+            ["{Asn}"] = archiveNumber is long number ? SanitizeTokenValue(_config.ResolveBarcodeOptions().AsnText(number)) : string.Empty
         };
 
         // The document's own id: {Id} is its first 8 hex digits, {Token} the whole thing.

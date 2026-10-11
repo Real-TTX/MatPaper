@@ -38,7 +38,7 @@
             <mp-field asp-for="Input.TargetLocationId" kind="select" label='@L["Target location"]' asp-items="Model.LocationOptions"
                       help='@L["Pick the location the copies go to."]' />
             <mp-field asp-for="Input.PathTemplate" label='@L["Path in the target"]' placeholder="{Year}/{Title}{Ext}"
-                      help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone."]' />
+                      help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone."]' />
         </section>
     </div>
 

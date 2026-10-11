@@ -136,7 +136,7 @@ public sealed class ExportRunner
             ct.ThrowIfCancellationRequested();
             var relative = _storage.BuildRelativePath(template, d.Title,
                 d.DocumentDate ?? d.FileModifiedUtc ?? d.CreateDate,
-                d.Correspondent?.Name, d.DocumentType?.Name, d.OriginalFileName, d.Token);
+                d.Correspondent?.Name, d.DocumentType?.Name, d.OriginalFileName, d.Token, d.ArchiveSerialNumber);
 
             // Two documents that end up on the same path: the later one gets its id in the name.
             if (!used.Add(relative))

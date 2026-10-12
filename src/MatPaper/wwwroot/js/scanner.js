@@ -26,6 +26,9 @@
     var root = null, ui = {}, view = "camera", onDone = null;
     var stream = null, track = null, detectTimer = null;
     var smoothQuad = null, stableFrames = 0, lastFound = null, autoMode = true, torchOn = false;
+    var noteTimer = null, adjustTimer = null;
+    var sharpScratch = null, sharpHistory = [], sharpWaited = 0;   // how crisp the page was in the last pictures (auto release waits for a crisp one)
+    var missed = 0, lastArea = 0, lastReach = 0, lastMargin = 0, lastCut = false;   // detections in a row without a page / size and confidence of the last one
     var sensitivity = 1;
     var MODE_KEY = "matpaper.scan.mode";
     var mode = "live"; // "live" = the in-page camera, "native" = the phone's own camera app (better optics, autofocus)
@@ -152,7 +155,9 @@
         revTop.append(ui.revBack, ui.revTitle, btn("scn__tool", "rotateCw", "", function () { turnPage(1); }, t("rotate", "Rotate")));
         ui.reviewStage = el("div", "scn__stage");
         ui.reviewCanvas = el("canvas", "scn__page");
-        ui.reviewStage.appendChild(ui.reviewCanvas);
+        ui.reviewNote = el("div", "scn__hint scn__hint--note");
+        ui.reviewNote.hidden = true;
+        ui.reviewStage.append(ui.reviewCanvas, ui.reviewNote);
         ui.filterBar = el("div", "scn__filters");
         FILTERS.forEach(function (f) {
             var b = el("button", "scn__chip", t("f-" + f[0], f[1]));
@@ -174,7 +179,7 @@
         var adj = el("div", "scn__view");
         var adjTop = el("div", "scn__top");
         adjTop.append(btn("scn__tool", "back", "", function () { showReview(current); }, t("back", "Back")),
-            el("div", "scn__heading", t("adjust", "Drag the corners onto the page")));
+            ui.adjustTitle = el("div", "scn__heading", t("adjust", "Drag the corners onto the page")));
         ui.adjustStage = el("div", "scn__stage");
         ui.adjustWrap = el("div", "scn__adjust-wrap");
         ui.adjustCanvas = el("canvas", "scn__page");
@@ -326,8 +331,8 @@
             chain = chain.then(function () {
                 return loadImage(file).then(function (canvas) {
                     var det = null;
-                    try { det = core.detect(canvas, { sensitivity: sensitivity }); } catch (e) { det = null; }
-                    pages.push({ src: canvas, quad: det ? det.quad : defaultQuad(), turns: 0, filter: "enhanced", preview: null, thumb: null });
+                    try { det = core.detect(canvas, { sensitivity: sensitivity, precise: true }); } catch (e) { det = null; }
+                    pages.push({ src: canvas, quad: det ? det.quad : defaultQuad(), note: !det ? "guess" : (det.cut ? "cut" : ""), turns: 0, filter: "enhanced", preview: null, thumb: null });
                 });
             });
         });
@@ -369,15 +374,15 @@
             ui.video.play().catch(function () { });
             var caps = track.getCapabilities ? track.getCapabilities() : {};
             ui.torchBtn.hidden = !caps.torch;
-            smoothQuad = null; stableFrames = 0; lastFound = null;
-            detectTimer = setInterval(detectLoop, 230);
+            smoothQuad = null; stableFrames = 0; lastFound = null; missed = 0;
+            detectTimer = setTimeout(detectLoop, 200);
         }).catch(function () {
             cameraUnavailable(t("camera-denied", "No access to the camera. Allow it in the browser."));
         });
     }
 
     function stopCamera() {
-        if (detectTimer) { clearInterval(detectTimer); detectTimer = null; }
+        if (detectTimer) { clearTimeout(detectTimer); detectTimer = null; }
         if (stream) { stream.getTracks().forEach(function (tr) { tr.stop(); }); }
         stream = null; track = null; torchOn = false;
         if (ui.video) { ui.video.srcObject = null; }
@@ -435,10 +440,48 @@
         return { x: (cw - w) / 2, y: (ch - h) / 2, w: w, h: h };
     }
 
+    // One analysis after the other: the next one is planned when the last one is done, so a slow phone does not queue them up.
     function detectLoop() {
+        detectTimer = null;
+        if (!stream) { return; }
+        var started = performance.now();
+        try { analyse(); } catch (e) { }
+        if (stream) { detectTimer = setTimeout(detectLoop, Math.max(80, 190 - (performance.now() - started))); }
+    }
+
+    // The corners come back in a fixed order (top left first), but a sheet turned about 45 degrees can change which corner
+    // counts as the first one: line them up with the corners of the previous picture.
+    function alignQuad(prev, quad) {
+        var best = quad, bestCost = Infinity;
+        for (var r = 0; r < 4; r++) {
+            var cand = [quad[r], quad[(r + 1) % 4], quad[(r + 2) % 4], quad[(r + 3) % 4]], cost = 0;
+            for (var i = 0; i < 4; i++) { cost += Math.hypot(cand[i][0] - prev[i][0], cand[i][1] - prev[i][1]); }
+            if (cost < bestCost) { bestCost = cost; best = cand; }
+        }
+        return best;
+    }
+
+    // How crisp the page is right now: the mean strength of the fine detail (Laplacian) in a window in the middle of the page, read at
+    // the camera's own resolution. Only a comparison between pictures of the same page means something.
+    function sharpness(quad) {
+        var vw = ui.video.videoWidth, vh = ui.video.videoHeight, cx = 0, cy = 0, side = Math.min(320, Math.round(Math.min(vw, vh) * 0.45));
+        quad.forEach(function (p) { cx += p[0] / 4; cy += p[1] / 4; });
+        if (!sharpScratch || sharpScratch.width !== side) { sharpScratch = core.makeCanvas(side, side); }
+        var x = sharpScratch.getContext("2d", { willReadFrequently: true });
+        x.drawImage(ui.video, Math.max(0, Math.min(vw - side, Math.round(cx * vw - side / 2))), Math.max(0, Math.min(vh - side, Math.round(cy * vh - side / 2))), side, side, 0, 0, side, side);
+        var d = x.getImageData(0, 0, side, side).data, g = new Float32Array(side * side), i, j, sum = 0;
+        for (i = 0, j = 0; i < g.length; i++, j += 4) { g[i] = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2]; }
+        for (var yy = 1; yy < side - 1; yy++) {
+            for (var xx = 1; xx < side - 1; xx++) { i = yy * side + xx; sum += Math.abs(4 * g[i] - g[i - 1] - g[i + 1] - g[i - side] - g[i + side]); }
+        }
+        return sum / ((side - 2) * (side - 2));
+    }
+
+    function analyse() {
         if (view !== "camera" || ui.video.readyState < 2 || !ui.video.videoWidth) { return; }
         var found = null;
-        try { found = core.detect(ui.video, { sensitivity: sensitivity }); } catch (e) { found = null; }
+        // the page found a moment ago is the hint: the outline stays on the same sheet instead of jumping between two
+        try { found = core.detect(ui.video, { sensitivity: sensitivity, hint: smoothQuad }); } catch (e) { found = null; }
 
         var cw = ui.overlay.clientWidth, ch = ui.overlay.clientHeight;
         if (ui.overlay.width !== cw * 2) { ui.overlay.width = cw * 2; ui.overlay.height = ch * 2; }
@@ -446,38 +489,62 @@
         g.setTransform(2, 0, 0, 2, 0, 0);
         g.clearRect(0, 0, cw, ch);
 
+        var held = false;
         if (!found) {
-            smoothQuad = null; stableFrames = 0; lastFound = null;
-            if (!hintLocked) { ui.hint.textContent = t("hint", "Hold the camera over the page"); }
-            return;
-        }
-
-        if (smoothQuad) {
-            var moved = 0;
-            smoothQuad = smoothQuad.map(function (p, i) {
-                var q = found.quad[i];
-                moved = Math.max(moved, Math.hypot(q[0] - p[0], q[1] - p[1]));
-                return [p[0] * 0.5 + q[0] * 0.5, p[1] * 0.5 + q[1] * 0.5];
-            });
-            stableFrames = moved < 0.025 ? stableFrames + 1 : 0;
+            // a page that was there a moment ago stays for two more analyses: a hand or a reflection must not make the outline flicker
+            if (smoothQuad && missed < 2) { missed++; held = true; stableFrames = 0; sharpHistory.length = 0; sharpWaited = 0; }
+            else {
+                smoothQuad = null; stableFrames = 0; lastFound = null; missed = 0; sharpHistory.length = 0; sharpWaited = 0;
+                if (!hintLocked) { ui.hint.textContent = t("hint", "Hold the camera over the page"); }
+                return;
+            }
         } else {
-            smoothQuad = found.quad; stableFrames = 0;
+            missed = 0;
+            if (smoothQuad) {
+                var next = alignQuad(smoothQuad, found.quad), moved = 0;
+                next.forEach(function (q, i) { moved = Math.max(moved, Math.hypot(q[0] - smoothQuad[i][0], q[1] - smoothQuad[i][1])); });
+                // follow a page that moves quickly, keep one that lies still calm
+                var a = moved > 0.08 ? 0.85 : (moved > 0.03 ? 0.6 : 0.35);
+                smoothQuad = smoothQuad.map(function (p, i) { return [p[0] + (next[i][0] - p[0]) * a, p[1] + (next[i][1] - p[1]) * a]; });
+                stableFrames = moved < 0.02 ? stableFrames + 1 : 0;
+                if (!stableFrames) { sharpHistory.length = 0; sharpWaited = 0; }
+            } else {
+                smoothQuad = found.quad; stableFrames = 0; sharpHistory.length = 0; sharpWaited = 0;
+            }
+            lastFound = smoothQuad; lastArea = found.area; lastMargin = found.margin; lastCut = !!found.cut;
+            // how far the longest side reaches across the picture (a receipt is long and narrow: little area, but close enough)
+            var vw = ui.video.videoWidth, vh = ui.video.videoHeight, diag = Math.hypot(vw, vh), longest = 0;
+            for (var k = 0; k < 4; k++) { var p0 = smoothQuad[k], p1 = smoothQuad[(k + 1) % 4]; longest = Math.max(longest, Math.hypot((p1[0] - p0[0]) * vw, (p1[1] - p0[1]) * vh)); }
+            lastReach = longest / diag;
         }
-        lastFound = smoothQuad;
 
         var box = frameBox(), steady = stableFrames > 2;
         g.lineWidth = 3;
-        g.strokeStyle = steady ? "#3ddc84" : "#ffd54a";
-        g.fillStyle = steady ? "rgba(61,220,132,0.18)" : "rgba(255,213,74,0.14)";
+        if (held) { g.setLineDash([9, 7]); g.strokeStyle = "rgba(255,213,74,0.7)"; g.fillStyle = "rgba(255,213,74,0.06)"; }
+        else if (lastCut) { g.strokeStyle = "#ff9f43"; g.fillStyle = "rgba(255,159,67,0.14)"; }
+        else { g.strokeStyle = steady ? "#3ddc84" : "#ffd54a"; g.fillStyle = steady ? "rgba(61,220,132,0.18)" : "rgba(255,213,74,0.14)"; }
         g.beginPath();
         smoothQuad.forEach(function (p, i) {
             var x = box.x + p[0] * box.w, y = box.y + p[1] * box.h;
             if (i) { g.lineTo(x, y); } else { g.moveTo(x, y); }
         });
-        g.closePath(); g.fill(); g.stroke();
+        g.closePath(); g.fill(); g.stroke(); g.setLineDash([]);
 
-        if (!hintLocked) { ui.hint.textContent = steady && autoMode ? t("hold", "Hold still …") : t("found", "Page found"); }
-        if (autoMode && stableFrames >= 7) { stableFrames = 0; capture(true); }
+        // a page that is far away is not worth a photo: it would be small and soft
+        var near = lastArea >= 0.16 || lastReach >= 0.38;
+        if (!hintLocked && !held) {
+            ui.hint.textContent = lastCut ? t("cut-off", "The page is cut off - move back") : (autoMode && !near ? t("closer", "Move closer") : (steady && autoMode ? t("hold", "Hold still …") : t("found", "Page found")));
+        }
+        // a page that is cut off by the edge of the picture is not worth a photo either
+        if (autoMode && !held && near && !lastCut && lastMargin >= 1 && stableFrames >= 3) {
+            // the picture of the moment must be about as crisp as the best of the last ones (a hand shakes, the focus hunts); but not for ever
+            sharpHistory.push(sharpness(smoothQuad));
+            if (sharpHistory.length > 8) { sharpHistory.shift(); }
+            if (stableFrames >= 6) {
+                var now = sharpHistory[sharpHistory.length - 1], best = Math.max.apply(null, sharpHistory);
+                if (now >= 0.82 * best || sharpWaited >= 5) { stableFrames = 0; sharpHistory.length = 0; sharpWaited = 0; capture(true); } else { sharpWaited++; }
+            }
+        }
     }
 
     function capture(automatic) {
@@ -485,12 +552,19 @@
         var c = core.makeCanvas(ui.video.videoWidth, ui.video.videoHeight);
         c.getContext("2d", { willReadFrequently: true }).drawImage(ui.video, 0, 0);
         if (automatic && navigator.vibrate) { navigator.vibrate(30); }
-        addPage(limit(c), lastFound || defaultQuad());
+        var canvas = limit(c), quad = lastFound;
+        // the outline came from a small copy of the picture; the frame in full size places the corners more exactly
+        try {
+            var again = core.detect(canvas, { sensitivity: sensitivity, hint: quad, precise: true });
+            if (again && (!quad || core.overlap(again.quad, quad) > 0.8)) { quad = again.quad; }
+        } catch (e) { }
+        addPage(canvas, quad || defaultQuad());
     }
 
     // ------------------------------------------------------------------ pages
 
-    function defaultQuad() { return [[0.08, 0.08], [0.92, 0.08], [0.92, 0.92], [0.08, 0.92]]; }
+    // Nothing found: the whole picture, a hair smaller (it is the safe choice - nothing of the page is cut off)
+    function defaultQuad() { return [[0.025, 0.025], [0.975, 0.025], [0.975, 0.975], [0.025, 0.975]]; }
 
     function limit(canvas) {
         var longest = Math.max(canvas.width, canvas.height);
@@ -535,6 +609,14 @@
         setView("review");
         var page = pages[index];
         ui.revTitle.textContent = t("page-n", "Page {0}").replace("{0}", index + 1) + " / " + pages.length;
+        // a photo in which no page was found is used as it is; say so once, the corners can be set under Crop
+        clearTimeout(noteTimer);
+        ui.reviewNote.hidden = !page.note;
+        if (page.note) {
+            ui.reviewNote.textContent = page.note === "cut" ? t("cut-note", "The page is cut off at the edge of the photo - retake it with the whole page in view.") : t("no-page-note", "No page was found - the whole photo is used. Under Crop the corners can be set.");
+            noteTimer = setTimeout(function () { ui.reviewNote.hidden = true; }, 6500);
+            page.note = "";
+        }
         busy(true);
         setTimeout(function () {
             page.preview = render(page, PREVIEW_SIDE);
@@ -643,9 +725,12 @@
 
     function redetect() {
         var page = pages[current], det = null;
-        try { det = core.detect(page.src, { sensitivity: sensitivity }); } catch (e) { det = null; }
-        page.quad = det ? det.quad : defaultQuad();
-        drawAdjust();
+        // asked for by hand, so a second, more generous try is welcome
+        try { det = core.detect(page.src, { sensitivity: sensitivity, precise: true }) || core.detect(page.src, { sensitivity: 2, precise: true }); } catch (e) { det = null; }
+        if (det) { page.quad = det.quad; page.note = ""; drawAdjust(); return; }
+        ui.adjustTitle.textContent = t("no-page", "No page found - drag the corners");
+        clearTimeout(adjustTimer);
+        adjustTimer = setTimeout(function () { ui.adjustTitle.textContent = t("adjust", "Drag the corners onto the page"); }, 2800);
     }
 
     // Turns the photo itself (page shot sideways); the corners turn with it.

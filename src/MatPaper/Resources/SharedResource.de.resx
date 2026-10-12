@@ -840,6 +840,11 @@
   <data name="The camera is not available here (it needs HTTPS). Use the gallery instead." xml:space="preserve"><value>Die Kamera ist hier nicht verfügbar (sie braucht HTTPS). Nutze stattdessen die Galerie.</value></data>
   <data name="No access to the camera. Allow it in the browser, or use the gallery." xml:space="preserve"><value>Kein Zugriff auf die Kamera. Erlaube sie im Browser oder nutze die Galerie.</value></data>
   <data name="Detect again" xml:space="preserve"><value>Neu erkennen</value></data>
+  <data name="Move closer" xml:space="preserve"><value>Näher heran</value></data>
+  <data name="The page is cut off - move back" xml:space="preserve"><value>Seite angeschnitten – etwas weiter weg gehen</value></data>
+  <data name="The page is cut off at the edge of the photo - retake it with the whole page in view." xml:space="preserve"><value>Die Seite ist am Rand des Fotos abgeschnitten – am besten noch einmal fotografieren, mit der ganzen Seite im Bild.</value></data>
+  <data name="No page found - drag the corners" xml:space="preserve"><value>Keine Seite gefunden – Ecken ziehen</value></data>
+  <data name="No page was found - the whole photo is used. Under Crop the corners can be set." xml:space="preserve"><value>Keine Seite erkannt – das ganze Foto wird verwendet. Unter „Zuschnitt“ lassen sich die Ecken setzen.</value></data>
   <data name="Drag the corners onto the page" xml:space="preserve"><value>Ecken auf die Seite ziehen</value></data>
   <data name="Enhanced" xml:space="preserve"><value>Verstärkt</value></data>
   <data name="Original" xml:space="preserve"><value>Original</value></data>

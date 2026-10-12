@@ -256,6 +256,23 @@ is in the task's attachment extensions (new tasks have it). With *After import: 
 archive is only removed once everything in it was imported or known already. Limits against
 oversized archives: 2000 files, 200 MB per file, 1 GB unpacked.
 
+**Scanning with the camera.** The *Add document* page can scan paper with the camera of the phone or the
+webcam: pages are found automatically, straightened and cleaned up (enhanced / original / grey / black and
+white), several pages become one PDF. *Live camera* shows an outline on the page while you hold the camera over it and
+takes the photo by itself once the page is in view, close enough, not cut off by the edge, lying still and
+sharp (it waits for a crisp picture, and for a page that is far away says "Move closer", for a page that
+reaches beyond the picture "move back"). *Camera app* hands the job to the camera app of the phone (the sharper
+photo) and finds the page afterwards; if nothing is found the whole photo is used and a note says so, and a
+page that is cut off at the edge of the photo is pointed out. The *Sensitivity* button (Low / Medium / High)
+decides how sure the scanner has to be before it calls something a page; *Crop* sets the corners by hand and
+*Detect again* tries once more, more generously. The page is not looked for as "the brightest blob" but by
+its sides: the long straight edges of the picture are found, every set of four that could bound a sheet is a
+candidate, and each is judged by how much of every side is a real step between the sheet and its surroundings,
+by its shape and size, and by its inside (white and calm, not a pattern). That also copes with a dark letterhead,
+a finger over a corner, a shadow, a sheet on a white desk or between other papers. The weights of the judgement
+were fitted on photographed-like test scenes (`tools/scanner-bench`, see the README there), which is also how
+a case that fails in practice can be added and the scanner tuned again.
+
 **E-invoices.** A PDF with embedded invoice data (ZUGFeRD, Factur-X) and a standalone XRechnung
 `.xml` are recognised everywhere a file comes in (upload, import tasks, storage search). The invoice
 facts - gross, net and VAT amount, due date, VAT ID, IBAN, buyer, buyer reference - are stored with

@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+scenes/
+fails*/
+*.png
+*.mjpeg
+d?.json
+dump*.json
+model.json
+res-*.json
+old*.js

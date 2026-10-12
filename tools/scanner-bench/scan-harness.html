@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>scanner harness</title>
+<link rel="stylesheet" href="/css/features.css">
+<style>body{margin:0;font-family:sans-serif;background:#222;color:#eee} #log{padding:1rem}</style>
+<body>
+<div id="log">scanner harness</div>
+<div id="scanner-config" hidden></div>
+<script>
+  window.__detections = [];
+  var Q = new URLSearchParams(location.search);
+  function load(src) { document.write('<script src="' + src + '"><\/script>'); }
+  // ?canvas=1&w=1280&h=720: the "camera" is a canvas the test draws on (frame accurate motion, hands, light changes)
+  if (Q.get("canvas") === "1") {
+    var cam = document.createElement("canvas"); cam.width = +Q.get("w") || 1280; cam.height = +Q.get("h") || 720;
+    window.__cam = cam;
+    var stream = cam.captureStream(30);
+    navigator.mediaDevices.getUserMedia = function () { return Promise.resolve(stream); };
+    (function loop() { if (window.__drawFn) { window.__drawFn(performance.now(), cam); } requestAnimationFrame(loop); })();
+  }
+  load("/repo/scanner-core.js");
+</script>
+<script>
+  // record every detection the scanner asks for (and what the picture really showed at that moment)
+  (function () {
+    var orig = MatPaperScan.detect;
+    MatPaperScan.detect = function (src, o) {
+      var t0 = performance.now(), gtNow = window.__gtNow ? window.__gtNow() : null, r = orig(src, o), dt = performance.now() - t0;
+      window.__detections.push({ t: Date.now(), ms: dt, precise: !!(o && o.precise), hint: !!(o && o.hint), sens: o && o.sensitivity, gt: gtNow, r: r ? { quad: r.quad, score: r.score, margin: r.margin, area: r.area, cut: r.cut } : null, w: src.videoWidth || src.width, h: src.videoHeight || src.height });
+      return r;
+    };
+  })();
+  load(Q.get("scanner") || "/repo/scanner.js");
+</script>
+</body>

@@ -1,0 +1,8 @@
+{
+  "name": "scanner-bench",
+  "private": true,
+  "description": "Benchmark and tuning tools for the page detection of the document scanner (not part of the app)",
+  "dependencies": {
+    "playwright-core": "^1.64.0"
+  }
+}

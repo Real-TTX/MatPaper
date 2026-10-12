@@ -1,6 +1,6 @@
 // Runs page detectors over the cached synthetic scenes and reports how well they find the sheet.
 //   node detect-bench.js [--cats a,b] [--det repo,old.js] [--level 1] [--seeds 1-40] [--json out.json] [--fails dir] [--opts '{"precise":true}']
-//                        [--cands dump.json] [--aug gain=0.6,contrast=0.8,tint=1.05:1:0.9]
+//                        [--cands dump.json] [--aug gain=0.6,contrast=0.8,tint=1.05:1:0.9,distort=0.1]   (distort: lens distortion, > 0 barrel, < 0 pincushion)
 // Detectors: repo = this checkout's wwwroot/js/scanner-core.js; any other value is a path to a scanner-core.js (an older version:
 //            git show <commit>:src/MatPaper/wwwroot/js/scanner-core.js > old.js).
 // --cands writes the features of all candidates of every scene (for learn2.js); --fails writes sheets of the scenes that went wrong.
@@ -52,7 +52,28 @@ const aug = opt('aug', ''); // e.g. gain=0.6,contrast=0.8,tint=1.05:1:0.9
         for (let p = 0; p < d.length; p += 4) for (let ch = 0; ch < 3; ch++) d[p + ch] = (((d[p + ch] * tint[ch]) - 128) * contrast + 128) * gain;
         cx.putImageData(id, 0, 0);
       }
-      const W = c.width, H = c.height, gt = it.entry.gt, row = { cat: it.cat, seed: it.seed, meta: it.entry.meta, hasSheet: gt.hasSheet, det: {} };
+      let gt = it.entry.gt;
+      if (aug && /distort=/.test(aug)) {
+        // lens distortion: the picture is re-sampled radially (k > 0 barrel, k < 0 pincushion); the true corners move with it
+        const k = +aug.match(/distort=(-?[0-9.]+)/)[1], cw = c.width, ch = c.height, hd = Math.hypot(cw, ch) / 2, sc = 1 / (1 + Math.max(k, 0));   // barrel: look at the middle part, so no black corners
+        const src = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, cw, ch), sd = src.data, out = new ImageData(cw, ch), od = out.data;
+        for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+          const ux = sc * (x + 0.5 - cw / 2) / hd, uy = sc * (y + 0.5 - ch / 2) / hd, f = 1 + k * (ux * ux + uy * uy);
+          const sx = ux * f * hd + cw / 2 - 0.5, sy = uy * f * hd + ch / 2 - 0.5, x0 = Math.floor(sx), y0 = Math.floor(sy), fx = sx - x0, fy = sy - y0, o = (y * cw + x) * 4;
+          if (x0 < 0 || y0 < 0 || x0 >= cw - 1 || y0 >= ch - 1) { od[o] = od[o + 1] = od[o + 2] = 0; od[o + 3] = 255; continue; }
+          const i00 = (y0 * cw + x0) * 4, i10 = i00 + 4, i01 = i00 + cw * 4, i11 = i01 + 4;
+          for (let ch2 = 0; ch2 < 3; ch2++) od[o + ch2] = sd[i00 + ch2] * (1 - fx) * (1 - fy) + sd[i10 + ch2] * fx * (1 - fy) + sd[i01 + ch2] * (1 - fx) * fy + sd[i11 + ch2] * fx * fy;
+          od[o + 3] = 255;
+        }
+        c.getContext('2d').putImageData(out, 0, 0);
+        const fwd = p => { // source point -> where it appears: solve u (1 + k |u|^2) = us
+          const usx = (p[0] * cw - cw / 2) / hd, usy = (p[1] * ch - ch / 2) / hd; let ux = usx, uy = usy;
+          for (let it2 = 0; it2 < 30; it2++) { const f = 1 + k * (ux * ux + uy * uy); ux = usx / f; uy = usy / f; }
+          return [(ux / sc * hd + cw / 2) / cw, (uy / sc * hd + ch / 2) / ch];
+        };
+        gt = Object.assign({}, gt, { quad: gt.quad && gt.quad.map(fwd), poly: gt.poly && gt.poly.map(fwd) });
+      }
+      const W = c.width, H = c.height, row = { cat: it.cat, seed: it.seed, meta: it.entry.meta, hasSheet: gt.hasSheet, det: {} };
       if (wantCands) {
         const dd = DET[dets[0]].detect(c, Object.assign({ sensitivity: level }, extra, { debug: true, debugAll: true }));
         const all = dd.candidates.map((k, i) => ({ f: k.f, score: k.score, iou: gt.hasSheet ? SceneLib.iou(k.V, gt.poly) : 0, i }));

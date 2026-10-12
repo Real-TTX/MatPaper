@@ -1,7 +1,8 @@
 // Document scanner core: find the sheet in a photo, straighten it, clean it up.
 // Pure image code on canvas pixels - no dependencies, runs in the browser (and is testable there).
 //
-//   MatPaperScan.detect(source, { sensitivity, hint, precise }) -> { quad:[tl,tr,br,bl] (0..1), score, area } | null
+//   MatPaperScan.detect(source, { sensitivity, hint, precise }) -> { quad:[tl,tr,br,bl] (0..1), score, margin, area, cut } | null
+//   MatPaperScan.overlap(quadA, quadB)               -> 0..1 (how much two outlines cover each other)
 //   MatPaperScan.warp(canvas, quad, maxSide)         -> canvas (the sheet, straightened)
 //   MatPaperScan.filter(canvas, "color|enhanced|gray|bw") -> canvas
 //   MatPaperScan.rotate(canvas, quarterTurns)        -> canvas

@@ -36,6 +36,7 @@ node detect-bench.js                                 # the detector of this chec
 node detect-bench.js --seeds 1001-1040 --level 1     # on the hold-out set
 node detect-bench.js --det repo,old.js               # side by side with an older version (git show <commit>:src/MatPaper/wwwroot/js/scanner-core.js > old.js)
 node detect-bench.js --cats cut,clutter --fails fails   # sheets of the scenes that went wrong (green truth, red/blue the detectors)
+node detect-bench.js --aug distort=0.12                  # the same scenes through a barrel distorting lens (also gain= contrast= tint= for exposure and colour cast)
 ```
 
 Per category: *good* = the outline covers the true sheet with IoU >= 0.93 (a crop one would not touch up), *ok* = IoU >= 0.85,

@@ -286,14 +286,7 @@
     <script src="~/js/doc-preview.js" asp-append-version="true"></script>
     @if (User.Identity?.IsAuthenticated == true && AppSettings.ArchiveNumbersEnabled)
     {
-        <div id="code-scan-config" hidden data-url="/Documents/ScanCode"
-             data-t-title='@L["Scan a label"]' data-t-close='@L["Close"]' data-t-light='@L["Light"]'
-             data-t-hint='@L["Hold the label in the frame"]' data-t-photo='@L["Take a photo"]'
-             data-t-no-camera='@L["The camera is not available here (it needs HTTPS). Take a photo of the label instead."]'
-             data-t-not-found='@L["No document has the number {0}."]' data-t-other='@L["Read \"{0}\" - that is no archive number."]'
-             data-t-error='@L["The code could not be read. Please try again."]' data-t-reading='@L["Reading …"]'
-             data-t-photo-none='@L["No code found in the photo. Try again, closer to the label."]'></div>
-        <script src="~/js/code-scan.js" asp-append-version="true"></script>
+        <partial name="_CodeScanConfig" />
     }
     @await RenderSectionAsync("Scripts", required: false)
 </body>

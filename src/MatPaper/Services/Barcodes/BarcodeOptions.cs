@@ -64,6 +64,27 @@ public sealed record BarcodeOptions
         return long.TryParse(match.Groups[1].Value, out var number) && number > 0 ? number : null;
     }
 
+    /// <summary>
+    /// The number in a code that is scanned to FIND a document (not one that is read from a file that is added): the
+    /// text of a label as <see cref="ParseAsn"/> reads it, else a bare number (a label of another kind that only says
+    /// 17 or 00017), else a label with the letters of the default (ASN) when the letters were changed since.
+    /// </summary>
+    public long? ParseAsnLoosely(string? code)
+    {
+        if (ParseAsn(code) is long number)
+        {
+            return number;
+        }
+
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return null;
+        }
+
+        var match = Regex.Match(code, "^\\s*(?:ASN[\\s\\-_:]*)?(\\d{1,12})\\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        return match.Success && long.TryParse(match.Groups[1].Value, out var loose) && loose > 0 ? loose : null;
+    }
+
     public bool IsSeparator(string? code)
         => !string.IsNullOrWhiteSpace(SeparatorText) && string.Equals(code?.Trim(), SeparatorText.Trim(), StringComparison.OrdinalIgnoreCase);
 

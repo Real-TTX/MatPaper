@@ -1203,7 +1203,7 @@
   <data name="No archive number found on the first page." xml:space="preserve"><value>Keine Archivnummer auf der ersten Seite gefunden.</value></data>
   <data name="Look for a label on the first page of the document" xml:space="preserve"><value>Ein Etikett auf der ersten Seite des Dokuments suchen</value></data>
   <data name="Read from document" xml:space="preserve"><value>Vom Dokument lesen</value></data>
-  <data name="Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more." xml:space="preserve"><value>Kleine Etiketten (unter 15 mm) werden beim Scannen zuverlässig ab 300 dpi gelesen.</value></data>
+  <data name="Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more. With the phone camera a code of 15 mm or more is read from further away." xml:space="preserve"><value>Kleine Etiketten (unter 15 mm) werden beim Scannen des Papiers zuverlässig ab 300 dpi gelesen. Mit der Handy-Kamera wird ein Code ab 15 mm aus größerer Entfernung gelesen.</value></data>
   <data name="Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} is the archive number as on the label (ASN00017) and empty for a document without one." xml:space="preserve"><value>Platzhalter: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} ist die Archivnummer wie auf dem Etikett (ASN00017) und leer bei einem Dokument ohne Nummer.</value></data>
   <data name="System / Archive numbers" xml:space="preserve"><value>System / Archivnummern</value></data>
   <data name="Archive numbers" xml:space="preserve"><value>Archivnummern</value></data>
@@ -1218,7 +1218,6 @@
   <data name="Hold the label in the frame" xml:space="preserve"><value>Etikett in den Rahmen halten</value></data>
   <data name="Take a photo" xml:space="preserve"><value>Foto aufnehmen</value></data>
   <data name="The camera is not available here (it needs HTTPS). Take a photo of the label instead." xml:space="preserve"><value>Die Kamera ist hier nicht verfügbar (sie braucht HTTPS). Mach stattdessen ein Foto vom Etikett.</value></data>
-  <data name="No document has the number {0}." xml:space="preserve"><value>Kein Dokument hat die Nummer {0}.</value></data>
   <data name="Read &quot;{0}&quot; - that is no archive number." xml:space="preserve"><value>„{0}“ gelesen – das ist keine Archivnummer.</value></data>
   <data name="The code could not be read. Please try again." xml:space="preserve"><value>Der Code konnte nicht gelesen werden. Bitte noch einmal versuchen.</value></data>
   <data name="Reading …" xml:space="preserve"><value>Wird gelesen …</value></data>
@@ -1227,4 +1226,12 @@
   <data name="Archive number from" xml:space="preserve"><value>Archivnummer ab</value></data>
   <data name="Archive number to" xml:space="preserve"><value>Archivnummer bis</value></data>
   <data name="Archive number (highest first)" xml:space="preserve"><value>Archivnummer (höchste zuerst)</value></data>
+  <data name="Zoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="Scan again" xml:space="preserve"><value>Erneut scannen</value></data>
+  <data name="Hold another label in the frame" xml:space="preserve"><value>Halte ein anderes Etikett in den Rahmen</value></data>
+  <data name="Take over" xml:space="preserve"><value>Übernehmen</value></data>
+  <data name="Take over anyway" xml:space="preserve"><value>Trotzdem übernehmen</value></data>
+  <data name="Free: no document has this number yet." xml:space="preserve"><value>Frei: Noch kein Dokument hat diese Nummer.</value></data>
+  <data name="Belongs to &quot;{0}&quot; already" xml:space="preserve"><value>Gehört schon zu „{0}“</value></data>
+  <data name="No document has this number." xml:space="preserve"><value>Kein Dokument hat diese Nummer.</value></data>
 </root>

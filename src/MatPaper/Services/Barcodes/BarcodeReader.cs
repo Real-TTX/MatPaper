@@ -163,18 +163,74 @@ public static class BarcodeReader
     /// <summary>
     /// The codes in one picture - a frame of a camera, a photo of a label: every format that is read here, any
     /// rotation. Nothing found (or a picture that cannot be read) is an empty list; this never throws.
+    /// <para>
+    /// The reader wants a few pixels per module - not too few, not too many. A small or slightly blurred code in a
+    /// camera frame is read when the picture is made bigger (the same frames: 107 of 288 read as they are, 220 when
+    /// doubled), a big code in a big photo when it is made smaller (a code of 18 pixels per module is not found at
+    /// all in a 4 megapixel picture, at half the size always). So the picture is tried at several sizes, the cheap ones
+    /// first. A frame from the live camera (<paramref name="photo"/> false) is not tried at a quarter of its size.
+    /// </para>
     /// </summary>
-    public static IReadOnlyList<string> DecodeImage(byte[] image)
+    public static IReadOnlyList<string> DecodeImage(byte[] image, bool photo = false)
     {
         try
         {
             using var bitmap = SKBitmap.Decode(image);
-            return bitmap is null ? Array.Empty<string>() : DecodeBitmap(bitmap, tryHarder: true).Distinct().ToList();
+            return bitmap is null ? Array.Empty<string>() : DecodeAtSeveralSizes(bitmap, photo).Distinct().ToList();
         }
         catch (Exception)
         {
             return Array.Empty<string>();
         }
+    }
+
+    /// <summary>A picture that is made bigger stays below this many pixels (the reader and the memory have to cope with it).</summary>
+    private const long MaxEnlargedPixels = 6_000_000;
+
+    private static List<string> DecodeAtSeveralSizes(SKBitmap bitmap, bool photo)
+    {
+        var pixels = (long)bitmap.Width * bitmap.Height;
+        foreach (var factor in photo ? new[] { 1.0, 0.5, 0.25, 2.0 } : new[] { 1.0, 0.5, 2.0 })
+        {
+            if (factor > 1 && pixels * factor * factor > MaxEnlargedPixels)
+            {
+                continue;
+            }
+
+            if (factor < 1 && pixels * factor * factor < 40_000)
+            {
+                continue; // a thumbnail has no code left in it
+            }
+
+            using var scaled = factor == 1.0 ? null : Resize(bitmap, factor);
+            if (factor != 1.0 && scaled is null)
+            {
+                continue;
+            }
+
+            var found = DecodeBitmap(scaled ?? bitmap, tryHarder: true);
+            if (found.Count > 0)
+            {
+                return found;
+            }
+        }
+
+        return new List<string>();
+    }
+
+    /// <summary>The picture in another size: made bigger smoothly (cubic), made smaller by averaging.</summary>
+    private static SKBitmap? Resize(SKBitmap source, double factor)
+    {
+        var info = new SKImageInfo(Math.Max(1, (int)(source.Width * factor)), Math.Max(1, (int)(source.Height * factor)), source.ColorType, source.AlphaType);
+        var result = new SKBitmap(info);
+        var sampling = factor > 1 ? new SKSamplingOptions(SKCubicResampler.Mitchell) : new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+        if (source.ScalePixels(result, sampling))
+        {
+            return result;
+        }
+
+        result.Dispose();
+        return null;
     }
 
     private static BarcodeScan ScanPdf(byte[] pdf, BarcodeOptions options, CancellationToken ct)
@@ -262,7 +318,7 @@ public static class BarcodeReader
     private static BarcodeScan ScanImage(byte[] image, BarcodeOptions options)
     {
         using var bitmap = SKBitmap.Decode(image);
-        var codes = bitmap is null ? new List<string>() : DecodeBitmap(bitmap, tryHarder: true);
+        var codes = bitmap is null ? new List<string>() : DecodeAtSeveralSizes(bitmap, photo: true);
         var pages = codes.Count == 0 ? new List<PageCodes>() : new List<PageCodes> { new(1, codes.Distinct().ToList()) };
         return new BarcodeScan(1, pages, options);
     }

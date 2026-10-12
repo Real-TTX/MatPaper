@@ -172,10 +172,14 @@ Switched off, nothing of it shows anywhere in the app and no file is searched fo
   the Paperless value — its own sheets work as well) between the documents. MatPaper cuts the scan at the sheets,
   adds every document on its own (with the number on its first sheet) and leaves the sheets out.
 - **Scanning a label with the phone**: the barcode icon in the header (and on the document page, beside the
-  field) opens the camera; a label in the frame opens the document that has the number. The picture is read on
-  the server by the same reader that reads uploaded files, so it works on every phone — also where the browser
-  has no barcode detection (Safari). Without a live camera (no HTTPS, no permission) a photo taken with the
-  camera app does the same. A USB bar code scanner needs nothing: it types the code into the search field.
+  field) opens the camera; a label in the frame is read, and the scanner shows what it read (the number, the
+  document) and waits: *Open* goes on, *Scan again* is for the label that was read by mistake (the one just
+  turned down is not offered again while it stays in view). The picture is read on the server by the same
+  reader that reads uploaded files, so it works on every phone — also where the browser has no barcode
+  detection (Safari) — and tries the picture at several sizes: small or slightly soft codes are read where a
+  plain reader gives up. A label may say `ASN00017`, `asn 17`, `ASN-17` or just `17`. Without a live camera
+  (no HTTPS, no permission) a photo taken with the camera app does the same. A USB bar code scanner needs
+  nothing: it types the code into the search field.
 - **In file names**: the placeholder `{Asn}` in the path template of a storage location (or of an export rule) becomes
   `ASN00017` and nothing for a document without a number. Giving or taking away a number moves the file like any
   other change of the metadata (`{Asn} {Title}{Ext}`, `{Year}/{Asn} - {Title}{Ext}`).

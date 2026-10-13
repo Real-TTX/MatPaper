@@ -26,7 +26,7 @@ public class ErrorModel : PageModel
         _logger = logger;
     }
 
-    public int StatusCode { get; private set; } = 500;
+    public new int StatusCode { get; private set; } = 500;
 
     public string Title { get; private set; } = string.Empty;
 

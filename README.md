@@ -101,8 +101,8 @@ Taken from a demo instance with made-up documents (German UI; English is built i
 | ![Document detail](docs/images/document-detail.png) | ![Connections](docs/images/connections.png) |
 | **Detail** — preview, metadata, sharing | **Connections** — NAS, mailboxes and cloud drives, defined once |
 
-**Themes.** Light, dark or system, five colour schemes and seven accent colours — every
-combination is checked for readable contrast. Each user picks their own look (it follows the
+**Themes.** Light, dark or system, four colour schemes (standard, paper, high contrast, black/OLED) and seven
+accent colours — every combination is checked for readable contrast. Each user picks their own look (it follows the
 account to every device); the administrator sets the default for everyone else and for the
 sign-in page.
 
@@ -121,6 +121,8 @@ sign-in page.
 ## Tech stack
 
 - **.NET 10** (ASP.NET Core **Razor Pages**)
+- **MatUi**, the design system of the Mat apps: one stylesheet, one script, one icon sprite, shipped as a copy in
+  `src/MatPaper/wwwroot/matui` (no CDN: it works offline and as an installed app)
 - **PostgreSQL** (via Npgsql / EF Core 10) with full-text search (`tsvector` + `pg_trgm`)
 - Runs entirely in **Docker**
 
@@ -148,6 +150,29 @@ sign-in page.
 - Per-user ownership, sharing and a common area; cookie-based authentication with roles
 
 See [PLAN.md](PLAN.md) for the full roadmap and phase breakdown.
+
+## The look (MatUi)
+
+The interface is built on **MatUi**, the toolkit of the Mat design system. MatPaper carries its own copy of it in
+`src/MatPaper/wwwroot/matui` (`matui.css`, `matui.js`, `matui.boot.js`, the icon sprite); do not edit those files, bring a newer copy:
+
+```powershell
+./scripts/update-matui.ps1                       # from the MatDesign of the dev stack (http://localhost:8060)
+./scripts/update-matui.ps1 -Url https://design.example.com
+```
+
+- **Pages** use the toolkit's classes (`mat-*`) and a set of tag helpers (`src/MatPaper/Controls`): `<mp-field asp-for="…">`, `<mp-picker>`,
+  `<mp-toolbar>` with its search, filters and sort, `<mp-table>`, `<mp-pager>`, `<mp-button>`, `<mp-icon>`. They write the toolkit's markup,
+  so a page stays short and every field behaves the same everywhere.
+- **What only MatPaper has** (the cards of the inbox, the document tile, the scanner, the drop target) is in
+  `wwwroot/css/matpaper.css` with the prefix `mp-`, built from the toolkit's colour and size tokens only, and in a few scripts under
+  `wwwroot/js`. No inline styles, scripts or handlers, no colour of its own (the camera view is the one dark exception).
+- **Icons** come from the sprite that the layout inlines once. The toolkit's own icons are used as they are; the few more MatPaper needs are
+  listed in `scripts/matpaper-icons.txt` (names from the Lucide library of MatDesign) and written into `matui/matpaper-icons.svg`.
+- **Texts** are English resource keys with a German translation in `Resources/SharedResource.de.resx`; the words the toolkit script writes
+  itself (dialog buttons, form messages, the theme button) are handed over as attributes of the `<html>` element.
+- **Theme**: mode, colour scheme and accent are attributes of `<html>` (`data-theme`, `data-scheme`, `data-accent`), written by the server from
+  the account of the user (or the instance default) on every page.
 
 ## Archive numbers, labels and separator sheets
 

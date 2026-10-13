@@ -81,16 +81,18 @@ public static class ThemeCatalog
     public static bool IsAccent(string? id) => Accents.Any(o => o.Id == id);
 }
 
-/// <summary>A resolved theme plus whether the user has saved their own mode.</summary>
-public sealed record ThemeChoice(string Mode, string Scheme, string Accent, bool UserHasMode)
+/// <summary>A resolved theme, whether the user has saved their own mode, and whether it is the theme of a signed-in user (<paramref name="ForUser"/>).</summary>
+public sealed record ThemeChoice(string Mode, string Scheme, string Accent, bool UserHasMode, bool ForUser = false)
 {
     /// <summary>The colour of the browser's bar.</summary>
     public string ThemeColour => ThemeCatalog.AccentColour(Accent);
 
     /// <summary>
-    /// The attributes of <c>&lt;html&gt;</c> that the toolkit reads, written only when they have a value: an empty
-    /// attribute is a present one, and the toolkit's boot script would take it for a choice of the server and never apply what
-    /// the browser remembers. The app itself (<c>data-app</c>) gives the accent the toolkit's registry knows.
+    /// The attributes of <c>&lt;html&gt;</c> that the toolkit reads. The toolkit's boot script fills in what is MISSING from what the browser remembers (the
+    /// choice of the last person who used it), so: for a signed-in user all three parts are written out in full - "system", "standard" and "default" for the
+    /// parts that need no attribute - and their account wins; without an account (the sign-in) only what differs from the toolkit's defaults is written
+    /// and the browser's memory fills in the rest, so the sign-in page looks like the one the person left. The app itself (<c>data-app</c>) gives the accent
+    /// the toolkit's registry knows.
     /// </summary>
     public string RootAttributes
     {
@@ -101,15 +103,27 @@ public sealed record ThemeChoice(string Mode, string Scheme, string Accent, bool
             {
                 sb.Append(" data-theme=\"").Append(Mode).Append('"');
             }
+            else if (ForUser)
+            {
+                sb.Append(" data-theme=\"system\"");
+            }
 
             if (ThemeCatalog.MatAccent(Accent) is { } preset)
             {
                 sb.Append(" data-accent=\"").Append(preset).Append('"');
             }
+            else if (ForUser)
+            {
+                sb.Append(" data-accent=\"default\"");
+            }
 
             if (Scheme is not (ThemeCatalog.DefaultScheme or ""))
             {
                 sb.Append(" data-scheme=\"").Append(Scheme).Append('"');
+            }
+            else if (ForUser)
+            {
+                sb.Append(" data-scheme=\"standard\"");
             }
 
             return sb.ToString();
@@ -167,6 +181,7 @@ public sealed class ThemeService(AppConfig config, CurrentUser currentUser, AppD
             ThemeCatalog.IsMode(mode) ? mode! : fallback.Mode,
             ThemeCatalog.IsScheme(scheme) ? scheme! : fallback.Scheme,
             ThemeCatalog.IsAccent(accent) ? accent! : fallback.Accent,
-            UserHasMode: ThemeCatalog.IsMode(mode));
+            UserHasMode: ThemeCatalog.IsMode(mode),
+            ForUser: true);
     }
 }

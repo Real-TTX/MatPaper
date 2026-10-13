@@ -861,7 +861,6 @@
   <data name="Scan with the camera" xml:space="preserve"><value>Mit der Kamera scannen</value></data>
   <data name="Photograph pages; they are cropped and straightened automatically." xml:space="preserve"><value>Seiten fotografieren; sie werden automatisch zugeschnitten und begradigt.</value></data>
   <data name="Details" xml:space="preserve"><value>Angaben</value></data>
-  <data name="optional" xml:space="preserve"><value>optional</value></data>
   <data name="Add" xml:space="preserve"><value>Hinzufügen</value></data>
   <data name="Scan: {0} page(s)" xml:space="preserve"><value>Scan: {0} Seite(n)</value></data>
   <data name="Queued" xml:space="preserve"><value>Wartet</value></data>

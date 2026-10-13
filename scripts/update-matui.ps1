@@ -5,9 +5,14 @@
 .DESCRIPTION
     MatDesign serves the toolkit as an archive (/ui/matui.zip). MatPaper carries its own copy in
     src/MatPaper/wwwroot/matui (rule CODE-03: copy, do not link), so it works offline and as a PWA.
+    The toolkit has a version of its own (MatDesign docs/VERSIONING.md): the files of one version belong together, so ALL the files of the archive are
+    copied - the four files the app uses, the parts of the stylesheet, CHANGELOG.md and matui.manifest.json with the SHA-256 of every file - and a file
+    that was changed by hand is overwritten. Afterwards "node <MatDesign>/tools/matui-check.js src/MatPaper/wwwroot/matui" says which version this is,
+    whether a file was changed and what a newer version would take with it (exit code 0 means current and unchanged).
     The few icons that the toolkit's own sprite does not have come from MatDesign's optional icon library:
-    scripts/matpaper-icons.txt lists them, and they are written into matpaper-icons.svg (ids mat-il-NAME).
-    Run this when MatDesign has a new release, then rebuild and look at the pages. The version is the first line of matui.css.
+    scripts/matpaper-icons.txt lists them, and they are written into matpaper-icons.svg (ids mat-il-NAME), a file of MatPaper's own.
+    Run this when MatDesign has a new release (read its changelog first: the Migration steps are the app's work), then rebuild and look at the pages.
+    The version is the first line of matui.css.
 .PARAMETER Url
     Address of MatDesign (default http://localhost:8060, the dev stack).
 .EXAMPLE
@@ -31,9 +36,8 @@ try {
     Expand-Archive -Path $zip -DestinationPath $work -Force
     $folder = Join-Path $work 'matui'
     New-Item -ItemType Directory -Path $target -Force | Out-Null
-    foreach ($file in 'matui.css', 'matui.js', 'matui.boot.js', 'matui-icons.svg') {
-        Copy-Item -Path (Join-Path $folder $file) -Destination (Join-Path $target $file) -Force
-    }
+    # all the files of the version, never a few of them (docs/VERSIONING.md of MatDesign)
+    Copy-Item -Path (Join-Path $folder '*') -Destination $target -Recurse -Force
 
     # The icons of the library that MatPaper uses: one symbol each, in a sprite of its own.
     $wanted = Get-Content -Path (Join-Path $PSScriptRoot 'matpaper-icons.txt') |

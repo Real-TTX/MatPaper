@@ -154,11 +154,20 @@ See [PLAN.md](PLAN.md) for the full roadmap and phase breakdown.
 ## The look (MatUi)
 
 The interface is built on **MatUi**, the toolkit of the Mat design system. MatPaper carries its own copy of it in
-`src/MatPaper/wwwroot/matui` (`matui.css`, `matui.js`, `matui.boot.js`, the icon sprite); do not edit those files, bring a newer copy:
+`src/MatPaper/wwwroot/matui` (`matui.css` with its parts in `css/`, `matui.js`, `matui.boot.js`, the icon sprite, `CHANGELOG.md` and
+`matui.manifest.json`); do not edit those files, bring a newer copy:
 
 ```powershell
 ./scripts/update-matui.ps1                       # from the MatDesign of the dev stack (http://localhost:8060)
 ./scripts/update-matui.ps1 -Url https://design.example.com
+```
+
+The toolkit has a version of its own (the first line of `matui.css`, `MatUi.version`), and the files of one version belong together: the script copies
+all of them. Read the changelog first (what the version changes and what the app has to do), then ask the toolkit's own tool where this copy stands and
+look at the pages after a rebuild (MatDesign's `docs/VERSIONING.md` has the whole procedure):
+
+```powershell
+node <MatDesign>/tools/matui-check.js src/MatPaper/wwwroot/matui   # exit code 0: this version, nothing changed by hand
 ```
 
 - **Pages** use the toolkit's classes (`mat-*`) and a set of tag helpers (`src/MatPaper/Controls`): `<mp-field asp-for="…">`, `<mp-picker>`,

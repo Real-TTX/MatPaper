@@ -21,11 +21,13 @@
                                             the menu names the element with the switcher and the panels: data-nav-scope="id"
      data-scrollspy                         an index of #links to sections of the page ("On this page"): the link of the section in view is marked
      data-validation-summary                an alert in a form that lists the fields with an error, each a link to its field (hidden while there are none)
+     formnovalidate                         on a submit button: the form is sent without the check (Delete, Save as draft), as in the browser
      data-output="id"                       a range input writes its value into the element with this id (the filled part of the track is drawn for every .mat-range)
      data-counter="id"                      a text field writes "length / maxlength" into the element with this id
      data-indeterminate                     a checkbox that starts in the indeterminate state
      data-password-toggle="id"              the eye button of a password field: shows and hides the password (aria-pressed)
-     data-selectable                        a table with data-select-row checks, a data-select-all check in its header and a [data-bulk-bar] with [data-bulk-count]
+     data-selectable                        a table, a gallery or a list of cards with a data-select-row check per item, maybe a data-select-all check and a [data-bulk-bar] with [data-bulk-count];
+                                            the item of a ticked check is marked is-selected: its table row, its .mat-tile, or the nearest element with data-select-item
      data-picker="select|date|daterange|time|timerange|colour"
                                             a field that is filled in a panel (FORM-15); the real input inside is .mat-picker__input. Options of the wrapper:
                                             data-placeholder, data-clearable (a button that clears the value), data-min / data-max / data-week-start / data-flex (dates),
@@ -386,19 +388,22 @@
   }
 
   // ---------------------------------------------------------------------------------------------------- dialogs
-  var openDialogs = 0;
+  // The dialogs opened by openDialog, in the order they were opened: the last one is the topmost. A modal dialog is in the top layer of the browser, above everything
+  // that is not inside of it (whatever its z-index), so the toasts live in the topmost one while a dialog is open (see toasts).
+  var dialogStack = [];
 
   function dialogEl(ref) { return typeof ref === 'string' ? doc.getElementById(ref) : ref; }
 
-  function syncLock() { root.classList.toggle('mat-lock', openDialogs > 0 || !!(app() && app().classList.contains('is-nav-open')) || !!(pickerOpen && pickerOpen.full)); }
+  function syncLock() { root.classList.toggle('mat-lock', dialogStack.length > 0 || !!(app() && app().classList.contains('is-nav-open')) || !!(pickerOpen && pickerOpen.full)); }
 
   function openDialog(ref, opener) {
     var d = dialogEl(ref);
     if (!d || d.open) { return d; }
     d._matOpener = opener || doc.activeElement;
     if (typeof d.showModal === 'function') { d.showModal(); } else { d.setAttribute('open', ''); }
-    openDialogs += 1;
+    dialogStack.push(d);
     syncLock();
+    placeToasts();
     var target = $('[autofocus]', d) || $('input:not([type=hidden]):not([disabled]), select, textarea', d);
     if (target) { target.focus({ preventScroll: true }); if (target.select && target.type === 'search') { target.select(); } }
     d.dispatchEvent(new CustomEvent('mat:dialog-open', { bubbles: true }));
@@ -416,8 +421,10 @@
   doc.addEventListener('close', function (e) {
     var d = e.target;
     if (!d || !d.classList || !d.classList.contains('mat-dialog')) { return; }
-    openDialogs = Math.max(0, openDialogs - 1);
+    var at = dialogStack.indexOf(d);
+    if (at >= 0) { dialogStack.splice(at, 1); }
     syncLock();
+    placeToasts();
     var op = d._matOpener;
     d._matOpener = null;
     if (op && op.focus && doc.contains(op)) { op.focus({ preventScroll: true }); }
@@ -527,10 +534,24 @@
   }
 
   // ----------------------------------------------------------------------------------------------------- toasts
+  // One host holds them all. It is at the end of <body>, except while a dialog is open: then it is inside the topmost one and goes back when that closes, so that a
+  // toast is never hidden behind a dialog and its X can still be pressed. The toasts that are shown move with the host.
+  function topDialog() {
+    for (var i = dialogStack.length - 1; i >= 0; i--) { if (dialogStack[i].open && doc.contains(dialogStack[i])) { return dialogStack[i]; } }
+    return null;
+  }
+  function toastHost() {
+    var host = $('.mat-toasts');
+    if (!host) { host = doc.createElement('div'); host.className = 'mat-toasts'; host.setAttribute('role', 'status'); host.setAttribute('aria-live', 'polite'); }
+    var home = topDialog() || doc.body;
+    if (host.parentNode !== home) { home.appendChild(host); }
+    return host;
+  }
+  function placeToasts() { if ($('.mat-toasts')) { toastHost(); } }
+
   function toast(message, options) {
     var o = options || {};
-    var host = $('.mat-toasts');
-    if (!host) { host = doc.createElement('div'); host.className = 'mat-toasts'; host.setAttribute('role', 'status'); host.setAttribute('aria-live', 'polite'); doc.body.appendChild(host); }
+    var host = toastHost();
     var t = doc.createElement('div');
     t.className = 'mat-toast' + (o.tone ? ' mat-toast--' + o.tone : '');
     t.innerHTML = icon(o.tone === 'danger' ? 'x-circle' : o.tone === 'success' ? 'check-circle' : o.tone === 'warning' ? 'alert' : 'info') +
@@ -621,6 +642,8 @@
   doc.addEventListener('submit', function (e) {
     var form = e.target;
     if (!form.matches || !form.matches('form.mat-form, form[data-validate]') || e.defaultPrevented) { return; }
+    // A submit button with formnovalidate (Delete, Save as draft) sends the form as it is, like the browser does: nothing is checked and no message is written.
+    if (e.submitter && e.submitter.hasAttribute('formnovalidate')) { return; }
     var bad = $$('input, select, textarea', form).filter(function (i) { return !i.disabled && !i.checkValidity(); });
     $$('input, select, textarea', form).forEach(function (i) { if (!bad.includes(i)) { showError(i, ''); } });
     // a group of radio buttons has one message
@@ -683,14 +706,18 @@
     });
   });
 
-  // ------------------------------------------------------------------------------------------------ selectable rows of a table
-  // An element with data-selectable holds a table with a checkbox per row (data-select-row), one in the header (data-select-all) and a bulk bar
-  // ([data-bulk-bar] with [data-bulk-count]) that is shown only while rows are selected. The row of a selected check is marked (is-selected).
+  // ------------------------------------------------------------------------------------------ selectable items: rows, tiles, cards
+  // An element with data-selectable holds a table, a gallery or a list of cards with a checkbox per item (data-select-row), maybe one that selects all of them
+  // (data-select-all) and a bulk bar ([data-bulk-bar] with [data-bulk-count]) that is shown only while something is selected. The item of a ticked check is marked
+  // is-selected: its table row, its .mat-tile, or the nearest element with data-select-item (a card, the row of a list of the app's own).
   function updateSelection(box) {
     var rows = $$('input[data-select-row]', box);
     var all = $('input[data-select-all]', box);
     var selected = rows.filter(function (r) { return r.checked; }).length;
-    rows.forEach(function (r) { var tr = r.closest('tr'); if (tr) { tr.classList.toggle('is-selected', r.checked); } });
+    rows.forEach(function (r) {
+      var item = r.closest('tr, .mat-tile, [data-select-item]');
+      if (item && box.contains(item)) { item.classList.toggle('is-selected', r.checked); }
+    });
     if (all) { all.checked = rows.length > 0 && selected === rows.length; all.indeterminate = selected > 0 && selected < rows.length; }
     var bar = $('[data-bulk-bar]', box);
     if (bar) {
@@ -830,7 +857,8 @@
 
   doc.addEventListener('submit', function (e) {
     var form = e.target;
-    if (form.matches && form.matches('form[data-confirm]')) { guardConfirm(e, form, function () { form.requestSubmit(); }); }
+    // the button that was pressed goes along (its name and value, its formnovalidate), as it does for a button with data-confirm
+    if (form.matches && form.matches('form[data-confirm]')) { guardConfirm(e, form, function () { form.requestSubmit(e.submitter || undefined); }); }
   }, true);
 
   doc.addEventListener('change', function (e) {

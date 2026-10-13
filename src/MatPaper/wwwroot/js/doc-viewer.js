@@ -6,7 +6,7 @@
 // to jump between fit-width and 2x. Pages load lazily as they come into view.
 //
 // The dialog is the toolkit's (mat-dialog, full screen); its look is in matpaper.css (mp-viewer*). The icons come from the sprite of the page
-// (MatPaper.icon), the notes ("link copied") from MatPaper.toast, which shows above an open dialog.
+// (MatPaper.icon), the notes ("link copied") are toasts of the toolkit, which shows them inside the open dialog.
 //
 //   MatPaperViewer.open({ token, title })       open it
 //   MatPaperViewer.isPhone()                    true on narrow screens (where it should be used)
@@ -116,7 +116,7 @@
     var current = null;
 
     function toast(message, tone) {
-        window.MatPaper.toast(message, { tone: tone });
+        window.MatUi.toast(message, { tone: tone });
     }
 
     function fileNameOf(response, fallback) {

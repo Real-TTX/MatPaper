@@ -18,7 +18,7 @@
    inbox. It deliberately carries no Confirm form, no title field and no selection
    checkbox, so nothing can archive it or overwrite its metadata by accident. *@
 
-<article class="@itemClass" data-doc-id="@row.Id" data-ocr="@row.OcrState.ToString().ToLowerInvariant()">
+<article class="@itemClass" data-doc-id="@row.Id" data-ocr="@row.OcrState.ToString().ToLowerInvariant()" data-select-item>
     <div class="mat-card__body">
         @if (!ignored)
         {

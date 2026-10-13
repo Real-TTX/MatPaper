@@ -1,4 +1,4 @@
-/* MatUi feature-matpaper-needs (f9a9a509c3) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi feature-matpaper-needs (69a17528fe) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -1093,6 +1093,8 @@ html.mat-lock { overflow: hidden; }
 }
 .mat-card__head { display: flex; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-4) var(--mat-space-6); border-bottom: 1px solid var(--mat-border); }
 .mat-card__head .mat-icon { font-size: 1.2rem; color: var(--mat-accent-text); }
+.mat-card__head .mat-check { align-items: center; min-height: 0; } /* the check of a selectable card sits on the line of the title */
+.mat-card__head .mat-check input { margin: 0; }
 .mat-card__title { font-size: var(--mat-fs-lg); font-weight: 650; }
 .mat-card__sub { color: var(--mat-text-muted); font-size: var(--mat-fs-sm); }
 .mat-card__body { padding: var(--mat-space-6); }
@@ -2101,6 +2103,9 @@ th[aria-sort="descending"] .mat-icon { transform: rotate(180deg); }
 .mat-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-3); padding: var(--mat-space-2) var(--mat-space-4); min-height: var(--mat-control-h-lg); background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); border-radius: var(--mat-radius); }
 .mat-bulk[hidden] { display: none; }
 .mat-bulk__count { margin-right: auto; font-weight: 600; }
+/* An item that is not a table row (a card, the row of a list: data-select-item) is marked like a row when its check is ticked: a tint behind the whole item and the accent
+   colour for its line, like a ticked .mat-choice, never a bar at one side (COLOR-08). A .mat-tile has its own mark (above). */
+[data-select-item].is-selected { background: var(--mat-accent-soft); border-color: var(--mat-accent); }
 
 /* ---- Pills and vertical tabs; tabs that fill the width ---- */
 .mat-tabs--pills { gap: var(--mat-space-2); border-bottom: 0; }

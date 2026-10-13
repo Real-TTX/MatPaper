@@ -154,8 +154,7 @@ dialog.mp-viewer { width: 100%; height: 100%; max-width: none; max-height: none;
 .mp-inbox-bulk .mat-bulk__actions { margin-left: auto; }
 .mp-inbox-list { display: flex; flex-direction: column; gap: var(--mat-space-4); min-width: 0; }
 .mp-inbox-item { transition: border-color var(--mat-dur) var(--mat-ease), background var(--mat-dur) var(--mat-ease); }
-.mp-inbox-item:focus-within, .mp-inbox-item.is-selected { border-color: var(--mat-accent); }
-.mp-inbox-item.is-selected { background: var(--mat-accent-soft); }
+.mp-inbox-item:focus-within { border-color: var(--mat-accent); }
 .mp-inbox-item.is-processing { opacity: .75; }
 .mp-inbox-item--found { border-left: 3px solid var(--mat-border-strong); }
 .mp-inbox-form { display: contents; }

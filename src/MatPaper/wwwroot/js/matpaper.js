@@ -323,22 +323,13 @@
             .catch(function () { /* no suggestions: the list is all there is */ });
     }
 
-    // ---- What the other scripts of the app (viewer, drop, scanner ...) need from the page: an icon of the inlined sprite, and a note that is seen above an open dialog.
+    // ---- What the other scripts of the app (viewer, drop, scanner ...) need from the page: an icon of the inlined sprite and a text of the page.
     function icon(name) {
         var prefix = doc.getElementById("mat-il-" + name) ? "mat-il-" : "mat-i-";
         return '<svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#' + prefix + name + '"></use></svg>';
     }
 
-    // The toasts of the toolkit stand in the page, and a modal dialog covers the page (it is in the top layer): while one is open the host of the toasts moves into it.
-    function toast(message, options) {
-        var open = doc.querySelectorAll("dialog[open]");
-        var home = open.length > 0 ? open[open.length - 1] : doc.body;
-        window.MatUi.toast(message, options);
-        var host = doc.querySelector(".mat-toasts");
-        if (host && host.parentNode !== home) { home.appendChild(host); }
-    }
-
-    window.MatPaper = { icon: icon, toast: toast, text: text };
+    window.MatPaper = { icon: icon, text: text };
 
     function init() {
         cleanHandlerFromAddress();

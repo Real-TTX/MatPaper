@@ -3,8 +3,8 @@
 //  - phones: project, tags and filing sit behind "More fields" (data-inbox-more);
 //  - documents that are still being processed (OCR): ask for their state and reload once suggestions are there - unless the person has started
 //    editing a row, then a note offers the reload instead;
-//  - the selection: the toolkit (data-selectable) ticks, counts and shows the bar; this adds the marks on the cards, "select all N" over all pages
-//    and the label of the button that opens the values for the selection.
+//  - the selection: the toolkit (data-selectable) ticks, counts, marks the cards (data-select-item) and shows the bar; this adds "select all N" over
+//    all pages and the label of the button that opens the values for the selection.
 (function () {
     "use strict";
 
@@ -81,10 +81,6 @@
             matchingButton.textContent = matching
                 ? (matchingButton.getAttribute("data-t-page") || "Only this page")
                 : (matchingButton.getAttribute("data-t-all") || "Select all {0}").replace("{0}", String(total));
-            all.forEach(function (r) {
-                var item = r.closest(".mp-inbox-item");
-                if (item) { item.classList.toggle("is-selected", r.checked); }
-            });
         }
 
         doc.addEventListener("change", function (event) {

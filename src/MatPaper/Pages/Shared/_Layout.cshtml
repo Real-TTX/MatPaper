@@ -74,18 +74,6 @@
                 <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label='@L["Close the menu"]'>@Ui.Icon("x")</button>
             </div>
 
-            @if (hasSwitcher)
-            {
-                <div class="mat-nav__switch">
-                    <button type="button" class="mat-switcher" data-menu-toggle="nav-switch-menu" data-menu-place="bottom" aria-haspopup="menu" aria-expanded="false">
-                        <span class="mat-switcher__icon">@Ui.Icon(current.Icon)</span>
-                        <span class="mat-switcher__text"><small>@L["Menu"]</small><span class="mat-switcher__name">@current.Title</span></span>
-                        @Ui.Icon("chevron-down", "mat-switcher__chev")
-                        <span class="mat-switcher__dot" hidden="@(!menus.Any(m => m != current && m.NeedsAttention))"></span>
-                    </button>
-                </div>
-            }
-
             @foreach (var menu in menus)
             {
                 <nav class="mat-nav__scroll" aria-label="@(hasSwitcher ? menu.Title : L["Main navigation"].Value)" data-nav-panel="@menu.Id" hidden="@(menu != current)">
@@ -131,7 +119,7 @@
                                 {
                                     var isActive = item.Href == active;
                                     <li>
-                                        <a class="mat-nav__item @(isActive ? "is-active" : "")" href="@item.Href" aria-current="@(isActive ? "page" : null)">
+                                        <a class="mat-nav__item @(item.Primary ? "mat-nav__item--primary " : "")@(isActive ? "is-active" : "")" href="@item.Href" aria-current="@(isActive ? "page" : null)">
                                             @if (item.Icon is not null) { @Ui.Icon(item.Icon) }<span>@item.Title</span>
                                             @if (item.Badge is not null) { @Badge(item.Badge) }
                                         </a>
@@ -141,6 +129,19 @@
                         }
                     </ul>
                 </nav>
+            }
+
+            @* The switcher of the menus sits at the end of the menu, above the foot (SHELL-15): the main action "Add document" is the first thing under the logo. Its popup opens upwards. *@
+            @if (hasSwitcher)
+            {
+                <div class="mat-nav__switch mat-nav__switch--end">
+                    <button type="button" class="mat-switcher" data-menu-toggle="nav-switch-menu" data-menu-place="top" aria-haspopup="menu" aria-expanded="false">
+                        <span class="mat-switcher__icon">@Ui.Icon(current.Icon)</span>
+                        <span class="mat-switcher__text"><small>@L["Menu"]</small><span class="mat-switcher__name">@current.Title</span></span>
+                        @Ui.Icon("chevron-up", "mat-switcher__chev")
+                        <span class="mat-switcher__dot" hidden="@(!menus.Any(m => m != current && m.NeedsAttention))"></span>
+                    </button>
+                </div>
             }
 
             <div class="mat-nav__foot">
@@ -197,13 +198,14 @@
                     </ol>
                 </nav>
                 <div class="mat-topbar__actions">
+                    @* The scan buttons are the main actions of the app, so they are filled with the accent (SHELL-17). *@
                     @* Archive numbers switched on: scan the label of a paper with the camera and see its document. *@
                     @if (archiveNumbers)
                     {
-                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon" data-code-scan="open" aria-label='@L["Scan a label"]' data-tip='@L["Scan a label"]'>@Ui.Icon("scan-barcode")</button>
+                        <button type="button" class="mat-btn mat-btn--primary mat-btn--icon" data-code-scan="open" aria-label='@L["Scan a label"]' data-tip='@L["Scan a label"]'>@Ui.Icon("scan-barcode")</button>
                     }
                     @* Scan from anywhere: the camera of the phone is in reach there, the menu is not. *@
-                    <a class="mat-btn mat-btn--ghost mat-btn--icon" href="/Documents/Upload?camera=true" aria-label='@L["Scan a document"]' data-tip='@L["Scan a document"]'>@Ui.Icon("camera")</a>
+                    <a class="mat-btn mat-btn--primary mat-btn--icon" href="/Documents/Upload?camera=true" aria-label='@L["Scan a document"]' data-tip='@L["Scan a document"]'>@Ui.Icon("camera")</a>
                 </div>
             </header>
 

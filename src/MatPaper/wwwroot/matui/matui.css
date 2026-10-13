@@ -1,4 +1,4 @@
-/* MatUi feature-matpaper-needs (69a17528fe) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi feature-menu-action (7a08fa3863) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -566,6 +566,7 @@ kbd {
      - the menu is on the LEFT, the logo ABOVE it
      - at the bottom of the menu: the 3-state theme button, the user (click = context menu), and below that the version
      - the menu scrolls SEPARATELY from the content on the right
+     - a main action may be the first item of the menu, filled with the accent (SHELL-19); the switcher of several menus sits under the logo or at the end of the menu (SHELL-15)
      - the content always has a BREADCRUMB above it
      - on a phone the menu is a drawer
    ========================================================================== */
@@ -659,6 +660,25 @@ kbd {
 /* Keyboard focus: inside the menu the ring is drawn inward (the submenu clips what is outside its box). */
 .mat-nav__item:focus-visible, .mat-switcher:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--mat-accent) 70%, transparent); border-radius: var(--mat-radius); }
 
+/* ---- A main action (SHELL-19): the first item of the menu, filled with the accent, for the one thing the app is mostly used for ---- */
+.mat-nav__item--primary {
+  min-height: var(--mat-control-h-lg);
+  margin-bottom: var(--mat-space-2);
+  background: var(--mat-accent);
+  color: var(--mat-on-accent);
+  font-weight: 620;
+}
+.mat-nav__item--primary .mat-icon { color: inherit; }
+.mat-nav__item--primary:hover { background: var(--mat-accent-hover); }
+.mat-nav__item--primary:active { background: var(--mat-accent-active); }
+/* On its own page it stays filled, a step darker, like the current item of the menu (SHELL-02). */
+.mat-nav__item--primary.is-active,
+.mat-nav__item--primary[aria-current="page"] { background: var(--mat-accent-active); font-weight: 650; }
+.mat-nav__item--primary.is-active .mat-icon,
+.mat-nav__item--primary[aria-current="page"] .mat-icon { color: inherit; }
+/* The ring of the other items is the accent; on an item that is filled with it the ring has the colour of the text. */
+.mat-nav__item--primary:focus-visible { box-shadow: inset 0 0 0 2px var(--mat-on-accent); }
+
 /* ---- Badges in the menu (SHELL-14): a count at the right end of the item, or a dot for "something new" ---- */
 .mat-nav__badge {
   margin-left: auto;
@@ -712,6 +732,8 @@ button.mat-nav__item:hover { background: var(--mat-surface-3); }
 
 /* ---- More than one menu (SHELL-15): the switcher under the logo; only the current menu's items are shown ---- */
 .mat-nav__switch { flex: none; padding: 0 var(--mat-space-3) var(--mat-space-2); }
+/* At the end of the menu, directly above the foot: for an app whose menu starts with a main action (SHELL-19). Its popup opens upwards (data-menu-place="top"). */
+.mat-nav__switch--end { padding: var(--mat-space-2) var(--mat-space-3) var(--mat-space-3); }
 .mat-switcher {
   position: relative;
   width: 100%;
@@ -871,6 +893,8 @@ button.mat-nav__item:hover { background: var(--mat-surface-3); }
   margin-right: calc(var(--mat-space-2) * -1);
 }
 .mat-topbar__actions .mat-btn { position: relative; }
+/* A main action of the app (scan, add) is highlighted: a filled accent button instead of a ghost one. A filled button needs room around it and lines up with the edge of the content. */
+.mat-topbar__actions:has(> .mat-btn--primary) { gap: var(--mat-space-2); margin-right: 0; }
 .mat-topbar__badge {
   position: absolute; top: 3px; right: 3px;
   min-width: 16px; height: 16px;

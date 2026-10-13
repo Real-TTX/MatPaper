@@ -6,8 +6,9 @@ using Microsoft.Extensions.Localization;
 namespace MatPaper.Services;
 
 /// <summary>
-/// The menus of the shell as data (<see cref="NavSet"/>): the everyday work of every user and, for an administrator, the administration behind the
-/// switcher under the logo (SHELL-15). The layout draws them; the badge of the inbox says how many documents wait there.
+/// The menus of the shell as data (<see cref="NavSet"/>): the everyday work of every user, with "Add document" as its main action (SHELL-19) and, for an
+/// administrator, the administration behind the switcher at the end of the menu (SHELL-15). The layout draws them; the badge of the inbox says how many
+/// documents wait there.
 /// </summary>
 public sealed class MenuService(CurrentUser user, AppDbContext db, IStringLocalizer<SharedResource> l)
 {
@@ -43,7 +44,7 @@ public sealed class MenuService(CurrentUser user, AppDbContext db, IStringLocali
     [
         new(null,
         [
-            new(l["Add document"].Value, "/Documents/Upload", "plus"),
+            new(l["Add document"].Value, "/Documents/Upload", "plus", Primary: true),
             new(l["Dashboard"].Value, "/", "dashboard"),
             new(l["Inbox"].Value, "/Inbox", "inbox", pending > 0 ? NavBadge.Count(pending, "accent", l["to review"].Value) : null),
             new(l["Documents"].Value, "/Documents", "file-text"),

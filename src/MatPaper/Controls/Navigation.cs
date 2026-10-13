@@ -44,8 +44,9 @@ public sealed record NavBadge(string Text, string Tone = "accent", string? Label
 /// <summary>
 /// An item of the menu. With <see cref="Children"/> it is the parent of a submenu (SHELL-13): not a page, a button that opens its children, one level deep.
 /// A parent has no <see cref="Href"/>; if the section has a page of its own, that page is its first child. Children show no icon.
+/// A <see cref="Primary"/> item is the main action of the app (SHELL-19): the first item of the menu of the everyday work, filled with the accent.
 /// </summary>
-public sealed record NavItem(string Title, string? Href, string? Icon, NavBadge? Badge = null, IReadOnlyList<NavItem>? Children = null)
+public sealed record NavItem(string Title, string? Href, string? Icon, NavBadge? Badge = null, IReadOnlyList<NavItem>? Children = null, bool Primary = false)
 {
     public bool IsParent => Children is { Count: > 0 };
 

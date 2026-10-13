@@ -89,10 +89,14 @@ public static class FilterUrl
 
             if (kv.Key == key)
             {
-                var remaining = kv.Value.Where(v => v != value).ToArray();
+                // A multiple picker sends its choices as ONE value ("1,5", the toolkit's separator); a link may also repeat the key. Both are read, one value is taken away.
+                var remaining = kv.Value
+                    .SelectMany(v => (v ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    .Where(v => v != value)
+                    .ToArray();
                 if (remaining.Length > 0)
                 {
-                    list.Add(new KeyValuePair<string, StringValues>(key, remaining));
+                    list.Add(new KeyValuePair<string, StringValues>(key, string.Join(',', remaining)));
                 }
             }
             else

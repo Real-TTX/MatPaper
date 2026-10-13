@@ -5,6 +5,8 @@
 @{
     var g = Model.Group;
     var sched = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
+    ViewData["Heading"] = g.Name;
+    ViewData["Title"] = g.Name;
 
     string TypeLabel(ImportTaskType type) => type switch
     {
@@ -15,133 +17,142 @@
     };
 }
 
-<div class="task-head">
-    <div class="task-head__main">
-        <h2 class="task-head__title">@g.Name</h2>
-        <div class="task-head__meta">
-            <span class="badge badge--muted">@L["Group"]</span>
-            @if (g.IsEnabled)
-            {
-                <span class="badge badge--ok">@L["Enabled"]</span>
-            }
-            else
-            {
-                <span class="badge badge--warn">@L["Disabled"]</span>
-            }
-            <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
-            @if (sched.NextUtc is DateTime nextUtc && g.IsEnabled)
-            {
-                <span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
-            }
+<div class="mat-stack">
+    <div class="mat-card">
+        <div class="mat-card__body">
+            <dl class="mat-kv">
+                <dt>@L["Group"]</dt>
+                <dd>
+                    @if (g.IsEnabled) { <span class="mat-pill mat-pill--ok">@L["Enabled"]</span> }
+                    else { <span class="mat-pill mat-pill--warn">@L["Disabled"]</span> }
+                </dd>
+                <dt>@L["Schedule"]</dt>
+                <dd>
+                    <span class="@(sched.IsValid ? "" : "mat-pill mat-pill--warn")">@sched.Text</span>
+                    @if (sched.NextUtc is DateTime nextUtc && g.IsEnabled)
+                    {
+                        <small class="mat-muted"> · @L["next:"] @Fmt.DateTime(nextUtc)</small>
+                    }
+                </dd>
+            </dl>
         </div>
     </div>
-    <div class="task-head__actions">
-        <a class="btn btn--secondary" href="/System/ImportGroups/Edit?id=@g.Id">@L["Edit"]</a>
-        <a class="btn btn--secondary" href="/System/ImportTasks">@L["Back"]</a>
-    </div>
-</div>
 
-<partial name="_TaskRunsPanel" model="Model.Runs" />
+    <partial name="_TaskRunsPanel" model="Model.Runs" />
 
-<div class="task-grid">
-    @if (Model.Source.Count > 0)
-    {
-        <section class="task-card">
-            <h3>@L["Source of all rules"]</h3>
-            <dl class="task-facts">
-                @foreach (var (label, value) in Model.Source)
-                {
-                    <dt>@label</dt>
-                    <dd>@value</dd>
-                }
-            </dl>
-        </section>
-    }
-    <section class="task-card">
-        <h3>@L["Target of all rules"]</h3>
-        <dl class="task-facts">
-            @foreach (var (label, value) in Model.Target)
-            {
-                <dt>@label</dt>
-                <dd>@value</dd>
-            }
-        </dl>
-    </section>
-    <section class="task-card">
-        <h3>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></h3>
-        @if (Model.Members.Count == 0)
+    <div class="mat-grid">
+        @if (Model.Source.Count > 0)
         {
-            <p class="form-help">@L["No rules in this group yet."]</p>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Source of all rules"]</h2></div>
+                <div class="mat-card__body">
+                    <dl class="mat-kv">
+                        @foreach (var (label, value) in Model.Source)
+                        {
+                            <dt>@label</dt>
+                            <dd>@value</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        }
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@L["Target of all rules"]</h2></div>
+            <div class="mat-card__body">
+                <dl class="mat-kv">
+                    @foreach (var (label, value) in Model.Target)
+                    {
+                        <dt>@label</dt>
+                        <dd>@value</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+        <div class="mat-card">
+            <div class="mat-card__head">
+                <h2 class="mat-card__title">@L["Rules"]</h2>
+                <span class="mat-pill mat-pill--plain">@Model.Members.Count</span>
+            </div>
+            <div class="mat-card__body">
+                @if (Model.Members.Count == 0)
+                {
+                    <p class="mat-muted">@L["No rules in this group yet."]</p>
+                }
+                else
+                {
+                    <dl class="mat-kv">
+                        @for (var i = 0; i < Model.Members.Count; i++)
+                        {
+                            var m = Model.Members[i];
+                            <dt>@(i + 1)</dt>
+                            <dd>
+                                <a href="/System/ImportTasks/Details?id=@m.Id">@m.Name</a>
+                                <small class="mat-muted">@TypeLabel(m.Type)</small>
+                                @if (!m.IsEnabled) { <span class="mat-pill mat-pill--warn">@L["Disabled"]</span> }
+                            </dd>
+                        }
+                    </dl>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="mat-card" data-live="docs">
+        <div class="mat-card__head">
+            <h2 class="mat-card__title">@L["Imported documents"]</h2>
+            <span class="mat-pill mat-pill--plain">@Model.DocumentCount</span>
+        </div>
+        @if (Model.Documents.Count == 0)
+        {
+            <div class="mat-card__body"><p class="mat-muted">@L["Nothing imported by this task yet."]</p></div>
         }
         else
         {
-            <dl class="task-facts">
-                @for (var i = 0; i < Model.Members.Count; i++)
+            <ul class="mat-listgroup mat-listgroup--flush mp-docs">
+                @foreach (var d in Model.Documents)
                 {
-                    var m = Model.Members[i];
-                    <dt>@(i + 1)</dt>
-                    <dd>
-                        <a href="/System/ImportTasks/Details?id=@m.Id">@m.Name</a>
-                        <span class="form-help" style="margin:0">@TypeLabel(m.Type)</span>
-                        @if (!m.IsEnabled) { <span class="badge badge--warn">@L["Disabled"]</span> }
-                    </dd>
+                    <li class="mat-listgroup__item">
+                        <a class="mp-thumb" href="/Documents/Edit?id=@d.Id" tabindex="-1" aria-hidden="true">
+                            @if (d.HasThumbnail)
+                            {
+                                <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
+                            }
+                            else
+                            {
+                                <mp-icon name="file-text" />
+                            }
+                        </a>
+                        <span class="mat-listgroup__text"><a href="/Documents/Edit?id=@d.Id">@d.Title</a><small>@d.FileName</small></span>
+                        <span class="mp-when">
+                            <small class="mat-muted">@Fmt.DateTime(d.Imported)</small>
+                            @if (d.IsStaged || d.Review == ReviewState.Pending)
+                            {
+                                <span class="mat-pill mat-pill--warn">@L["Inbox"]</span>
+                            }
+                        </span>
+                    </li>
                 }
-            </dl>
-        }
-    </section>
-</div>
-
-<section class="task-card task-card--wide" data-live="docs">
-    <h3>
-        @L["Imported documents"]
-        <span class="task-card__count">@Model.DocumentCount</span>
-    </h3>
-    @if (Model.Documents.Count == 0)
-    {
-        <p class="form-help">@L["Nothing imported by this task yet."]</p>
-    }
-    else
-    {
-        <ul class="task-docs">
-            @foreach (var d in Model.Documents)
+            </ul>
+            @if (Model.DocumentCount > Model.Documents.Count)
             {
-                <li class="task-docs__item">
-                    <a class="task-docs__thumb" href="/Documents/Edit?id=@d.Id" tabindex="-1" aria-hidden="true">
-                        @if (d.HasThumbnail)
-                        {
-                            <img src="/Documents/@d.Token/thumb" loading="lazy" alt="" />
-                        }
-                        else
-                        {
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
-                        }
-                    </a>
-                    <div class="task-docs__text">
-                        <a href="/Documents/Edit?id=@d.Id">@d.Title</a>
-                        <span class="form-help" style="margin:0">@d.FileName</span>
-                    </div>
-                    <div class="task-docs__when">
-                        <span>@Fmt.DateTime(d.Imported)</span>
-                        @if (d.IsStaged || d.Review == ReviewState.Pending)
-                        {
-                            <span class="badge badge--warn">@L["Inbox"]</span>
-                        }
-                    </div>
-                </li>
+                <div class="mat-card__foot"><small class="mat-muted">@L["The latest {0} of {1} are shown.", Model.Documents.Count, Model.DocumentCount]</small></div>
             }
-        </ul>
-        @if (Model.DocumentCount > Model.Documents.Count)
-        {
-            <p class="form-help">@L["The latest {0} of {1} are shown.", Model.Documents.Count, Model.DocumentCount]</p>
         }
-    }
-</section>
+    </div>
 
-@if (Model.LastRun is { } last && (!string.IsNullOrWhiteSpace(last.Log) || Model.Runs.IsRunning))
-{
-    <section class="task-card task-card--wide" data-live="log">
-        <h3>@L["Log of the latest run"]</h3>
-        <pre class="task-log">@last.Log</pre>
-        <p class="runs-panel__more"><a href="/System/TaskRuns/Details?id=@last.Id">@Fmt.DateTimeSeconds(last.StartedAt)</a></p>
-    </section>
-}
+    @if (Model.LastRun is { } last && (!string.IsNullOrWhiteSpace(last.Log) || Model.Runs.IsRunning))
+    {
+        <div class="mat-card" data-live="log">
+            <div class="mat-card__head"><h2 class="mat-card__title">@L["Log of the latest run"]</h2></div>
+            <div class="mat-card__body mat-stack">
+                <pre class="mat-code mp-log">@last.Log</pre>
+                <a href="/System/TaskRuns/Details?id=@last.Id">@Fmt.DateTimeSeconds(last.StartedAt)</a>
+            </div>
+        </div>
+    }
+
+    <mp-button-row>
+        <mp-button variant="primary" href="@($"/System/ImportGroups/Edit?id={g.Id}")" icon="edit">@L["Edit"]</mp-button>
+        <mp-button variant="secondary" href="/System/ImportTasks" icon="back">@L["Back"]</mp-button>
+    </mp-button-row>
+</div>

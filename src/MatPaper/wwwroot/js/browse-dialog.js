@@ -2,7 +2,7 @@
 //
 // A form opts in with data-browse-url: a Razor handler that receives the whole form plus
 // "scope" and "path" and answers { ok, entries: [{ path, name, count, hasChildren }] } or
-// { ok: false, error }. The page renders the dialog once (partial _BrowseDialog). Each
+// { ok: false, error }. The page renders the dialog once (partial _BrowseDialog, a dialog of the toolkit). Each
 // trigger button carries:
 //   data-browse         scope sent to the handler (e.g. "smb-folders")
 //   data-browse-target  id of the input that receives the chosen path
@@ -18,6 +18,10 @@
         return String(value).replace(/[&<>"']/g, function (c) {
             return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
         });
+    }
+
+    function icon(name) {
+        return '<svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#mat-i-' + name + '"></use></svg>';
     }
 
     function text(form, name, fallback) {
@@ -76,29 +80,33 @@
         }
 
         function setList(html) {
-            dialog.querySelector(".browse-dialog__list").innerHTML = html;
+            dialog.querySelector(".mp-browse__list").innerHTML = html;
+        }
+
+        function message(kind, content) {
+            return '<li class="mat-listgroup__item mp-browse__' + kind + '">' + escapeHtml(content) + "</li>";
         }
 
         function load(path) {
             state.path = path || "";
-            dialog.querySelector(".browse-dialog__path").textContent = state.path || "/";
-            setList('<li class="browse-dialog__empty">' + escapeHtml(t("loading", "Loading…")) + "</li>");
+            dialog.querySelector(".mp-browse__path").textContent = state.path || "/";
+            setList(message("empty", t("loading", "Loading…")));
 
             postJson(state.form, state.form.getAttribute("data-browse-url"), { scope: state.scope, path: state.path })
                 .then(function (res) {
                     if (!res.ok) {
-                        setList('<li class="browse-dialog__error">' + escapeHtml(res.error || "") + "</li>");
+                        setList(message("error", res.error || ""));
                         return;
                     }
                     var up = state.flat || !state.path || state.path === state.root ? "" : renderUpRow();
                     if (!res.entries.length) {
-                        setList(up + '<li class="browse-dialog__empty">' + escapeHtml(t("empty", "Nothing found.")) + "</li>");
+                        setList(up + message("empty", t("empty", "Nothing found.")));
                         return;
                     }
                     setList(up + res.entries.map(renderEntry).join(""));
                 })
                 .catch(function (err) {
-                    setList('<li class="browse-dialog__error">' + escapeHtml(String(err)) + "</li>");
+                    setList(message("error", String(err && err.message ? err.message : err)));
                 });
         }
 
@@ -109,19 +117,19 @@
         }
 
         function renderUpRow() {
-            return '<li class="browse-dialog__item browse-dialog__item--up">' +
-                '<button type="button" class="browse-dialog__up">↑ ' + escapeHtml(t("up", "One level up")) + "</button></li>";
+            return '<li class="mat-listgroup__item"><button type="button" class="mat-btn mat-btn--ghost mat-btn--sm mp-browse__up">' +
+                icon("arrow-up") + "<span>" + escapeHtml(t("up", "One level up")) + "</span></button></li>";
         }
 
         function renderEntry(entry) {
             var count = entry.count === null || entry.count === undefined
                 ? ""
-                : '<span class="badge badge--muted">' + escapeHtml(entry.count) + "</span>";
+                : '<span class="mat-badge mat-badge--soft">' + escapeHtml(entry.count) + "</span>";
             var open = entry.hasChildren
-                ? '<button type="button" class="icon-btn browse-dialog__open" data-path="' + escapeHtml(entry.path) + '" title="›">›</button>'
+                ? '<button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm mp-browse__open" data-path="' + escapeHtml(entry.path) + '" aria-label="' + escapeHtml(entry.name) + ' ›">' + icon("chevron-right") + "</button>"
                 : "";
-            return '<li class="browse-dialog__item">' +
-                '<button type="button" class="browse-dialog__pick" data-path="' + escapeHtml(entry.path) + '">' +
+            return '<li class="mat-listgroup__item">' + icon("folder") +
+                '<button type="button" class="mat-listgroup__text mp-browse__pick" data-path="' + escapeHtml(entry.path) + '">' +
                 escapeHtml(entry.name) + "</button>" + count + open + "</li>";
         }
 
@@ -132,11 +140,11 @@
             state.root = button.getAttribute("data-browse-root") || "";
             state.flat = button.hasAttribute("data-browse-flat");
 
-            dialog.querySelector(".browse-dialog__title").textContent =
+            dialog.querySelector(".mat-dialog__title").textContent =
                 button.getAttribute("data-browse-title") || t("folders", "Folders");
-            dialog.querySelector(".browse-dialog__footer").hidden = state.flat;
-            dialog.querySelector(".browse-dialog__path").hidden = state.flat;
-            if (typeof dialog.showModal === "function") { dialog.showModal(); }
+            dialog.querySelector(".mp-browse__footer").hidden = state.flat;
+            dialog.querySelector(".mp-browse__path").hidden = state.flat;
+            window.MatUi.dialog.open(dialog, button);
 
             // Folder pickers start where the field points; flat lists always start at the top.
             var current = targetInput() ? targetInput().value.trim() : "";
@@ -147,30 +155,27 @@
             var input = targetInput();
             if (input) {
                 input.value = path;
+                input.dispatchEvent(new Event("input", { bubbles: true }));
                 input.dispatchEvent(new Event("change", { bubbles: true }));
             }
-            dialog.close();
+            window.MatUi.dialog.close(dialog);
         }
 
-        document.querySelectorAll("form[data-browse-url] [data-browse]").forEach(function (button) {
-            button.addEventListener("click", function () { open(button); });
-        });
-
-        // Clicking the backdrop (the dialog element itself, outside its content) closes it.
-        dialog.addEventListener("mousedown", function (ev) {
-            if (ev.target === dialog) { dialog.close(); }
+        // The buttons that open it (a delegated listener: the page may add some later).
+        document.addEventListener("click", function (ev) {
+            var button = ev.target.closest ? ev.target.closest("form[data-browse-url] [data-browse]") : null;
+            if (button) { ev.preventDefault(); open(button); }
         });
 
         dialog.addEventListener("click", function (ev) {
-            var pick = ev.target.closest(".browse-dialog__pick");
+            var pick = ev.target.closest(".mp-browse__pick");
             if (pick) { choose(pick.getAttribute("data-path")); return; }
 
-            var openBtn = ev.target.closest(".browse-dialog__open");
+            var openBtn = ev.target.closest(".mp-browse__open");
             if (openBtn) { load(openBtn.getAttribute("data-path")); return; }
 
-            if (ev.target.closest(".browse-dialog__up")) { load(parentOf(state.path)); return; }
-            if (ev.target.closest(".browse-dialog__close")) { dialog.close(); return; }
-            if (ev.target.closest(".browse-dialog__use")) { choose(state.path); }
+            if (ev.target.closest(".mp-browse__up")) { load(parentOf(state.path)); return; }
+            if (ev.target.closest(".mp-browse__use")) { choose(state.path); }
         });
     });
 })();

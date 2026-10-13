@@ -1,38 +1,19 @@
 @page
 @model MatPaper.Pages.Account.LoginModel
 @{
-    ViewData["Title"] = L["Sign in"];
+    ViewData["Title"] = L["Sign in"].Value;
+    ViewData["PageSub"] = L["Enter your credentials to continue."].Value;
 }
 
-<div class="auth-card">
-    <div class="auth-card__brand">MatPaper</div>
-    <h1 class="auth-card__title">@L["Sign in"]</h1>
-    <p class="auth-card__sub">@L["Enter your credentials to continue."]</p>
+<form method="post" class="mat-form" novalidate>
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    <partial name="_ValidationSummary" />
 
-    <form method="post" class="form">
-        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+    <mp-field asp-for="Input.Username" label='@L["Username"]' autocomplete="username" autofocus="true" required="true" star="false" />
+    <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' autocomplete="current-password" required="true" star="false" />
+    <mp-field asp-for="Input.RememberMe" kind="checkbox" label='@L["Remember me"]' />
 
-        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-
-        <div class="form-row">
-            <label asp-for="Input.Username">@L["Username"]</label>
-            <input asp-for="Input.Username" class="form-control" autocomplete="username" autofocus />
-            <span asp-validation-for="Input.Username" class="field-error"></span>
-        </div>
-
-        <div class="form-row">
-            <label asp-for="Input.Password">@L["Password"]</label>
-            <input asp-for="Input.Password" class="form-control" type="password" autocomplete="current-password" />
-            <span asp-validation-for="Input.Password" class="field-error"></span>
-        </div>
-
-        <div class="form-check">
-            <input asp-for="Input.RememberMe" type="checkbox" />
-            <label asp-for="Input.RememberMe">@L["Remember me"]</label>
-        </div>
-
-        <div class="btn-row">
-            <button type="submit" class="btn btn--primary">@L["Sign in"]</button>
-        </div>
-    </form>
-</div>
+    <mp-button-row plain="true">
+        <mp-button variant="primary" icon="login" block="true">@L["Sign in"]</mp-button>
+    </mp-button-row>
+</form>

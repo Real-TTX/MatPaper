@@ -13,84 +13,77 @@
         ConnectionKind.OneDrive => "OneDrive",
         _ => k.ToString()
     };
-}
 
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or username"]' />
-    <mp-toolbar-select name="Kind" label='@L["Type"]' value="@Model.Kind">
-        <option value="all">@L["All"]</option>
-        <option value="Smb">SMB</option>
-        <option value="Imap">IMAP</option>
-        <option value="Pop3">POP3</option>
-        <option value="GoogleDrive">Google Drive</option>
-        <option value="OneDrive">OneDrive</option>
-    </mp-toolbar-select>
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="name_asc">@L["Name (A–Z)"]</option>
-        <option value="name_desc">@L["Name (Z–A)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
-
-@{
     var kindFilter = Enum.TryParse<ConnectionKind>(Model.Kind, true, out var chosenKind) && Enum.IsDefined(chosenKind) ? KindLabel(chosenKind) : null;
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
         new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
         new MatPaper.Services.FilterSpec("Kind", L["Type"].Value, kindFilter));
 }
-<partial name="_FilterChips" model="activeFilters" />
 
-<mp-list-bar count="Model.TotalCount" singular="{0} connection" plural="{0} connections" />
+<div class="mat-list">
+    <mp-toolbar id="connections" label='@L["Connections"]' count="Model.TotalCount" singular="{0} connection" plural="{0} connections">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or username"]' />
+        <mp-toolbar-select name="Kind" label='@L["Type"]' value="@Model.Kind">
+            <option value="all">@L["All"]</option>
+            <option value="Smb">SMB</option>
+            <option value="Imap">IMAP</option>
+            <option value="Pop3">POP3</option>
+            <option value="GoogleDrive">Google Drive</option>
+            <option value="OneDrive">OneDrive</option>
+        </mp-toolbar-select>
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="name_asc">@L["Name (A–Z)"]</option>
+            <option value="name_desc">@L["Name (Z–A)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text='@L["No connections yet."]'>
-    <thead>
-        <tr>
-            <th>@L["Name"]</th>
-            <th>@L["Type"]</th>
-            <th>@L["Sign-in"]</th>
-            <th>@L["Account"]</th>
-            <th class="is-actions"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var c in Model.Rows)
-        {
-            <tr data-row-href="/System/Connections/Edit?id=@c.Id" tabindex="0">
-                <td>@c.Name</td>
-                <td><span class="badge badge--muted">@KindLabel(c.Kind)</span></td>
-                <td>
-                    @if (c.AuthMode == ConnectionAuthMode.OAuth2)
-                    {
-                        @if (c.IsOAuthConnected)
+    <partial name="_FilterChips" model="activeFilters" />
+
+    <mp-table item-count="Model.Rows.Count" empty-text='@L["No connections yet."]' caption='@L["Connections"]'>
+        <thead>
+            <tr>
+                <th scope="col">@L["Name"]</th>
+                <th scope="col">@L["Type"]</th>
+                <th scope="col">@L["Sign-in"]</th>
+                <th scope="col" class="mat-hide-sm">@L["Account"]</th>
+                <th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model.Rows)
+            {
+                <tr data-row-href="/System/Connections/Edit?id=@c.Id">
+                    <td><div class="mat-table__name"><a href="/System/Connections/Edit?id=@c.Id">@c.Name</a></div></td>
+                    <td><span class="mat-pill mat-pill--plain">@KindLabel(c.Kind)</span></td>
+                    <td>
+                        @if (c.AuthMode == ConnectionAuthMode.OAuth2)
                         {
-                            <span class="badge badge--ok">@(c.Provider == OAuthProvider.Microsoft ? "Microsoft" : "Google") · @L["Connected"]</span>
+                            @if (c.IsOAuthConnected)
+                            {
+                                <span class="mat-pill mat-pill--ok">@(c.Provider == OAuthProvider.Microsoft ? "Microsoft" : "Google") · @L["Connected"]</span>
+                            }
+                            else
+                            {
+                                <span class="mat-pill mat-pill--warn">@(c.Provider == OAuthProvider.Microsoft ? "Microsoft" : "Google") · @L["Not connected"]</span>
+                            }
                         }
                         else
                         {
-                            <span class="badge badge--warn">@(c.Provider == OAuthProvider.Microsoft ? "Microsoft" : "Google") · @L["Not connected"]</span>
+                            <span class="mat-pill mat-pill--plain">@L["Password"]</span>
                         }
-                    }
-                    else
-                    {
-                        <span class="badge badge--muted">@L["Password"]</span>
-                    }
-                </td>
-                <td>@(string.IsNullOrEmpty(c.Username) ? "—" : c.Username)</td>
-                <td class="is-actions">
-                    <span class="icon-actions">
-                        <a class="icon-btn" href="/System/Connections/Edit?id=@c.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                            </svg>
-                        </a>
-                    </span>
-                </td>
-            </tr>
-        }
-    </tbody>
-</mp-table>
+                    </td>
+                    <td class="mat-hide-sm">@(string.IsNullOrEmpty(c.Username) ? "—" : c.Username)</td>
+                    <td class="mat-table__cell-actions">
+                        <div class="mat-table__actions">
+                            <mp-icon-button icon="edit" label='@L["Edit"]' href='@($"/System/Connections/Edit?id={c.Id}")' />
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </mp-table>
 
-<div class="list-actions">
-    <a class="btn btn--primary" href="/System/Connections/Edit">@L["New connection"]</a>
+    <div class="mat-actions">
+        <mp-button variant="primary" href="/System/Connections/Edit" icon="plus">@L["New connection"]</mp-button>
+    </div>
 </div>
-
-<mp-list-bar position="bottom" />

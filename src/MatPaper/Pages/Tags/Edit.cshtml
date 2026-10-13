@@ -3,23 +3,30 @@
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Tags / Edit"].Value : L["Tags / New"].Value;
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New tag"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-<form class="form" method="post">
+<form method="post" class="mat-form" novalidate>
     <input type="hidden" asp-for="Id" />
+    <partial name="_ValidationSummary" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-
-    <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoice"]' />
-    <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' />
+    <div class="mat-card">
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoice"]' />
+                <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' />
+            </div>
+        </div>
+    </div>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/Tags">@L["Back"]</mp-button>
-        <mp-button-spacer />
+        <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/Tags" icon="back">@L["Back"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete" confirm='@L["Delete this tag? This cannot be undone."]'>@L["Delete"]</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" icon="trash" handler="Delete" confirm='@L["Delete this tag? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

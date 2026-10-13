@@ -3,77 +3,74 @@
 @{
     ViewData["Breadcrumb"] = L["System / Task history / Run"].Value;
     ViewData["Title"] = Model.TaskName;
+    ViewData["Heading"] = Model.TaskName;
+    ViewData["Width"] = "narrow";
 }
 
-<dl class="form">
-    <div>
-        <strong>@L["Task"]</strong>
-        <div>@Model.TaskName</div>
-    </div>
-    <div>
-        <strong>@L["Kind"]</strong>
-        <div>@(Model.Run.Kind switch { MatPaper.Data.TaskRunKind.Import => L["Import"].Value, MatPaper.Data.TaskRunKind.Export => L["Export"].Value, MatPaper.Data.TaskRunKind.Align => L["Align to template"].Value, MatPaper.Data.TaskRunKind.ImportGroup => L["Import group"].Value, _ => L["Storage search"].Value })</div>
-    </div>
-    <div>
-        <strong>@L["State"]</strong>
-        <div>
-            @switch (Model.Run.State)
-            {
-                case MatPaper.Data.TaskRunState.Success:
-                    <span class="badge badge--ok">@L["Success"]</span>
-                    break;
-                case MatPaper.Data.TaskRunState.Failed:
-                    <span class="badge badge--off">@L["Failed"]</span>
-                    break;
-                case MatPaper.Data.TaskRunState.Cancelled:
-                    <span class="badge badge--warn">@L["Cancelled"]</span>
-                    break;
-                default:
-                    <span class="badge badge--muted">@L["Running"]</span>
-                    break;
-            }
+<div class="mat-stack">
+    <div class="mat-card">
+        <div class="mat-card__body">
+            <dl class="mat-kv">
+                <dt>@L["Task"]</dt>
+                <dd>@Model.TaskName</dd>
+                <dt>@L["Kind"]</dt>
+                <dd>@(Model.Run.Kind switch { MatPaper.Data.TaskRunKind.Import => L["Import"].Value, MatPaper.Data.TaskRunKind.Export => L["Export"].Value, MatPaper.Data.TaskRunKind.Align => L["Align to template"].Value, MatPaper.Data.TaskRunKind.ImportGroup => L["Import group"].Value, _ => L["Storage search"].Value })</dd>
+                <dt>@L["State"]</dt>
+                <dd>
+                    @switch (Model.Run.State)
+                    {
+                        case MatPaper.Data.TaskRunState.Success:
+                            <span class="mat-pill mat-pill--ok">@L["Success"]</span>
+                            break;
+                        case MatPaper.Data.TaskRunState.Failed:
+                            <span class="mat-pill mat-pill--error">@L["Failed"]</span>
+                            break;
+                        case MatPaper.Data.TaskRunState.Cancelled:
+                            <span class="mat-pill mat-pill--warn">@L["Cancelled"]</span>
+                            break;
+                        default:
+                            <span class="mat-pill mat-pill--busy">@L["Running"]</span>
+                            break;
+                    }
+                </dd>
+                <dt>@L["Started"]</dt>
+                <dd class="mat-mono">@Fmt.DateTimeSeconds(Model.Run.StartedAt)</dd>
+                <dt>@L["Finished"]</dt>
+                <dd class="mat-mono">
+                    @if (Model.Run.FinishedAt is { } finished)
+                    {
+                        @Fmt.DateTimeSeconds(finished)
+                    }
+                    else
+                    {
+                        <span>—</span>
+                    }
+                </dd>
+                <dt>@L["Duration"]</dt>
+                <dd class="mat-mono">
+                    @if (Model.Duration is { } d)
+                    {
+                        @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
+                    }
+                    else
+                    {
+                        <span>—</span>
+                    }
+                </dd>
+                <dt>@L["Items processed"]</dt>
+                <dd>@Model.Run.ItemsProcessed</dd>
+            </dl>
         </div>
     </div>
-    <div>
-        <strong>@L["Started"]</strong>
-        <div>@Fmt.DateTimeSeconds(Model.Run.StartedAt)</div>
-    </div>
-    <div>
-        <strong>@L["Finished"]</strong>
-        <div>
-            @if (Model.Run.FinishedAt is { } finished)
-            {
-                @Fmt.DateTimeSeconds(finished)
-            }
-            else
-            {
-                <span class="badge badge--muted">—</span>
-            }
-        </div>
-    </div>
-    <div>
-        <strong>@L["Duration"]</strong>
-        <div>
-            @if (Model.Duration is { } d)
-            {
-                @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
-            }
-            else
-            {
-                <span class="badge badge--muted">—</span>
-            }
-        </div>
-    </div>
-    <div>
-        <strong>@L["Items processed"]</strong>
-        <div>@Model.Run.ItemsProcessed</div>
-    </div>
-    <div>
-        <strong>@L["Log"]</strong>
-        <pre>@(string.IsNullOrEmpty(Model.Run.Log) ? L["(no log)"].Value : Model.Run.Log)</pre>
-    </div>
-</dl>
 
-<mp-button-row>
-    <mp-button variant="secondary" href="/System/TaskRuns">@L["Back"]</mp-button>
-</mp-button-row>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Log"]</h2></div>
+        <div class="mat-card__body">
+            <pre class="mat-code mp-log">@(string.IsNullOrEmpty(Model.Run.Log) ? L["(no log)"].Value : Model.Run.Log)</pre>
+        </div>
+    </div>
+
+    <mp-button-row>
+        <mp-button variant="secondary" href="/System/TaskRuns" icon="back">@L["Back"]</mp-button>
+    </mp-button-row>
+</div>

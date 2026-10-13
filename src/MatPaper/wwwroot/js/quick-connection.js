@@ -6,7 +6,7 @@
     "use strict";
 
     var dialog = document.getElementById("quick-connection");
-    if (!dialog || typeof dialog.showModal !== "function") { return; }
+    if (!dialog || !window.MatUi) { return; }
 
     var NEW = "__new__";
     var current = null; // { select, kind, previous }
@@ -62,7 +62,7 @@
         });
         field("#qc-ssl").checked = true;
         showFor(kind);
-        dialog.showModal();
+        window.MatUi.dialog.open(dialog, select);
         var first = dialog.querySelector(kind === "cloud" ? '[data-qc="cloud"] a' : "#qc-name");
         if (first) { first.focus(); }
     }
@@ -70,7 +70,7 @@
     function cancel() {
         if (current) { current.select.value = current.previous; }
         current = null;
-        if (dialog.open) { dialog.close(); }
+        if (dialog.open) { window.MatUi.dialog.close(dialog); }
     }
 
     // The mailbox type and TLS switch change the usual port.
@@ -105,17 +105,20 @@
         }
 
         var saveBtn = field('[data-qc="save"]');
-        var label = saveBtn.textContent;
+        var label = "";
+        var saveLabelEl = saveBtn.querySelector("span") || saveBtn;
+        label = saveLabelEl.textContent;
         saveBtn.disabled = true;
-        saveBtn.textContent = t("saving", "Saving …");
+        saveLabelEl.textContent = t("saving", "Saving …");
         var errors = field('[data-qc="errors"]');
+        var errorText = errors.querySelector(".mat-alert__body");
         errors.hidden = true;
 
         fetch("/System/Connections/Edit?handler=Quick", { method: "POST", body: body, credentials: "same-origin" })
             .then(function (r) { return r.json(); })
             .then(function (result) {
                 if (!result || !result.ok) {
-                    errors.textContent = (result && result.errors && result.errors.join(" ")) || t("failed", "The connection could not be saved.");
+                    errorText.textContent = (result && result.errors && result.errors.join(" ")) || t("failed", "The connection could not be saved.");
                     errors.hidden = false;
                     return;
                 }
@@ -131,15 +134,15 @@
                 current.select.setAttribute("data-qc-previous", String(result.id));
                 current.select.dispatchEvent(new Event("change", { bubbles: true }));
                 current = null;
-                dialog.close();
+                window.MatUi.dialog.close(dialog);
             })
             .catch(function () {
-                errors.textContent = t("failed", "The connection could not be saved.");
+                errorText.textContent = t("failed", "The connection could not be saved.");
                 errors.hidden = false;
             })
             .then(function () {
                 saveBtn.disabled = false;
-                saveBtn.textContent = label;
+                saveLabelEl.textContent = label;
             });
     }
 
@@ -150,7 +153,8 @@
         if (name === "close") { event.preventDefault(); cancel(); }
         else if (name === "save") { event.preventDefault(); save(); }
     });
-    dialog.addEventListener("cancel", function () { cancel(); });
+    // Escape and a click outside close the dialog too: what was asked for is then declined.
+    dialog.addEventListener("close", function () { if (current) { current.select.value = current.previous; current = null; } });
     // Enter in a field saves instead of submitting the page's own form.
     dialog.querySelector("form").addEventListener("submit", function (event) { event.preventDefault(); });
     dialog.addEventListener("keydown", function (event) {

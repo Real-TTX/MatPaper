@@ -4,50 +4,43 @@
     ViewData["Breadcrumb"] = L["Tags"].Value;
 }
 
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="name_asc">@L["Name (A–Z)"]</option>
-        <option value="name_desc">@L["Name (Z–A)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
+<div class="mat-list">
+    <mp-toolbar id="tags" label='@L["Tags"]' count="Model.TotalCount" singular="{0} tag" plural="{0} tags">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="name_asc">@L["Name (A–Z)"]</option>
+            <option value="name_desc">@L["Name (Z–A)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-<partial name="_FilterChips" model="Model.Filters" />
+    <partial name="_FilterChips" model="Model.Filters" />
 
-<mp-list-bar count="Model.TotalCount" singular="{0} tag" plural="{0} tags" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
-
-<mp-table item-count="Model.Rows.Count" empty-text='@L["No tags match your criteria."]'>
-    <thead>
-        <tr>
-            <th>@L["Name"]</th>
-            <th class="is-actions"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var tag in Model.Rows)
-        {
-            var swatch = string.IsNullOrWhiteSpace(tag.Color) ? "#808080" : tag.Color;
-            <tr data-row-href="/Tags/Edit?id=@tag.Id" tabindex="0">
-                <td>
-                    <span class="tag-label"><span class="tag-label__dot" style="background:@swatch"></span>@tag.Name</span>
-                </td>
-                <td class="is-actions">
-                    <span class="icon-actions">
-                        <a class="icon-btn" href="/Documents?TagIds=@tag.Id" title='@L["Documents"]' aria-label='@L["Documents"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
-                        </a>
-                        <a class="icon-btn" href="/Tags/Edit?id=@tag.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
-                        </a>
-                    </span>
-                </td>
+    <mp-table item-count="Model.Rows.Count" empty-text='@L["No tags match your criteria."]' caption='@L["Tags"]'>
+        <thead>
+            <tr>
+                <th scope="col">@L["Name"]</th>
+                <th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th>
             </tr>
-        }
-    </tbody>
-</mp-table>
+        </thead>
+        <tbody>
+            @foreach (var tag in Model.Rows)
+            {
+                <tr data-row-href="/Tags/Edit?id=@tag.Id">
+                    <td><div class="mat-table__name"><span class="mat-dot" data-colour="@(string.IsNullOrWhiteSpace(tag.Color) ? "#808080" : tag.Color)" aria-hidden="true"></span><a href="/Tags/Edit?id=@tag.Id">@tag.Name</a></div></td>
+                    <td class="mat-table__cell-actions">
+                        <div class="mat-table__actions">
+                            <mp-icon-button icon="file-text" label='@L["Documents"]' href='@($"/Documents?TagIds={tag.Id}")' />
+                            <mp-icon-button icon="edit" label='@L["Edit"]' href='@($"/Tags/Edit?id={tag.Id}")' />
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </mp-table>
 
-<div class="list-actions">
-    <a class="btn btn--primary" href="/Tags/Edit">@L["New tag"]</a>
+    <mp-pager current-page="Model.PageNumber" total-pages="Model.TotalPages" total="Model.TotalCount" row-count="Model.Rows.Count" />
+
+    <div class="mat-actions">
+        <mp-button variant="primary" href="/Tags/Edit" icon="plus">@L["New tag"]</mp-button>
+    </div>
 </div>
-
-<mp-list-bar position="bottom" />

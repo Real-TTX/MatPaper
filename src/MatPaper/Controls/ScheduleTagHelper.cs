@@ -7,12 +7,10 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 namespace MatPaper.Controls;
 
 /// <summary>
-/// A friendly schedule builder that edits a 5-field cron string. It renders a
-/// mode selector (Manual / Hourly / Daily / Weekly / Monthly / Custom) plus the
-/// matching inputs and posts the computed cron through a hidden input whose name
-/// matches the bound property — so PageModels keep binding a plain
-/// <c>string? CronExpression</c> with no change. Behaviour lives in
-/// <c>schedule.js</c>; times are wall-clock times in the configured app time zone.
+/// A friendly schedule builder that edits a 5-field cron string, made of the toolkit's controls. It renders a <c>mat-field</c> with a mode selector
+/// (Manual / Hourly / Daily / Weekly / Monthly / Custom) plus the matching inputs and posts the computed cron through a hidden input whose name matches
+/// the bound property - so PageModels keep binding a plain <c>string? CronExpression</c> with no change. Behaviour lives in <c>schedule.js</c>; times are
+/// wall-clock times in the configured app time zone.
 /// Usage: &lt;mp-schedule asp-for="Input.CronExpression" label="Schedule" /&gt;
 /// </summary>
 [HtmlTargetElement("mp-schedule", Attributes = "asp-for")]
@@ -20,16 +18,13 @@ public sealed class ScheduleTagHelper : TagHelper
 {
     private readonly Services.Fmt _fmt;
     private readonly Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> _l;
-    private readonly IHtmlGenerator _generator;
 
     public ScheduleTagHelper(
         Services.Fmt fmt,
-        Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l,
-        IHtmlGenerator generator)
+        Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l)
     {
         _fmt = fmt;
         _l = l;
-        _generator = generator;
     }
 
     [HtmlAttributeName("asp-for")]
@@ -49,11 +44,15 @@ public sealed class ScheduleTagHelper : TagHelper
     {
         var enc = HtmlEncoder.Default;
         var fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
+        var id = TagBuilder.CreateSanitizedId(fullName, "_");
         var current = For.Model?.ToString() ?? string.Empty;
+        var error = ViewContext.ViewData.ModelState.TryGetValue(fullName, out var entry) && entry.Errors.Count > 0
+            ? entry.Errors.Select(e => e.ErrorMessage).FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "?"
+            : null;
 
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.Attributes.SetAttribute("class", "form-row mp-schedule");
+        output.Attributes.SetAttribute("class", Classes.Merge("mat-field mp-schedule", error is null ? null : "is-invalid", output.Attributes["class"]?.Value?.ToString()));
         output.Attributes.SetAttribute("data-name", fullName);
         output.Attributes.SetAttribute("data-cron", current);
         output.Attributes.SetAttribute("data-zone", _fmt.ZoneName);
@@ -65,11 +64,11 @@ public sealed class ScheduleTagHelper : TagHelper
         output.Attributes.SetAttribute("data-t-monthly", _l["On day {0} of each month at {1}"].Value);
 
         var w = new StringBuilder();
-        w.Append($"<label>{enc.Encode(Label)}</label>");
+        w.Append($"<label class=\"mat-label\" for=\"{id}__mode\">{enc.Encode(Label)}</label>");
         w.Append($"<input type=\"hidden\" class=\"mp-schedule__value\" name=\"{enc.Encode(fullName)}\" value=\"{enc.Encode(current)}\">");
 
         w.Append("<div class=\"mp-schedule__controls\">");
-        w.Append("<select class=\"mp-schedule__mode form-control\">");
+        w.Append($"<select class=\"mat-select mp-schedule__mode\" id=\"{id}__mode\">");
         w.Append($"<option value=\"manual\">{enc.Encode(_l["Manual only"].Value)}</option>");
         w.Append($"<option value=\"hourly\">{enc.Encode(_l["Hourly"].Value)}</option>");
         w.Append($"<option value=\"daily\">{enc.Encode(_l["Daily"].Value)}</option>");
@@ -78,10 +77,10 @@ public sealed class ScheduleTagHelper : TagHelper
         w.Append($"<option value=\"custom\">{enc.Encode(_l["Custom (cron)"].Value)}</option>");
         w.Append("</select>");
 
-        w.Append($"<span class=\"mp-schedule__part\" data-modes=\"hourly\">{enc.Encode(_l["at minute"].Value)} <input type=\"number\" class=\"mp-schedule__minute form-control\" min=\"0\" max=\"59\" value=\"0\"></span>");
-        w.Append($"<span class=\"mp-schedule__part\" data-modes=\"daily weekly monthly\">{enc.Encode(_l["at"].Value)} <input type=\"time\" class=\"mp-schedule__time form-control\" value=\"03:00\"></span>");
+        w.Append($"<label class=\"mp-schedule__part\" data-modes=\"hourly\" hidden><span>{enc.Encode(_l["at minute"].Value)}</span> <input type=\"number\" class=\"mat-input mp-schedule__minute\" min=\"0\" max=\"59\" value=\"0\" inputmode=\"numeric\"></label>");
 
-        w.Append("<span class=\"mp-schedule__part\" data-modes=\"weekly\"><select class=\"mp-schedule__weekday form-control\">");
+        w.Append("<span class=\"mp-schedule__part\" data-modes=\"weekly\" hidden><select class=\"mat-select mp-schedule__weekday\" aria-label=\"")
+            .Append(enc.Encode(_l["Weekday"].Value)).Append("\">");
         string[] days =
         {
             _l["Monday"].Value, _l["Tuesday"].Value, _l["Wednesday"].Value, _l["Thursday"].Value,
@@ -90,32 +89,23 @@ public sealed class ScheduleTagHelper : TagHelper
         int[] vals = { 1, 2, 3, 4, 5, 6, 0 };
         for (var i = 0; i < days.Length; i++)
         {
-            w.Append($"<option value=\"{vals[i]}\">{days[i]}</option>");
+            w.Append($"<option value=\"{vals[i]}\">{enc.Encode(days[i])}</option>");
         }
         w.Append("</select></span>");
 
-        w.Append($"<span class=\"mp-schedule__part\" data-modes=\"monthly\">{enc.Encode(_l["day"].Value)} <input type=\"number\" class=\"mp-schedule__dom form-control\" min=\"1\" max=\"31\" value=\"1\"></span>");
-        w.Append("<span class=\"mp-schedule__part\" data-modes=\"custom\"><input type=\"text\" class=\"mp-schedule__cron form-control\" placeholder=\"*/15 * * * *\"></span>");
+        w.Append($"<label class=\"mp-schedule__part\" data-modes=\"monthly\" hidden><span>{enc.Encode(_l["day"].Value)}</span> <input type=\"number\" class=\"mat-input mp-schedule__dom\" min=\"1\" max=\"31\" value=\"1\" inputmode=\"numeric\"></label>");
+        w.Append($"<div class=\"mp-schedule__part\" data-modes=\"daily weekly monthly\" hidden><span>{enc.Encode(_l["at"].Value)}</span> <div class=\"mat-picker\" data-picker=\"time\" data-step=\"5\"><input class=\"mat-picker__input mp-schedule__time\" id=\"{id}__time\" value=\"03:00\" aria-label=\"{enc.Encode(_l["Time"].Value)}\"></div></div>");
+        w.Append($"<span class=\"mp-schedule__part mp-schedule__part--wide\" data-modes=\"custom\" hidden><input type=\"text\" class=\"mat-input mat-mono mp-schedule__cron\" placeholder=\"*/15 * * * *\" aria-label=\"{enc.Encode(_l["Custom (cron)"].Value)}\"></span>");
         w.Append("</div>");
 
-        w.Append("<p class=\"mp-schedule__summary form-help\"></p>");
-
-        // Without this an invalid cron is refused silently: the page only shows
-        // model-level errors, and this field used to render no message of its own.
-        var validation = _generator.GenerateValidationMessage(
-            ViewContext, For.ModelExplorer, For.Name, message: null, tag: "span",
-            htmlAttributes: new { @class = "field-error" });
-        if (validation is not null)
-        {
-            using var writer = new System.IO.StringWriter();
-            validation.WriteTo(writer, enc);
-            w.Append(writer.ToString());
-        }
-
+        w.Append("<span class=\"mat-hint mp-schedule__summary\" aria-live=\"polite\"></span>");
         if (!string.IsNullOrEmpty(Help))
         {
-            w.Append($"<p class=\"form-help\">{enc.Encode(Help)}</p>");
+            w.Append($"<span class=\"mat-hint\">{enc.Encode(Help)}</span>");
         }
+
+        // Without this an invalid cron is refused silently.
+        w.Append($"<span class=\"mat-error\" id=\"{id}-error\" aria-live=\"polite\">{enc.Encode(error ?? string.Empty)}</span>");
 
         output.Content.SetHtmlContent(w.ToString());
     }

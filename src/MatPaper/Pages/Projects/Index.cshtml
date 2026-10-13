@@ -4,60 +4,56 @@
     ViewData["Breadcrumb"] = L["Projects"].Value;
 }
 
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="name_asc">@L["Name (A–Z)"]</option>
-        <option value="name_desc">@L["Name (Z–A)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
+<div class="mat-list">
+    <mp-toolbar id="projects" label='@L["Projects"]' count="Model.TotalCount" singular="{0} project" plural="{0} projects">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="name_asc">@L["Name (A–Z)"]</option>
+            <option value="name_desc">@L["Name (Z–A)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-<partial name="_FilterChips" model="Model.Filters" />
+    <partial name="_FilterChips" model="Model.Filters" />
 
-<mp-list-bar count="Model.TotalCount" singular="{0} project" plural="{0} projects" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
-
-<mp-table item-count="Model.Rows.Count" empty-text='@L["No projects match your criteria."]'>
-    <thead>
-        <tr>
-            <th>@L["Name"]</th>
-            <th class="is-actions"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var project in Model.Rows)
-        {
-            var swatch = string.IsNullOrWhiteSpace(project.Color) ? "#808080" : project.Color;
-            <tr data-row-href="/Projects/Edit?id=@project.Id" tabindex="0">
-                <td>
-                    <a href="/Documents?ProjectIds=@project.Id" title='@L["Show documents"]' class="project-label">
-                        <svg class="project-label__icon" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:@swatch"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>@project.Name
-                    </a>
-                    @if (project.IsCommon)
-                    {
-                        <span class="badge badge--ok" style="margin-left:.5em">@L["Common"]</span>
-                    }
-                    else if (project.OwnerId != Model.CurrentUserId)
-                    {
-                        <span class="badge badge--muted" style="margin-left:.5em">@L["Shared"]@(project.Owner != null ? $": {project.Owner.DisplayName ?? project.Owner.Username}" : "")</span>
-                    }
-                </td>
-                <td class="is-actions">
-                    <span class="icon-actions">
-                        <a class="icon-btn" href="/Documents?ProjectIds=@project.Id" title='@L["Documents"]' aria-label='@L["Documents"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /></svg>
-                        </a>
-                        <a class="icon-btn" href="/Projects/Edit?id=@project.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></svg>
-                        </a>
-                    </span>
-                </td>
+    <mp-table item-count="Model.Rows.Count" empty-text='@L["No projects match your criteria."]' caption='@L["Projects"]'>
+        <thead>
+            <tr>
+                <th scope="col">@L["Name"]</th>
+                <th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th>
             </tr>
-        }
-    </tbody>
-</mp-table>
+        </thead>
+        <tbody>
+            @foreach (var project in Model.Rows)
+            {
+                <tr data-row-href="/Projects/Edit?id=@project.Id">
+                    <td>
+                        <div class="mat-table__name">
+                            <mp-icon name="folder" data-colour="@(string.IsNullOrWhiteSpace(project.Color) ? "#808080" : project.Color)" />
+                            <a href="/Documents?ProjectIds=@project.Id" data-tip='@L["Show documents"]'>@project.Name</a>
+                            @if (project.IsCommon)
+                            {
+                                <span class="mat-pill mat-pill--ok">@L["Common"]</span>
+                            }
+                            else if (project.OwnerId != Model.CurrentUserId)
+                            {
+                                <span class="mat-pill mat-pill--plain">@L["Shared"]@(project.Owner != null ? $": {project.Owner.DisplayName ?? project.Owner.Username}" : "")</span>
+                            }
+                        </div>
+                    </td>
+                    <td class="mat-table__cell-actions">
+                        <div class="mat-table__actions">
+                            <mp-icon-button icon="file-text" label='@L["Documents"]' href='@($"/Documents?ProjectIds={project.Id}")' />
+                            <mp-icon-button icon="edit" label='@L["Edit"]' href='@($"/Projects/Edit?id={project.Id}")' />
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </mp-table>
 
-<div class="list-actions">
-    <a class="btn btn--primary" href="/Projects/Edit">@L["New project"]</a>
+    <mp-pager current-page="Model.PageNumber" total-pages="Model.TotalPages" total="Model.TotalCount" row-count="Model.Rows.Count" />
+
+    <div class="mat-actions">
+        <mp-button variant="primary" href="/Projects/Edit" icon="plus">@L["New project"]</mp-button>
+    </div>
 </div>
-
-<mp-list-bar position="bottom" />

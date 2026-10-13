@@ -3,92 +3,110 @@
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Projects / Edit"].Value : L["Projects / New"].Value;
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New project"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-@if (Model.IsEdit)
-{
-    <div class="doc-status" style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;padding:.6rem .85rem;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface)">
-        <span>@L["Owner"]: <strong>@(Model.OwnerName ?? "—")</strong></span>
-        @if (Model.IsCommon)
-        {
-            <span class="badge badge--ok">@L["Common area"]</span>
-        }
-        @if (!Model.CanManage)
-        {
-            <span class="form-help" style="margin:0">@L["Shared with you."]</span>
-        }
-    </div>
-}
+<div class="mat-stack">
+    @if (Model.IsEdit)
+    {
+        <div class="mat-card">
+            <div class="mat-card__body">
+                <dl class="mat-kv">
+                    <dt>@L["Owner"]</dt>
+                    <dd>@(Model.OwnerName ?? "—") @if (Model.IsCommon) { <span class="mat-pill mat-pill--ok">@L["Common area"]</span> }</dd>
+                    @if (!Model.CanManage)
+                    {
+                        <dt>@L["Sharing"]</dt>
+                        <dd>@L["Shared with you."]</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    }
 
-<form class="form" method="post">
-    <input type="hidden" asp-for="Id" />
+    <form method="post" class="mat-form" novalidate>
+        <input type="hidden" asp-for="Id" />
+        <partial name="_ValidationSummary" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+        <div class="mat-card">
+            <div class="mat-card__body">
+                <div class="mat-form__grid">
+                    <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Website relaunch"]' />
+                    <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' />
+                </div>
+            </div>
+        </div>
 
-    <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Website relaunch"]' />
-    <mp-field asp-for="Input.Color" kind="color" label='@L["Colour"]' />
+        <mp-button-row>
+            @if (Model.CanManage)
+            {
+                <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+            }
+            <mp-button variant="secondary" href="/Projects" icon="back">@L["Back"]</mp-button>
+            @if (Model.IsEdit && Model.CanManage)
+            {
+                <mp-button-spacer />
+                <mp-button variant="danger" icon="trash" handler="Delete" confirm='@L["Delete this project? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
+            }
+        </mp-button-row>
+    </form>
 
-    <mp-button-row>
-        @if (Model.CanManage)
-        {
-            <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        }
-        <mp-button variant="secondary" href="/Projects">@L["Back"]</mp-button>
-        @if (Model.IsEdit && Model.CanManage)
-        {
-            <mp-button-spacer />
-            <mp-button variant="danger" type="submit" handler="Delete" confirm='@L["Delete this project? This cannot be undone."]'>@L["Delete"]</mp-button>
-        }
-    </mp-button-row>
-</form>
+    @if (Model.IsEdit && Model.CanManage)
+    {
+        <div class="mat-card">
+            <div class="mat-card__head">
+                <mp-icon name="users" />
+                <h2 class="mat-card__title">@L["Sharing"]</h2>
+            </div>
+            <div class="mat-card__body mat-stack">
+                <p class="mat-muted">@L["Sharing a project gives the selected users access to every document in it."]</p>
 
-@if (Model.IsEdit && Model.CanManage)
-{
-    <section class="doc-shares" style="margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--color-border)">
-        <h2 class="doc-shares__title" style="font-size:1.1rem;margin:0 0 .25rem">@L["Sharing"]</h2>
-        <p class="form-help">@L["Sharing a project gives the selected users access to every document in it."]</p>
+                <form method="post" asp-page-handler="SetCommon">
+                    <input type="hidden" asp-for="Id" />
+                    <label class="mat-switch">
+                        <input type="checkbox" name="isCommon" value="true" checked="@Model.IsCommon" data-autosubmit />
+                        <span class="mat-switch__track"></span>
+                        <span>@L["Show in the common area (visible to everyone)"]</span>
+                    </label>
+                </form>
 
-        <form method="post" asp-page-handler="SetCommon">
-            <input type="hidden" asp-for="Id" />
-            <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--color-text-muted)">
-                <input type="checkbox" name="isCommon" value="true" @(Model.IsCommon ? "checked" : "") onchange="this.form.submit()" />
-                @L["Show in the common area (visible to everyone)"]
-            </label>
-        </form>
-
-        <h3 style="margin:1.25rem 0 .35rem;font-size:1rem">@L["Shared with users"]</h3>
-        @if (Model.UserShares.Count > 0)
-        {
-            <ul class="share-users">
-                @foreach (var s in Model.UserShares)
+                <h3>@L["Shared with users"]</h3>
+                @if (Model.UserShares.Count > 0)
                 {
-                    <li class="share-user">
-                        <span class="share-user__name">@s.UserName</span>
-                        <span class="share-user__perm">@(s.CanEdit ? L["can edit documents"] : L["view only"])</span>
-                        <form method="post" asp-page-handler="RevokeUserShare" style="display:inline">
-                            <input type="hidden" asp-for="Id" />
-                            <input type="hidden" name="shareId" value="@s.ShareId" />
-                            <button class="btn btn--danger" type="submit">@L["Remove"]</button>
-                        </form>
-                    </li>
+                    <ul class="mat-listgroup">
+                        @foreach (var s in Model.UserShares)
+                        {
+                            <li class="mat-listgroup__item">
+                                <span class="mat-listgroup__text"><strong>@s.UserName</strong><small>@(s.CanEdit ? L["can edit documents"] : L["view only"])</small></span>
+                                <form method="post" asp-page-handler="RevokeUserShare">
+                                    <input type="hidden" asp-for="Id" />
+                                    <input type="hidden" name="shareId" value="@s.ShareId" />
+                                    <mp-button variant="ghost" size="sm" icon="x" confirm='@($"{L["Remove"]}: {s.UserName}?")' confirm-ok='@L["Remove"]'>@L["Remove"]</mp-button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
                 }
-            </ul>
-        }
-        else
-        {
-            <p class="form-help">@L["Not shared with any user yet."]</p>
-        }
+                else
+                {
+                    <p class="mat-muted">@L["Not shared with any user yet."]</p>
+                }
 
-        @if (Model.ShareUserOptions.Count > 0)
-        {
-            <form method="post" asp-page-handler="ShareUser" class="doc-shares__create" style="display:flex;align-items:flex-end;gap:.75rem;flex-wrap:wrap;margin-top:1rem">
-                <input type="hidden" asp-for="Id" />
-                <mp-picker asp-for="ShareUserId" label='@L["Add user"]' asp-items="Model.ShareUserOptions" placeholder='@L["Choose a user…"]' />
-                <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--color-text-muted)">
-                    <input type="checkbox" name="canEdit" value="true" /> @L["may edit documents"]
-                </label>
-                <button class="btn btn--primary" type="submit">@L["Share"]</button>
-            </form>
-        }
-    </section>
-}
+                @if (Model.ShareUserOptions.Count > 0)
+                {
+                    <form method="post" asp-page-handler="ShareUser" class="mat-form mat-form--inline">
+                        <input type="hidden" asp-for="Id" />
+                        <mp-picker asp-for="ShareUserId" label='@L["Add user"]' asp-items="Model.ShareUserOptions" placeholder='@L["Choose a user…"]' />
+                        <div class="mat-field mat-field--auto">
+                            <label class="mat-check"><input type="checkbox" name="canEdit" value="true" /><span class="mat-check__text">@L["may edit documents"]</span></label>
+                        </div>
+                        <div class="mat-field mat-field--auto">
+                            <mp-button variant="primary" icon="plus">@L["Share"]</mp-button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+</div>

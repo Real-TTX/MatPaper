@@ -2,73 +2,29 @@
 @model MatPaper.Pages.System.IndexModel
 @{
     ViewData["Breadcrumb"] = L["System"].Value;
-}
+    ViewData["Heading"] = L["Administration"].Value;
+    ViewData["PageSub"] = L["Users, storage, automation and the settings of this instance."].Value;
 
-@{
-    void Icon(string paths)
+    async Task Card(string href, string icon, string title, string description)
     {
-        <span class="link-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">@Html.Raw(paths)</svg></span>
+        <a class="mat-card mp-linkcard" href="@href">
+            <div class="mat-card__body mp-linkcard__body">
+                <span class="mp-linkcard__icon"><mp-icon name="@icon" /></span>
+                <span class="mp-linkcard__text"><strong>@title</strong><span class="mat-muted">@description</span></span>
+            </div>
+        </a>
     }
 }
 
-<section class="card-grid">
-    <a class="link-card" href="/System/Users">
-        @{ Icon("<path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'/>"); }
-        <span class="link-card__title">@L["Users"]</span>
-        <span class="link-card__desc">@L["Manage local accounts and roles"]</span>
-    </a>
-
-    <a class="link-card" href="/System/StorageLocations">
-        @{ Icon("<ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/><path d='M3 12c0 1.66 4 3 9 3s9-1.34 9-3'/>"); }
-        <span class="link-card__title">@L["Storage locations"]</span>
-        <span class="link-card__desc">@L["Manage storage locations and search them for files"]</span>
-    </a>
-
-    <a class="link-card" href="/System/DocumentTypes">
-        @{ Icon("<path d='M12 2 2 7l10 5 10-5-10-5z'/><path d='M2 17l10 5 10-5M2 12l10 5 10-5'/>"); }
-        <span class="link-card__title">@L["Document types"]</span>
-        <span class="link-card__desc">@L["Manage the document type vocabulary"]</span>
-    </a>
-
-    <a class="link-card" href="/System/Connections">
-        @{ Icon("<path d='M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3'/>"); }
-        <span class="link-card__title">@L["Connections"]</span>
-        <span class="link-card__desc">@L["Reusable connections for mailboxes, shares and cloud drives"]</span>
-    </a>
-
-    <a class="link-card" href="/System/ImportTasks">
-        @{ Icon("<path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><path d='M7 10l5 5 5-5'/><path d='M12 15V3'/>"); }
-        <span class="link-card__title">@L["Import tasks"]</span>
-        <span class="link-card__desc">@L["Scheduled imports from folders and mailboxes"]</span>
-    </a>
-
-    <a class="link-card" href="/System/ExportTasks">
-        @{ Icon("<path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><path d='M17 8l-5-5-5 5'/><path d='M12 3v12'/>"); }
-        <span class="link-card__title">@L["Export tasks"]</span>
-        <span class="link-card__desc">@L["Scheduled database and document backups"]</span>
-    </a>
-
-    <a class="link-card" href="/System/ArchiveNumbers">
-        @{ Icon("<path d='M4 5v14' stroke-width='1.5'/><path d='M7.5 5v14' stroke-width='3'/><path d='M12 5v14' stroke-width='1.5'/><path d='M15 5v14' stroke-width='2.5'/><path d='M19 5v14' stroke-width='1.5'/><path d='M21.5 5v14' stroke-width='1'/>"); }
-        <span class="link-card__title">@L["Archive numbers"]</span>
-        <span class="link-card__desc">@L["Labels, separator sheets and barcodes for the paper originals"]</span>
-    </a>
-
-    <a class="link-card" href="/System/Blocklist">
-        @{ Icon("<circle cx='12' cy='12' r='9'/><path d='M5.6 5.6l12.8 12.8'/>"); }
-        <span class="link-card__title">@L["Blocklist"]</span>
-        <span class="link-card__desc">@L["Deleted documents that are not imported again"]</span>
-    </a>
-
-    <a class="link-card" href="/System/TaskRuns">
-        @{ Icon("<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 3'/>"); }
-        <span class="link-card__title">@L["Task history"]</span>
-        <span class="link-card__desc">@L["Results and logs of import/export runs"]</span>
-    </a>
-
-    <a class="link-card" href="/System/Settings">
-        @{ Icon("<circle cx='12' cy='12' r='3'/><path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/>"); }
-        <span class="link-card__title">@L["Settings"]</span>
-        <span class="link-card__desc">@L["Public address, time zone and language"]</span>
-    </a>
-</section>
+<div class="mat-grid">
+    @{ await Card("/System/Users", "user", L["Users"].Value, L["Manage local accounts and roles"].Value); }
+    @{ await Card("/System/StorageLocations", "hard-drive", L["Storage locations"].Value, L["Manage storage locations and search them for files"].Value); }
+    @{ await Card("/System/DocumentTypes", "layers", L["Document types"].Value, L["Manage the document type vocabulary"].Value); }
+    @{ await Card("/System/Connections", "plug", L["Connections"].Value, L["Reusable connections for mailboxes, shares and cloud drives"].Value); }
+    @{ await Card("/System/ImportTasks", "download", L["Import tasks"].Value, L["Scheduled imports from folders and mailboxes"].Value); }
+    @{ await Card("/System/ExportTasks", "upload", L["Export tasks"].Value, L["Scheduled database and document backups"].Value); }
+    @{ await Card("/System/ArchiveNumbers", "scan-barcode", L["Archive numbers"].Value, L["Labels, separator sheets and barcodes for the paper originals"].Value); }
+    @{ await Card("/System/Blocklist", "shield", L["Blocklist"].Value, L["Deleted documents that are not imported again"].Value); }
+    @{ await Card("/System/TaskRuns", "clock", L["Task history"].Value, L["Results and logs of import/export runs"].Value); }
+    @{ await Card("/System/Settings", "sliders", L["Settings"].Value, L["Public address, time zone and language"].Value); }
+</div>

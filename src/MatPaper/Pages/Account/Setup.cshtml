@@ -1,49 +1,20 @@
 @page
 @model MatPaper.Pages.Account.SetupModel
 @{
-    ViewData["Title"] = L["Welcome to MatPaper"];
+    ViewData["Title"] = L["Welcome to MatPaper"].Value;
+    ViewData["PageSub"] = L["Create the administrator account"].Value;
 }
 
-<div class="auth-card">
-    <div class="auth-card__brand">MatPaper</div>
-    <h1 class="auth-card__title">@L["Welcome to MatPaper"]</h1>
-    <p class="auth-card__sub">@L["Create the administrator account"]</p>
+<form method="post" class="mat-form" novalidate>
+    <partial name="_ValidationSummary" />
 
-    <form method="post" class="form">
-        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    <mp-field asp-for="Input.Username" label='@L["Username"]' autocomplete="username" autofocus="true" required="true" />
+    <mp-field asp-for="Input.DisplayName" label='@L["Display name"]' autocomplete="name" />
+    <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]' autocomplete="email" help='@L["(optional)"]' />
+    <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' autocomplete="new-password" required="true" />
+    <mp-field asp-for="Input.ConfirmPassword" kind="password" label='@L["Confirm password"]' autocomplete="new-password" required="true" />
 
-        <div class="form-row">
-            <label asp-for="Input.Username">@L["Username"]</label>
-            <input asp-for="Input.Username" class="form-control" autocomplete="username" autofocus />
-            <span asp-validation-for="Input.Username" class="field-error"></span>
-        </div>
-
-        <div class="form-row">
-            <label asp-for="Input.DisplayName">@L["Display name"]</label>
-            <input asp-for="Input.DisplayName" class="form-control" autocomplete="name" />
-            <span asp-validation-for="Input.DisplayName" class="field-error"></span>
-        </div>
-
-        <div class="form-row">
-            <label asp-for="Input.Email">@L["Email"] <span class="auth-card__sub">@L["(optional)"]</span></label>
-            <input asp-for="Input.Email" class="form-control" type="email" autocomplete="email" />
-            <span asp-validation-for="Input.Email" class="field-error"></span>
-        </div>
-
-        <div class="form-row">
-            <label asp-for="Input.Password">@L["Password"]</label>
-            <input asp-for="Input.Password" class="form-control" type="password" autocomplete="new-password" />
-            <span asp-validation-for="Input.Password" class="field-error"></span>
-        </div>
-
-        <div class="form-row">
-            <label asp-for="Input.ConfirmPassword">@L["Confirm password"]</label>
-            <input asp-for="Input.ConfirmPassword" class="form-control" type="password" autocomplete="new-password" />
-            <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
-        </div>
-
-        <div class="btn-row">
-            <button type="submit" class="btn btn--primary">@L["Create account"]</button>
-        </div>
-    </form>
-</div>
+    <mp-button-row plain="true">
+        <mp-button variant="primary" icon="rocket" block="true">@L["Create account"]</mp-button>
+    </mp-button-row>
+</form>

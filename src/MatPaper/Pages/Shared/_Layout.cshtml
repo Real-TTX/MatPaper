@@ -1,256 +1,257 @@
+@using Microsoft.AspNetCore.Html
+@using MatPaper.Controls
 @using MatPaper.Services
 @inject MatPaper.Services.CurrentUser CurrentUser
-@inject MatPaper.Data.AppDbContext Db
 @inject MatPaper.Services.ThemeService Themes
+@inject MatPaper.Services.MenuService MenuSvc
+@inject MatPaper.Controls.Toolkit Toolkit
 @inject MatPaper.Configuration.AppConfig AppSettings
-@using MatPaper.Data
-@using Microsoft.EntityFrameworkCore
 @{
-    // Breadcrumbs are set as "Section / Page" strings — some from views, some from page
-    // models. Translating segment by segment localizes both without touching every model;
-    // an unknown segment (e.g. a document title) simply passes through.
+    // A page fills these in:
+    //   Breadcrumb   "Section / Page" (translated segment by segment; BreadcrumbLiteral = true when a segment is data, e.g. a document title)
+    //   Title        the entity of a detail page (it leads the browser title: "Invoice 2026-04 · Documents · MatPaper")
+    //   Heading      the h1, when it is not the entity or the last crumb;  PageSub  one line under it
+    //   Width        "narrow" (forms, 780 px) or "wide";  OwnHead  the page draws its own head;  ActiveHref  the menu item it belongs to when its address is not in the menu
+    var theme = await Themes.ResolveAsync();
+    var menus = await MenuSvc.BuildAsync();
+    var path = Context.Request.Path.Value ?? "/";
+    var active = ViewData["ActiveHref"] as string ?? NavigationMatch.ActiveHref(menus.SelectMany(m => m.Pages).Select(i => i.Href!), path);
+    var current = menus.FirstOrDefault(m => m.Contains(active)) ?? menus[0];
+    var hasSwitcher = menus.Count > 1;
+
     var breadcrumbRaw = ViewData["Breadcrumb"] as string ?? "";
     var breadcrumbLiteral = ViewData["BreadcrumbLiteral"] is true;
-    var breadcrumbParts = breadcrumbRaw
+    var crumbs = breadcrumbRaw
         .Split('/', StringSplitOptions.RemoveEmptyEntries)
         .Select(s => breadcrumbLiteral ? s.Trim() : L[s.Trim()].Value)
         .ToList();
-    var breadcrumb = string.Join(" / ", breadcrumbParts);
+    // The crumbs mirror the URL, so each one but the last can lead back; only when both have the same number of segments, otherwise the mapping would be a guess.
+    var pathParts = path.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+    var crumbsLinkable = pathParts.Count == crumbs.Count && crumbs.Count > 1;
 
-    // The crumbs mirror the URL, so each one but the last can lead back. Only when both
-    // have the same number of segments, otherwise the mapping would be a guess.
-    var pathParts = (Context.Request.Path.Value ?? "")
-        .Split('/', StringSplitOptions.RemoveEmptyEntries)
-        .ToList();
-    var breadcrumbLinkable = pathParts.Count == breadcrumbParts.Count && breadcrumbParts.Count > 1;
-    var accountName = CurrentUser.DisplayName ?? CurrentUser.Username ?? "Account";
-    var avatarLetter = string.IsNullOrEmpty(accountName) ? "?" : accountName.Substring(0, 1).ToUpperInvariant();
+    var entity = ViewData["Title"] as string;
+    var heading = ViewData["Heading"] as string ?? entity ?? (crumbs.Count > 0 ? crumbs[^1] : "MatPaper");
+    var sub = ViewData["PageSub"] as string;
+    var ownHead = ViewData["OwnHead"] is true;
+    var width = ViewData["Width"] as string;
 
-    // Resolved before any markup, so the first byte already carries the right colours.
-    var theme = await Themes.ResolveAsync();
+    // "Vodafone invoice · Documents · MatPaper" reads better in a tab strip and in the browser history than three tabs all called "Documents / Edit".
+    var titleParts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(entity)) { titleParts.Add(entity.Trim()); }
+    if (crumbs.Count > 0) { titleParts.Add(string.Join(" / ", crumbs)); }
+    titleParts.Add(Ui.App.Name);
+    ViewData["FullTitle"] = string.Join(" · ", titleParts);
 
-    var pendingCount = 0;
-    if (CurrentUser.UserId is long uid)
+    var displayName = CurrentUser.DisplayName ?? CurrentUser.Username ?? L["Account"].Value;
+    var role = CurrentUser.Role ?? string.Empty;
+    var archiveNumbers = User.Identity?.IsAuthenticated == true && AppSettings.ArchiveNumbersEnabled;
+
+    IHtmlContent Badge(NavBadge badge, bool sum = false)
     {
-        pendingCount = await Db.Documents.InInboxOf(uid, CurrentUser.IsAdmin).CountAsync();
+        var text = badge.IsDot ? string.Empty : badge.Text;
+        var label = string.IsNullOrEmpty(badge.Label) ? string.Empty : (badge.IsDot ? badge.Label : " " + badge.Label);
+        return new HtmlString($"<span class=\"{badge.Classes(sum)}\">{Ui.Encode(text)}" + (label.Length == 0 ? string.Empty : $"<span class=\"mat-sr-only\">{Ui.Encode(label)}</span>") + "</span>");
     }
 }
-@functions {
-    // "Vodafone invoice · Documents · MatPaper" reads better in a tab strip and in the
-    // browser history than three tabs all called "Documents / Edit".
-    static string PageTitle(string? entity, string breadcrumb)
-    {
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(entity))
-        {
-            parts.Add(entity.Trim());
-        }
-        if (!string.IsNullOrEmpty(breadcrumb))
-        {
-            parts.Add(breadcrumb);
-        }
-        parts.Add("MatPaper");
-        return string.Join(" · ", parts);
-    }
-}
-
 <!DOCTYPE html>
-<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" data-theme-mode="@theme.Mode" data-mode="@(theme.Mode == "dark" ? "dark" : "light")" data-scheme="@theme.Scheme" data-accent="@theme.Accent" data-theme-source="@(theme.UserHasMode ? "user" : "default")" data-theme-save="/Account/Appearance?handler=Mode">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="MatPaper" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <title>@PageTitle(ViewData["Title"] as string, breadcrumb)</title>
-    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/picker.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/features.css" asp-append-version="true" />
-    <link rel="manifest" href="~/manifest.webmanifest" />
-    <link rel="icon" type="image/svg+xml" href="~/icons/logo.svg" />
-    <partial name="_ThemeHead" model="theme" />
-    <link rel="apple-touch-icon" href="~/icons/icon-192.png" />
-    <noscript><style>form.toolbar{visibility:visible!important}</style></noscript>
-</head>
+<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" @Html.Raw(theme.RootAttributes)@(Context.Request.Method == "POST" ? Html.Raw(" data-posted") : null)>
+<partial name="_Head" model="theme" />
 <body>
-    <div class="app-shell">
-        <div class="app-shell__backdrop" id="sidebar-backdrop" hidden></div>
+    <a class="mat-skip" href="#main">@L["Skip to the content"]</a>
+    @Html.Raw(Toolkit.Sprite)
 
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar__brand">
-                <svg class="sidebar__brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="var(--color-primary)" />
-                    <path d="M6.5 16.8V8.2l5.5 5.4 5.5-5.4v8.6" fill="none"
-                          stroke="var(--color-primary-contrast)" stroke-width="1.9"
-                          stroke-linecap="round" stroke-linejoin="round" />
-                    <circle cx="12" cy="18.4" r="1.05" fill="var(--color-primary-contrast)" />
-                </svg>
-                <span class="sidebar__brand-text">MatPaper</span>
-            </div>
-
-            <nav class="sidebar__nav" aria-label='@L["Main navigation"]'>
-                <a class="nav-upload" href="/Documents/Upload">
-                    <svg class="nav-upload__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    <span>@L["Document"]</span>
-                </a>
-                <a class="nav-item" href="/">
-                    <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <rect x="3" y="3" width="7" height="9" rx="1" />
-                        <rect x="14" y="3" width="7" height="5" rx="1" />
-                        <rect x="14" y="12" width="7" height="9" rx="1" />
-                        <rect x="3" y="16" width="7" height="5" rx="1" />
-                    </svg>
-                    <span>@L["Dashboard"]</span>
-                </a>
-                <a class="nav-item" href="/Inbox">
-                    <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-                        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-                    </svg>
-                    <span>@L["Inbox"]</span>
-                    @if (pendingCount > 0)
-                    {
-                        <span class="nav-item__badge">@pendingCount</span>
-                    }
-                </a>
-                <a class="nav-item" href="/Documents">
-                    <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                        <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-                        <path d="M9 13h6M9 17h4" />
-                    </svg>
-                    <span>@L["Documents"]</span>
-                </a>
-                <a class="nav-item" href="/Correspondents">
-                    <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    <span>@L["Correspondents"]</span>
-                </a>
-                <a class="nav-item" href="/Tags">
-                    <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M20.59 13.41 11 3.82A2 2 0 0 0 9.59 3H4a1 1 0 0 0-1 1v5.59A2 2 0 0 0 3.82 11l9.59 9.59a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.83z" />
-                        <path d="M7 7h.01" />
-                    </svg>
-                    <span>@L["Tags"]</span>
-                </a>
-                <a class="nav-item" href="/Projects">
-                    <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    </svg>
-                    <span>@L["Projects"]</span>
-                </a>
-                @if (CurrentUser.IsAdmin)
-                {
-                    <a class="nav-item" href="/System">
-                        <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                        </svg>
-                        <span>@L["System"]</span>
-                    </a>
-                }
-            </nav>
-
-            <div class="sidebar__footer">
-                <a class="account" href="/Account" title='@L["Account"]'>
-                    <span class="account__avatar" aria-hidden="true">@avatarLetter</span>
-                    <span class="account__body">
-                        <span class="account__name">@accountName</span>
-                        @if (!string.IsNullOrEmpty(CurrentUser.Role))
-                        {
-                            <span class="account__role">@CurrentUser.Role</span>
-                        }
+    <div class="mat-app">
+        <aside class="mat-nav" id="mat-nav">
+            <div class="mat-nav__brand">
+                <a href="/" aria-label='@L["MatPaper, start page"]'>
+                    @Ui.Logo()
+                    <span>
+                        <span class="mat-nav__name">@Ui.App.Name</span>
+                        <span class="mat-nav__tagline">@L["Your documents, in order"]</span>
                     </span>
                 </a>
-                <form class="account__logout-form" method="post" action="/Account/Logout">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="account__logout" title='@L["Sign out"]' aria-label='@L["Sign out"]'>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                            <path d="M16 17l5-5-5-5M21 12H9" />
-                        </svg>
-                        <span class="account__logout-label">@L["Sign out"]</span>
+                <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-nav__close" data-nav-close aria-label='@L["Close the menu"]'>@Ui.Icon("x")</button>
+            </div>
+
+            @if (hasSwitcher)
+            {
+                <div class="mat-nav__switch">
+                    <button type="button" class="mat-switcher" data-menu-toggle="nav-switch-menu" data-menu-place="bottom" aria-haspopup="menu" aria-expanded="false">
+                        <span class="mat-switcher__icon">@Ui.Icon(current.Icon)</span>
+                        <span class="mat-switcher__text"><small>@L["Menu"]</small><span class="mat-switcher__name">@current.Title</span></span>
+                        @Ui.Icon("chevron-down", "mat-switcher__chev")
+                        <span class="mat-switcher__dot" hidden="@(!menus.Any(m => m != current && m.NeedsAttention))"></span>
                     </button>
-                </form>
+                </div>
+            }
+
+            @foreach (var menu in menus)
+            {
+                <nav class="mat-nav__scroll" aria-label="@(hasSwitcher ? menu.Title : L["Main navigation"].Value)" data-nav-panel="@menu.Id" hidden="@(menu != current)">
+                    <ul class="mat-nav__list">
+                        @foreach (var group in menu.Groups)
+                        {
+                            if (group.Title is not null)
+                            {
+                                <li class="mat-nav__group" role="presentation">@group.Title</li>
+                            }
+
+                            foreach (var item in group.Items)
+                            {
+                                if (item.IsParent)
+                                {
+                                    var hasActive = item.Contains(active);
+                                    var subId = $"nav-sub-{menu.Id}-{item.Key}";
+                                    var sum = item.SumOfChildren;
+                                    <li class="mat-nav__branch @(hasActive ? "is-open is-current" : "")">
+                                        <button type="button" class="mat-nav__item mat-nav__parent" aria-expanded="@(hasActive ? "true" : "false")" aria-controls="@subId" data-nav-branch="@item.Key">
+                                            @if (item.Icon is not null) { @Ui.Icon(item.Icon) }<span>@item.Title</span>
+                                            @if (item.Badge is not null) { @Badge(item.Badge) }
+                                            else if (sum is not null) { @Badge(sum, sum: true) }
+                                            @Ui.Icon("chevron-down", "mat-nav__chev")
+                                        </button>
+                                        <div class="mat-nav__sub" id="@subId">
+                                            <ul class="mat-nav__list">
+                                                @foreach (var child in item.Children!)
+                                                {
+                                                    var childActive = child.Href == active;
+                                                    <li>
+                                                        <a class="mat-nav__item mat-nav__item--sub @(childActive ? "is-active" : "")" href="@child.Href" aria-current="@(childActive ? "page" : null)">
+                                                            <span>@child.Title</span>
+                                                            @if (child.Badge is not null) { @Badge(child.Badge) }
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </li>
+                                }
+                                else
+                                {
+                                    var isActive = item.Href == active;
+                                    <li>
+                                        <a class="mat-nav__item @(isActive ? "is-active" : "")" href="@item.Href" aria-current="@(isActive ? "page" : null)">
+                                            @if (item.Icon is not null) { @Ui.Icon(item.Icon) }<span>@item.Title</span>
+                                            @if (item.Badge is not null) { @Badge(item.Badge) }
+                                        </a>
+                                    </li>
+                                }
+                            }
+                        }
+                    </ul>
+                </nav>
+            }
+
+            <div class="mat-nav__foot">
+                <div class="mat-nav__account">
+                    <button type="button" class="mat-user" data-menu-toggle="user-menu" aria-haspopup="menu" aria-expanded="false">
+                        <span class="mat-avatar" aria-hidden="true">@Ui.Initials(displayName)</span>
+                        <span class="mat-user__text">
+                            <span class="mat-user__name">@displayName</span>
+                            <span class="mat-user__role">@role</span>
+                        </span>
+                        @Ui.Icon("chevron-up", "mat-user__chev")
+                    </button>
+                    @{
+                        var themeLabel = L["Theme: {0}. Click for {1}.", L[theme.Mode switch { "light" => "Light", "dark" => "Dark", _ => "System" }].Value, L[theme.Mode switch { "light" => "Dark", "dark" => "System", _ => "Light" }].Value].Value;
+                    }
+                    <button type="button" class="mat-theme" data-theme-toggle data-theme-save-url="/Account/Appearance?handler=Mode" data-theme-state="@theme.Mode" aria-label="@themeLabel" title="@themeLabel">
+                        <svg class="mat-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="#mat-i-monitor"></use></svg>
+                        <svg class="mat-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="#mat-i-sun"></use></svg>
+                        <svg class="mat-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="#mat-i-moon"></use></svg>
+                    </button>
+                </div>
+                <div class="mat-nav__version">@Ui.App.Name @AppInfo.Version</div>
             </div>
         </aside>
 
-        <div class="app-main">
-            <header class="app-header">
-                <button type="button" class="hamburger" id="sidebar-toggle" aria-label='@L["Toggle navigation"]' aria-controls="sidebar" aria-expanded="false">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 12h18M3 6h18M3 18h18" />
-                    </svg>
-                </button>
-                <nav class="breadcrumb" aria-label='@L["Breadcrumb"]'>
-                    @for (var i = 0; i < breadcrumbParts.Count; i++)
-                    {
-                        if (i > 0)
+        <div class="mat-main">
+            <header class="mat-topbar">
+                <button type="button" class="mat-burger" data-nav-toggle aria-label='@L["Open the menu"]' aria-controls="mat-nav" aria-expanded="false">@Ui.Icon("menu")</button>
+                <nav class="mat-crumbs" aria-label='@L["Breadcrumb"]'>
+                    <ol>
+                        @if (crumbs.Count == 0)
                         {
-                            <span class="breadcrumb__sep" aria-hidden="true">/</span>
-                        }
-
-                        if (breadcrumbLinkable && i < breadcrumbParts.Count - 1)
-                        {
-                            <a class="breadcrumb__link" href="/@string.Join("/", pathParts.Take(i + 1))">@breadcrumbParts[i]</a>
+                            <li aria-current="page">@Ui.App.Name</li>
                         }
                         else
                         {
-                            <span class="@(i == breadcrumbParts.Count - 1 ? "breadcrumb__current" : "")">@breadcrumbParts[i]</span>
+                            <li><a href="/">@Ui.App.Name</a></li>
+                            @for (var i = 0; i < crumbs.Count; i++)
+                            {
+                                if (crumbsLinkable && i < crumbs.Count - 1)
+                                {
+                                    <li><a href="/@string.Join("/", pathParts.Take(i + 1))">@crumbs[i]</a></li>
+                                }
+                                else if (i < crumbs.Count - 1)
+                                {
+                                    <li>@crumbs[i]</li>
+                                }
+                                else
+                                {
+                                    <li aria-current="page">@crumbs[i]</li>
+                                }
+                            }
                         }
-                    }
+                    </ol>
                 </nav>
-                @* Archive numbers switched on: scan the label of a paper with the camera and see its document. *@
-                @if (User.Identity?.IsAuthenticated == true && AppSettings.ArchiveNumbersEnabled)
-                {
-                    <button type="button" class="header-code" data-code-scan="open" title='@L["Scan a label"]' aria-label='@L["Scan a label"]'>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" /><path d="M8 9v6M11 9v6M14 9v6M17 9v6" /></svg>
-                    </button>
-                }
-                @* Phones: scan from anywhere (the sidebar button is out of reach there). *@
-                <a class="header-add" href="/Documents/Upload?camera=true" title='@L["Scan a document"]' aria-label='@L["Scan a document"]'>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-                </a>
+                <div class="mat-topbar__actions">
+                    @* Archive numbers switched on: scan the label of a paper with the camera and see its document. *@
+                    @if (archiveNumbers)
+                    {
+                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon" data-code-scan="open" aria-label='@L["Scan a label"]' data-tip='@L["Scan a label"]'>@Ui.Icon("scan-barcode")</button>
+                    }
+                    @* Scan from anywhere: the camera of the phone is in reach there, the menu is not. *@
+                    <a class="mat-btn mat-btn--ghost mat-btn--icon" href="/Documents/Upload?camera=true" aria-label='@L["Scan a document"]' data-tip='@L["Scan a document"]'>@Ui.Icon("camera")</a>
+                </div>
             </header>
 
-            <main class="app-content">
+            <main class="mat-page @(width == "narrow" ? "mat-page--narrow" : width == "wide" ? "mat-page--wide" : "")" id="main">
                 <partial name="_Notice" />
+                @if (!ownHead)
+                {
+                    <div class="mat-page__head">
+                        <div class="mat-page__title">
+                            <h1>@heading</h1>
+                            @if (!string.IsNullOrEmpty(sub))
+                            {
+                                <p class="mat-page__sub">@sub</p>
+                            }
+                        </div>
+                    </div>
+                }
+
                 @RenderBody()
             </main>
         </div>
     </div>
 
-
-    <dialog id="mp-confirm" class="confirm">
-        <form method="dialog" class="confirm__inner" data-no-busy>
-            <p class="confirm__text"></p>
-            <div class="confirm__actions">
-                <button class="btn btn--secondary" value="cancel">@L["Cancel"]</button>
-                <button class="btn btn--primary confirm__ok" value="ok">@L["Confirm"]</button>
-            </div>
+    <div class="mat-menu" id="user-menu" role="menu" aria-label="@displayName" hidden>
+        <div class="mat-menu__head">
+            <span class="mat-avatar" aria-hidden="true">@Ui.Initials(displayName)</span>
+            <div><strong>@displayName</strong><small>@CurrentUser.Username@(string.IsNullOrEmpty(role) ? "" : " · " + role)</small></div>
+        </div>
+        <a class="mat-menu__item" role="menuitem" href="/Account">@Ui.Icon("user")<span>@L["Show account"]</span></a>
+        <a class="mat-menu__item" role="menuitem" href="/Account/Appearance">@Ui.Icon("palette")<span>@L["Appearance"]</span></a>
+        <div class="mat-menu__sep" role="separator"></div>
+        <form method="post" action="/Account/Logout">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="mat-menu__item" role="menuitem">@Ui.Icon("logout")<span>@L["Sign out"]</span></button>
         </form>
-    </dialog>
+    </div>
 
-    @if (Context.Request.Method == "POST")
+    @if (hasSwitcher)
     {
-        @* A page answered by a handler button (Test, Preview, ...) keeps "?handler=..." in its address, and
-           the form without an action would post "Save" to that same handler. Drop it from the address. *@
-        <script>
-            (function () {
-                var url = new URL(location.href);
-                if (url.searchParams.has("handler")) {
-                    url.searchParams.delete("handler");
-                    history.replaceState(null, "", url.pathname + url.search + url.hash);
-                }
-            })();
-        </script>
+        <div class="mat-menu" id="nav-switch-menu" role="menu" aria-label='@L["Menus"]' data-nav-scope="mat-nav" hidden>
+            @foreach (var menu in menus)
+            {
+                <button type="button" class="mat-menu__item" role="menuitemradio" aria-checked="@(menu == current ? "true" : "false")" data-nav-set="@menu.Id" data-nav-title="@menu.Title" @(menu.NeedsAttention ? Html.Raw("data-nav-attention") : null)>
+                    @Ui.Icon(menu.Icon)<span>@menu.Title</span>
+                    @if (menu.NeedsAttention) { <span class="mat-nav__badge mat-nav__badge--dot mat-nav__badge--warn"><span class="mat-sr-only">@L["needs attention"]</span></span> }
+                    @Ui.Icon("check", "mat-menu__check")
+                </button>
+            }
+        </div>
     }
 
     <div id="viewer-i18n" hidden data-close='@L["Close"]' data-download='@L["Download"]' data-page='@L["Page"]'
@@ -277,14 +278,13 @@
              data-t-processing='@L["Processing …"]'></div>
         <partial name="_DocPreviewDialog" />
     }
-    <script src="~/js/app.js" asp-append-version="true"></script>
+    <script src="~/matui/matui.js" asp-append-version="true"></script>
+    <script src="~/js/matpaper.js" asp-append-version="true"></script>
     <script src="~/js/doc-viewer.js" asp-append-version="true"></script>
-    <script src="~/js/picker.js" asp-append-version="true"></script>
-    <script src="~/js/datepicker.js" asp-append-version="true"></script>
     <script src="~/js/schedule.js" asp-append-version="true"></script>
     <script src="~/js/global-drop.js" asp-append-version="true"></script>
     <script src="~/js/doc-preview.js" asp-append-version="true"></script>
-    @if (User.Identity?.IsAuthenticated == true && AppSettings.ArchiveNumbersEnabled)
+    @if (archiveNumbers)
     {
         <partial name="_CodeScanConfig" />
     }

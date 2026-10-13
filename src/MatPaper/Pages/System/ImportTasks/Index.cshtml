@@ -13,49 +13,22 @@
         _ => L["Watched folder"].Value
     };
 
-    string StateBadge(TaskRunState state) => state switch
+    string StatePill(TaskRunState state) => state switch
     {
-        TaskRunState.Success => "badge--ok",
-        TaskRunState.Failed => "badge--off",
-        TaskRunState.Cancelled => "badge--warn",
-        _ => "badge--muted"
+        TaskRunState.Success => "mat-pill mat-pill--ok",
+        TaskRunState.Failed => "mat-pill mat-pill--error",
+        TaskRunState.Cancelled => "mat-pill mat-pill--warn",
+        _ => "mat-pill mat-pill--busy"
     };
-}
 
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
-    <mp-toolbar-select name="Type" label='@L["Type"]' value="@Model.Type">
-        <option value="all">@L["All"]</option>
-        <option value="Imap">IMAP</option>
-        <option value="Pop3">POP3</option>
-        <option value="Smb">@L["SMB share"]</option>
-        <option value="Filesystem">@L["Watched folder"]</option>
-    </mp-toolbar-select>
-    <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
-        <option value="all">@L["All"]</option>
-        <option value="enabled">@L["Enabled"]</option>
-        <option value="disabled">@L["Disabled"]</option>
-    </mp-toolbar-select>
-    @if (Model.GroupOptions.Count > 0)
+    string StateText(TaskRunState state) => state switch
     {
-        <mp-toolbar-select name="Group" label='@L["Group"]' value="@Model.Group">
-            <option value="all">@L["All"]</option>
-            <option value="none">@L["Without group"]</option>
-            @foreach (var option in Model.GroupOptions)
-            {
-                <option value="@option.Id">@option.Name</option>
-            }
-        </mp-toolbar-select>
-    }
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="name_asc">@L["Name (A–Z)"]</option>
-        <option value="name_desc">@L["Name (Z–A)"]</option>
-        <option value="run_desc">@L["Last run (newest first)"]</option>
-        <option value="run_asc">@L["Last run (oldest first)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
+        TaskRunState.Success => L["Success"].Value,
+        TaskRunState.Failed => L["Failed"].Value,
+        TaskRunState.Cancelled => L["Cancelled"].Value,
+        _ => L["Running"].Value
+    };
 
-@{
     var typeFilter = Enum.TryParse<ImportTaskType>(Model.Type, true, out var chosenType) && Enum.IsDefined(chosenType) ? TypeLabel(chosenType) : null;
     var statusFilter = Model.Status switch { "enabled" => L["Enabled"].Value, "disabled" => L["Disabled"].Value, _ => null };
     var groupFilter = Model.Group == "none"
@@ -66,140 +39,145 @@
         new FilterSpec("Type", L["Type"].Value, typeFilter),
         new FilterSpec("Status", L["Status"].Value, statusFilter),
         new FilterSpec("Group", L["Group"].Value, groupFilter));
-}
-<partial name="_FilterChips" model="activeFilters" />
 
-<mp-list-bar count="Model.TotalCount" singular="{0} import rule" plural="{0} import rules" />
+    // The cells every row has: enabled, schedule, last run.
+    void Enabled(bool on)
+    {
+        if (on) { <span class="mat-pill mat-pill--ok">@L["Enabled"]</span> }
+        else { <span class="mat-pill mat-pill--warn">@L["Disabled"]</span> }
+    }
 
-@* One table: a group is a header row, its rules sit indented below it in the order they run; single rules follow. *@
-<mp-table item-count="Model.TotalCount + Model.Groups.Count" empty-text='@L["No import tasks match your criteria."]'>
-    <thead>
-        <tr>
-            <th>@L["Name"]</th>
-            <th>@L["Type"]</th>
-            <th>@L["Enabled"]</th>
-            <th>@L["Schedule"]</th>
-            <th>@L["Last run"]</th>
-            <th class="is-actions"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var g in Model.Groups)
+    void LastRun(TaskRunState? state, DateTime? started)
+    {
+        if (state is TaskRunState s && started is DateTime at)
         {
-            var gs = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
-            <tr class="import-row import-row--group" data-row-href="/System/ImportGroups/Details?id=@g.Id" tabindex="0">
-                <td>
-                    <span class="import-row__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12l9 5 9-5" /><path d="M3 16l9 5 9-5" /></svg>
-                    </span>
-                    <a href="/System/ImportGroups/Details?id=@g.Id">@g.Name</a>
-                    <span class="import-row__count">@g.Rules.Count</span>
-                </td>
-                <td>@L["Group"]</td>
-                <td>
-                    @if (g.IsEnabled) { <span class="badge badge--ok">@L["Enabled"]</span> }
-                    else { <span class="badge badge--warn">@L["Disabled"]</span> }
-                </td>
-                <td>
-                    <span class="@(gs.IsValid ? "" : "badge badge--warn")">@gs.Text</span>
-                    @if (gs.NextUtc is DateTime gnext)
-                    {
-                        <br /><span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(gnext)</span>
-                    }
-                </td>
-                <td>
-                    @if (g.LastState is TaskRunState gstate && g.LastStartedAt is DateTime gstarted)
-                    {
-                        <span class="badge @StateBadge(gstate)">@gstate</span>
-                        <span>&nbsp;@Fmt.DateTime(gstarted)</span>
-                    }
-                    else { <span>—</span> }
-                </td>
-                <td class="is-actions">
-                    <form method="post" action="/System/ImportGroups/Edit?id=@g.Id&handler=Run" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <button class="icon-btn" type="submit" title='@L["Run group now"]' aria-label='@L["Run group now"]'>
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-                        </button>
-                    </form>
-                    <a class="icon-btn" href="/System/ImportGroups/Edit?id=@g.Id" title='@L["Edit"]' aria-label='@L["Edit"]'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg></a>
-                </td>
-            </tr>
+            <span class="@StatePill(s)">@StateText(s)</span> <small class="mat-muted">@Fmt.DateTime(at)</small>
+        }
+        else { <span class="mat-muted">—</span> }
+    }
 
-            @for (var i = 0; i < g.Rules.Count; i++)
+    async Task Actions(string runUrl, string runLabel, string editUrl)
+    {
+        <div class="mat-table__actions">
+            <form method="post" action="@runUrl" class="mp-contents">
+                @Html.AntiForgeryToken()
+                <mp-icon-button icon="play" label="@runLabel" type="submit" />
+            </form>
+            <mp-icon-button icon="edit" label='@L["Edit"]' href="@editUrl" />
+        </div>
+    }
+}
+
+<div class="mat-list">
+    <mp-toolbar id="importtasks" label='@L["Import tasks"]' count="Model.TotalCount" singular="{0} import rule" plural="{0} import rules">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name"]' />
+        <mp-toolbar-select name="Type" label='@L["Type"]' value="@Model.Type">
+            <option value="all">@L["All"]</option>
+            <option value="Imap">IMAP</option>
+            <option value="Pop3">POP3</option>
+            <option value="Smb">@L["SMB share"]</option>
+            <option value="Filesystem">@L["Watched folder"]</option>
+        </mp-toolbar-select>
+        <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
+            <option value="all">@L["All"]</option>
+            <option value="enabled">@L["Enabled"]</option>
+            <option value="disabled">@L["Disabled"]</option>
+        </mp-toolbar-select>
+        @if (Model.GroupOptions.Count > 0)
+        {
+            <mp-toolbar-select name="Group" label='@L["Group"]' value="@Model.Group">
+                <option value="all">@L["All"]</option>
+                <option value="none">@L["Without group"]</option>
+                @foreach (var option in Model.GroupOptions)
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </mp-toolbar-select>
+        }
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="name_asc">@L["Name (A–Z)"]</option>
+            <option value="name_desc">@L["Name (Z–A)"]</option>
+            <option value="run_desc">@L["Last run (newest first)"]</option>
+            <option value="run_asc">@L["Last run (oldest first)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
+
+    <partial name="_FilterChips" model="activeFilters" />
+
+    @* One table: a group is a header row, its rules sit indented below it in the order they run; single rules follow. *@
+    <mp-table item-count="Model.TotalCount + Model.Groups.Count" empty-text='@L["No import tasks match your criteria."]' caption='@L["Import tasks"]'>
+        <thead>
+            <tr>
+                <th scope="col">@L["Name"]</th>
+                <th scope="col" class="mat-hide-sm">@L["Type"]</th>
+                <th scope="col">@L["Enabled"]</th>
+                <th scope="col" class="mat-hide-sm">@L["Schedule"]</th>
+                <th scope="col">@L["Last run"]</th>
+                <th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var g in Model.Groups)
             {
-                var t = g.Rules[i];
-                <tr class="import-row import-row--child@(i == g.Rules.Count - 1 ? " is-last" : "")" data-row-href="/System/ImportTasks/Details?id=@t.Id" tabindex="0">
-                    <td><span class="import-row__order">@(i + 1)</span><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></td>
-                    <td>@TypeLabel(t.Type)</td>
+                var gs = CronSchedule.Describe(g.CronExpression, Fmt.TimeZone);
+                <tr class="mp-import-group" data-row-href="/System/ImportGroups/Details?id=@g.Id">
                     <td>
-                        @if (t.IsEnabled) { <span class="badge badge--ok">@L["Enabled"]</span> }
-                        else { <span class="badge badge--warn">@L["Disabled"]</span> }
+                        <div class="mat-table__name">
+                            <mp-icon name="layers" />
+                            <a href="/System/ImportGroups/Details?id=@g.Id">@g.Name</a>
+                            <span class="mat-badge mat-badge--soft">@g.Rules.Count</span>
+                        </div>
                     </td>
-                    <td><span class="form-help" style="margin:0">@L["with the group"]</span></td>
-                    <td>
-                        @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
+                    <td class="mat-hide-sm">@L["Group"]</td>
+                    <td>@{ Enabled(g.IsEnabled); }</td>
+                    <td class="mat-hide-sm">
+                        <span class="@(gs.IsValid ? "" : "mat-pill mat-pill--warn")">@gs.Text</span>
+                        @if (gs.NextUtc is DateTime gnext)
                         {
-                            <span class="badge @StateBadge(state)">@state</span>
-                            <span>&nbsp;@Fmt.DateTime(started)</span>
+                            <small class="mat-muted mp-block">@L["next:"] @Fmt.DateTime(gnext)</small>
                         }
-                        else { <span>—</span> }
                     </td>
-                    <td class="is-actions">
-                        <form method="post" action="/System/ImportTasks/Edit?id=@t.Id&handler=Run" style="display:inline">
-                            @Html.AntiForgeryToken()
-                            <button class="icon-btn" type="submit" title='@L["Run now"]' aria-label='@L["Run now"]'>
-                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-                            </button>
-                        </form>
-                        <a class="icon-btn" href="/System/ImportTasks/Edit?id=@t.Id" title='@L["Edit"]' aria-label='@L["Edit"]'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg></a>
+                    <td>@{ LastRun(g.LastState, g.LastStartedAt); }</td>
+                    <td class="mat-table__cell-actions">@{ await Actions($"/System/ImportGroups/Edit?id={g.Id}&handler=Run", L["Run group now"].Value, $"/System/ImportGroups/Edit?id={g.Id}"); }</td>
+                </tr>
+
+                @for (var i = 0; i < g.Rules.Count; i++)
+                {
+                    var t = g.Rules[i];
+                    <tr class="mp-import-child" data-row-href="/System/ImportTasks/Details?id=@t.Id">
+                        <td><div class="mat-table__name"><span class="mat-badge mat-badge--soft">@(i + 1)</span><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></div></td>
+                        <td class="mat-hide-sm">@TypeLabel(t.Type)</td>
+                        <td>@{ Enabled(t.IsEnabled); }</td>
+                        <td class="mat-hide-sm"><small class="mat-muted">@L["with the group"]</small></td>
+                        <td>@{ LastRun(t.LastState, t.LastStartedAt); }</td>
+                        <td class="mat-table__cell-actions">@{ await Actions($"/System/ImportTasks/Edit?id={t.Id}&handler=Run", L["Run now"].Value, $"/System/ImportTasks/Edit?id={t.Id}"); }</td>
+                    </tr>
+                }
+            }
+
+            @foreach (var t in Model.Singles)
+            {
+                var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone);
+                <tr data-row-href="/System/ImportTasks/Details?id=@t.Id">
+                    <td><div class="mat-table__name"><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></div></td>
+                    <td class="mat-hide-sm">@TypeLabel(t.Type)</td>
+                    <td>@{ Enabled(t.IsEnabled); }</td>
+                    <td class="mat-hide-sm">
+                        <span class="@(sched.IsValid ? "" : "mat-pill mat-pill--warn")">@sched.Text</span>
+                        @if (sched.NextUtc is DateTime nextUtc)
+                        {
+                            <small class="mat-muted mp-block">@L["next:"] @Fmt.DateTime(nextUtc)</small>
+                        }
                     </td>
+                    <td>@{ LastRun(t.LastState, t.LastStartedAt); }</td>
+                    <td class="mat-table__cell-actions">@{ await Actions($"/System/ImportTasks/Edit?id={t.Id}&handler=Run", L["Run now"].Value, $"/System/ImportTasks/Edit?id={t.Id}"); }</td>
                 </tr>
             }
-        }
+        </tbody>
+    </mp-table>
 
-        @foreach (var t in Model.Singles)
-        {
-            var sched = CronSchedule.Describe(t.CronExpression, Fmt.TimeZone);
-            <tr class="import-row" data-row-href="/System/ImportTasks/Details?id=@t.Id" tabindex="0">
-                <td><a href="/System/ImportTasks/Details?id=@t.Id">@t.Name</a></td>
-                <td>@TypeLabel(t.Type)</td>
-                <td>
-                    @if (t.IsEnabled) { <span class="badge badge--ok">@L["Enabled"]</span> }
-                    else { <span class="badge badge--warn">@L["Disabled"]</span> }
-                </td>
-                <td>
-                    <span class="@(sched.IsValid ? "" : "badge badge--warn")">@sched.Text</span>
-                    @if (sched.NextUtc is DateTime nextUtc)
-                    {
-                        <br /><span class="form-help" style="margin:0">@L["next:"] @Fmt.DateTime(nextUtc)</span>
-                    }
-                </td>
-                <td>
-                    @if (t.LastState is TaskRunState state && t.LastStartedAt is DateTime started)
-                    {
-                        <span class="badge @StateBadge(state)">@state</span>
-                        <span>&nbsp;@Fmt.DateTime(started)</span>
-                    }
-                    else { <span>—</span> }
-                </td>
-                <td class="is-actions">
-                    <form method="post" action="/System/ImportTasks/Edit?id=@t.Id&handler=Run" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <button class="icon-btn" type="submit" title='@L["Run now"]' aria-label='@L["Run now"]'>
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-                        </button>
-                    </form>
-                    <a class="icon-btn" href="/System/ImportTasks/Edit?id=@t.Id" title='@L["Edit"]' aria-label='@L["Edit"]'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg></a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</mp-table>
-
-<div class="list-actions">
-    <a class="btn btn--primary" href="/System/ImportTasks/Edit">@L["New import task"]</a>
-    <a class="btn btn--secondary" href="/System/ImportGroups/Edit">@L["New group"]</a>
+    <div class="mat-actions">
+        <mp-button variant="primary" href="/System/ImportTasks/Edit" icon="plus">@L["New import task"]</mp-button>
+        <mp-button variant="secondary" href="/System/ImportGroups/Edit" icon="layers">@L["New group"]</mp-button>
+    </div>
 </div>
-
-<mp-list-bar position="bottom" />

@@ -1,15 +1,15 @@
 @model MatPaper.Services.FilterChipBar
+@*
+    The tools of a list that are in effect, as removable chips below its toolbar (rule LIST-04): each chip removes just itself, "Clear all" removes them all.
+    It renders nothing without a filter (CODE-06).
+*@
 @if (Model != null && Model.Any)
 {
-    <div class="filter-chips">
-        <span class="filter-chips__label">@L["Active filters:"]</span>
+    <div class="mat-chips" role="group" aria-label='@L["Active filters:"]'>
         @foreach (var chip in Model.Chips)
         {
-            <span class="filter-chip">
-                @chip.Label
-                <a class="filter-chip__x" href="@chip.RemoveUrl" aria-label='@L["Remove filter"]' title='@L["Remove"]'>✕</a>
-            </span>
+            <span class="mat-chip">@chip.Label<a class="mat-chip__x" href="@chip.RemoveUrl" aria-label='@($"{L["Remove filter"]}: {chip.Label}")'>@Ui.Icon("x")</a></span>
         }
-        <a class="filter-chips__clear" href="@Model.ClearAllUrl">@L["Clear all"]</a>
+        <a class="mat-btn mat-btn--ghost mat-btn--sm" href="@Model.ClearAllUrl">@L["Clear all"]</a>
     </div>
 }

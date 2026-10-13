@@ -30,7 +30,7 @@
     function sync() {
         var isCustom = format.value === "custom";
         custom.hidden = !isCustom;
-        var gridFields = custom.querySelectorAll(".asn-grid .form-row");
+        var gridFields = custom.querySelectorAll(".mat-form__grid .mat-field");
         // a label printer feeds one label per page: the grid fields do not matter then
         Array.prototype.forEach.call(gridFields, function (row, index) {
             var isGrid = index < 2 || index > 3; // columns, rows, gaps

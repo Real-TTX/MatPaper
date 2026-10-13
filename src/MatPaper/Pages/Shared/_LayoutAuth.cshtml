@@ -1,60 +1,49 @@
+@using MatPaper.Controls
 @inject MatPaper.Services.ThemeService Themes
+@inject MatPaper.Controls.Toolkit Toolkit
 @{
+    // Sign-in, setup, a shared link, "no access": no menu, a centred card on the plain page background with the logo above the title (SHELL-11).
+    // The page fills in Heading (the h1; default: its breadcrumb) and PageSub (the muted line under it); ShellClass widens the card (a shared document).
     var breadcrumb = ViewData["Breadcrumb"] as string ?? "";
-    // Sign-in, setup and share pages: the instance default (or a signed-in viewer's own theme).
     var theme = await Themes.ResolveAsync();
+    var heading = ViewData["Heading"] as string ?? ViewData["Title"] as string ?? (string.IsNullOrEmpty(breadcrumb) ? Ui.App.Name : breadcrumb);
+    var sub = ViewData["PageSub"] as string;
+    ViewData["FullTitle"] = string.IsNullOrEmpty(breadcrumb) ? Ui.App.Name : $"{breadcrumb} · {Ui.App.Name}";
+    var authUiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 <!DOCTYPE html>
-<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" data-theme-mode="@theme.Mode" data-mode="@(theme.Mode == "dark" ? "dark" : "light")" data-scheme="@theme.Scheme" data-accent="@theme.Accent" data-theme-source="@(theme.UserHasMode ? "user" : "default")">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="MatPaper" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <title>@(string.IsNullOrEmpty(breadcrumb) ? "MatPaper" : $"{breadcrumb} · MatPaper")</title>
-    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
-    <partial name="_ThemeHead" model="theme" />
-</head>
-<body class="auth-page">
-    <main class="auth-shell @(ViewData["ShellClass"] as string)">
-        <div class="auth-brand">
-            <svg class="auth-brand__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-            </svg>
-            <span class="auth-brand__text">MatPaper</span>
+<html lang="@authUiCulture" @Html.Raw(theme.RootAttributes)>
+<partial name="_Head" model="theme" />
+<body>
+    <a class="mat-skip" href="#main">@L["Skip to the content"]</a>
+    @Html.Raw(Toolkit.Sprite)
+    <main class="mat-auth" id="main">
+        <div class="mat-auth__card @(ViewData["ShellClass"] as string)">
+            <div class="mat-auth__brand">
+                @Ui.Logo("lg")
+                <h1>@heading</h1>
+                @if (!string.IsNullOrEmpty(sub))
+                {
+                    <p class="mat-muted">@sub</p>
+                }
+            </div>
+
+            <partial name="_Notice" />
+            @RenderBody()
         </div>
 
-        <partial name="_Notice" />
-        @RenderBody()
-
-        @{
-            var authUiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        }
-        <form class="lang-switch lang-switch--auth" method="post" action="/Account/Language" role="group" aria-label='@L["Language"]'>
+        <form class="mp-lang" method="post" action="/Account/Language" role="group" aria-label='@L["Language"]'>
             @Html.AntiForgeryToken()
             <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-            <button type="submit" name="culture" value="de-DE"
-                    class="lang-switch__btn@(authUiCulture == "de" ? " is-active" : "")">DE</button>
-            <button type="submit" name="culture" value="en-US"
-                    class="lang-switch__btn@(authUiCulture == "en" ? " is-active" : "")">EN</button>
+            <div class="mat-seg">
+                <button type="submit" name="culture" value="de-DE" class="mat-seg__btn" aria-pressed="@(authUiCulture == "de" ? "true" : "false")">Deutsch</button>
+                <button type="submit" name="culture" value="en-US" class="mat-seg__btn" aria-pressed="@(authUiCulture == "en" ? "true" : "false")">English</button>
+            </div>
         </form>
     </main>
 
-    <script src="~/js/app.js" asp-append-version="true"></script>
+    <script src="~/matui/matui.js" asp-append-version="true"></script>
+    <script src="~/js/matpaper.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-
-    <dialog id="mp-confirm" class="confirm">
-        <form method="dialog" class="confirm__inner" data-no-busy>
-            <p class="confirm__text"></p>
-            <div class="confirm__actions">
-                <button class="btn btn--secondary" value="cancel">@L["Cancel"]</button>
-                <button class="btn btn--primary confirm__ok" value="ok">@L["Confirm"]</button>
-            </div>
-        </form>
-    </dialog>
 </body>
 </html>

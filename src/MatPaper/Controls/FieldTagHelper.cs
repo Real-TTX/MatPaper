@@ -1,23 +1,27 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Net;
+using System.Text;
 using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace MatPaper.Controls;
 
 /// <summary>
-/// A complete form field built from an <c>asp-for</c> model expression. Renders a
-/// <c>.form-row</c> (or <c>.form-check</c> host for checkboxes) containing a &lt;label&gt;,
-/// the input, an inline <c>.field-error</c> validation message and optional
-/// <c>.form-help</c> text. Names and ids are derived from the model expression, so any
-/// number of fields can coexist on one page without colliding.
-/// Supports kinds: text (default), email, password, number, color, checkbox, textarea, select.
-/// For select, pass <c>asp-items</c> (a SelectList) or nested &lt;option&gt; children.
-/// Optional dependent visibility: <c>show-when-field</c> + <c>show-when-value</c> emit
-/// data-show-when-field / data-show-when-value on the wrapper (handled by app.js).
-/// Optional folder picker (text kind): <c>browse</c> names the scope and <c>browse-label</c> the
-/// button text; the button opens the shared picker dialog (browse-dialog.js) for this input.
+/// A complete form field built from an <c>asp-for</c> model expression, as the toolkit has it (rules FORM-03, FORM-06, FORM-08): <c>&lt;div class="mat-field"&gt;</c>
+/// with the label above, the control, the hint below and the reserved line (<c>mat-error</c>) for the message of the server, which the toolkit's script
+/// writes its own into. Names and ids come from the model expression, so any number of fields can coexist on one page.
+/// Kinds: text (default), email, password (with the eye), number, tel, url, search, textarea, select, checkbox, switch, and the pickers date, time and color.
+/// An explicit <c>[Required]</c> puts the star in the label and <c>required</c> plus the message (<c>data-msg-required</c>) on the control; the toolkit
+/// checks the form without the browser's bubbles (<c>novalidate</c>). Length, range, pattern and e-mail checks of the model become the matching
+/// attributes with their messages in the same way. A checkbox is never required (FORM-05).
+/// Dependent visibility: <c>show-when-field</c> + <c>show-when-value</c> write the toolkit's <c>data-show-if</c> / <c>data-show-value</c> on the field; a
+/// field that is hidden is disabled and posts nothing (FORM-04).
+/// Folder picker (text kind): <c>browse</c> names the scope and <c>browse-label</c> the text of the button that opens the shared dialog for this input
+/// (browse-dialog.js).
 /// </summary>
 [HtmlTargetElement("mp-field", Attributes = ForAttributeName)]
 public sealed class FieldTagHelper : TagHelper
@@ -25,14 +29,19 @@ public sealed class FieldTagHelper : TagHelper
     private const string ForAttributeName = "asp-for";
 
     private readonly IHtmlGenerator _generator;
+    private readonly Microsoft.Extensions.Localization.IStringLocalizer<MatPaper.SharedResource> _l;
 
-    public FieldTagHelper(IHtmlGenerator generator) => _generator = generator;
+    public FieldTagHelper(IHtmlGenerator generator, Microsoft.Extensions.Localization.IStringLocalizer<MatPaper.SharedResource> l)
+    {
+        _generator = generator;
+        _l = l;
+    }
 
     /// <summary>The model property this field edits. Required.</summary>
     [HtmlAttributeName(ForAttributeName)]
     public ModelExpression For { get; set; } = default!;
 
-    /// <summary>Input kind: text, email, password, number, color, checkbox, textarea, select.</summary>
+    /// <summary>Input kind: text, email, password, number, tel, url, search, textarea, select, checkbox, switch, date, time, color.</summary>
     [HtmlAttributeName("kind")]
     public string Kind { get; set; } = "text";
 
@@ -40,7 +49,7 @@ public sealed class FieldTagHelper : TagHelper
     [HtmlAttributeName("label")]
     public string? Label { get; set; }
 
-    /// <summary>Optional help text rendered as <c>.form-help</c> under the input.</summary>
+    /// <summary>Optional hint rendered as <c>mat-hint</c> under the control (for a checkbox or switch: under its label).</summary>
     [HtmlAttributeName("help")]
     public string? Help { get; set; }
 
@@ -58,11 +67,62 @@ public sealed class FieldTagHelper : TagHelper
     [HtmlAttributeName("asp-items")]
     public IEnumerable<SelectListItem>? Items { get; set; }
 
-    /// <summary>Name of the controlling input for dependent visibility (see app.js).</summary>
+    /// <summary>Marks the field as required even without a <c>[Required]</c> on the model (<c>false</c> takes the star away).</summary>
+    [HtmlAttributeName("required")]
+    public bool? Required { get; set; }
+
+    /// <summary>An id of the control of your own, when the same property appears twice on a page (one of two blocks that show one at a time).</summary>
+    [HtmlAttributeName("control-id")]
+    public string? ControlId { get; set; }
+
+    /// <summary>Draw the asterisk of a required field (default); <c>false</c> for a form in which everything is required (the sign-in).</summary>
+    [HtmlAttributeName("star")]
+    public bool Star { get; set; } = true;
+
+    /// <summary>The field spans both columns of a two-column form (FORM-07): descriptions, long values.</summary>
+    [HtmlAttributeName("full")]
+    public bool Full { get; set; }
+
+    /// <summary>Set in the mono font (IDs, paths, technical values - TYPE-03).</summary>
+    [HtmlAttributeName("mono")]
+    public bool Mono { get; set; }
+
+    [HtmlAttributeName("readonly")]
+    public bool ReadOnly { get; set; }
+
+    [HtmlAttributeName("disabled")]
+    public bool Disabled { get; set; }
+
+    [HtmlAttributeName("autofocus")]
+    public bool AutoFocus { get; set; }
+
+    [HtmlAttributeName("inputmode")]
+    public string? InputMode { get; set; }
+
+    [HtmlAttributeName("min")]
+    public string? Min { get; set; }
+
+    [HtmlAttributeName("max")]
+    public string? Max { get; set; }
+
+    [HtmlAttributeName("step")]
+    public string? Step { get; set; }
+
+    [HtmlAttributeName("maxlength")]
+    public int? MaxLength { get; set; }
+
+    [HtmlAttributeName("pattern")]
+    public string? Pattern { get; set; }
+
+    /// <summary>A picker can be emptied again (date, time, color).</summary>
+    [HtmlAttributeName("clearable")]
+    public bool Clearable { get; set; }
+
+    /// <summary>Name of the controlling input for dependent visibility.</summary>
     [HtmlAttributeName("show-when-field")]
     public string? ShowWhenField { get; set; }
 
-    /// <summary>Comma-separated controller values that reveal this field.</summary>
+    /// <summary>Comma-separated controller values that reveal this field (<c>true</c> = a checkbox that is checked).</summary>
     [HtmlAttributeName("show-when-value")]
     public string? ShowWhenValue { get; set; }
 
@@ -85,154 +145,276 @@ public sealed class FieldTagHelper : TagHelper
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
         string kind = (Kind ?? "text").Trim().ToLowerInvariant();
-        bool isCheckbox = kind == "checkbox";
+        bool isCheck = kind is "checkbox" or "switch";
+        string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
+        string id = ControlId ?? TagBuilder.CreateSanitizedId(fullName, "_");
+        string? error = ErrorOf(fullName);
+        bool required = !isCheck && (Required ?? For.Metadata.ValidatorMetadata.Any(v => v is RequiredAttribute));
+        string labelText = Label ?? For.Metadata.DisplayName ?? For.Metadata.PropertyName ?? For.Name;
 
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.Attributes.SetAttribute("class", isCheckbox ? "form-row form-row--check" : "form-row");
-
+        output.Attributes.SetAttribute("class", Classes.Merge("mat-field", Full ? "mat-field--full" : null, error is null ? null : "is-invalid", output.Attributes["class"]?.Value?.ToString()));
         if (!string.IsNullOrEmpty(ShowWhenField))
         {
-            output.Attributes.SetAttribute("data-show-when-field", ShowWhenField);
-            output.Attributes.SetAttribute("data-show-when-value", ShowWhenValue ?? string.Empty);
+            output.Attributes.SetAttribute("data-show-if", ShowWhenField);
+            output.Attributes.SetAttribute("data-show-value", ShowWhenValue ?? string.Empty);
         }
 
-        TagBuilder label = _generator.GenerateLabel(ViewContext, For.ModelExplorer, For.Name, Label, htmlAttributes: null);
-        TagBuilder validation = _generator.GenerateValidationMessage(
-            ViewContext, For.ModelExplorer, For.Name, message: null, tag: "span",
-            htmlAttributes: new { @class = "field-error" });
-
-        if (isCheckbox)
+        var html = new StringBuilder();
+        if (!isCheck)
         {
-            TagBuilder checkbox = _generator.GenerateCheckBox(ViewContext, For.ModelExplorer, For.Name, isChecked: null, htmlAttributes: null);
-            TagBuilder hidden = _generator.GenerateHiddenForCheckbox(ViewContext, For.ModelExplorer, For.Name);
+            html.Append($"<label class=\"mat-label\" for=\"{Enc(id)}\">{Enc(labelText)}");
+            if (required && Star)
+            {
+                html.Append(" <span class=\"mat-req\" aria-hidden=\"true\">*</span>");
+            }
 
-            output.Content.SetHtmlContent("<div class=\"form-check\">");
-            output.Content.AppendHtml(checkbox);
-            output.Content.AppendHtml(label);
-            output.Content.AppendHtml("</div>");
-            output.Content.AppendHtml(hidden);
-            output.Content.AppendHtml(validation);
-            AppendHelp(output);
-            return;
+            html.Append("</label>");
         }
-
-        output.Content.SetHtmlContent(label);
 
         switch (kind)
         {
+            case "checkbox":
+            case "switch":
+                AppendCheck(html, kind, id, labelText);
+                break;
             case "textarea":
-                var textareaAttrs = BaseAttributes();
-                output.Content.AppendHtml(
-                    _generator.GenerateTextArea(ViewContext, For.ModelExplorer, For.Name, Rows, 0, textareaAttrs));
+                html.Append(Render(_generator.GenerateTextArea(ViewContext, For.ModelExplorer, For.Name, Rows, 0, null), "mat-textarea", required, id, error));
                 break;
-
             case "select":
-                await AppendSelectAsync(output);
+                html.Append(await SelectAsync(output, id, required, error));
                 break;
-
+            case "date":
+            case "time":
+                html.Append(PickerHtml(kind, id, fullName, error, required));
+                break;
+            case "color":
+                html.Append(PickerHtml("colour", id, fullName, error, required));
+                break;
             case "password":
-                output.Content.AppendHtml(
-                    _generator.GeneratePassword(ViewContext, For.ModelExplorer, For.Name, value: null, BaseAttributes()));
+                html.Append("<div class=\"mat-input-icon mat-input-icon--end\">");
+                html.Append(Render(_generator.GeneratePassword(ViewContext, For.ModelExplorer, For.Name, value: null, null), "mat-input", required, id, error));
+                html.Append($"<button type=\"button\" class=\"mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm mat-input-icon__btn\" data-password-toggle=\"{Enc(id)}\" aria-pressed=\"false\" aria-label=\"{Enc(PasswordLabel())}\" data-tip=\"{Enc(PasswordLabel())}\">{Ui.IconHtml("eye", "mat-toggle-on")}{Ui.IconHtml("eye-off", "mat-toggle-off")}</button>");
+                html.Append("</div>");
                 break;
-
             default:
-                var inputAttrs = BaseAttributes();
-                inputAttrs["type"] = MapInputType(kind);
-                // Pass the model value explicitly: GenerateTextBox does NOT fall back to
-                // ModelExplorer.Model when value is null, so edit forms would render empty.
-                TagBuilder textBox = _generator.GenerateTextBox(ViewContext, For.ModelExplorer, For.Name, value: For.Model, format: null, inputAttrs);
+                // The model value is passed explicitly: GenerateTextBox does NOT fall back to ModelExplorer.Model when value is null, so edit forms would render empty.
+                var textBox = _generator.GenerateTextBox(ViewContext, For.ModelExplorer, For.Name, value: For.Model, format: null, new Dictionary<string, object> { ["type"] = InputType(kind) });
+                string box = Render(textBox, "mat-input", required, id, error);
                 if (string.IsNullOrEmpty(Browse))
                 {
-                    output.Content.AppendHtml(textBox);
+                    html.Append(box);
                 }
                 else
                 {
-                    AppendWithBrowseButton(output, textBox);
+                    html.Append("<div class=\"mat-input-group\">").Append(box);
+                    html.Append($"<button type=\"button\" class=\"mat-btn mat-btn--secondary\" data-browse=\"{Enc(Browse)}\" data-browse-target=\"{Enc(id)}\"");
+                    if (!string.IsNullOrEmpty(BrowseRoot))
+                    {
+                        html.Append($" data-browse-root=\"{Enc(BrowseRoot)}\"");
+                    }
+
+                    html.Append($">{Ui.IconHtml("folder-open")}<span>{Enc(string.IsNullOrEmpty(BrowseLabel) ? "…" : BrowseLabel)}</span></button></div>");
                 }
+
                 break;
         }
 
-        output.Content.AppendHtml(validation);
-        AppendHelp(output);
+        if (!isCheck && !string.IsNullOrEmpty(Help))
+        {
+            html.Append($"<span class=\"mat-hint\" id=\"{Enc(id)}-hint\">{Enc(Help)}</span>");
+        }
+
+        html.Append($"<span class=\"mat-error\" id=\"{Enc(id)}-error\" aria-live=\"polite\">{Enc(error)}</span>");
+        output.Content.SetHtmlContent(html.ToString());
     }
 
-    private async Task AppendSelectAsync(TagHelperOutput output)
+    private string? ErrorOf(string fullName)
+    {
+        if (!ViewContext.ViewData.ModelState.TryGetValue(fullName, out var entry) || entry.Errors.Count == 0)
+        {
+            return null;
+        }
+
+        string text = entry.Errors.Select(e => e.ErrorMessage).FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? string.Empty;
+        return text.Length == 0 ? "?" : text;
+    }
+
+    private void AppendCheck(StringBuilder html, string kind, string id, string labelText)
+    {
+        TagBuilder checkbox = _generator.GenerateCheckBox(ViewContext, For.ModelExplorer, For.Name, isChecked: null, htmlAttributes: null);
+        checkbox.Attributes.Remove("class");
+        checkbox.Attributes["id"] = id;
+        StripValidation(checkbox);
+        if (Disabled) { checkbox.Attributes["disabled"] = "disabled"; }
+        string text = string.IsNullOrEmpty(Help)
+            ? $"<span class=\"mat-check__text\">{Enc(labelText)}</span>"
+            : $"<span class=\"mat-check__text\"><strong>{Enc(labelText)}</strong><small class=\"mat-muted\">{Enc(Help)}</small></span>";
+        if (kind == "switch")
+        {
+            html.Append("<label class=\"mat-switch\">").Append(Render(checkbox)).Append("<span class=\"mat-switch__track\"></span>")
+                .Append(string.IsNullOrEmpty(Help) ? $"<span>{Enc(labelText)}</span>" : $"<span class=\"mat-check__text\"><strong>{Enc(labelText)}</strong><small class=\"mat-muted\">{Enc(Help)}</small></span>")
+                .Append("</label>");
+        }
+        else
+        {
+            html.Append("<label class=\"mat-check\">").Append(Render(checkbox)).Append(text).Append("</label>");
+        }
+
+        html.Append(Render(_generator.GenerateHiddenForCheckbox(ViewContext, For.ModelExplorer, For.Name)));
+    }
+
+    private async Task<string> SelectAsync(TagHelperOutput output, string id, bool required, string? error)
     {
         if (Items is not null)
         {
-            output.Content.AppendHtml(
-                _generator.GenerateSelect(ViewContext, For.ModelExplorer, optionLabel: null, For.Name, Items, allowMultiple: false, BaseAttributes()));
-            return;
+            TagBuilder select = _generator.GenerateSelect(ViewContext, For.ModelExplorer, optionLabel: null, For.Name, Items, allowMultiple: false, htmlAttributes: null);
+            return Render(select, "mat-select", required, id, error);
         }
 
-        // Nested <option> children: render the select manually and mark the option
-        // whose value matches the current model value.
+        // Nested <option> children: render the select manually and mark the option whose value matches the current model value.
         string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
-        string id = TagBuilder.CreateSanitizedId(fullName, "_");
-        string optionsHtml = (await output.GetChildContentAsync()).GetContent();
-        optionsHtml = HtmlOptionHelper.MarkSelected(optionsHtml, For.Model?.ToString());
-
-        output.Content.AppendHtml(
-            $"<select class=\"form-control\" id=\"{HtmlEncoder.Default.Encode(id)}\" name=\"{HtmlEncoder.Default.Encode(fullName)}\">");
-        output.Content.AppendHtml(optionsHtml);
-        output.Content.AppendHtml("</select>");
+        string optionsHtml = HtmlOptionHelper.MarkSelected((await output.GetChildContentAsync()).GetContent(), For.Model?.ToString());
+        var sb = new StringBuilder($"<select class=\"{Classes.Merge("mat-select", Mono ? "mat-mono" : null)}\" id=\"{Enc(id)}\" name=\"{Enc(fullName)}\"");
+        if (required) { sb.Append(" required"); }
+        if (Disabled) { sb.Append(" disabled"); }
+        if (error is not null) { sb.Append($" aria-invalid=\"true\" aria-describedby=\"{Enc(id)}-error\""); }
+        sb.Append('>').Append(optionsHtml).Append("</select>");
+        return sb.ToString();
     }
 
-    /// <summary>Wraps the input with a browse button that targets it (see browse-dialog.js).</summary>
-    private void AppendWithBrowseButton(TagHelperOutput output, TagBuilder textBox)
+    /// <summary>A picker of the toolkit around the real input that holds the value in a fixed format (date 2026-10-12, time 09:30, colour #b4235f).</summary>
+    private string PickerHtml(string picker, string id, string fullName, string? error, bool required)
     {
-        string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
-        string id = TagBuilder.CreateSanitizedId(fullName, "_");
-
-        var button = new TagBuilder("button");
-        button.AddCssClass("btn");
-        button.AddCssClass("btn--secondary");
-        button.Attributes["type"] = "button";
-        button.Attributes["data-browse"] = Browse!;
-        button.Attributes["data-browse-target"] = id;
-        if (!string.IsNullOrEmpty(BrowseRoot))
+        string value = For.Model switch
         {
-            button.Attributes["data-browse-root"] = BrowseRoot;
-        }
-        button.InnerHtml.Append(string.IsNullOrEmpty(BrowseLabel) ? "…" : BrowseLabel);
+            null => string.Empty,
+            DateTime dt when picker == "date" => dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DateTime dt => dt.ToString("HH:mm", CultureInfo.InvariantCulture),
+            DateTimeOffset dto when picker == "date" => dto.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            TimeSpan ts => $"{ts.Hours:00}:{ts.Minutes:00}",
+            var other => Convert.ToString(other, CultureInfo.InvariantCulture) ?? string.Empty,
+        };
 
-        output.Content.AppendHtml("<div class=\"input-with-action\">");
-        output.Content.AppendHtml(textBox);
-        output.Content.AppendHtml(button);
-        output.Content.AppendHtml("</div>");
+        var sb = new StringBuilder($"<div class=\"mat-picker\" data-picker=\"{picker}\"");
+        if (Clearable || !required) { sb.Append(" data-clearable"); }
+        if (!string.IsNullOrEmpty(Placeholder)) { sb.Append($" data-placeholder=\"{Enc(Placeholder)}\""); }
+        if (!string.IsNullOrEmpty(Min)) { sb.Append($" data-min=\"{Enc(Min)}\""); }
+        if (!string.IsNullOrEmpty(Max)) { sb.Append($" data-max=\"{Enc(Max)}\""); }
+        if (!string.IsNullOrEmpty(Step)) { sb.Append($" data-step=\"{Enc(Step)}\""); }
+        sb.Append($"><input class=\"mat-picker__input\" id=\"{Enc(id)}\" name=\"{Enc(fullName)}\" value=\"{Enc(value)}\"");
+        if (required) { sb.Append(" required"); }
+        if (Disabled) { sb.Append(" disabled"); }
+        if (error is not null) { sb.Append($" aria-invalid=\"true\" aria-describedby=\"{Enc(id)}-error\""); }
+        sb.Append(" /></div>");
+        return sb.ToString();
     }
 
-    private Dictionary<string, object> BaseAttributes()
+    /// <summary>Renders a control the generator made: the toolkit's class, the validation of the model as attributes of the control, and the state of the form.</summary>
+    private string Render(TagBuilder control, string cssClass, bool required, string id, string? error)
     {
-        var attrs = new Dictionary<string, object> { ["class"] = "form-control" };
-        if (!string.IsNullOrEmpty(Placeholder))
+        control.AddCssClass(cssClass);
+        control.Attributes["id"] = id;
+        if (Mono) { control.AddCssClass("mat-mono"); }
+        MapValidation(control, required);
+        Set(control, "placeholder", Placeholder);
+        Set(control, "autocomplete", Autocomplete);
+        Set(control, "inputmode", InputMode);
+        Set(control, "min", Min);
+        Set(control, "max", Max);
+        Set(control, "step", Step);
+        Set(control, "pattern", Pattern);
+        if (MaxLength is int max) { control.Attributes["maxlength"] = max.ToString(CultureInfo.InvariantCulture); }
+        if (ReadOnly) { control.Attributes["readonly"] = "readonly"; }
+        if (Disabled) { control.Attributes["disabled"] = "disabled"; }
+        if (AutoFocus) { control.Attributes["autofocus"] = "autofocus"; }
+        if (required) { control.Attributes["required"] = "required"; }
+        if (error is not null)
         {
-            attrs["placeholder"] = Placeholder;
+            control.Attributes["aria-invalid"] = "true";
+            control.Attributes["aria-describedby"] = $"{id}-error";
         }
 
-        if (!string.IsNullOrEmpty(Autocomplete))
-        {
-            attrs["autocomplete"] = Autocomplete;
-        }
-
-        return attrs;
+        return Render(control);
     }
 
-    private void AppendHelp(TagHelperOutput output)
+    private static string Render(IHtmlContent content)
     {
-        if (!string.IsNullOrEmpty(Help))
+        using var writer = new StringWriter();
+        content.WriteTo(writer, HtmlEncoder.Default);
+        return writer.ToString();
+    }
+
+    private static void Set(TagBuilder control, string name, string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
         {
-            output.Content.AppendHtml($"<p class=\"form-help\">{HtmlEncoder.Default.Encode(Help)}</p>");
+            control.Attributes[name] = value;
         }
     }
 
-    private static string MapInputType(string kind) => kind switch
+    /// <summary>
+    /// The unobtrusive validation attributes of the model (<c>data-val-*</c>, written for a script that is not here) become what the toolkit reads:
+    /// <c>required</c>, <c>minlength</c>, <c>maxlength</c>, <c>min</c>, <c>max</c>, <c>pattern</c> and the messages <c>data-msg-required</c>,
+    /// <c>data-msg-range</c>, <c>data-msg-pattern</c>, <c>data-msg-type</c>.
+    /// </summary>
+    private static void MapValidation(TagBuilder control, bool required)
+    {
+        var a = control.Attributes;
+        string? Get(string key) => a.TryGetValue(key, out var v) ? v : null;
+
+        if (Get("data-val-required") is { } requiredMessage && required)
+        {
+            a["data-msg-required"] = requiredMessage;
+        }
+
+        if (Get("data-val-length") is { } lengthMessage)
+        {
+            if (Get("data-val-length-min") is { } min) { a["minlength"] = min; }
+            if (Get("data-val-length-max") is { } max) { a["maxlength"] = max; }
+            a["data-msg-range"] = lengthMessage;
+        }
+
+        if (Get("data-val-range") is { } rangeMessage)
+        {
+            if (Get("data-val-range-min") is { } min) { a["min"] = min; }
+            if (Get("data-val-range-max") is { } max) { a["max"] = max; }
+            a["data-msg-range"] = rangeMessage;
+        }
+
+        if (Get("data-val-regex") is { } regexMessage)
+        {
+            if (Get("data-val-regex-pattern") is { } pattern) { a["pattern"] = pattern; }
+            a["data-msg-pattern"] = regexMessage;
+        }
+
+        if (Get("data-val-email") is { } emailMessage) { a["data-msg-type"] = emailMessage; }
+        else if (Get("data-val-url") is { } urlMessage) { a["data-msg-type"] = urlMessage; }
+        else if (Get("data-val-number") is { } numberMessage) { a["data-msg-type"] = numberMessage; }
+
+        StripValidation(control);
+    }
+
+    private static void StripValidation(TagBuilder control)
+    {
+        foreach (string key in control.Attributes.Keys.Where(k => k.StartsWith("data-val", StringComparison.Ordinal)).ToList())
+        {
+            control.Attributes.Remove(key);
+        }
+    }
+
+    private string PasswordLabel() => _l["Show or hide the password"].Value;
+
+    private static string InputType(string kind) => kind switch
     {
         "email" => "email",
         "number" => "number",
-        "color" => "color",
-        "date" => "date",
+        "tel" => "tel",
+        "url" => "url",
+        "search" => "search",
         _ => "text",
     };
+
+    private static string Enc(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
 }

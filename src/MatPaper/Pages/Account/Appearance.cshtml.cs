@@ -89,10 +89,10 @@ public class AppearanceModel : PageModel
         return RedirectToPage();
     }
 
-    /// <summary>Saves only the mode — called by the sidebar switch (fetch, no page change).</summary>
-    public async Task<IActionResult> OnPostModeAsync(string? mode, CancellationToken ct)
+    /// <summary>Saves only the mode — called by the theme button of the menu (the toolkit posts <c>theme=</c> and the anti-forgery token; no page change).</summary>
+    public async Task<IActionResult> OnPostModeAsync(string? theme, CancellationToken ct)
     {
-        if (!ThemeCatalog.IsMode(mode))
+        if (!ThemeCatalog.IsMode(theme))
         {
             return BadRequest();
         }
@@ -103,7 +103,7 @@ public class AppearanceModel : PageModel
             return Unauthorized();
         }
 
-        user.ThemeMode = mode;
+        user.ThemeMode = theme;
         user.UpdateDate = DateTime.UtcNow;
         user.UpdateUserId = _currentUser.UserId;
         await _db.SaveChangesAsync(ct);

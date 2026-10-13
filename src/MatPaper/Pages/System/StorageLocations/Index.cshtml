@@ -4,111 +4,92 @@
 @model MatPaper.Pages.System.StorageLocations.IndexModel
 @{
     ViewData["Breadcrumb"] = L["System / Storage locations"].Value;
-}
-
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or path"]' />
-    <mp-toolbar-select name="Kind" label='@L["Type"]' value="@Model.Kind">
-        <option value="all">@L["All"]</option>
-        <option value="Local">@L["Local"]</option>
-        <option value="Smb">SMB</option>
-    </mp-toolbar-select>
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="name_asc">@L["Name (A–Z)"]</option>
-        <option value="name_desc">@L["Name (Z–A)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
-
-@{
     var kindLabel = Model.Kind switch { "Local" => L["Local"].Value, "Smb" => "SMB", _ => null };
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
         new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search),
         new MatPaper.Services.FilterSpec("Kind", L["Type"].Value, kindLabel));
 }
-<partial name="_FilterChips" model="activeFilters" />
 
-<mp-list-bar count="Model.TotalCount" singular="{0} storage location" plural="{0} storage locations" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<div class="mat-list">
+    <mp-toolbar id="locations" label='@L["Storage locations"]' count="Model.TotalCount" singular="{0} storage location" plural="{0} storage locations">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or path"]' />
+        <mp-toolbar-select name="Kind" label='@L["Type"]' value="@Model.Kind">
+            <option value="all">@L["All"]</option>
+            <option value="Local">@L["Local"]</option>
+            <option value="Smb">SMB</option>
+        </mp-toolbar-select>
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="name_asc">@L["Name (A–Z)"]</option>
+            <option value="name_desc">@L["Name (Z–A)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-<form method="post">
-    <mp-table item-count="Model.Rows.Count" empty-text='@L["No storage locations match your criteria."]'>
-        <thead>
-            <tr>
-                <th>@L["Name"]</th>
-                <th>@L["Type"]</th>
-                <th>@L["Location"]</th>
-                <th>@L["Default"]</th>
-                <th>@L["Last searched"]</th>
-                <th class="is-actions"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var s in Model.Rows)
-            {
-                <tr data-row-href="/System/StorageLocations/Details?id=@s.Id" tabindex="0">
-                    <td>@s.Name</td>
-                    <td>
-                        <span class="badge @(s.Kind == StorageKind.Smb ? "badge--admin" : "badge--muted")">
-                            @(s.Kind == StorageKind.Smb ? "SMB" : L["Local"].Value)
-                        </span>
-                    </td>
-                    <td><code>@s.DisplayRoot</code></td>
-                    <td>
-                        @if (s.IsDefault)
-                        {
-                            <span class="badge badge--ok">@L["Default"]</span>
-                        }
-                    </td>
-                    <td>
-                        @if (Model.Busy.Contains(s.Id))
-                        {
-                            <span class="badge badge--muted">@L["Search running…"]</span>
-                        }
-                        else if (s.LastScanError != null)
-                        {
-                            <span class="badge badge--off" title="@s.LastScanError">@L["Failed"]</span>
-                            <span class="form-help" style="margin:0">@Fmt.Date(s.LastScanUtc)</span>
-                        }
-                        else if (s.LastScanUtc.HasValue)
-                        {
-                            <span>@Fmt.Date(s.LastScanUtc)</span>
-                            <span class="form-help" style="margin:0">@L["{0} new", s.LastScanFound]</span>
-                        }
-                        else
-                        {
-                            <span class="form-help" style="margin:0">@L["Never"]</span>
-                        }
-                    </td>
-                    <td class="is-actions">
-                        <span class="icon-actions">
-                            <button class="icon-btn" type="submit" asp-page-handler="Scan" asp-route-id="@s.Id"
-                                    title='@L["Search storage for files"]' disabled="@Model.Busy.Contains(s.Id)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v3" /><path d="M3 7v10a2 2 0 0 0 2 2h6" />
-                                    <circle cx="17" cy="17" r="3" /><path d="M21 21l-1.8-1.8" />
-                                </svg>
-                            </button>
-                            <a class="icon-btn" href="/System/StorageLocations/Edit?id=@s.Id" title='@L["Edit"]'>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                                </svg>
-                            </a>
-                        </span>
-                    </td>
+    <partial name="_FilterChips" model="activeFilters" />
+
+    <form method="post" class="mp-contents">
+        <mp-table item-count="Model.Rows.Count" empty-text='@L["No storage locations match your criteria."]' caption='@L["Storage locations"]'>
+            <thead>
+                <tr>
+                    <th scope="col">@L["Name"]</th>
+                    <th scope="col">@L["Type"]</th>
+                    <th scope="col" class="mat-hide-sm">@L["Location"]</th>
+                    <th scope="col">@L["Default"]</th>
+                    <th scope="col">@L["Last searched"]</th>
+                    <th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th>
                 </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Rows)
+                {
+                    <tr data-row-href="/System/StorageLocations/Details?id=@s.Id">
+                        <td><div class="mat-table__name"><a href="/System/StorageLocations/Details?id=@s.Id">@s.Name</a></div></td>
+                        <td><span class="@(s.Kind == StorageKind.Smb ? "mat-pill mat-pill--accent" : "mat-pill mat-pill--plain")">@(s.Kind == StorageKind.Smb ? "SMB" : L["Local"].Value)</span></td>
+                        <td class="mat-hide-sm mat-mono">@s.DisplayRoot</td>
+                        <td>
+                            @if (s.IsDefault)
+                            {
+                                <span class="mat-pill mat-pill--ok">@L["Default"]</span>
+                            }
+                        </td>
+                        <td>
+                            @if (Model.Busy.Contains(s.Id))
+                            {
+                                <span class="mat-pill mat-pill--busy">@L["Search running…"]</span>
+                            }
+                            else if (s.LastScanError != null)
+                            {
+                                <span class="mat-pill mat-pill--error" title="@s.LastScanError">@L["Failed"]</span> <small class="mat-muted">@Fmt.Date(s.LastScanUtc)</small>
+                            }
+                            else if (s.LastScanUtc.HasValue)
+                            {
+                                <span>@Fmt.Date(s.LastScanUtc)</span> <small class="mat-muted">@L["{0} new", s.LastScanFound]</small>
+                            }
+                            else
+                            {
+                                <small class="mat-muted">@L["Never"]</small>
+                            }
+                        </td>
+                        <td class="mat-table__cell-actions">
+                            <div class="mat-table__actions">
+                                <mp-icon-button icon="folder-open" label='@L["Search storage for files"]' type="submit" formaction='@Url.Page(null, "Scan", new { id = s.Id })' disabled="@Model.Busy.Contains(s.Id)" />
+                                <mp-icon-button icon="edit" label='@L["Edit"]' href='@($"/System/StorageLocations/Edit?id={s.Id}")' />
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </mp-table>
+
+        <div class="mat-actions">
+            <mp-button variant="primary" href="/System/StorageLocations/Edit" icon="plus">@L["New storage location"]</mp-button>
+            @if (Model.Rows.Count > 0)
+            {
+                <mp-button variant="secondary" handler="ScanAll" icon="refresh">@L["Search all storage locations"]</mp-button>
             }
-        </tbody>
-    </mp-table>
+        </div>
+    </form>
 
-    <div class="list-actions">
-        <a class="btn btn--primary" href="/System/StorageLocations/Edit">@L["New storage location"]</a>
-        @if (Model.Rows.Count > 0)
-        {
-            <button class="btn btn--secondary" type="submit" asp-page-handler="ScanAll">@L["Search all storage locations"]</button>
-        }
-        <span class="form-help" style="margin:0 0 0 auto">
-            @L["Inbox staging:"] <code>@Storage.StagingRoot</code>
-        </span>
-    </div>
-</form>
+    <mp-pager current-page="Model.PageNumber" total-pages="Model.TotalPages" total="Model.TotalCount" row-count="Model.Rows.Count" />
+</div>
 
-<mp-list-bar position="bottom" />
+<p class="mat-muted">@L["Inbox staging:"] <span class="mat-mono">@Storage.StagingRoot</span></p>

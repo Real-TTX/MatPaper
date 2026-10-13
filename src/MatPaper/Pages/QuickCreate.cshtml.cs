@@ -15,11 +15,13 @@ public class QuickCreateModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
+    private readonly Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> _l;
 
-    public QuickCreateModel(AppDbContext db, CurrentUser currentUser)
+    public QuickCreateModel(AppDbContext db, CurrentUser currentUser, Microsoft.Extensions.Localization.IStringLocalizer<SharedResource> l)
     {
         _db = db;
         _currentUser = currentUser;
+        _l = l;
     }
 
     public void OnGet()
@@ -73,13 +75,13 @@ public class QuickCreateModel : PageModel
         name = (name ?? string.Empty).Trim();
         if (name.Length == 0 || name.Length > 200)
         {
-            return new JsonResult(new { ok = false });
+            return new JsonResult(new { ok = false, error = _l["The name is empty or too long."].Value }) { StatusCode = StatusCodes.Status400BadRequest };
         }
 
         // Document types are managed by administrators (System); everything else any user may add.
         if (kind == "document-type" && !_currentUser.IsAdmin)
         {
-            return new JsonResult(new { ok = false, forbidden = true }) { StatusCode = StatusCodes.Status403Forbidden };
+            return new JsonResult(new { ok = false, forbidden = true, error = _l["Only administrators can add this."].Value }) { StatusCode = StatusCodes.Status403Forbidden };
         }
 
         var now = DateTime.UtcNow;
@@ -111,7 +113,7 @@ public class QuickCreateModel : PageModel
                 display = ((Project)entity).Name;
                 break;
             default:
-                return new JsonResult(new { ok = false });
+                return new JsonResult(new { ok = false }) { StatusCode = StatusCodes.Status400BadRequest };
         }
 
         if (_db.Entry(entity).State == EntityState.Added)
@@ -123,6 +125,7 @@ public class QuickCreateModel : PageModel
             await _db.SaveChangesAsync();
         }
 
-        return new JsonResult(new { ok = true, id = entity.Id, name = display });
+        // value and name are what the toolkit's picker reads; id stays for the page scripts that know it.
+        return new JsonResult(new { ok = true, value = entity.Id.ToString(global::System.Globalization.CultureInfo.InvariantCulture), id = entity.Id, name = display });
     }
 }

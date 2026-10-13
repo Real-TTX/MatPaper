@@ -1,8 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using System.Collections;
 using System.Globalization;
+using System.Net;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
@@ -12,31 +12,23 @@ using MatPaper.Services;
 namespace MatPaper.Controls;
 
 /// <summary>
-/// A searchable select control that replaces long native &lt;select&gt; dropdowns and
-/// long[] checkbox groups with a dialog-based picker. Renders a <c>.form-row</c>
-/// containing a &lt;label&gt; and a <c>.mp-picker</c> widget.
+/// A choice from a list in the toolkit's picker (<c>mat-picker[data-picker="select"]</c>, rule FORM-15): a field that opens a panel with a search and the
+/// options, full screen on a phone. Renders a <c>mat-field</c> with the label, the picker, the hint and the reserved line for the message of the server.
 /// <para>
-/// Server-side binding is intentionally identical to a plain <c>&lt;select asp-for&gt;</c>
-/// (single mode) or a checkbox group bound to a collection (multiple mode): the value(s)
-/// post through hidden inputs whose name is the full field name derived from the model
-/// expression. Existing PageModels therefore need no change.
-/// </para>
-/// <para>
-/// Single mode expects a scalar property (e.g. <c>long?</c>); multiple mode expects a
-/// collection (e.g. <c>long[]</c> / <c>IEnumerable&lt;long&gt;</c>). Options come from
-/// <c>asp-items</c>. The client behaviour lives in <c>picker.js</c> / <c>picker.css</c>;
-/// when &lt;dialog&gt; is unsupported the hidden inputs still post their current values.
+/// The value posts as ONE input named like the model property, as the toolkit makes it: the key of the chosen option, or the keys joined by a comma
+/// (<c>1,4,7</c>) in the multiple mode. The model binds as before: a scalar (<c>long?</c>) takes the key, a collection (<c>long[]</c>) is split by
+/// <see cref="CommaSeparatedBinder"/>, so no page model changes. Options come from <c>asp-items</c>.
 /// </para>
 /// </summary>
 [HtmlTargetElement("mp-picker", Attributes = ForAttributeName + "," + ItemsAttributeName)]
 public sealed class PickerTagHelper : TagHelper
 {
+    private const string ForAttributeName = "asp-for";
+    private const string ItemsAttributeName = "asp-items";
+
     private readonly IStringLocalizer<SharedResource> _l;
 
     public PickerTagHelper(IStringLocalizer<SharedResource> l) => _l = l;
-
-    private const string ForAttributeName = "asp-for";
-    private const string ItemsAttributeName = "asp-items";
 
     /// <summary>The model property this picker edits. Required.</summary>
     [HtmlAttributeName(ForAttributeName)]
@@ -54,39 +46,50 @@ public sealed class PickerTagHelper : TagHelper
     [HtmlAttributeName("multiple")]
     public bool Multiple { get; set; }
 
-    /// <summary>Placeholder shown when nothing is selected. Defaults per mode.</summary>
+    /// <summary>Placeholder shown when nothing is chosen. Defaults per mode.</summary>
     [HtmlAttributeName("placeholder")]
     public string? Placeholder { get; set; }
 
-    /// <summary>Optional help text rendered as <c>.form-help</c> under the widget.</summary>
+    /// <summary>Optional hint rendered as <c>mat-hint</c> under the picker.</summary>
     [HtmlAttributeName("help")]
     public string? Help { get; set; }
 
+    /// <summary>Marks the field as required even without a <c>[Required]</c> on the model.</summary>
+    [HtmlAttributeName("required")]
+    public bool? Required { get; set; }
+
     /// <summary>
-    /// Explicit selected value(s) — comma-separated for multiple — overriding the model
-    /// value. Together with <c>id-suffix</c> this lets the same field appear once per row
-    /// (each row in its own form), e.g. in the review inbox.
+    /// Explicit chosen key(s) - comma-separated for multiple - overriding the model value. Together with <c>id-suffix</c> this lets the same field appear
+    /// once per row (each row in its own form), e.g. in the review inbox.
     /// </summary>
     [HtmlAttributeName("value")]
     public string? Value { get; set; }
 
     /// <summary>
-    /// Offer "+ create" for names that do not exist yet. Inferred from the field (correspondent, document
-    /// type, project, tag); set to "false" for filters, where creating an entry makes no sense.
+    /// Offer "Create ..." for names that do not exist yet. Inferred from the field (correspondent, document type, project, tag); set to "false" for
+    /// filters, where creating an entry makes no sense.
     /// </summary>
     [HtmlAttributeName("create")]
     public string? Create { get; set; }
 
     /// <summary>
-    /// A document id: the dropdown then offers the correspondents (or names) its text suggests, on top of the list.
-    /// Only for the correspondent picker; leave unset elsewhere.
+    /// A document id: the picker then offers the correspondents (or names) that the text of that document suggests, on top of its list. The page script
+    /// asks for them (once for all the pickers of a page) and hands them to the toolkit. Only for the correspondent picker; leave unset elsewhere.
     /// </summary>
     [HtmlAttributeName("suggest-doc")]
     public long? SuggestDoc { get; set; }
 
-    /// <summary>Suffix appended to the widget id so repeated pickers keep unique ids.</summary>
+    /// <summary>Suffix appended to the id so repeated pickers keep unique ids.</summary>
     [HtmlAttributeName("id-suffix")]
     public string? IdSuffix { get; set; }
+
+    /// <summary>The picker has no search field (a list of three).</summary>
+    [HtmlAttributeName("no-search")]
+    public bool NoSearch { get; set; }
+
+    /// <summary>The colour (<c>#rrggbb</c>) of an option by its key: tags and projects have one; it shows as a dot before the name.</summary>
+    [HtmlAttributeName("colours")]
+    public IReadOnlyDictionary<string, string?>? Colours { get; set; }
 
     [HtmlAttributeNotBound]
     [ViewContext]
@@ -94,88 +97,76 @@ public sealed class PickerTagHelper : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        HtmlEncoder enc = HtmlEncoder.Default;
-
         string fullName = ViewContext.ViewData.TemplateInfo.GetFullHtmlFieldName(For.Name);
         string fieldId = TagBuilder.CreateSanitizedId(fullName, "_");
-        string widgetId = string.IsNullOrEmpty(IdSuffix) ? $"{fieldId}__picker" : $"{fieldId}_{IdSuffix}__picker";
+        string id = string.IsNullOrEmpty(IdSuffix) ? fieldId : $"{fieldId}_{IdSuffix}";
         string placeholder = Placeholder ?? (Multiple ? _l["Add…"].Value : _l["— None —"].Value);
+        string labelText = Label ?? For.Metadata.DisplayName ?? For.Metadata.PropertyName ?? For.Name;
+        var requiredAttribute = For.Metadata.ValidatorMetadata.OfType<RequiredAttribute>().FirstOrDefault();
+        bool required = Required ?? requiredAttribute is not null;
 
         IReadOnlyList<SelectListItem> items = Items as IReadOnlyList<SelectListItem> ?? Items.ToList();
-        HashSet<string> selected = Value is not null
-            ? new HashSet<string>(Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.Ordinal)
-            : ResolveSelectedValues();
+        var selected = (Value is not null ? SplitKeys(Value) : ResolveSelectedValues()).ToList();
+        string? error = ViewContext.ViewData.ModelState.TryGetValue(fullName, out var entry) && entry.Errors.Count > 0
+            ? entry.Errors.Select(e => e.ErrorMessage).FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "?"
+            : null;
 
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.Attributes.SetAttribute("class", "form-row");
+        output.Attributes.SetAttribute("class", Classes.Merge("mat-field", error is null ? null : "is-invalid", output.Attributes["class"]?.Value?.ToString()));
 
-        // Label
-        string labelText = Label ?? For.Metadata.DisplayName ?? For.Name;
-        output.Content.AppendHtml(
-            $"<label for=\"{enc.Encode(widgetId)}\">{enc.Encode(labelText)}</label>");
-
-        // Widget root
-        string optionsJson = BuildOptionsJson(items);
-        string selectedAttr = string.Join(",", selected.Select(enc.Encode));
-
-        var widget = new StringBuilder();
-        widget.Append("<div class=\"mp-picker\"");
-        widget.Append($" id=\"{enc.Encode(widgetId)}\"");
-        widget.Append($" data-multiple=\"{(Multiple ? "true" : "false")}\"");
-        widget.Append($" data-name=\"{enc.Encode(fullName)}\"");
-        widget.Append($" data-selected=\"{selectedAttr}\"");
-        widget.Append($" data-placeholder=\"{enc.Encode(placeholder)}\"");
-        // The dialog is built in picker.js, so its labels travel as data attributes.
-        widget.Append($" data-search-label=\"{enc.Encode(_l["Search…"].Value)}\"");
-        widget.Append($" data-done-label=\"{enc.Encode(_l["Done"].Value)}\"");
-        widget.Append($" data-close-label=\"{enc.Encode(_l["Close"].Value)}\"");
-        widget.Append($" data-remove-label=\"{enc.Encode(_l["Remove"].Value)}\"");
-        if (SuggestDoc is long suggestDoc && !Multiple && selected.Count == 0)
+        var html = new StringBuilder();
+        html.Append($"<label class=\"mat-label\" for=\"{Enc(id)}\">{Enc(labelText)}");
+        if (required)
         {
-            widget.Append($" data-suggest-doc=\"{suggestDoc}\"");
-            widget.Append($" data-suggest-hint=\"{enc.Encode(_l["{0} suggestions"].Value)}\"");
-            widget.Append($" data-suggest-hint-one=\"{enc.Encode(_l["1 suggestion"].Value)}\"");
-            widget.Append($" data-suggest-heading=\"{enc.Encode(_l["Suggestions"].Value)}\"");
-            widget.Append($" data-suggest-all=\"{enc.Encode(_l["All"].Value)}\"");
+            html.Append(" <span class=\"mat-req\" aria-hidden=\"true\">*</span>");
         }
+
+        html.Append("</label>");
 
         string? createKind = CreateKind(fullName);
-        if (createKind is not null)
-        {
-            widget.Append($" data-create=\"{createKind}\"");
-            widget.Append($" data-create-label=\"{enc.Encode(_l["Create \"{0}\""].Value)}\"");
-            widget.Append($" data-create-hint=\"{enc.Encode(_l["Type a name to create it."].Value)}\"");
-            widget.Append($" data-more-label=\"{enc.Encode(_l["{0} more — narrow the search"].Value)}\"");
-        }
-        else
-        {
-            widget.Append($" data-more-label=\"{enc.Encode(_l["{0} more — narrow the search"].Value)}\"");
-        }
-        widget.Append(">");
+        html.Append("<div class=\"mat-picker\" data-picker=\"select\"");
+        if (Multiple) { html.Append(" data-multiple data-sep=\",\""); }
+        if (!NoSearch && (items.Count > 6 || createKind is not null)) { html.Append(" data-search"); }
+        if (!Multiple && !required) { html.Append(" data-clearable"); }
+        html.Append($" data-placeholder=\"{Enc(placeholder)}\"");
+        if (createKind is not null) { html.Append($" data-create-url=\"/QuickCreate?kind={Enc(createKind)}\" data-create-label=\"{Enc(_l["Create \"{0}\""].Value)}\""); }
+        if (SuggestDoc is long doc && !Multiple && selected.Count == 0) { html.Append($" data-mp-suggest-doc=\"{doc}\""); }
+        html.Append('>');
 
-        widget.Append($"<script type=\"application/json\" class=\"mp-picker__data\">{optionsJson}</script>");
-
-        if (Multiple)
+        html.Append($"<input class=\"mat-picker__input\" id=\"{Enc(id)}\" name=\"{Enc(fullName)}\" value=\"{Enc(string.Join(",", selected))}\"");
+        if (required)
         {
-            AppendMultiple(widget, items, selected, fullName, placeholder, _l["Remove"].Value, enc);
-        }
-        else
-        {
-            AppendSingle(widget, items, selected, fullName, placeholder, enc);
+            html.Append(" required");
+            html.Append($" data-msg-required=\"{Enc(_l[requiredAttribute?.ErrorMessage ?? "The {0} field is required.", labelText].Value)}\"");
         }
 
-        widget.Append("</div>");
-        output.Content.AppendHtml(widget.ToString());
+        if (error is not null) { html.Append($" aria-invalid=\"true\" aria-describedby=\"{Enc(id)}-error\""); }
+        html.Append(" />");
 
-        // Validation + help (match other fields)
-        output.Content.AppendHtml(
-            $"<span class=\"field-error\" data-valmsg-for=\"{enc.Encode(fullName)}\" data-valmsg-replace=\"true\"></span>");
+        html.Append("<div class=\"mat-picker__options\" hidden>");
+        foreach (SelectListItem item in items)
+        {
+            html.Append($"<button type=\"button\" class=\"mat-picker__option\" data-value=\"{Enc(item.Value)}\"");
+            if (item.Disabled) { html.Append(" disabled"); }
+            html.Append('>');
+            if (Colours is not null && item.Value is not null && Colours.TryGetValue(item.Value, out var colour) && !string.IsNullOrEmpty(colour))
+            {
+                html.Append($"<span class=\"mat-dot\" data-colour=\"{Enc(colour)}\" aria-hidden=\"true\"></span>");
+            }
+
+            html.Append(Enc(item.Text)).Append("</button>");
+        }
+
+        html.Append("</div></div>");
 
         if (!string.IsNullOrEmpty(Help))
         {
-            output.Content.AppendHtml($"<p class=\"form-help\">{enc.Encode(Help)}</p>");
+            html.Append($"<span class=\"mat-hint\" id=\"{Enc(id)}-hint\">{Enc(Help)}</span>");
         }
+
+        html.Append($"<span class=\"mat-error\" id=\"{Enc(id)}-error\" aria-live=\"polite\">{Enc(error)}</span>");
+        output.Content.SetHtmlContent(html.ToString());
     }
 
     private string? CreateKind(string fullName)
@@ -192,75 +183,22 @@ public sealed class PickerTagHelper : TagHelper
 
         var field = fullName.Contains('.') ? fullName[(fullName.LastIndexOf('.') + 1)..] : fullName;
         if (field.Contains("Correspondent", StringComparison.OrdinalIgnoreCase)) { return "correspondent"; }
-        // Document types belong to the administrators (System): only they get the "+" for them.
+        // Document types belong to the administrators (System): only they get the "Create" for them.
         if (field.Contains("DocumentType", StringComparison.OrdinalIgnoreCase)) { return ViewContext.HttpContext.User.IsInRole("Admin") ? "document-type" : null; }
         if (field.Contains("Project", StringComparison.OrdinalIgnoreCase)) { return "project"; }
         if (field.Contains("Tag", StringComparison.OrdinalIgnoreCase)) { return "tag"; }
         return null;
     }
 
-    private static void AppendSingle(
-        StringBuilder w, IReadOnlyList<SelectListItem> items, HashSet<string> selected,
-        string fullName, string placeholder, HtmlEncoder enc)
+    private static IEnumerable<string> SplitKeys(string keys)
+        => keys.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private IEnumerable<string> ResolveSelectedValues()
     {
-        string? current = selected.Count > 0 ? selected.First() : null;
-        SelectListItem? match = current is null
-            ? null
-            : items.FirstOrDefault(i => string.Equals(i.Value, current, StringComparison.Ordinal));
-
-        string display = match?.Text ?? placeholder;
-        bool isPlaceholder = match is null;
-
-        w.Append($"<input type=\"hidden\" class=\"mp-picker__value\" name=\"{enc.Encode(fullName)}\" value=\"{enc.Encode(current ?? string.Empty)}\">");
-
-        w.Append("<button type=\"button\" class=\"mp-picker__trigger form-control\"");
-        w.Append(" aria-haspopup=\"dialog\"");
-        if (isPlaceholder)
-        {
-            w.Append(" data-placeholder-shown=\"true\"");
-        }
-
-        w.Append(">");
-        w.Append($"<span class=\"mp-picker__label\">{enc.Encode(display)}</span>");
-        w.Append("<span class=\"mp-picker__caret\" aria-hidden=\"true\">▾</span>");
-        w.Append("</button>");
-    }
-
-    private static void AppendMultiple(
-        StringBuilder w, IReadOnlyList<SelectListItem> items, HashSet<string> selected,
-        string fullName, string placeholder, string removeLabel, HtmlEncoder enc)
-    {
-        w.Append("<div class=\"mp-picker__chips\">");
-        foreach (SelectListItem item in items)
-        {
-            if (!selected.Contains(item.Value))
-            {
-                continue;
-            }
-
-            w.Append($"<span class=\"mp-picker__chip\" data-value=\"{enc.Encode(item.Value)}\">");
-            w.Append($"<input type=\"hidden\" name=\"{enc.Encode(fullName)}\" value=\"{enc.Encode(item.Value)}\">");
-            w.Append($"<span class=\"mp-picker__chip-text\">{enc.Encode(item.Text)}</span>");
-            w.Append($"<button type=\"button\" class=\"mp-picker__chip-remove\" aria-label=\"{enc.Encode(removeLabel)}\" tabindex=\"-1\">✕</button>");
-            w.Append("</span>");
-        }
-
-        w.Append("</div>");
-
-        w.Append("<button type=\"button\" class=\"mp-picker__trigger mp-picker__trigger--add form-control\"");
-        w.Append(" aria-haspopup=\"dialog\">");
-        w.Append($"<span class=\"mp-picker__label\">{enc.Encode(placeholder)}</span>");
-        w.Append("<span class=\"mp-picker__caret\" aria-hidden=\"true\">＋</span>");
-        w.Append("</button>");
-    }
-
-    private HashSet<string> ResolveSelectedValues()
-    {
-        var result = new HashSet<string>(StringComparer.Ordinal);
         object? model = For.Model;
         if (model is null)
         {
-            return result;
+            yield break;
         }
 
         if (Multiple && model is IEnumerable enumerable && model is not string)
@@ -269,36 +207,19 @@ public sealed class PickerTagHelper : TagHelper
             {
                 if (entry is not null)
                 {
-                    result.Add(Convert.ToString(entry, CultureInfo.InvariantCulture) ?? string.Empty);
+                    yield return Convert.ToString(entry, CultureInfo.InvariantCulture) ?? string.Empty;
                 }
             }
 
-            return result;
+            yield break;
         }
 
         string? scalar = Convert.ToString(model, CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(scalar))
         {
-            result.Add(scalar);
+            yield return scalar;
         }
-
-        return result;
     }
 
-    private static string BuildOptionsJson(IReadOnlyList<SelectListItem> items)
-    {
-        var options = new List<Dictionary<string, string>>(items.Count);
-        foreach (SelectListItem item in items)
-        {
-            options.Add(new Dictionary<string, string>
-            {
-                ["v"] = item.Value ?? string.Empty,
-                ["t"] = item.Text ?? string.Empty,
-            });
-        }
-
-        // The default serializer escapes '<' to "<", so the payload is safe to embed
-        // inside a <script type="application/json"> block (it cannot break out via "</script>").
-        return JsonSerializer.Serialize(options);
-    }
+    private static string Enc(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
 }

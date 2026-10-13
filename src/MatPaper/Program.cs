@@ -75,6 +75,8 @@ builder.Services.AddSingleton<OAuthService>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<Fmt>();
 builder.Services.AddScoped<ThemeService>();
+builder.Services.AddScoped<MenuService>();
+builder.Services.AddSingleton<MatPaper.Controls.Toolkit>();
 builder.Services.AddSingleton<TaskTriggerQueue>();
 builder.Services.AddScoped<ConnectionService>();
 builder.Services.AddScoped<ImportRunner>();
@@ -136,7 +138,12 @@ builder.Services.AddRazorPages(options =>
 // ASP.NET adds an implicit [Required] for non-nullable reference types whose message is
 // framework-supplied and therefore never reaches our resource file. The PageModels do
 // their own (localized) required checks, so turn the implicit one off.
-builder.Services.Configure<MvcOptions>(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+builder.Services.Configure<MvcOptions>(o =>
+{
+    o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+    // The toolkit's multiple picker posts its keys joined by a comma; a list of numbers takes that as well as the usual repeated values.
+    o.ModelBinderProviders.Insert(0, new CommaSeparatedBinderProvider());
+});
 
 builder.Services.Configure<RequestLocalizationOptions>(o =>
 {
@@ -158,6 +165,9 @@ builder.Services.Configure<RequestLocalizationOptions>(o =>
 });
 
 var app = builder.Build();
+
+// The icon sprites are read at startup: a page body renders before its layout does, and its icons need to know which sprite they live in.
+app.Services.GetRequiredService<MatPaper.Controls.Toolkit>();
 
 // Startup migration with retry to tolerate Postgres warmup.
 const int maxAttempts = 10;

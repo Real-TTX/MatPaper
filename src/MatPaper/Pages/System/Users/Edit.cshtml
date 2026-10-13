@@ -2,39 +2,45 @@
 @model MatPaper.Pages.System.Users.EditModel
 @{
     ViewData["Breadcrumb"] = $"{L["System"].Value} / {L["Users"].Value} / {(Model.IsEdit ? L["Edit"].Value : L["New"].Value)}";
+    ViewData["Heading"] = Model.IsEdit ? L["Edit user"].Value : L["New user"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-<form class="form" method="post">
+<form method="post" class="mat-form" novalidate>
     <input type="hidden" asp-for="Id" />
+    <partial name="_ValidationSummary" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Account"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.Username" label='@L["Username"]' autocomplete="off" />
+                <mp-field asp-for="Input.DisplayName" label='@L["Display name"]' autocomplete="off" />
+                <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]' autocomplete="off" />
+                <mp-field asp-for="Input.RoleId" kind="select" label='@L["Role"]' asp-items="Model.RoleOptions" />
+                <mp-field asp-for="Input.IsActive" kind="switch" label='@L["Active"]' full="true" />
+            </div>
+        </div>
+    </div>
 
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Account"]</h2>
-
-        <mp-field asp-for="Input.Username" label='@L["Username"]' autocomplete="off" />
-        <mp-field asp-for="Input.DisplayName" label='@L["Display name"]' autocomplete="off" />
-        <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]' autocomplete="off" />
-        <mp-field asp-for="Input.RoleId" kind="select" label='@L["Role"]' asp-items="Model.RoleOptions" />
-        <mp-field asp-for="Input.IsActive" kind="checkbox" label='@L["Active"]' />
-    </section>
-
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Password"]</h2>
-
-        <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' autocomplete="new-password"
-                  placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : L["At least 8 characters"].Value)' />
-        <mp-field asp-for="Input.ConfirmPassword" kind="password" label='@L["Confirm password"]' autocomplete="new-password" />
-    </section>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Password"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' autocomplete="new-password"
+                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : L["At least 8 characters"].Value)' />
+                <mp-field asp-for="Input.ConfirmPassword" kind="password" label='@L["Confirm password"]' autocomplete="new-password" />
+            </div>
+        </div>
+    </div>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/System/Users">@L["Back"]</mp-button>
-        <mp-button-spacer />
+        <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/Users" icon="back">@L["Back"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm='@L["Delete this user? This cannot be undone."]'>@L["Delete"]</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" icon="trash" handler="Delete" confirm='@L["Delete this user? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

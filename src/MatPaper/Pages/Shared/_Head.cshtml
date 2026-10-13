@@ -1,0 +1,24 @@
+@model MatPaper.Services.ThemeChoice
+@*
+    The <head> of every page: the toolkit (its boot script applies a theme that only the browser remembers before the first paint, so the page does not
+    flash in the wrong colours), the few styles of this app (mp-*) and the details of an installable app (manifest, icons, colour of the browser bar).
+    The full title comes from the layout in ViewData["FullTitle"] ("Page · Section · MatPaper", rule IDENT-07).
+*@
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="@Model.ThemeColour" />
+    <title>@(ViewData["FullTitle"] as string ?? "MatPaper")</title>
+    <link rel="icon" type="image/svg+xml" href="~/icons/logo.svg" />
+    <link rel="apple-touch-icon" href="~/icons/icon-192.png" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <meta name="application-name" content="MatPaper" />
+    <meta name="apple-mobile-web-app-title" content="MatPaper" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script src="~/matui/matui.boot.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="~/matui/matui.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/matpaper.css" asp-append-version="true" />
+</head>

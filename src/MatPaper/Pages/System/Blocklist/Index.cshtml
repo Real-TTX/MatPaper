@@ -2,57 +2,52 @@
 @model MatPaper.Pages.System.Blocklist.IndexModel
 @{
     ViewData["Breadcrumb"] = L["System / Blocklist"].Value;
-}
-
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or file name"]' />
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="date_desc">@L["Blocked on (newest first)"]</option>
-        <option value="date_asc">@L["Blocked on (oldest first)"]</option>
-        <option value="name_asc">@L["Name (A–Z)"]</option>
-        <option value="name_desc">@L["Name (Z–A)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
-
-@{
+    ViewData["PageSub"] = L["What you deleted and blocked is skipped by imports and searches when it turns up again. Release an entry to get it back."].Value;
     var activeFilters = MatPaper.Services.FilterChipBar.From(ViewContext.HttpContext.Request,
         new MatPaper.Services.FilterSpec("Search", L["Search"].Value, Model.Search));
 }
-<partial name="_FilterChips" model="activeFilters" />
 
-<mp-list-bar count="Model.TotalCount" singular="{0} entry" plural="{0} entries" />
+<div class="mat-list">
+    <mp-toolbar id="blocklist" label='@L["Blocklist"]' count="Model.TotalCount" singular="{0} entry" plural="{0} entries">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Name or file name"]' />
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="date_desc">@L["Blocked on (newest first)"]</option>
+            <option value="date_asc">@L["Blocked on (oldest first)"]</option>
+            <option value="name_asc">@L["Name (A–Z)"]</option>
+            <option value="name_desc">@L["Name (Z–A)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text='@L["Nothing is blocked."]'>
-    <thead>
-        <tr>
-            <th>@L["Name"]</th>
-            <th>@L["File name"]</th>
-            <th>@L["Blocked on"]</th>
-            <th class="is-actions"></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model.Rows)
-        {
+    <partial name="_FilterChips" model="activeFilters" />
+
+    <mp-table item-count="Model.Rows.Count" empty-text='@L["Nothing is blocked."]' caption='@L["Blocklist"]'>
+        <thead>
             <tr>
-                <td>@r.Name</td>
-                <td>@r.OriginalFileName</td>
-                <td>@Fmt.Date(r.CreateDate)</td>
-                <td class="is-actions">
-                    <form method="post" asp-page-handler="Release" asp-route-id="@r.Id" asp-route-Search="@Model.Search" asp-route-Sort="@Model.Sort" style="display:inline">
-                        <button class="btn btn--secondary" type="submit"
-                                data-confirm='@L["Release this entry? The document is imported again the next time it turns up."]'>@L["Release"]</button>
-                    </form>
-                </td>
+                <th scope="col">@L["Name"]</th>
+                <th scope="col" class="mat-hide-sm">@L["File name"]</th>
+                <th scope="col">@L["Blocked on"]</th>
+                <th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th>
             </tr>
-        }
-    </tbody>
-</mp-table>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td>@r.Name</td>
+                    <td class="mat-hide-sm mat-mono">@r.OriginalFileName</td>
+                    <td class="mat-mono">@Fmt.Date(r.CreateDate)</td>
+                    <td class="mat-table__cell-actions">
+                        <form method="post" asp-page-handler="Release" asp-route-id="@r.Id" asp-route-Search="@Model.Search" asp-route-Sort="@Model.Sort">
+                            <mp-button variant="secondary" size="sm" icon="restore" confirm='@L["Release this entry? The document is imported again the next time it turns up."]' confirm-ok='@L["Release"]'>@L["Release"]</mp-button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </mp-table>
+</div>
 
-<mp-list-bar position="bottom" />
-
-<p class="form-help">@L["What you deleted and blocked is skipped by imports and searches when it turns up again. Release an entry to get it back."]</p>
 @if (Model.Truncated)
 {
-    <p class="form-help">@L["The first {0} of {1} are shown.", MatPaper.Pages.System.Blocklist.IndexModel.Limit, Model.TotalCount] @L["Narrow it down with the search."]</p>
+    <p class="mat-muted">@L["The first {0} of {1} are shown.", MatPaper.Pages.System.Blocklist.IndexModel.Limit, Model.TotalCount] @L["Narrow it down with the search."]</p>
 }

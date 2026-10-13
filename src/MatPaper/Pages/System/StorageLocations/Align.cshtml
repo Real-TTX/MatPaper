@@ -3,65 +3,63 @@
 @{
     var plan = Model.Plan;
     var shown = plan.Items.Take(MatPaper.Pages.System.StorageLocations.AlignModel.ShownItems).ToList();
+    ViewData["Heading"] = plan.Location.Name;
+    ViewData["PageSub"] = $"{L["Template"].Value}: {plan.Location.PathTemplate}";
 }
 
-<div class="task-head">
-    <div class="task-head__main">
-        <h2 class="task-head__title">@plan.Location.Name</h2>
-        <div class="task-head__meta"><span class="form-help" style="margin:0">@L["Template"]: <code>@plan.Location.PathTemplate</code></span></div>
-    </div>
-    <div class="task-head__actions">
-        <a class="btn btn--secondary" href="/System/StorageLocations/Details?id=@plan.Location.Id">@L["Back"]</a>
-    </div>
-</div>
+<div class="mat-stack">
+    <partial name="_TaskRunsPanel" model="Model.Runs" />
 
-<partial name="_TaskRunsPanel" model="Model.Runs" />
-
-<section class="task-card task-card--wide" data-live="align">
-    <form method="get" class="align-options">
-        <input type="hidden" name="id" value="@plan.Location.Id" />
-        <label class="form-check">
-            <input type="checkbox" name="Found" value="true" checked="@plan.IncludeFound" onchange="this.form.submit()" />
-            <span>@L["Include files found in place"]</span>
-        </label>
-    </form>
-
-    <h3>
-        @L["Files to move"]
-        <span class="task-card__count">@plan.Total / @plan.Checked</span>
-    </h3>
-
-    @if (plan.FoundSkipped > 0)
-    {
-        <p class="form-help">@L["{0} file(s) found in place are left alone.", plan.FoundSkipped]</p>
-    }
-
-    @if (plan.Total == 0)
-    {
-        <p class="form-help">@L["Everything lies where the template puts it."]</p>
-    }
-    else
-    {
-        <div class="table-scroll">
-            <table class="data-table align-table">
-                <thead>
-                    <tr><th>@L["Title"]</th><th>@L["Now"]</th><th>@L["Becomes"]</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in shown)
-                    {
-                        <tr>
-                            <td><a href="/Documents/Edit?id=@item.Id">@item.Title</a></td>
-                            <td class="align-table__path">@item.From</td>
-                            <td class="align-table__path">@item.To</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <div class="mat-card" data-live="align">
+        <div class="mat-card__head">
+            <h2 class="mat-card__title">@L["Files to move"]</h2>
+            <span class="mat-pill mat-pill--plain">@plan.Total / @plan.Checked</span>
         </div>
-        @if (plan.Total > shown.Count)
-        {
-            <p class="form-help">@L["The first {0} of {1} are shown.", shown.Count, plan.Total]</p>
-        }
-    }
-</section>
+        <div class="mat-card__body mat-stack">
+            <form method="get" class="mat-form">
+                <input type="hidden" name="id" value="@plan.Location.Id" />
+                <label class="mat-switch">
+                    <input type="checkbox" name="Found" value="true" checked="@plan.IncludeFound" data-autosubmit />
+                    <span class="mat-switch__track"></span>
+                    <span>@L["Include files found in place"]</span>
+                </label>
+            </form>
+
+            @if (plan.FoundSkipped > 0)
+            {
+                <p class="mat-muted">@L["{0} file(s) found in place are left alone.", plan.FoundSkipped]</p>
+            }
+
+            @if (plan.Total == 0)
+            {
+                <p class="mat-muted">@L["Everything lies where the template puts it."]</p>
+            }
+            else
+            {
+                <mp-table item-count="shown.Count" caption='@L["Files to move"]'>
+                    <thead>
+                        <tr><th scope="col">@L["Title"]</th><th scope="col">@L["Now"]</th><th scope="col">@L["Becomes"]</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in shown)
+                        {
+                            <tr>
+                                <td><a href="/Documents/Edit?id=@item.Id">@item.Title</a></td>
+                                <td class="mat-mono mp-path">@item.From</td>
+                                <td class="mat-mono mp-path">@item.To</td>
+                            </tr>
+                        }
+                    </tbody>
+                </mp-table>
+                @if (plan.Total > shown.Count)
+                {
+                    <p class="mat-muted">@L["The first {0} of {1} are shown.", shown.Count, plan.Total]</p>
+                }
+            }
+        </div>
+    </div>
+
+    <mp-button-row>
+        <mp-button variant="secondary" href="@($"/System/StorageLocations/Details?id={plan.Location.Id}")" icon="back">@L["Back"]</mp-button>
+    </mp-button-row>
+</div>

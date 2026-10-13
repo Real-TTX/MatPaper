@@ -2,67 +2,83 @@
 @model MatPaper.Pages.System.ExportTasks.EditModel
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Export tasks / Edit"].Value : L["System / Export tasks / New"].Value;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New export task"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-<form class="form form--wide" method="post">
+<form method="post" class="mat-form" novalidate>
     <input type="hidden" asp-for="Id" />
+    <partial name="_ValidationSummary" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Overview"]</h2>
-        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Nightly backup"]' />
-        <mp-field asp-for="Input.Type" kind="select" label='@L["Type"]' asp-items="Model.TypeOptions" />
-        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
-        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
-    </section>
-
-    <div data-show-when-field="Input.Type" data-show-when-value="1">
-        <section class="form-section">
-            <h2 class="form-section__title">@L["Which documents"]</h2>
-            <p class="form-help">@L["All filters have to match. Leave a filter empty to ignore it."]</p>
-            @if (Model.TagOptions.Count > 0)
-            {
-                <mp-picker create="false" asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
-            }
-            <mp-picker create="false" asp-for="Input.CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— None —"]' />
-            <mp-picker create="false" asp-for="Input.DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— None —"]' />
-            <mp-picker create="false" asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
-            <mp-picker asp-for="Input.OwnerUserId" label='@L["Owner"]' asp-items="Model.UserOptions" placeholder='@L["— None —"]' />
-            <mp-picker asp-for="Input.SourceLocationId" label='@L["Only documents in this location"]' asp-items="Model.LocationOptions" placeholder='@L["— None —"]' />
-            <mp-field asp-for="Input.SourceFolder" label='@L["Only in this folder"]' placeholder='@L["e.g. Taxes/2025"]' />
-        </section>
-
-        <section class="form-section">
-            <h2 class="form-section__title">@L["Where to"]</h2>
-            <mp-field asp-for="Input.TargetLocationId" kind="select" label='@L["Target location"]' asp-items="Model.LocationOptions"
-                      help='@L["Pick the location the copies go to."]' />
-            <mp-field asp-for="Input.PathTemplate" label='@L["Path in the target"]' placeholder="{Year}/{Title}{Ext}"
-                      help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone."]' />
-        </section>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Overview"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Nightly backup"]' />
+                <mp-field asp-for="Input.Type" kind="select" label='@L["Type"]' asp-items="Model.TypeOptions" />
+                <mp-field asp-for="Input.IsEnabled" kind="switch" label='@L["Enabled"]' full="true" />
+                <div class="mat-field--full"><mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' /></div>
+            </div>
+        </div>
     </div>
 
-    <div data-show-when-field="Input.Type" data-show-when-value="0">
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Backup settings"]</h2>
-        <mp-field asp-for="Input.TargetPath" label='@L["Target path"]'
-                  placeholder="/backup"
-                  help='@L["Path inside the container, e.g. a mounted backup folder"]' />
-        <mp-field asp-for="Input.IncludeConfig" kind="checkbox" label='@L["Include configuration"]' />
-        <mp-field asp-for="Input.IncludeDocuments" kind="checkbox" label='@L["Include documents"]' />
-        <mp-field asp-for="Input.Retention" kind="number" label='@L["Retention"]'
-                  help='@L["how many backups to keep"]' />
-    </section>
+    <div class="mat-stack" data-show-if="Input.Type" data-show-value="1">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@L["Which documents"]</h2></div>
+            <div class="mat-card__body mat-stack">
+                <p class="mat-muted">@L["All filters have to match. Leave a filter empty to ignore it."]</p>
+                <div class="mat-form__grid">
+                    @if (Model.TagOptions.Count > 0)
+                    {
+                        <mp-picker create="false" asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
+                    }
+                    <mp-picker create="false" asp-for="Input.CorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— None —"]' />
+                    <mp-picker create="false" asp-for="Input.DocumentTypeId" label='@L["Document type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— None —"]' />
+                    <mp-picker create="false" asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
+                    <mp-picker asp-for="Input.OwnerUserId" label='@L["Owner"]' asp-items="Model.UserOptions" placeholder='@L["— None —"]' />
+                    <mp-picker asp-for="Input.SourceLocationId" label='@L["Only documents in this location"]' asp-items="Model.LocationOptions" placeholder='@L["— None —"]' />
+                    <mp-field asp-for="Input.SourceFolder" label='@L["Only in this folder"]' placeholder='@L["e.g. Taxes/2025"]' mono="true" full="true" />
+                </div>
+            </div>
+        </div>
+
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@L["Where to"]</h2></div>
+            <div class="mat-card__body">
+                <div class="mat-form__grid">
+                    <mp-field asp-for="Input.TargetLocationId" kind="select" label='@L["Target location"]' asp-items="Model.LocationOptions"
+                              help='@L["Pick the location the copies go to."]' full="true" />
+                    <mp-field asp-for="Input.PathTemplate" label='@L["Path in the target"]' placeholder="{Year}/{Title}{Ext}" mono="true" full="true"
+                              help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. Example: {Year}/{Title}{Ext}. Copies that already exist are left alone."]' />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mat-stack" data-show-if="Input.Type" data-show-value="0">
+        <div class="mat-card">
+            <div class="mat-card__head"><h2 class="mat-card__title">@L["Backup settings"]</h2></div>
+            <div class="mat-card__body">
+                <div class="mat-form__grid">
+                    <mp-field asp-for="Input.TargetPath" label='@L["Target path"]' placeholder="/backup" mono="true" full="true"
+                              help='@L["Path inside the container, e.g. a mounted backup folder"]' />
+                    <mp-field asp-for="Input.IncludeConfig" kind="switch" label='@L["Include configuration"]' full="true" />
+                    <mp-field asp-for="Input.IncludeDocuments" kind="switch" label='@L["Include documents"]' full="true" />
+                    <mp-field asp-for="Input.Retention" kind="number" label='@L["Retention"]' inputmode="numeric"
+                              help='@L["how many backups to keep"]' />
+                </div>
+            </div>
+        </div>
     </div>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="@(Model.IsEdit ? "/System/ExportTasks/Details?id=" + Model.Id : "/System/ExportTasks")">@L["Cancel"]</mp-button>
-        <mp-button-spacer />
+        <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="@(Model.IsEdit ? "/System/ExportTasks/Details?id=" + Model.Id : "/System/ExportTasks")" icon="back">@L["Cancel"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm='@L["Delete this export task? This cannot be undone."]'>@L["Delete"]</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" icon="trash" handler="Delete"
+                       confirm='@L["Delete this export task? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

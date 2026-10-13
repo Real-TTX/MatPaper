@@ -3,12 +3,15 @@
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Edit"].Value : L["System / Import tasks / New"].Value;
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New import task"].Value;
+    ViewData["Width"] = "narrow";
+    var inGroup = Model.Input.GroupId is not null;
+    var hasGroups = Model.GroupOptions.Any(o => o.Value != string.Empty);
 }
 
-@* The wizard walks through type → connection → credentials → source → rules →
-   preview → filing. Steps that do not apply to the chosen type hide themselves
-   (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
-<form class="form form--wide wizard is-booting" id="import-wizard" method="post" data-mode="wizard"
+@* The wizard walks through assignment → type → connection → credentials → source → rules → preview → filing. Steps that do not apply to the chosen type
+   hide themselves (see import-wizard.js); everything stays one form, so Save works from anywhere. *@
+<form class="mat-form mp-wizard is-booting" id="import-wizard" method="post" data-mode="wizard" novalidate
       data-group-sources='@Html.Raw(global::System.Text.Json.JsonSerializer.Serialize(Model.GroupSources))'
       data-browse-url="/System/ImportTasks/Edit?handler=Browse"
       data-preview-url="/System/ImportTasks/Edit?handler=Preview"
@@ -22,409 +25,334 @@
       data-t-show-more='@L["Show more"]' data-t-up='@L["One level up"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
-
-    <div asp-validation-summary="All" class="form-summary"></div>
+    <partial name="_ValidationSummary" />
 
     @* Enter in a text field must save, not fire the first submit button in the markup. *@
-    <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">@L["Save"]</button>
+    <button type="submit" class="mat-sr-only" tabindex="-1" aria-hidden="true">@L["Save"]</button>
     <input type="hidden" asp-for="ActiveStep" id="wizard-active-step" />
 
-    <ol class="wizard__steps" id="wizard-steps">
-        <li class="wizard__step" data-goto="0"><span class="wizard__num"></span><span class="wizard__label">@L["Assignment"]</span></li>
-        <li class="wizard__step" data-goto="1"><span class="wizard__num"></span><span class="wizard__label">@L["Type"]</span></li>
-        <li class="wizard__step" data-goto="2"><span class="wizard__num"></span><span class="wizard__label">@L["Connection"]</span></li>
-        <li class="wizard__step" data-goto="3"><span class="wizard__num"></span><span class="wizard__label">@L["Credentials"]</span></li>
-        <li class="wizard__step" data-goto="4"><span class="wizard__num"></span><span class="wizard__label">@L["Source"]</span></li>
-        <li class="wizard__step" data-goto="5"><span class="wizard__num"></span><span class="wizard__label">@L["Rules"]</span></li>
-        <li class="wizard__step" data-goto="6"><span class="wizard__num"></span><span class="wizard__label">@L["Preview"]</span></li>
-        <li class="wizard__step" data-goto="7"><span class="wizard__num"></span><span class="wizard__label">@L["Filing"]</span></li>
-    </ol>
+    <nav class="mat-tabs mat-tabs--pills mp-wizard__steps" id="wizard-steps" aria-label='@L["Steps"]'>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="0"><span class="mp-wizard__num"></span><span>@L["Assignment"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="1"><span class="mp-wizard__num"></span><span>@L["Type"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="2"><span class="mp-wizard__num"></span><span>@L["Connection"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="3"><span class="mp-wizard__num"></span><span>@L["Credentials"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="4"><span class="mp-wizard__num"></span><span>@L["Source"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="5"><span class="mp-wizard__num"></span><span>@L["Rules"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="6"><span class="mp-wizard__num"></span><span>@L["Preview"]</span></button>
+        <button type="button" class="mat-tab mp-wizard__step" data-goto="7"><span class="mp-wizard__num"></span><span>@L["Filing"]</span></button>
+    </nav>
 
     @* ---------- 0 Assignment: on its own or in a group ---------- *@
-    <section class="wizard__panel" data-step="0" hidden="@(Model.ActiveStep != 0)">
-        @{ var inGroup = Model.Input.GroupId is not null; var hasGroups = Model.GroupOptions.Any(o => o.Value != string.Empty); }
-        <h2 class="wizard__title">@L["Where does the rule belong?"]</h2>
-        <div class="type-tiles type-tiles--two" id="scope-tiles">
-            <label class="type-tile">
-                <input type="radio" name="rule-scope" value="single" checked="@(!inGroup)" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2" /><path d="M8 10h8M8 14h5" /></svg>
-                <span class="type-tile__name">@L["Single rule"]</span>
-                <span class="type-tile__hint">@L["Has its own schedule and target."]</span>
-            </label>
-            <label class="type-tile">
-                <input type="radio" name="rule-scope" value="group" checked="@inGroup" disabled="@(!hasGroups)" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12l9 5 9-5" /><path d="M3 16l9 5 9-5" /></svg>
-                <span class="type-tile__name">@L["In a group"]</span>
-                <span class="type-tile__hint">@(hasGroups ? L["Schedule, order and target come from the group."].Value : L["Create a group first."].Value)</span>
-            </label>
+    <section class="mat-card mp-wizard__panel" data-step="0" hidden="@(Model.ActiveStep != 0)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Where does the rule belong?"]</h2></div>
+        <div class="mat-card__body mat-stack">
+            <div class="mat-choices" id="scope-tiles">
+                <label class="mat-choice">
+                    <input type="radio" name="rule-scope" value="single" checked="@(!inGroup)" />
+                    <mp-icon name="file-text" />
+                    <span class="mat-choice__text"><strong>@L["Single rule"]</strong><small>@L["Has its own schedule and target."]</small></span>
+                </label>
+                <label class="mat-choice">
+                    <input type="radio" name="rule-scope" value="group" checked="@inGroup" disabled="@(!hasGroups)" />
+                    <mp-icon name="layers" />
+                    <span class="mat-choice__text"><strong>@L["In a group"]</strong><small>@(hasGroups ? L["Schedule, order and target come from the group."].Value : L["Create a group first."].Value)</small></span>
+                </label>
+            </div>
+            <div id="group-pick" hidden="@(!inGroup)" data-group-types='@Html.Raw(global::System.Text.Json.JsonSerializer.Serialize(Model.GroupTypes))'>
+                <mp-field asp-for="Input.GroupId" kind="select" label='@L["Which group?"]' asp-items="Model.GroupOptions" />
+            </div>
         </div>
-        <div id="group-pick" @(inGroup ? "" : "hidden") data-group-types='@Html.Raw(global::System.Text.Json.JsonSerializer.Serialize(Model.GroupTypes))'>
-            <mp-field asp-for="Input.GroupId" kind="select" label='@L["Which group?"]' asp-items="Model.GroupOptions" />
-        </div>
-
     </section>
 
     @* ---------- 1 Type ---------- *@
-    <section class="wizard__panel" data-step="1" hidden="@(Model.ActiveStep != 1)">
-        <div id="type-pick">
-        <h2 class="wizard__title">@L["What should be imported?"]</h2>
+    <section class="mat-card mp-wizard__panel" data-step="1" hidden="@(Model.ActiveStep != 1)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["What should be imported?"]</h2></div>
+        <div class="mat-card__body mat-stack">
+            <div id="type-pick">
+                <div class="mat-choices">
+                    <label class="mat-choice">
+                        <input type="radio" asp-for="Input.Type" value="2" />
+                        <mp-icon name="folder" />
+                        <span class="mat-choice__text"><strong>@L["Watch folder"]</strong><small>@L["A folder inside the container, e.g. a scanner drop."]</small></span>
+                    </label>
+                    <label class="mat-choice">
+                        <input type="radio" asp-for="Input.Type" value="3" />
+                        <mp-icon name="server" />
+                        <span class="mat-choice__text"><strong>@L["Network share (SMB)"]</strong><small>@L["A NAS share, reached directly over the network."]</small></span>
+                    </label>
+                    <label class="mat-choice">
+                        <input type="radio" asp-for="Input.Type" value="0" />
+                        <mp-icon name="mail" />
+                        <span class="mat-choice__text"><strong>@L["IMAP mailbox"]</strong><small>@L["Attachments from a mailbox; folders stay on the server."]</small></span>
+                    </label>
+                    <label class="mat-choice">
+                        <input type="radio" asp-for="Input.Type" value="1" />
+                        <mp-icon name="mail" />
+                        <span class="mat-choice__text"><strong>@L["POP3 mailbox"]</strong><small>@L["Simple mailbox without folders."]</small></span>
+                    </label>
+                </div>
+            </div>
+            <p class="mat-muted" id="type-fixed-note" hidden>@L["The group already decides what is imported here."]</p>
 
-        <div class="type-tiles">
-            <label class="type-tile">
-                <input type="radio" asp-for="Input.Type" value="2" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                </svg>
-                <span class="type-tile__name">@L["Watch folder"]</span>
-                <span class="type-tile__hint">@L["A folder inside the container, e.g. a scanner drop."]</span>
-            </label>
-            <label class="type-tile">
-                <input type="radio" asp-for="Input.Type" value="3" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="2" y="4" width="20" height="7" rx="2" /><rect x="2" y="13" width="20" height="7" rx="2" />
-                    <path d="M6 7.5h.01M6 16.5h.01" />
-                </svg>
-                <span class="type-tile__name">@L["Network share (SMB)"]</span>
-                <span class="type-tile__hint">@L["A NAS share, reached directly over the network."]</span>
-            </label>
-            <label class="type-tile">
-                <input type="radio" asp-for="Input.Type" value="0" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
-                </svg>
-                <span class="type-tile__name">@L["IMAP mailbox"]</span>
-                <span class="type-tile__hint">@L["Attachments from a mailbox; folders stay on the server."]</span>
-            </label>
-            <label class="type-tile">
-                <input type="radio" asp-for="Input.Type" value="1" />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 10h10M7 14h6" />
-                </svg>
-                <span class="type-tile__name">@L["POP3 mailbox"]</span>
-                <span class="type-tile__hint">@L["Simple mailbox without folders."]</span>
-            </label>
+            <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Scanner watch folder"]' />
         </div>
-        </div>
-        <p class="form-help" id="type-fixed-note" hidden>@L["The group already decides what is imported here."]</p>
-
-        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Scanner watch folder"]' />
     </section>
 
     @* ---------- 2 Connection ---------- *@
-    <section class="wizard__panel" data-step="2" data-for-type="0,1,3" data-hide-with-source hidden="@(Model.ActiveStep != 2)">
-        <h2 class="wizard__title">@L["Where does it connect to?"]</h2>
+    <section class="mat-card mp-wizard__panel" data-step="2" data-for-type="0,1,3" data-hide-with-source hidden="@(Model.ActiveStep != 2)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Where does it connect to?"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="3">
+                    <mp-field asp-for="Input.SmbConnectionId" kind="select" label='@L["Saved connection"]' asp-items="Model.SmbConnectionOptions" />
+                    <div class="mat-form__grid mat-field--full" data-show-if="Input.SmbConnectionId" data-show-value="">
+                        <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" mono="true" />
+                    </div>
+                </div>
 
-        <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <mp-field asp-for="Input.SmbConnectionId" kind="select" label='@L["Saved connection"]'
-                      asp-items="Model.SmbConnectionOptions" />
-            <div data-show-when-field="Input.SmbConnectionId" data-show-when-value="">
-                <mp-field asp-for="Input.SmbHost" label='@L["Host"]' placeholder="nas.local" />
-            </div>
-        </div>
-
-        <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <mp-field asp-for="Input.MailConnectionId" kind="select" label='@L["Saved connection"]'
-                      asp-items="Model.MailConnectionOptions" />
-            <div data-show-when-field="Input.MailConnectionId" data-show-when-value="">
-                <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" />
-                <mp-field asp-for="Input.UseSsl" kind="checkbox" label='@L["Use SSL"]' />
-                <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' />
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="0,1">
+                    <mp-field asp-for="Input.MailConnectionId" kind="select" label='@L["Saved connection"]' asp-items="Model.MailConnectionOptions" />
+                    <div class="mat-form__grid mat-field--full" data-show-if="Input.MailConnectionId" data-show-value="">
+                        <mp-field asp-for="Input.Host" label='@L["Host"]' placeholder="mail.example.com" mono="true" />
+                        <mp-field asp-for="Input.Port" kind="number" label='@L["Port"]' inputmode="numeric" />
+                        <mp-field asp-for="Input.UseSsl" kind="switch" label='@L["Use SSL"]' full="true" />
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     @* ---------- 3 Credentials ---------- *@
-    <section class="wizard__panel" data-step="3" data-for-type="0,1,3" data-hide-with-source hidden="@(Model.ActiveStep != 3)">
-        <h2 class="wizard__title">@L["How does it sign in?"]</h2>
+    <section class="mat-card mp-wizard__panel" data-step="3" data-for-type="0,1,3" data-hide-with-source hidden="@(Model.ActiveStep != 3)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["How does it sign in?"]</h2></div>
+        <div class="mat-card__body mat-stack">
+            <div class="mat-form__grid">
+                @* SMB: manual sign-in only when no saved connection is chosen. *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="3">
+                    <div class="mat-form__grid mat-field--full" data-show-if="Input.SmbConnectionId" data-show-value="">
+                        <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' autocomplete="off" />
+                        <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
+                        <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]' autocomplete="new-password"
+                                  placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+                    </div>
+                </div>
 
-        @* SMB: manual sign-in only when no saved connection is chosen. *@
-        <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <div data-show-when-field="Input.SmbConnectionId" data-show-when-value="">
-                <mp-field asp-for="Input.SmbUsername" label='@L["Username"]' />
-                <mp-field asp-for="Input.SmbDomain" label='@L["Domain"]' placeholder='@L["Optional"]' />
-                <mp-field asp-for="Input.SmbPassword" kind="password" label='@L["Password"]'
-                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+                @* Mail: manual sign-in only when no saved connection is chosen. *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="0,1">
+                    <div class="mat-form__grid mat-field--full" data-show-if="Input.MailConnectionId" data-show-value="">
+                        <mp-field asp-for="Input.Username" label='@L["Username"]' autocomplete="off" />
+                        <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]' autocomplete="new-password"
+                                  placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
+                    </div>
+                </div>
             </div>
-        </div>
 
-        @* Mail: manual sign-in only when no saved connection is chosen. *@
-        <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <div data-show-when-field="Input.MailConnectionId" data-show-when-value="">
-                <mp-field asp-for="Input.Username" label='@L["Username"]' />
-                <mp-field asp-for="Input.Password" kind="password" label='@L["Password"]'
-                          placeholder='@(Model.IsEdit ? L["Leave blank to keep current"].Value : "")' />
-            </div>
+            <div><mp-button variant="secondary" handler="Test" icon="plug">@L["Test connection"]</mp-button></div>
         </div>
-
-        <mp-button-row>
-            <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
-        </mp-button-row>
     </section>
 
     @* ---------- 4 Source ---------- *@
-    <section class="wizard__panel" data-step="4" data-hide-with-source hidden="@(Model.ActiveStep != 4)">
-        <h2 class="wizard__title">@L["Which folder should be watched?"]</h2>
-
-        @* Filesystem *@
-        <div data-show-when-field="Input.Type" data-show-when-value="2">
-            <div class="form-row">
-                <label asp-for="Input.SourcePath">@L["Folder"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.SourcePath" placeholder="/mnt/scan" />
-                    <button class="btn btn--secondary" type="button" data-browse="local-folders"
-                            data-browse-target="Input_SourcePath" data-browse-root="/">@L["Browse…"]</button>
+    <section class="mat-card mp-wizard__panel" data-step="4" data-hide-with-source hidden="@(Model.ActiveStep != 4)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Which folder should be watched?"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                @* Filesystem *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="2">
+                    <mp-field asp-for="Input.SourcePath" label='@L["Folder"]' placeholder="/mnt/scan" full="true" mono="true"
+                              browse="local-folders" browse-root="/" browse-label='@L["Browse…"]' />
                 </div>
-                <span class="field-error" asp-validation-for="Input.SourcePath"></span>
-            </div>
-        </div>
 
-        @* SMB *@
-        <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <div class="form-row">
-                <label asp-for="Input.SmbShare">@L["SMB share"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.SmbShare" placeholder="documents" />
-                    <button class="btn btn--secondary" type="button" data-browse="smb-shares"
-                            data-browse-target="Input_SmbShare" data-browse-flat data-browse-title='@L["Shares"]'>@L["List shares"]</button>
+                @* SMB *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="3">
+                    <mp-field asp-for="Input.SmbShare" label='@L["SMB share"]' placeholder="documents" full="true"
+                              browse="smb-shares" browse-label='@L["List shares"]' />
+                    <mp-field asp-for="Input.SmbPath" label='@L["Folder in share"]' placeholder="inbox/scans" full="true" mono="true"
+                              browse="smb-folders" browse-label='@L["Browse…"]' />
                 </div>
-                <span class="field-error" asp-validation-for="Input.SmbShare"></span>
-            </div>
-            <div class="form-row">
-                <label asp-for="Input.SmbPath">@L["Folder in share"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.SmbPath" placeholder="inbox/scans" />
-                    <button class="btn btn--secondary" type="button" data-browse="smb-folders"
-                            data-browse-target="Input_SmbPath">@L["Browse…"]</button>
-                </div>
-                <span class="field-error" asp-validation-for="Input.SmbPath"></span>
-            </div>
-        </div>
 
-        @* IMAP *@
-        <div data-show-when-field="Input.Type" data-show-when-value="0">
-            <div class="form-row">
-                <label asp-for="Input.Folder">@L["Mailbox folder"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.Folder" placeholder="INBOX" />
-                    <button class="btn btn--secondary" type="button" data-browse="mail-folders"
-                            data-browse-target="Input_Folder" data-browse-flat>@L["Show folders…"]</button>
+                @* IMAP *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="0">
+                    <mp-field asp-for="Input.Folder" label='@L["Mailbox folder"]' placeholder="INBOX" full="true"
+                              browse="mail-folders" browse-label='@L["Show folders…"]' />
                 </div>
-                <span class="field-error" asp-validation-for="Input.Folder"></span>
-            </div>
-        </div>
 
-        @* POP3 *@
-        <div data-show-when-field="Input.Type" data-show-when-value="1">
-            <p class="form-help">@L["POP3 has no folders — the whole mailbox is checked."]</p>
+                @* POP3 *@
+                <div class="mat-field--full" data-show-if="Input.Type" data-show-value="1">
+                    <p class="mat-muted">@L["POP3 has no folders — the whole mailbox is checked."]</p>
+                </div>
+            </div>
         </div>
     </section>
 
     @* ---------- 5 Rules ---------- *@
-    <section class="wizard__panel" data-step="5" hidden="@(Model.ActiveStep != 5)">
-        <h2 class="wizard__title">@L["What should be picked up?"]</h2>
-
-        @* Files *@
-        <div data-show-when-field="Input.Type" data-show-when-value="2">
-            <mp-field asp-for="Input.Pattern" label='@L["File pattern"]' placeholder="*"
-                      help='@L["A ZIP archive is opened: the PDFs, images and XML files in it are imported."]' />
-            <mp-field asp-for="Input.Recursive" kind="checkbox" label='@L["Include subfolders"]' />
-            <mp-field asp-for="Input.PostAction" kind="select" label='@L["After import"]'>
-                <option value="none">@L["Do nothing"]</option>
-                <option value="delete">@L["Delete"]</option>
-                <option value="move">@L["Move"]</option>
-            </mp-field>
-            <mp-field asp-for="Input.MoveToPath" label='@L["Move to path"]'
-                      show-when-field="Input.PostAction" show-when-value="move" placeholder="/mnt/scan/done" />
-        </div>
-
-        @* SMB *@
-        <div data-show-when-field="Input.Type" data-show-when-value="3">
-            <mp-field asp-for="Input.SmbPattern" label='@L["File pattern"]' placeholder="*"
-                      help='@L["A ZIP archive is opened: the PDFs, images and XML files in it are imported."]' />
-            <mp-field asp-for="Input.SmbRecursive" kind="checkbox" label='@L["Include subfolders"]' />
-            <mp-field asp-for="Input.SmbPostAction" kind="select" label='@L["After import"]'>
-                <option value="none">@L["Leave on share"]</option>
-                <option value="delete">@L["Delete"]</option>
-                <option value="move">@L["Move to subfolder"]</option>
-            </mp-field>
-            <mp-field asp-for="Input.SmbMoveToPath" label='@L["Move to subfolder"]'
-                      show-when-field="Input.SmbPostAction" show-when-value="move" placeholder="imported" />
-        </div>
-
-        @* Mail *@
-        <div data-show-when-field="Input.Type" data-show-when-value="0,1">
-            <div data-show-when-field="Input.Type" data-show-when-value="0">
-                <mp-field asp-for="Input.OnlyUnread" kind="checkbox" label='@L["Only unread mail"]'
-                          help='@L["The mail server picks the unread ones (UNSEEN), so read mail is not even looked at."]' />
-            </div>
-            <mp-field asp-for="Input.MailFilterMode" kind="select" label='@L["Messages"]'>
-                <option value="all">@L["Import all"]</option>
-                <option value="filter">@L["Filter…"]</option>
-            </mp-field>
-            <div data-show-when-field="Input.MailFilterMode" data-show-when-value="filter">
-                <mp-field asp-for="Input.FromFilter" label='@L["From contains"]' />
-                <mp-field asp-for="Input.ToFilter" label='@L["To contains"]' />
-                <mp-field asp-for="Input.SubjectFilter" label='@L["Subject contains"]' />
-                <div data-show-when-field="Input.Type" data-show-when-value="0">
-                    <mp-field asp-for="Input.MailFilterWhere" kind="select" label='@L["Filter on"]'>
-                        <option value="auto">@L["Automatic (the server; Gmail: here)"]</option>
-                        <option value="server">@L["The mail server (fast, finds whole words on Gmail)"]</option>
-                        <option value="local">@L["Here (reads every header, exact but slow)"]</option>
+    <section class="mat-card mp-wizard__panel" data-step="5" hidden="@(Model.ActiveStep != 5)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["What should be picked up?"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                @* Files *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="2">
+                    <mp-field asp-for="Input.Pattern" label='@L["File pattern"]' placeholder="*" mono="true" full="true"
+                              help='@L["A ZIP archive is opened: the PDFs, images and XML files in it are imported."]' />
+                    <mp-field asp-for="Input.Recursive" kind="switch" label='@L["Include subfolders"]' full="true" />
+                    <mp-field asp-for="Input.PostAction" kind="select" label='@L["After import"]'>
+                        <option value="none">@L["Do nothing"]</option>
+                        <option value="delete">@L["Delete"]</option>
+                        <option value="move">@L["Move"]</option>
                     </mp-field>
+                    <mp-field asp-for="Input.MoveToPath" label='@L["Move to path"]' mono="true"
+                              show-when-field="Input.PostAction" show-when-value="move" placeholder="/mnt/scan/done" />
                 </div>
-                <mp-field asp-for="Input.SenderRegex" label='@L["Sender regex (advanced)"]' />
-                <mp-field asp-for="Input.SubjectRegex" label='@L["Subject regex (advanced)"]' />
-            </div>
 
-            <mp-field asp-for="Input.AttachmentExtensions" label='@L["Attachment extensions"]'
-                      help='@L["A .zip in the list is opened: the documents in it are imported, as far as their type is listed."]' />
-            <div class="preset-chips" role="group" aria-label='@L["Presets"]'>
-                <button type="button" class="preset-chip" data-ext-preset=".pdf">@L["PDF only"]</button>
-                <button type="button" class="preset-chip" data-ext-preset=".xml">@L["XML only (e-invoice)"]</button>
-                <button type="button" class="preset-chip" data-ext-preset=".pdf,.xml,.png,.jpg,.jpeg,.tif,.tiff,.zip">@L["All documents"]</button>
-            </div>
-            <mp-field asp-for="Input.ImportBodyAsPdf" kind="checkbox" label='@L["Also import the mail body as a PDF"]' />
-
-            <div data-show-when-field="Input.Type" data-show-when-value="0">
-                <mp-field asp-for="Input.MailMarkSeen" kind="checkbox" label='@L["Mark as read"]' />
-                <mp-field asp-for="Input.MailMarkFlagged" kind="checkbox" label='@L["Mark as important (star)"]' />
-            </div>
-            <mp-field asp-for="Input.MailPostAction" kind="select" label='@L["Then"]'>
-                <option value="none">@L["Leave on server"]</option>
-                <option value="move">@L["Move to folder (IMAP only)"]</option>
-                <option value="delete">@L["Delete"]</option>
-            </mp-field>
-            <div class="form-row" data-show-when-field="Input.MailPostAction" data-show-when-value="move">
-                <label asp-for="Input.MailMoveToFolder">@L["Move to folder"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.MailMoveToFolder" placeholder="Archive/Imported" />
-                    <button class="btn btn--secondary" type="button" data-browse="mail-folders"
-                            data-browse-target="Input_MailMoveToFolder" data-browse-flat>@L["Show folders…"]</button>
+                @* SMB *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="3">
+                    <mp-field asp-for="Input.SmbPattern" label='@L["File pattern"]' placeholder="*" mono="true" full="true"
+                              help='@L["A ZIP archive is opened: the PDFs, images and XML files in it are imported."]' />
+                    <mp-field asp-for="Input.SmbRecursive" kind="switch" label='@L["Include subfolders"]' full="true" />
+                    <mp-field asp-for="Input.SmbPostAction" kind="select" label='@L["After import"]'>
+                        <option value="none">@L["Leave on share"]</option>
+                        <option value="delete">@L["Delete"]</option>
+                        <option value="move">@L["Move to subfolder"]</option>
+                    </mp-field>
+                    <mp-field asp-for="Input.SmbMoveToPath" label='@L["Move to subfolder"]' mono="true"
+                              show-when-field="Input.SmbPostAction" show-when-value="move" placeholder="imported" />
                 </div>
+
+                @* Mail *@
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="0,1">
+                    <div class="mat-field--full" data-show-if="Input.Type" data-show-value="0">
+                        <mp-field asp-for="Input.OnlyUnread" kind="switch" label='@L["Only unread mail"]'
+                                  help='@L["The mail server picks the unread ones (UNSEEN), so read mail is not even looked at."]' />
+                    </div>
+                    <mp-field asp-for="Input.MailFilterMode" kind="select" label='@L["Messages"]' full="true">
+                        <option value="all">@L["Import all"]</option>
+                        <option value="filter">@L["Filter…"]</option>
+                    </mp-field>
+                    <div class="mat-form__grid mat-field--full" data-show-if="Input.MailFilterMode" data-show-value="filter">
+                        <mp-field asp-for="Input.FromFilter" label='@L["From contains"]' />
+                        <mp-field asp-for="Input.ToFilter" label='@L["To contains"]' />
+                        <mp-field asp-for="Input.SubjectFilter" label='@L["Subject contains"]' full="true" />
+                        <div class="mat-field--full" data-show-if="Input.Type" data-show-value="0">
+                            <mp-field asp-for="Input.MailFilterWhere" kind="select" label='@L["Filter on"]'>
+                                <option value="auto">@L["Automatic (the server; Gmail: here)"]</option>
+                                <option value="server">@L["The mail server (fast, finds whole words on Gmail)"]</option>
+                                <option value="local">@L["Here (reads every header, exact but slow)"]</option>
+                            </mp-field>
+                        </div>
+                        <mp-field asp-for="Input.SenderRegex" label='@L["Sender regex (advanced)"]' mono="true" />
+                        <mp-field asp-for="Input.SubjectRegex" label='@L["Subject regex (advanced)"]' mono="true" />
+                    </div>
+
+                    <mp-field asp-for="Input.AttachmentExtensions" label='@L["Attachment extensions"]' full="true" mono="true"
+                              help='@L["A .zip in the list is opened: the documents in it are imported, as far as their type is listed."]' />
+                    <div class="mat-btn-group mat-field--full" role="group" aria-label='@L["Presets"]'>
+                        <button type="button" class="mat-btn mat-btn--secondary" data-ext-preset=".pdf" aria-pressed="false">@L["PDF only"]</button>
+                        <button type="button" class="mat-btn mat-btn--secondary" data-ext-preset=".xml" aria-pressed="false">@L["XML only (e-invoice)"]</button>
+                        <button type="button" class="mat-btn mat-btn--secondary" data-ext-preset=".pdf,.xml,.png,.jpg,.jpeg,.tif,.tiff,.zip" aria-pressed="false">@L["All documents"]</button>
+                    </div>
+                    <mp-field asp-for="Input.ImportBodyAsPdf" kind="switch" label='@L["Also import the mail body as a PDF"]' full="true" />
+
+                    <div class="mat-form__grid mat-field--full" data-show-if="Input.Type" data-show-value="0">
+                        <mp-field asp-for="Input.MailMarkSeen" kind="switch" label='@L["Mark as read"]' />
+                        <mp-field asp-for="Input.MailMarkFlagged" kind="switch" label='@L["Mark as important (star)"]' />
+                    </div>
+                    <mp-field asp-for="Input.MailPostAction" kind="select" label='@L["Then"]'>
+                        <option value="none">@L["Leave on server"]</option>
+                        <option value="move">@L["Move to folder (IMAP only)"]</option>
+                        <option value="delete">@L["Delete"]</option>
+                    </mp-field>
+                    <mp-field asp-for="Input.MailMoveToFolder" label='@L["Move to folder"]' placeholder="Archive/Imported" mono="true"
+                              show-when-field="Input.MailPostAction" show-when-value="move"
+                              browse="mail-folders" browse-label='@L["Show folders…"]' />
+                </div>
+
+                <mp-field asp-for="Input.LookbackMode" kind="select" label='@L["Period"]'>
+                    <option value="all">@L["Everything"]</option>
+                    <option value="days">@L["Only the last days"]</option>
+                    <option value="date">@L["Only from a date on"]</option>
+                </mp-field>
+                <mp-field asp-for="Input.LookbackDays" kind="number" label='@L["Days"]' inputmode="numeric"
+                          show-when-field="Input.LookbackMode" show-when-value="days" />
+                <mp-field asp-for="Input.LookbackDate" kind="date" label='@L["From"]'
+                          show-when-field="Input.LookbackMode" show-when-value="date" />
+
+                <mp-field asp-for="Input.MaxPerRun" kind="number" label='@L["At most per run"]' inputmode="numeric" full="true"
+                          help='@L["0 = no limit. To try a rule out: import 10 now, the next run takes the next 10."]' />
             </div>
         </div>
-
-        <mp-field asp-for="Input.LookbackMode" kind="select" label='@L["Period"]'>
-            <option value="all">@L["Everything"]</option>
-            <option value="days">@L["Only the last days"]</option>
-            <option value="date">@L["Only from a date on"]</option>
-        </mp-field>
-        <mp-field asp-for="Input.LookbackDays" kind="number" label='@L["Days"]'
-                  show-when-field="Input.LookbackMode" show-when-value="days" />
-        <mp-field asp-for="Input.LookbackDate" kind="date" label='@L["From"]'
-                  show-when-field="Input.LookbackMode" show-when-value="date" />
-
-        <mp-field asp-for="Input.MaxPerRun" kind="number" label='@L["At most per run"]'
-                  help='@L["0 = no limit. To try a rule out: import 10 now, the next run takes the next 10."]' />
     </section>
 
     @* ---------- 6 Preview ---------- *@
-    <section class="wizard__panel" data-step="6" hidden="@(Model.ActiveStep != 6)">
-        <h2 class="wizard__title">@L["What would be imported right now?"]</h2>
-        <p class="form-help">@L["A dry run: nothing is imported, moved, deleted or marked as read."]</p>
+    <section class="mat-card mp-wizard__panel" data-step="6" hidden="@(Model.ActiveStep != 6)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["What would be imported right now?"]</h2></div>
+        <div class="mat-card__body mat-stack">
+            <p class="mat-muted">@L["A dry run: nothing is imported, moved, deleted or marked as read."]</p>
 
-        <mp-field asp-for="Input.PreviewWindow" kind="select" label='@L["Look at the newest"]'>
-            @foreach (var window in MatPaper.Pages.System.ImportTasks.EditModel.PreviewWindows)
-            {
-                <option value="@window">@window</option>
-            }
-        </mp-field>
+            <mp-field asp-for="Input.PreviewWindow" kind="select" label='@L["Look at the newest"]'>
+                @foreach (var window in MatPaper.Pages.System.ImportTasks.EditModel.PreviewWindows)
+                {
+                    <option value="@window">@window</option>
+                }
+            </mp-field>
 
-        <mp-button-row>
-            <mp-button variant="secondary" type="button" id="preview-run">@L["Run preview"]</mp-button>
-        </mp-button-row>
+            <div><mp-button variant="secondary" type="button" id="preview-run" icon="play">@L["Run preview"]</mp-button></div>
 
-        <div class="preview" id="preview-result" hidden></div>
+            <div class="mp-preview" id="preview-result" hidden></div>
+        </div>
     </section>
 
     @* ---------- 7 Filing ---------- *@
-    <section class="wizard__panel" data-step="7" hidden="@(Model.ActiveStep != 7)">
-        <h2 class="wizard__title">@L["Where do the documents go?"]</h2>
+    <section class="mat-card mp-wizard__panel" data-step="7" hidden="@(Model.ActiveStep != 7)">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Where do the documents go?"]</h2></div>
+        <div class="mat-card__body mat-stack">
+            <p class="mat-muted" id="group-target-note" hidden="@(!inGroup)">@L["The target of this rule is set by its group."]</p>
+            <div class="mat-form__grid" data-show-if="Input.GroupId" data-show-value="">
+                <mp-field asp-for="Input.StorageLocationId" kind="select" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" />
+                <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]' asp-items="Model.UserOptions" />
+                <mp-field asp-for="Input.IsCommon" kind="switch" label='@L["Common area (visible to everyone)"]' full="true" />
+                <mp-field asp-for="Input.SkipInbox" kind="switch" label='@L["Skip inbox (mark imported documents as reviewed)"]' full="true" />
+            </div>
 
-        <p class="form-help" id="group-target-note" @(inGroup ? "" : "hidden")>@L["The target of this rule is set by its group."]</p>
-        <div data-show-when-field="Input.GroupId" data-show-when-value="">
-            <mp-field asp-for="Input.StorageLocationId" kind="select" label='@L["Storage location"]'
-                      asp-items="Model.StorageLocationOptions" />
-            <mp-field asp-for="Input.OwnerUserId" kind="select" label='@L["Inbox of"]'
-                      asp-items="Model.UserOptions" />
-            <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
-            <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
+            <h3>@L["Preset metadata"]</h3>
+            <div class="mat-form__grid">
+                <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
+                           asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
+                <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]'
+                           asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
+                <mp-picker asp-for="Input.ProjectId" label='@L["Project"]'
+                           asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
+                <mp-picker asp-for="TagIds" label='@L["Tags"]' multiple="true" placeholder='@L["Add tags…"]'
+                           asp-items="Model.TagOptions.Select(t => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(t.Name, t.Id.ToString(), t.Selected))"
+                           help='@L["Every document this task imports gets these tags."]' />
+            </div>
+
+            <h3>@L["When does it run?"]</h3>
+            <div class="mat-form__grid">
+                <div class="mat-field--full" data-show-if="Input.GroupId" data-show-value="">
+                    <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
+                </div>
+                <mp-field asp-for="Input.IsEnabled" kind="switch" label='@L["Enabled"]' full="true" />
+            </div>
         </div>
-
-        <h3 class="wizard__subtitle">@L["Preset metadata"]</h3>
-        <mp-picker asp-for="Input.CorrespondentId" label='@L["Correspondent"]'
-                   asp-items="Model.CorrespondentOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
-        <mp-picker asp-for="Input.DocumentTypeId" label='@L["Document type"]'
-                   asp-items="Model.DocumentTypeOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
-        <mp-picker asp-for="Input.ProjectId" label='@L["Project"]'
-                   asp-items="Model.ProjectOptions.Where(o => o.Value != string.Empty)" placeholder='@L["— None —"]' />
-
-        <mp-picker asp-for="TagIds" label='@L["Tags"]' multiple="true" placeholder='@L["Add tags…"]'
-                   asp-items="Model.TagOptions.Select(t => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(t.Name, t.Id.ToString(), t.Selected))"
-                   help='@L["Every document this task imports gets these tags."]' />
-
-        <h3 class="wizard__subtitle">@L["When does it run?"]</h3>
-        <div data-show-when-field="Input.GroupId" data-show-when-value="">
-            <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
-        </div>
-        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
     </section>
 
-    <div class="wizard__nav">
-        <button class="btn btn--secondary" type="button" id="wizard-back">@L["Back"]</button>
-        <button class="btn btn--primary" type="button" id="wizard-next">@L["Next"]</button>
-        <span class="wizard__nav-spacer"></span>
-        <button class="btn btn--primary" type="submit">@L["Save"]</button>
-        <a class="btn btn--secondary" href="@(Model.IsEdit ? $"/System/ImportTasks/Details?id={Model.Id}" : "/System/ImportTasks")">@L["Cancel"]</a>
+    <mp-button-row>
+        <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        <mp-button variant="secondary" type="button" id="wizard-back" icon="chevron-left">@L["Back"]</mp-button>
+        <mp-button variant="secondary" type="button" id="wizard-next" icon="chevron-right">@L["Next"]</mp-button>
+        <mp-button variant="ghost" href="@(Model.IsEdit ? $"/System/ImportTasks/Details?id={Model.Id}" : "/System/ImportTasks")">@L["Cancel"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm='@L["Delete this import task? This cannot be undone."]'>@L["Delete"]</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" icon="trash" handler="Delete"
+                       confirm='@L["Delete this import task? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
         }
-    </div>
+    </mp-button-row>
 </form>
-
-<noscript><style>.wizard.is-booting { visibility: visible; } .wizard__panel { display: block !important; }</style></noscript>
 
 @* Source picker, filled from the Browse handler. *@
 <partial name="_BrowseDialog" />
 
 @section Scripts {
-    <script>
-        (function () {
-            var tiles = document.getElementById("scope-tiles");
-            var pick = document.getElementById("group-pick");
-            var note = document.getElementById("group-target-note");
-            var select = document.querySelector('[name="Input.GroupId"]');
-            if (!tiles || !pick || !select) { return; }
-            // A group that already has a rule decides the kind of source: the type tiles are not offered then.
-            var typeMap = {};
-            try { typeMap = JSON.parse(pick.getAttribute("data-group-types") || "{}"); } catch (e) { }
-            function syncType() {
-                var fixed = select.value && typeMap[select.value] !== undefined ? String(typeMap[select.value]) : null;
-                var tilesBox = document.getElementById("type-pick");
-                var typeNote = document.getElementById("type-fixed-note");
-                if (tilesBox) { tilesBox.hidden = fixed !== null; }
-                if (typeNote) { typeNote.hidden = fixed === null; }
-                if (fixed !== null) {
-                    var radio = document.querySelector('input[name="Input.Type"][value="' + fixed + '"]');
-                    if (radio && !radio.checked) { radio.checked = true; radio.dispatchEvent(new Event("change", { bubbles: true })); }
-                }
-            }
-            function apply(scope) {
-                var group = scope === "group";
-                pick.hidden = !group;
-                if (!group) { select.value = ""; }
-                else if (!select.value && select.options.length > 1) { select.selectedIndex = 1; }
-                select.dispatchEvent(new Event("change", { bubbles: true }));
-                if (note) { note.hidden = !group; }
-                syncType();
-            }
-            tiles.addEventListener("change", function (e) { if (e.target.name === "rule-scope") { apply(e.target.value); } });
-            select.addEventListener("change", function () { if (note) { note.hidden = !select.value; } syncType(); });
-            syncType();
-        })();
-    </script>
     <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
     <script src="~/js/import-wizard.js" asp-append-version="true"></script>
 }

@@ -3,94 +3,99 @@
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Storage locations / Edit"].Value : L["System / Storage locations / New"].Value;
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New storage location"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-<form class="form" method="post"
+<form method="post" class="mat-form" novalidate
       data-browse-url="/System/StorageLocations/Edit?handler=Browse"
       data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]' data-t-folders='@L["Folders"]'
       data-t-up='@L["One level up"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
     <input type="hidden" asp-for="Id" />
+    <partial name="_ValidationSummary" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Overview"]</h2>
-
-        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Archive"]' />
-
-        <mp-field asp-for="Input.Kind" kind="select" label='@L["Type"]'>
-            <option value="0">@L["Local folder"]</option>
-            <option value="1">@L["SMB / CIFS network share"]</option>
-            <option value="2">@L["Cloud drive (Google Drive, OneDrive)"]</option>
-        </mp-field>
-
-        <mp-field asp-for="Input.IsDefault" kind="checkbox" label='@L["Default location"]' />
-    </section>
-
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Location"]</h2>
-
-        <div data-show-when-field="Input.Kind" data-show-when-value="0">
-            <mp-field asp-for="Input.RootPath" label='@L["Folder"]' placeholder="/storage"
-                      browse="local-folders" browse-root="/" browse-label='@L["Browse…"]' />
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Overview"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Archive"]' />
+                <mp-field asp-for="Input.Kind" kind="select" label='@L["Type"]'>
+                    <option value="0">@L["Local folder"]</option>
+                    <option value="1">@L["SMB / CIFS network share"]</option>
+                    <option value="2">@L["Cloud drive (Google Drive, OneDrive)"]</option>
+                </mp-field>
+                <mp-field asp-for="Input.IsDefault" kind="switch" label='@L["Default location"]' full="true" />
+            </div>
         </div>
+    </div>
 
-        <div data-show-when-field="Input.Kind" data-show-when-value="1">
-            <mp-field asp-for="Input.ConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.SmbConnectionOptions" />
-            <mp-field asp-for="Input.BasePath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]'
-                      browse="remote-folders" browse-label='@L["Browse…"]' />
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Location"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Kind" data-show-value="0">
+                    <mp-field asp-for="Input.RootPath" label='@L["Folder"]' placeholder="/storage" full="true" mono="true"
+                              browse="local-folders" browse-root="/" browse-label='@L["Browse…"]' />
+                </div>
+
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Kind" data-show-value="1">
+                    <mp-field asp-for="Input.ConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.SmbConnectionOptions" />
+                    <mp-field asp-for="Input.BasePath" label='@L["Folder in share"]' placeholder='@L["archive (optional)"]' mono="true"
+                              browse="remote-folders" browse-label='@L["Browse…"]' />
+                </div>
+
+                <div class="mat-form__grid mat-field--full" data-show-if="Input.Kind" data-show-value="2">
+                    <mp-field asp-for="Input.CloudConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.CloudConnectionOptions" />
+                    <mp-field asp-for="Input.CloudBasePath" label='@L["Folder in drive"]' placeholder='@L["MatPaper/Archive (optional)"]' mono="true"
+                              browse="remote-folders" browse-label='@L["Browse…"]' />
+                </div>
+
+                <mp-field asp-for="Input.PathTemplate" label='@L["Path template"]' mono="true" full="true"
+                          placeholder="{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}"
+                          help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} is the archive number as on the label (ASN00017) and empty for a document without one."]' />
+            </div>
         </div>
+    </div>
 
-        <div data-show-when-field="Input.Kind" data-show-when-value="2">
-            <mp-field asp-for="Input.CloudConnectionId" kind="select" label='@L["Connection"]' asp-items="Model.CloudConnectionOptions" />
-            <mp-field asp-for="Input.CloudBasePath" label='@L["Folder in drive"]' placeholder='@L["MatPaper/Archive (optional)"]'
-                      browse="remote-folders" browse-label='@L["Browse…"]' />
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Metadata files"]</h2></div>
+        <div class="mat-card__body mat-stack">
+            <mp-field asp-for="Input.IdInFileName" kind="switch" label='@L["Unique ID in the file name"]'
+                      help='@L["Name [a1b2c3d4].pdf: files with the same name stay apart, and a file that was moved by hand is recognised again by its ID. Existing files get the ID through Align to template."]' />
+
+            <mp-field asp-for="Input.WriteMetadataFiles" kind="switch" label='@L["Write metadata files"]'
+                      help='@L["Next to every filed document a .matpaper.json file holds its type, correspondent, tags and invoice data, and follows it when it moves. Import tasks and the storage search read it back."]' />
+            @if (Model.IsEdit && Model.Input.WriteMetadataFiles)
+            {
+                <div><mp-button variant="secondary" handler="WriteMetadataFiles" icon="file-plus">@L["Write for all documents now"]</mp-button></div>
+            }
         </div>
+    </div>
 
-        <mp-field asp-for="Input.PathTemplate" label='@L["Path template"]'
-                  placeholder="{Correspondent}/{Year}/{DocumentType}/{Date} {Title}{Ext}"
-                  help='@L["Placeholders: {Year} {Month} {Date} {Title} {Correspondent} {DocumentType} {Asn} {Ext} {Id}. {Asn} is the archive number as on the label (ASN00017) and empty for a document without one."]' />
-    </section>
-
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Metadata files"]</h2>
-
-        <mp-field asp-for="Input.IdInFileName" kind="checkbox" label='@L["Unique ID in the file name"]'
-                  help='@L["Name [a1b2c3d4].pdf: files with the same name stay apart, and a file that was moved by hand is recognised again by its ID. Existing files get the ID through Align to template."]' />
-
-        <mp-field asp-for="Input.WriteMetadataFiles" kind="checkbox" label='@L["Write metadata files"]'
-                  help='@L["Next to every filed document a .matpaper.json file holds its type, correspondent, tags and invoice data, and follows it when it moves. Import tasks and the storage search read it back."]' />
-        @if (Model.IsEdit && Model.Input.WriteMetadataFiles)
-        {
-            <mp-button variant="secondary" type="submit" handler="WriteMetadataFiles">@L["Write for all documents now"]</mp-button>
-        }
-    </section>
-
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Storage search"]</h2>
-
-        <mp-field asp-for="Input.ScanExtensions" label='@L["File types to search for"]'
-                  placeholder=".pdf,.png,.jpg"
-                  help='@L["Comma-separated extensions; empty means all files."]' />
-
-        <mp-field asp-for="Input.DefaultOwnerId" kind="select" label='@L["Default owner for found files"]'
-                  asp-items="Model.OwnerOptions"
-                  help='@L["Empty: the administrator who starts the search."]' />
-
-        <mp-field asp-for="Input.DefaultIsCommon" kind="checkbox" label='@L["Put found files in the common area"]' />
-
-        <mp-schedule asp-for="Input.ScanCron" label='@L["Schedule"]' />
-    </section>
+    <div class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">@L["Storage search"]</h2></div>
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.ScanExtensions" label='@L["File types to search for"]' mono="true"
+                          placeholder=".pdf,.png,.jpg"
+                          help='@L["Comma-separated extensions; empty means all files."]' />
+                <mp-field asp-for="Input.DefaultOwnerId" kind="select" label='@L["Default owner for found files"]'
+                          asp-items="Model.OwnerOptions"
+                          help='@L["Empty: the administrator who starts the search."]' />
+                <mp-field asp-for="Input.DefaultIsCommon" kind="switch" label='@L["Put found files in the common area"]' full="true" />
+                <div class="mat-field--full"><mp-schedule asp-for="Input.ScanCron" label='@L["Schedule"]' /></div>
+            </div>
+        </div>
+    </div>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/System/StorageLocations">@L["Back"]</mp-button>
-        <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
-        <mp-button-spacer />
+        <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/System/StorageLocations" icon="back">@L["Back"]</mp-button>
+        <mp-button variant="secondary" handler="Test" icon="plug">@L["Test connection"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm='@L["Delete this storage location? This cannot be undone."]'>@L["Delete"]</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" icon="trash" handler="Delete" confirm='@L["Delete this storage location? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

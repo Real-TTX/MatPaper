@@ -1,8 +1,7 @@
-// Friendly schedule builder for the task editors. Reads/writes a 5-field cron
+// Friendly schedule builder for the task editors (<mp-schedule>, made of the toolkit's controls). Reads/writes a 5-field cron
 // string in a hidden input; times are wall-clock in the app time zone.
 (function () {
     "use strict";
-
 
     function pad(n) { return (n < 10 ? "0" : "") + n; }
     function isNum(s) { return /^\d+$/.test(s); }
@@ -96,7 +95,7 @@
         function refresh() {
             parts.forEach(function (part) {
                 var modes = (part.getAttribute("data-modes") || "").split(/\s+/);
-                part.style.display = modes.indexOf(mode.value) >= 0 ? "" : "none";
+                part.hidden = modes.indexOf(mode.value) < 0;
             });
             var expr = build();
             value.value = expr;

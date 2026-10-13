@@ -1,0 +1,27 @@
+# Icons of MatDesign's optional icon library (Lucide) that MatPaper uses and the toolkit's own sprite does not have.
+# One name per line; scripts/update-matui.ps1 writes them into src/MatPaper/wwwroot/matui/matpaper-icons.svg (ids mat-il-NAME).
+# In a page: @Ui.Icon("camera") finds the icon in either sprite. Keep the list sorted by meaning, not by letter.
+
+# navigation and objects
+inbox
+files
+folder-open
+folder-plus
+file-plus
+tags
+receipt
+paperclip
+stamp
+scissors
+printer
+share-2
+
+# camera and scanning
+camera
+scan-barcode
+qr-code
+rotate-cw
+rotate-ccw
+zoom-in
+zoom-out
+maximize-2

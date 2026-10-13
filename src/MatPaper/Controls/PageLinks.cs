@@ -1,65 +1,42 @@
 using System.Text;
 using System.Text.Encodings.Web;
-using MatPaper.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Controls;
 
-/// <summary>
-/// The links of a pager and the query strings the page controls of a list build: first and previous page, always
-/// three numbered pages (the current one in the middle where there is room), next and last page. A step that leads
-/// nowhere (previous on the first page ...) is shown dimmed. Every existing query-string parameter is kept, only the
-/// page parameter is swapped.
-/// </summary>
+/// <summary>The query strings the page controls of a list build, and which page numbers a pager shows.</summary>
 internal static class PageLinks
 {
-    private const string Svg = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">";
-    private const string FirstIcon = Svg + "<path d=\"M11 17l-5-5 5-5\"/><path d=\"M18 17l-5-5 5-5\"/></svg>";
-    private const string PreviousIcon = Svg + "<path d=\"M15 18l-6-6 6-6\"/></svg>";
-    private const string NextIcon = Svg + "<path d=\"M9 18l6-6-6-6\"/></svg>";
-    private const string LastIcon = Svg + "<path d=\"M13 17l5-5-5-5\"/><path d=\"M6 17l5-5-5-5\"/></svg>";
-
-    public static string Render(IQueryCollection query, int current, int total, string pageParam, IStringLocalizer<SharedResource> l)
+    /// <summary>
+    /// The page numbers of a pager: the first and the last page and two on each side of the current one; <c>0</c> stands for a gap
+    /// (<c>1 … 4 5 [6] 7 8 … 20</c>).
+    /// </summary>
+    public static IReadOnlyList<int> Window(int current, int total)
     {
         current = Math.Clamp(current, 1, Math.Max(1, total));
-
-        // Three numbers, the current one in the middle; at either end the window sits against the edge.
-        int first = Math.Clamp(current - 1, 1, Math.Max(1, total - 2));
-        int last = Math.Min(total, first + 2);
-
-        var sb = new StringBuilder();
-        Step(sb, query, pageParam, 1, current > 1, l["First page"].Value, FirstIcon);
-        Step(sb, query, pageParam, current - 1, current > 1, l["Previous page"].Value, PreviousIcon);
-        for (int page = first; page <= last; page++)
+        var shown = new SortedSet<int> { 1, Math.Max(1, total) };
+        for (int p = current - 2; p <= current + 2; p++)
         {
-            string href = HtmlEncoder.Default.Encode(With(query, pageParam, page.ToString()));
-            if (page == current)
+            if (p >= 1 && p <= total)
             {
-                sb.Append($"<a class=\"pagination__link is-active\" href=\"{href}\" aria-current=\"page\">{page}</a>");
-            }
-            else
-            {
-                sb.Append($"<a class=\"pagination__link\" href=\"{href}\">{page}</a>");
+                shown.Add(p);
             }
         }
-        Step(sb, query, pageParam, current + 1, current < total, l["Next page"].Value, NextIcon);
-        Step(sb, query, pageParam, total, current < total, l["Last page"].Value, LastIcon);
-        return sb.ToString();
-    }
 
-    private static void Step(StringBuilder sb, IQueryCollection query, string pageParam, int page, bool enabled, string label, string icon)
-    {
-        string text = HtmlEncoder.Default.Encode(label);
-        if (enabled)
+        var result = new List<int>();
+        int last = 0;
+        foreach (int p in shown)
         {
-            string href = HtmlEncoder.Default.Encode(With(query, pageParam, page.ToString()));
-            sb.Append($"<a class=\"pagination__link pagination__link--step\" href=\"{href}\" aria-label=\"{text}\" title=\"{text}\">{icon}</a>");
+            if (last != 0 && p - last > 1)
+            {
+                result.Add(0);
+            }
+
+            result.Add(p);
+            last = p;
         }
-        else
-        {
-            sb.Append($"<span class=\"pagination__link pagination__link--step is-disabled\" aria-hidden=\"true\">{icon}</span>");
-        }
+
+        return result;
     }
 
     /// <summary>

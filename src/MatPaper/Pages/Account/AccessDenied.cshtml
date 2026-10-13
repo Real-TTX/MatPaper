@@ -1,15 +1,10 @@
 @page
 @model MatPaper.Pages.Account.AccessDeniedModel
 @{
-    ViewData["Title"] = L["Access denied"];
+    ViewData["Title"] = L["Access denied"].Value;
+    ViewData["PageSub"] = L["You do not have permission to view this page."].Value;
 }
 
-<div class="auth-card">
-    <div class="auth-card__brand">MatPaper</div>
-    <h1 class="auth-card__title">@L["Access denied"]</h1>
-    <p class="auth-card__sub">@L["You do not have permission to view this page."]</p>
-
-    <div class="btn-row">
-        <a href="/" class="btn btn--secondary">@L["Back to home"]</a>
-    </div>
-</div>
+<mp-button-row plain="true">
+    <mp-button variant="secondary" href="/" icon="home">@L["Back to home"]</mp-button>
+</mp-button-row>

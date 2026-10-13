@@ -2,217 +2,233 @@
 @model MatPaper.Pages.System.ArchiveNumbers.IndexModel
 @{
     ViewData["Breadcrumb"] = L["System / Archive numbers"].Value;
+    ViewData["PageSub"] = L["Labels, separator sheets and barcodes for the paper originals"].Value;
+    ViewData["Width"] = "narrow";
     var isCustom = string.Equals(Model.Input.Format, "custom", StringComparison.OrdinalIgnoreCase);
 }
 
-<div data-tabs class="is-booting">
-    <div class="tabs__bar" role="tablist">
-        <button type="button" class="tabs__tab" data-tab="general" role="tab">@L["General"]</button>
+<div data-tabs class="mat-stack">
+    <div class="mat-tabs" role="tablist" aria-label='@L["Archive numbers"]'>
+        <button type="button" class="mat-tab" role="tab" id="an-tab-general" aria-controls="an-panel-general" aria-selected="true">@L["General"]</button>
         @if (Model.Enabled)
         {
-            <button type="button" class="tabs__tab" data-tab="labels" role="tab">@L["Labels"]</button>
-            <button type="button" class="tabs__tab" data-tab="separators" role="tab">@L["Separator sheets"]</button>
+            <button type="button" class="mat-tab" role="tab" id="an-tab-labels" aria-controls="an-panel-labels" aria-selected="false" tabindex="-1">@L["Labels"]</button>
+            <button type="button" class="mat-tab" role="tab" id="an-tab-separators" aria-controls="an-panel-separators" aria-selected="false" tabindex="-1">@L["Separator sheets"]</button>
         }
     </div>
 
-    <form class="form form--wide" method="post" asp-page-handler="Save">
-        <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+    @* The settings of the tabs General and Separator sheets are ONE form (they are saved together); the printing of separator sheets is a form of its own
+       that the fields point to with the form attribute. *@
+    <form method="post" asp-page-handler="Save" class="mat-form" novalidate>
+        <partial name="_ValidationSummary" />
 
-        <section class="form-section tabs__panel" data-tab-panel="general">
-            <h2 class="form-section__title">@L["Archive numbers"]</h2>
-            <p class="form-section__hint">@L["An archive number marks a paper original: a label with the number is stuck on the paper and read again when the paper is scanned. So you find the paper in the folder by its number, and the document on the screen. Switched off, nothing of it shows anywhere in the app."]</p>
+        <div class="mat-tabpanel mat-stack" role="tabpanel" id="an-panel-general" aria-labelledby="an-tab-general">
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Archive numbers"]</h2></div>
+                <div class="mat-card__body mat-stack">
+                    <p class="mat-muted">@L["An archive number marks a paper original: a label with the number is stuck on the paper and read again when the paper is scanned. So you find the paper in the folder by its number, and the document on the screen. Switched off, nothing of it shows anywhere in the app."]</p>
 
-            <mp-field asp-for="Setup.Enabled" kind="checkbox" label='@L["Use archive numbers"]'
-                      help='@L["Turns everything on: the number on a document, labels and separator sheets, reading codes when a file is added, and scanning a label with the camera."]' />
+                    <mp-field asp-for="Setup.Enabled" kind="switch" label='@L["Use archive numbers"]'
+                              help='@L["Turns everything on: the number on a document, labels and separator sheets, reading codes when a file is added, and scanning a label with the camera."]' />
 
-            <div class="form" data-show-when-field="Setup.Enabled" data-show-when-value="true">
-                <mp-field asp-for="Setup.AsnPrefix" label='@L["Letters before the number"]' autocomplete="off"
-                          help='@L["A label says ASN00017 with the letters ASN. Labels that were printed with other letters are not recognised anymore after a change."]' />
-                <mp-field asp-for="Setup.AsnDigits" kind="number" label='@L["Digits of the number"]'
-                          help='@L["The number is filled up with zeros: 5 digits give 00017."]' />
-                <mp-field asp-for="Setup.HighResolution" kind="checkbox" label='@L["Look for small labels more thoroughly (slower)"]' />
+                    <div class="mat-form__grid" data-show-if="Setup.Enabled" data-show-value="true">
+                        <mp-field asp-for="Setup.AsnPrefix" label='@L["Letters before the number"]' autocomplete="off" mono="true"
+                                  help='@L["A label says ASN00017 with the letters ASN. Labels that were printed with other letters are not recognised anymore after a change."]' />
+                        <mp-field asp-for="Setup.AsnDigits" kind="number" label='@L["Digits of the number"]' inputmode="numeric"
+                                  help='@L["The number is filled up with zeros: 5 digits give 00017."]' />
+                        <mp-field asp-for="Setup.HighResolution" kind="switch" label='@L["Look for small labels more thoroughly (slower)"]' full="true" />
+                    </div>
+
+                    @if (!Model.Enabled)
+                    {
+                        <p class="mat-muted">@L["After saving, the tabs Labels and Separator sheets appear here."]</p>
+                    }
+                </div>
             </div>
 
-            @if (!Model.Enabled)
+            <mp-button-row>
+                <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+                <mp-button variant="secondary" href="/System" icon="back">@L["Back"]</mp-button>
+            </mp-button-row>
+        </div>
+
+        <div class="mat-tabpanel mat-stack" role="tabpanel" id="an-panel-separators" aria-labelledby="an-tab-separators" hidden>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Separator sheets"]</h2></div>
+                <div class="mat-card__body mat-stack">
+                    <p class="mat-muted">@L["Scan a whole stack of papers in one go: put a separator sheet between two documents. MatPaper cuts the scan at the sheets - every document of the stack is added on its own - and leaves the sheets out."]</p>
+                    <div class="mat-form__grid" data-show-if="Setup.Enabled" data-show-value="true">
+                        <mp-field asp-for="Setup.SplitAtSeparators" kind="switch" label='@L["Cut a scan at separator sheets"]' full="true" />
+                        <mp-field asp-for="Setup.SeparatorText" label='@L["Text of the separator code"]' autocomplete="off" mono="true" full="true"
+                                  help='@L["PATCHT is what Paperless uses; its separator sheets work here, too."]' />
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.Enabled)
             {
-                <p class="form-help">@L["After saving, the tabs Labels and Separator sheets appear here."]</p>
+                <div class="mat-card">
+                    <div class="mat-card__head"><h2 class="mat-card__title">@L["Print separator sheets"]</h2></div>
+                    <div class="mat-card__body mat-stack">
+                        <p class="mat-muted">@L["The code on the sheet says {0}.", Model.SeparatorText]</p>
+                        <div class="mat-form__grid">
+                            <div class="mat-field">
+                                <label class="mat-label" for="sep-count">@L["How many sheets"]</label>
+                                <input id="sep-count" class="mat-input" type="number" min="1" max="500" step="1" inputmode="numeric" name="Input.SeparatorCount" value="@Model.Input.SeparatorCount" required form="sep-print" />
+                                <span class="mat-error" aria-live="polite"></span>
+                            </div>
+                            <div class="mat-field">
+                                <label class="mat-label" for="sep-kind">@L["Code"]</label>
+                                <select id="sep-kind" name="Input.SeparatorKind" class="mat-select" form="sep-print">
+                                    @foreach (var o in Model.KindOptions)
+                                    {
+                                        <option value="@o.Value" selected="@(o.Value == Model.Input.SeparatorKind)">@o.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div><button type="submit" form="sep-print" class="mat-btn mat-btn--primary"><mp-icon name="printer" /><span>@L["Create PDF"]</span></button></div>
+                    </div>
+                </div>
             }
-        </section>
 
-        <section class="form-section tabs__panel" data-tab-panel="separators">
-            <h2 class="form-section__title">@L["Separator sheets"]</h2>
-            <p class="form-section__hint">@L["Scan a whole stack of papers in one go: put a separator sheet between two documents. MatPaper cuts the scan at the sheets - every document of the stack is added on its own - and leaves the sheets out."]</p>
-
-            <div class="form" data-show-when-field="Setup.Enabled" data-show-when-value="true">
-                <mp-field asp-for="Setup.SplitAtSeparators" kind="checkbox" label='@L["Cut a scan at separator sheets"]' />
-                <mp-field asp-for="Setup.SeparatorText" label='@L["Text of the separator code"]' autocomplete="off"
-                          help='@L["PATCHT is what Paperless uses; its separator sheets work here, too."]' />
-            </div>
-        </section>
-
-        <mp-button-row>
-            <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-            <mp-button variant="secondary" href="/System">@L["Back"]</mp-button>
-        </mp-button-row>
+            <mp-button-row>
+                <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+                <mp-button variant="secondary" href="/System" icon="back">@L["Back"]</mp-button>
+            </mp-button-row>
+        </div>
     </form>
 
     @if (Model.Enabled)
     {
-        <section class="form-section tabs__panel" data-tab-panel="labels">
-            <h2 class="form-section__title">@L["Labels with archive numbers"]</h2>
-            <p class="form-section__hint">@L["Print the labels on sticker sheets and stick one on every paper original. When the paper is scanned, MatPaper reads the number and gives it to the document - and you find the paper again by its number."]</p>
+        <form id="sep-print" method="post" asp-page-handler="Separators" target="_blank" hidden></form>
 
-            <ul class="doc-facts labels-facts">
-                <li>
-                    <span class="doc-facts__key">@L["Next free number"]</span>
-                    <span class="doc-facts__val" data-labels-next>@Model.NextFree</span>
-                </li>
-                <li>
-                    <span class="doc-facts__key">@L["Printed so far"]</span>
-                    <span class="doc-facts__val" data-labels-last>@(Model.LastPrinted > 0 ? Model.LastPrinted.ToString() : "—")</span>
-                </li>
-                <li>
-                    <span class="doc-facts__key">@L["A label says"]</span>
-                    <span class="doc-facts__val"><code>@Model.ExampleText</code></span>
-                </li>
-            </ul>
+        <div class="mat-tabpanel mat-stack" role="tabpanel" id="an-panel-labels" aria-labelledby="an-tab-labels" hidden>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Labels with archive numbers"]</h2></div>
+                <div class="mat-card__body mat-stack">
+                    <p class="mat-muted">@L["Print the labels on sticker sheets and stick one on every paper original. When the paper is scanned, MatPaper reads the number and gives it to the document - and you find the paper again by its number."]</p>
 
-            <form class="form" method="post" asp-page-handler="Labels" target="_blank" data-labels-form>
-                <div asp-validation-summary="All" class="form-summary"></div>
-
-                <div class="form-row">
-                    <label for="labels-format">@L["Sticker sheet"]</label>
-                    <select id="labels-format" name="Input.Format" class="form-control" data-labels-format>
-                        @foreach (var f in Model.Formats)
-                        {
-                            <option value="@f.Id" data-per-page="@f.PerPage" selected="@(string.Equals(Model.Input.Format, f.Id, StringComparison.OrdinalIgnoreCase))">@f.Name</option>
-                        }
-                        <option value="custom" data-per-page="0" selected="@isCustom">@L["Other sheet or label printer ..."]</option>
-                    </select>
+                    <dl class="mat-kv">
+                        <dt>@L["Next free number"]</dt>
+                        <dd class="mat-mono" data-labels-next>@Model.NextFree</dd>
+                        <dt>@L["Printed so far"]</dt>
+                        <dd class="mat-mono" data-labels-last>@(Model.LastPrinted > 0 ? Model.LastPrinted.ToString() : "—")</dd>
+                        <dt>@L["A label says"]</dt>
+                        <dd class="mat-mono">@Model.ExampleText</dd>
+                    </dl>
                 </div>
+            </div>
 
-                <p class="form-help">@L["Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more. With the phone camera a code of 15 mm or more is read from further away."]</p>
+            <form class="mat-form" method="post" asp-page-handler="Labels" target="_blank" data-labels-form novalidate>
+                <partial name="_ValidationSummary" />
 
-                <div class="labels-custom" data-labels-custom hidden="@(!isCustom)">
-                    <div class="asn-grid">
-                        <div class="form-row">
-                            <label for="labels-columns">@L["Labels across"]</label>
-                            <input id="labels-columns" class="form-control" type="number" min="1" max="20" step="1" name="Input.Columns" value="@Model.Input.Columns" />
+                <div class="mat-card">
+                    <div class="mat-card__head"><h2 class="mat-card__title">@L["Create PDF"]</h2></div>
+                    <div class="mat-card__body mat-stack">
+                        <div class="mat-field">
+                            <label class="mat-label" for="labels-format">@L["Sticker sheet"]</label>
+                            <select id="labels-format" name="Input.Format" class="mat-select" data-labels-format>
+                                @foreach (var f in Model.Formats)
+                                {
+                                    <option value="@f.Id" data-per-page="@f.PerPage" selected="@(string.Equals(Model.Input.Format, f.Id, StringComparison.OrdinalIgnoreCase))">@f.Name</option>
+                                }
+                                <option value="custom" data-per-page="0" selected="@isCustom">@L["Other sheet or label printer ..."]</option>
+                            </select>
+                            <span class="mat-hint">@L["Small labels (under 15 mm) are read reliably when the paper is scanned at 300 dpi or more. With the phone camera a code of 15 mm or more is read from further away."]</span>
                         </div>
-                        <div class="form-row">
-                            <label for="labels-rows">@L["Labels down"]</label>
-                            <input id="labels-rows" class="form-control" type="number" min="1" max="60" step="1" name="Input.Rows" value="@Model.Input.Rows" />
+
+                        <div class="mat-stack" data-labels-custom hidden="@(!isCustom)">
+                            <div class="mat-form__grid mat-form__grid--3">
+                                <div class="mat-field">
+                                    <label class="mat-label" for="labels-columns">@L["Labels across"]</label>
+                                    <input id="labels-columns" class="mat-input" type="number" min="1" max="20" step="1" inputmode="numeric" name="Input.Columns" value="@Model.Input.Columns" />
+                                </div>
+                                <div class="mat-field">
+                                    <label class="mat-label" for="labels-rows">@L["Labels down"]</label>
+                                    <input id="labels-rows" class="mat-input" type="number" min="1" max="60" step="1" inputmode="numeric" name="Input.Rows" value="@Model.Input.Rows" />
+                                </div>
+                                <div class="mat-field">
+                                    <label class="mat-label" for="labels-width">@L["Label width (mm)"]</label>
+                                    <input id="labels-width" class="mat-input" type="text" inputmode="decimal" name="Input.LabelWidth" value="@Model.Input.LabelWidth" />
+                                </div>
+                                <div class="mat-field">
+                                    <label class="mat-label" for="labels-height">@L["Label height (mm)"]</label>
+                                    <input id="labels-height" class="mat-input" type="text" inputmode="decimal" name="Input.LabelHeight" value="@Model.Input.LabelHeight" />
+                                </div>
+                                <div class="mat-field">
+                                    <label class="mat-label" for="labels-gapx">@L["Gap between columns (mm)"]</label>
+                                    <input id="labels-gapx" class="mat-input" type="text" inputmode="decimal" name="Input.GapX" value="@Model.Input.GapX" />
+                                </div>
+                                <div class="mat-field">
+                                    <label class="mat-label" for="labels-gapy">@L["Gap between rows (mm)"]</label>
+                                    <input id="labels-gapy" class="mat-input" type="text" inputmode="decimal" name="Input.GapY" value="@Model.Input.GapY" />
+                                </div>
+                            </div>
+                            <label class="mat-check"><input type="checkbox" id="labels-one" name="Input.OnePerPage" value="true" checked="@Model.Input.OnePerPage" data-labels-one /><span class="mat-check__text">@L["Label printer: one label per page, the page as big as the label"]</span></label>
                         </div>
-                        <div class="form-row">
-                            <label for="labels-width">@L["Label width (mm)"]</label>
-                            <input id="labels-width" class="form-control" type="text" inputmode="decimal" name="Input.LabelWidth" value="@Model.Input.LabelWidth" />
+
+                        <div class="mat-form__grid">
+                            <div class="mat-field">
+                                <label class="mat-label" for="labels-start">@L["First number"]</label>
+                                <input id="labels-start" class="mat-input" type="number" min="1" step="1" inputmode="numeric" name="Input.Start" value="@Model.Input.Start" required data-labels-start />
+                                <span class="mat-error" aria-live="polite"></span>
+                            </div>
+                            <div class="mat-field">
+                                <label class="mat-label" for="labels-count">@L["How many labels"]</label>
+                                <input id="labels-count" class="mat-input" type="number" min="1" max="5000" step="1" inputmode="numeric" name="Input.Count" value="@Model.Input.Count" required data-labels-count />
+                                <span class="mat-error" aria-live="polite"></span>
+                            </div>
+                            <div class="mat-field">
+                                <label class="mat-label" for="labels-kind">@L["Code"]</label>
+                                <select id="labels-kind" name="Input.Kind" class="mat-select">
+                                    @foreach (var o in Model.KindOptions)
+                                    {
+                                        <option value="@o.Value" selected="@(o.Value == Model.Input.Kind)">@o.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mat-field">
+                                <label class="mat-label" for="labels-skip">@L["Already used (first sheet)"]</label>
+                                <input id="labels-skip" class="mat-input" type="number" min="0" max="999" step="1" inputmode="numeric" name="Input.Skip" value="@Model.Input.Skip" data-labels-skip />
+                                <span class="mat-hint">@L["Labels of the first sheet that are used already: a sheet that was started is filled up."]</span>
+                            </div>
                         </div>
-                        <div class="form-row">
-                            <label for="labels-height">@L["Label height (mm)"]</label>
-                            <input id="labels-height" class="form-control" type="text" inputmode="decimal" name="Input.LabelHeight" value="@Model.Input.LabelHeight" />
-                        </div>
-                        <div class="form-row">
-                            <label for="labels-gapx">@L["Gap between columns (mm)"]</label>
-                            <input id="labels-gapx" class="form-control" type="text" inputmode="decimal" name="Input.GapX" value="@Model.Input.GapX" />
-                        </div>
-                        <div class="form-row">
-                            <label for="labels-gapy">@L["Gap between rows (mm)"]</label>
-                            <input id="labels-gapy" class="form-control" type="text" inputmode="decimal" name="Input.GapY" value="@Model.Input.GapY" />
-                        </div>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" id="labels-one" name="Input.OnePerPage" value="true" checked="@Model.Input.OnePerPage" data-labels-one />
-                        <label for="labels-one">@L["Label printer: one label per page, the page as big as the label"]</label>
+
+                        <label class="mat-check"><input type="checkbox" id="labels-text" name="Input.ShowText" value="true" checked="@Model.Input.ShowText" /><span class="mat-check__text">@L["Print the number as text next to the code"]</span></label>
+                        <input type="hidden" name="Input.ShowText" value="false" />
+
+                        <details class="mat-collapse">
+                            <summary>@L["Test print and adjustment"]<mp-icon name="chevron-down" class="mat-accordion__chev" /></summary>
+                            <div class="mat-accordion__body mat-stack">
+                                <label class="mat-check"><input type="checkbox" id="labels-border" name="Input.Border" value="true" checked="@Model.Input.Border" data-labels-border /><span class="mat-check__text">@L["Frame around every label (test print on plain paper; uses up no numbers)"]</span></label>
+                                <input type="hidden" name="Input.Border" value="false" />
+                                <p class="mat-muted">@L["Hold the test print against a sticker sheet in the light: the frames show whether the labels fit. If not, shift the print here."]</p>
+                                <div class="mat-form__grid">
+                                    <div class="mat-field">
+                                        <label class="mat-label" for="labels-offx">@L["Shift to the right (mm)"]</label>
+                                        <input id="labels-offx" class="mat-input" type="text" inputmode="decimal" name="Input.OffsetX" value="@Model.Input.OffsetX" />
+                                    </div>
+                                    <div class="mat-field">
+                                        <label class="mat-label" for="labels-offy">@L["Shift down (mm)"]</label>
+                                        <input id="labels-offy" class="mat-input" type="text" inputmode="decimal" name="Input.OffsetY" value="@Model.Input.OffsetY" />
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <p class="mat-muted">@L["Print at 100 % (not \"fit to page\")."]</p>
                     </div>
                 </div>
-
-                <div class="asn-grid">
-                    <div class="form-row">
-                        <label for="labels-start">@L["First number"]</label>
-                        <input id="labels-start" class="form-control" type="number" min="1" step="1" inputmode="numeric" name="Input.Start" value="@Model.Input.Start" required data-labels-start />
-                    </div>
-                    <div class="form-row">
-                        <label for="labels-count">@L["How many labels"]</label>
-                        <input id="labels-count" class="form-control" type="number" min="1" max="5000" step="1" inputmode="numeric" name="Input.Count" value="@Model.Input.Count" required data-labels-count />
-                    </div>
-                    <div class="form-row">
-                        <label for="labels-kind">@L["Code"]</label>
-                        <select id="labels-kind" name="Input.Kind" class="form-control">
-                            @foreach (var o in Model.KindOptions)
-                            {
-                                <option value="@o.Value" selected="@(o.Value == Model.Input.Kind)">@o.Text</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <label for="labels-skip" title='@L["Labels of the first sheet that are used already: a sheet that was started is filled up."]'>@L["Already used (first sheet)"]</label>
-                        <input id="labels-skip" class="form-control" type="number" min="0" max="999" step="1" inputmode="numeric" name="Input.Skip" value="@Model.Input.Skip" data-labels-skip />
-                    </div>
-                </div>
-
-                <div class="form-check">
-                    <input type="checkbox" id="labels-text" name="Input.ShowText" value="true" checked="@Model.Input.ShowText" />
-                    <label for="labels-text">@L["Print the number as text next to the code"]</label>
-                </div>
-                <input type="hidden" name="Input.ShowText" value="false" />
-
-                <details class="labels-more">
-                    <summary>@L["Test print and adjustment"]</summary>
-                    <div class="form-check">
-                        <input type="checkbox" id="labels-border" name="Input.Border" value="true" checked="@Model.Input.Border" data-labels-border />
-                        <label for="labels-border">@L["Frame around every label (test print on plain paper; uses up no numbers)"]</label>
-                    </div>
-                    <input type="hidden" name="Input.Border" value="false" />
-                    <p class="form-help">@L["Hold the test print against a sticker sheet in the light: the frames show whether the labels fit. If not, shift the print here."]</p>
-                    <div class="asn-grid">
-                        <div class="form-row">
-                            <label for="labels-offx">@L["Shift to the right (mm)"]</label>
-                            <input id="labels-offx" class="form-control" type="text" inputmode="decimal" name="Input.OffsetX" value="@Model.Input.OffsetX" />
-                        </div>
-                        <div class="form-row">
-                            <label for="labels-offy">@L["Shift down (mm)"]</label>
-                            <input id="labels-offy" class="form-control" type="text" inputmode="decimal" name="Input.OffsetY" value="@Model.Input.OffsetY" />
-                        </div>
-                    </div>
-                </details>
-
-                <p class="form-help">@L["Print at 100 % (not \"fit to page\")."]</p>
 
                 <mp-button-row>
-                    <mp-button variant="primary" type="submit">@L["Create PDF"]</mp-button>
+                    <mp-button variant="primary" icon="printer">@L["Create PDF"]</mp-button>
                 </mp-button-row>
             </form>
-        </section>
-
-        <section class="form-section tabs__panel" data-tab-panel="separators">
-            <h2 class="form-section__title">@L["Print separator sheets"]</h2>
-            <p class="form-help">@L["The code on the sheet says {0}.", Model.SeparatorText]</p>
-
-            <form class="form" method="post" asp-page-handler="Separators" target="_blank">
-                <div class="asn-grid">
-                    <div class="form-row">
-                        <label for="sep-count">@L["How many sheets"]</label>
-                        <input id="sep-count" class="form-control" type="number" min="1" max="500" step="1" inputmode="numeric" name="Input.SeparatorCount" value="@Model.Input.SeparatorCount" required />
-                    </div>
-                    <div class="form-row">
-                        <label for="sep-kind">@L["Code"]</label>
-                        <select id="sep-kind" name="Input.SeparatorKind" class="form-control">
-                            @foreach (var o in Model.KindOptions)
-                            {
-                                <option value="@o.Value" selected="@(o.Value == Model.Input.SeparatorKind)">@o.Text</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-                <mp-button-row>
-                    <mp-button variant="primary" type="submit">@L["Create PDF"]</mp-button>
-                </mp-button-row>
-            </form>
-        </section>
+        </div>
     }
 </div>
 
 @section Scripts {
-    <script src="~/js/tabs.js" asp-append-version="true"></script>
     <script src="~/js/labels.js" asp-append-version="true"></script>
 }

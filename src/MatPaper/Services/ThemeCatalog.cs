@@ -6,15 +6,17 @@ namespace MatPaper.Services;
 
 /// <summary>
 /// The themes MatPaper offers. A theme has three independent parts, each rendered as an
-/// attribute on &lt;html&gt; and resolved purely in CSS (wwwroot/css/themes.css):
+/// attribute on &lt;html&gt; and resolved purely in the CSS of the MatUi toolkit (wwwroot/matui):
 /// <list type="bullet">
-/// <item><b>Mode</b> — system / light / dark. "system" is turned into data-mode="light|dark" by
-/// the inline head script, so the page never flashes the wrong brightness.</item>
+/// <item><b>Mode</b> — system / light / dark (<c>data-theme</c>; "system" writes nothing, the page follows the
+/// device, and the toolkit's boot script applies a choice that only the browser knows).</item>
 /// <item><b>Scheme</b> — the surface palette: standard, paper (warm), contrast, oled (pure black,
-/// dark mode only).</item>
-/// <item><b>Accent</b> — the brand colour used for buttons, links, focus and highlights.</item>
+/// dark mode only) (<c>data-scheme</c>, absent for the standard).</item>
+/// <item><b>Accent</b> — the brand colour used for buttons, links, focus and highlights
+/// (<c>data-accent</c>: one of the toolkit's presets; green is the colour of the app itself and writes nothing).</item>
 /// </list>
-/// The ids here must match the selectors in themes.css. Labels are English resource keys.
+/// The ids are what the accounts and the settings store; <see cref="MatAccent"/> says which preset of the toolkit
+/// stands behind an accent. Labels are English resource keys.
 /// </summary>
 public static class ThemeCatalog
 {
@@ -23,6 +25,30 @@ public static class ThemeCatalog
     public const string DefaultAccent = "green";
 
     public sealed record Option(string Id, string Label, string? Hint = null);
+
+    /// <summary>The preset of the toolkit (<c>data-accent</c>) that an accent id stands for; null is the colour of the app itself.</summary>
+    public static string? MatAccent(string? accent) => accent switch
+    {
+        "blue" => "ocean",
+        "violet" => "purple",
+        "teal" => "teal",
+        "amber" => "gold",
+        "rose" => "berry",
+        "graphite" => "graphite",
+        _ => null,
+    };
+
+    /// <summary>The colour of an accent (for the bar of the browser, <c>theme-color</c>); the values are those of the toolkit's presets.</summary>
+    public static string AccentColour(string? accent) => accent switch
+    {
+        "blue" => "#1a73e8",
+        "violet" => "#8300bc",
+        "teal" => "#008578",
+        "amber" => "#966d07",
+        "rose" => "#c2185b",
+        "graphite" => "#546e7a",
+        _ => "#268538",
+    };
 
     public static readonly IReadOnlyList<Option> Modes = new[]
     {
@@ -55,8 +81,41 @@ public static class ThemeCatalog
     public static bool IsAccent(string? id) => Accents.Any(o => o.Id == id);
 }
 
-/// <summary>A resolved theme plus whether the user has saved their own mode (for the localStorage migration).</summary>
-public sealed record ThemeChoice(string Mode, string Scheme, string Accent, bool UserHasMode);
+/// <summary>A resolved theme plus whether the user has saved their own mode.</summary>
+public sealed record ThemeChoice(string Mode, string Scheme, string Accent, bool UserHasMode)
+{
+    /// <summary>The colour of the browser's bar.</summary>
+    public string ThemeColour => ThemeCatalog.AccentColour(Accent);
+
+    /// <summary>
+    /// The attributes of <c>&lt;html&gt;</c> that the toolkit reads, written only when they have a value: an empty
+    /// attribute is a present one, and the toolkit's boot script would take it for a choice of the server and never apply what
+    /// the browser remembers. The app itself (<c>data-app</c>) gives the accent the toolkit's registry knows.
+    /// </summary>
+    public string RootAttributes
+    {
+        get
+        {
+            var sb = new System.Text.StringBuilder($"data-app=\"{Controls.Ui.App.Id}\"");
+            if (Mode is "light" or "dark")
+            {
+                sb.Append(" data-theme=\"").Append(Mode).Append('"');
+            }
+
+            if (ThemeCatalog.MatAccent(Accent) is { } preset)
+            {
+                sb.Append(" data-accent=\"").Append(preset).Append('"');
+            }
+
+            if (Scheme is not (ThemeCatalog.DefaultScheme or ""))
+            {
+                sb.Append(" data-scheme=\"").Append(Scheme).Append('"');
+            }
+
+            return sb.ToString();
+        }
+    }
+}
 
 /// <summary>
 /// Resolves the theme for the current request: the signed-in user's own choice per part, falling

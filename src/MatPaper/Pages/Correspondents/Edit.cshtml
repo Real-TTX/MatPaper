@@ -3,36 +3,34 @@
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["Correspondents / Edit"].Value : L["Correspondents / New"].Value;
     ViewData["Title"] = Model.IsEdit ? Model.Input.Name : null;
-    var matchPatternHelp = L["Alternative names or a regex, comma-separated."].Value;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New correspondent"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-<form class="form" method="post">
+<form method="post" class="mat-form" novalidate>
     <input type="hidden" asp-for="Id" />
+    <partial name="_ValidationSummary" />
 
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-
-    <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Finanzamt"]' />
-
-    <mp-field asp-for="Input.MatchPattern" label='@L["Alternative names / keywords"]'
-              help="@matchPatternHelp" />
-
-    <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]'
-              help='@L["Also used for matching."]' />
-
-    <mp-field asp-for="Input.Phone" label='@L["Phone"]'
-              help='@L["Also used for matching."]' />
-
-    <mp-field asp-for="Input.Address" kind="textarea" rows="3" label='@L["Address"]' placeholder='@L["Street, ZIP, city"]' />
-
-    <mp-field asp-for="Input.Notes" kind="textarea" rows="5" label='@L["Notes"]' placeholder='@L["Optional notes"]' />
+    <div class="mat-card">
+        <div class="mat-card__body">
+            <div class="mat-form__grid">
+                <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Finanzamt"]' full="true" />
+                <mp-field asp-for="Input.MatchPattern" label='@L["Alternative names / keywords"]' help='@L["Alternative names or a regex, comma-separated."]' full="true" />
+                <mp-field asp-for="Input.Email" kind="email" label='@L["Email"]' help='@L["Also used for matching."]' autocomplete="off" />
+                <mp-field asp-for="Input.Phone" kind="tel" label='@L["Phone"]' help='@L["Also used for matching."]' autocomplete="off" />
+                <mp-field asp-for="Input.Address" kind="textarea" rows="3" label='@L["Address"]' placeholder='@L["Street, ZIP, city"]' full="true" />
+                <mp-field asp-for="Input.Notes" kind="textarea" rows="5" label='@L["Notes"]' placeholder='@L["Optional notes"]' full="true" />
+            </div>
+        </div>
+    </div>
 
     <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="/Correspondents">@L["Back"]</mp-button>
-        <mp-button-spacer />
+        <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        <mp-button variant="secondary" href="/Correspondents" icon="back">@L["Back"]</mp-button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete" confirm='@L["Delete this correspondent? This cannot be undone."]'>@L["Delete"]</mp-button>
+            <mp-button-spacer />
+            <mp-button variant="danger" icon="trash" handler="Delete" confirm='@L["Delete this correspondent? This cannot be undone."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
         }
     </mp-button-row>
 </form>

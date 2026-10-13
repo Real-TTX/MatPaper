@@ -1,0 +1,65 @@
+/* =====================================================================
+   MatPaper: the few things only this app has.
+   Everything else (the shell, lists, forms, dialogs, colours, dark mode, schemes) comes from MatUi in wwwroot/matui.
+   The classes here start with mp-, the colours are tokens of the toolkit (rules CODE-02, CODE-04, COLOR-01).
+   ===================================================================== */
+
+/* ---- A form around the parts of a list (a table of rows that post): its children take part in the order of the list block ---- */
+.mp-contents { display: contents; }
+
+/* ---- A table that fills a card needs no line and no corners of its own ---- */
+.mat-card > .mat-table-wrap { border: 0; border-radius: 0; box-shadow: none; }
+.mp-spacer { flex: 1 1 auto; }
+.mp-log { max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mp-path { overflow-wrap: anywhere; }
+
+/* ---- The language switch under the card of a page without a menu ---- */
+.mp-lang { display: flex; justify-content: center; margin-top: var(--mat-space-4); }
+
+/* ---- The schedule builder (<mp-schedule>): a mode and the parts that belong to it ---- */
+.mp-schedule__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-3); }
+.mp-schedule__part { display: flex; align-items: center; gap: var(--mat-space-2); min-width: 0; }
+.mp-schedule__part[hidden] { display: none; }
+.mp-schedule__part .mat-input { width: 6rem; }
+.mp-schedule__part--wide { flex: 1 1 14rem; }
+.mp-schedule__part--wide .mat-input { width: 100%; }
+.mp-schedule__summary { display: block; margin-top: var(--mat-space-2); }
+
+/* ---- The sheet that offers a file to the share sheet of the installed app ---- */
+.mp-sheet__text { overflow-wrap: anywhere; }
+
+/* ---- User colours (tags, projects). SHIM: MatUi gets data-colour itself (feature C of the matpaper-needs branch of MatDesign); remove this block with the next update of the toolkit. ---- */
+.mat-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch, var(--mat-text-faint)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 22%, transparent); }
+.mat-tag[data-colour] { display: inline-flex; align-items: center; gap: var(--mat-space-2); }
+.mat-tag[data-colour]::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--mat-swatch, var(--mat-text-faint)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 22%, transparent); }
+.mat-icon[data-colour] { color: var(--mat-swatch, currentColor); }
+
+/* ---- Lists of tasks: a group is a header row, its rules follow indented ---- */
+.mp-block { display: block; }
+.mp-import-group > td { background: var(--mat-surface-2); }
+.mp-import-child > td:first-child { padding-left: var(--mat-space-10); }
+@media (max-width: 720px) { .mp-import-child > td:first-child { padding-left: 0; } }
+
+/* ---- A thumbnail of a document in a list of rows ---- */
+.mp-thumb { flex: none; display: grid; place-items: center; width: 40px; height: 52px; overflow: hidden; border: 1px solid var(--mat-border); border-radius: var(--mat-radius-sm); background: var(--mat-surface-3); color: var(--mat-text-muted); }
+.mp-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mp-when { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--mat-space-1); }
+
+/* ---- The import wizard: the list of steps and its panels ---- */
+.mp-wizard.is-booting { visibility: hidden; }
+.mp-wizard__steps { flex-wrap: wrap; }
+.mp-wizard__step { gap: var(--mat-space-2); }
+.mp-wizard__step[hidden] { display: none; }
+.mp-wizard__num { display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; border-radius: 50%; background: var(--mat-surface-3); color: var(--mat-text-muted); font-size: var(--mat-fs-xs); font-weight: 650; }
+.mp-wizard__step.is-active .mp-wizard__num { background: var(--mat-accent); color: var(--mat-on-accent); }
+.mp-wizard__step.is-done .mp-wizard__num { background: var(--mat-accent-soft-strong); color: var(--mat-accent-text); }
+.mp-wizard__panel[hidden] { display: none; }
+.mp-preview { display: flex; flex-direction: column; gap: var(--mat-space-3); }
+.mat-choice > .mat-icon { flex: none; margin-top: 1px; font-size: 1.35rem; color: var(--mat-accent-text); }
+
+/* ---- A card that is a link: the overview of the administration ---- */
+.mp-linkcard { color: inherit; text-decoration: none; }
+a.mp-linkcard:hover { border-color: var(--mat-text-faint); background: var(--mat-surface-2); text-decoration: none; }
+.mp-linkcard__body { display: flex; align-items: flex-start; gap: var(--mat-space-4); }
+.mp-linkcard__icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--mat-radius); background: var(--mat-accent-soft); color: var(--mat-accent-text); font-size: 1.25rem; }
+.mp-linkcard__text { display: flex; flex-direction: column; gap: var(--mat-space-1); min-width: 0; }

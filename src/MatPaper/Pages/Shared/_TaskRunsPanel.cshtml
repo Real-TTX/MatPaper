@@ -2,60 +2,50 @@
 @using MatPaper.Data
 @inject MatPaper.Services.TaskTriggerQueue Queue
 @{ var busy = Model.IsRunning || Queue.IsBusy(Model.Kind, Model.TaskId); }
-@* The runs block at the top of a task editor. Not a nested form: render it OUTSIDE the editor's
-   own <form>. While the newest run is still running the page reloads itself every few seconds. *@
-<section class="runs-panel" data-live="runs" @(busy ? "data-running=true" : "")>
-    <div class="runs-panel__head">
-        <div class="runs-panel__title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
-            <strong>@L["Runs"]</strong>
-            @if (Model.Memory is not null)
-            {
-                <span class="runs-panel__memory">@Model.Memory</span>
-            }
-        </div>
-        <div class="runs-panel__actions">
-            @if (busy)
-            {
-                <form method="post" action="/System/TaskRuns/Cancel?kind=@((int)Model.Kind)&taskId=@Model.TaskId">
-                    @Html.AntiForgeryToken()
-                    <button class="btn btn--danger-outline" type="submit">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5" /></svg>
-                        @L["Cancel run"]
-                    </button>
-                </form>
-            }
-            <form method="post" action="@Model.RunAction">
+@* The runs block at the top of a task editor. Not a nested form: render it OUTSIDE the editor's own <form>. While the newest run is still running
+   the page asks for itself every few seconds and swaps in the parts marked data-live (matpaper.js). *@
+<div class="mat-card" data-live="runs" @(busy ? Html.Raw("data-running=\"true\"") : null)>
+    <div class="mat-card__head">
+        <mp-icon name="clock" />
+        <h2 class="mat-card__title">@L["Runs"]</h2>
+        @if (Model.Memory is not null)
+        {
+            <span class="mat-muted">@Model.Memory</span>
+        }
+        <span class="mp-spacer"></span>
+        @if (busy)
+        {
+            <form method="post" action="/System/TaskRuns/Cancel?kind=@((int)Model.Kind)&taskId=@Model.TaskId">
                 @Html.AntiForgeryToken()
-                <button class="btn btn--primary" type="submit" disabled="@busy">
-                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-                    @(busy ? L["Running"].Value : Model.RunLabel)
-                </button>
+                <mp-button variant="danger" size="sm" icon="stop">@L["Cancel run"]</mp-button>
             </form>
-            @if (Model.ResetAction is not null)
-            {
-                <form method="post" action="@Model.ResetAction">
-                    @Html.AntiForgeryToken()
-                    <button class="btn btn--secondary" type="submit"
-                            data-confirm='@L["Forget where the task stopped? The next run checks everything again."]'>@L["Start over"]</button>
-                </form>
-            }
-        </div>
+        }
+        <form method="post" action="@Model.RunAction">
+            @Html.AntiForgeryToken()
+            <mp-button variant="primary" size="sm" icon="play" disabled="@busy">@(busy ? L["Running"].Value : Model.RunLabel)</mp-button>
+        </form>
+        @if (Model.ResetAction is not null)
+        {
+            <form method="post" action="@Model.ResetAction">
+                @Html.AntiForgeryToken()
+                <mp-button variant="secondary" size="sm" icon="restore" confirm='@L["Forget where the task stopped? The next run checks everything again."]' confirm-ok='@L["Start over"]'>@L["Start over"]</mp-button>
+            </form>
+        }
     </div>
 
     @if (Model.Runs.Count == 0)
     {
-        <p class="form-help runs-panel__empty">@L["No run yet."]</p>
+        <div class="mat-card__body"><p class="mat-muted">@L["No run yet."]</p></div>
     }
     else
     {
-        <table class="data-table runs-panel__table">
+        <mp-table item-count="Model.Runs.Count" table-class="mat-table--compact" caption='@L["Runs"]'>
             <thead>
                 <tr>
-                    <th>@L["Started"]</th>
-                    <th>@L["State"]</th>
-                    <th>@L["Items"]</th>
-                    <th>@L["Duration"]</th>
+                    <th scope="col">@L["Started"]</th>
+                    <th scope="col">@L["State"]</th>
+                    <th scope="col" class="mat-num">@L["Items"]</th>
+                    <th scope="col" class="mat-num">@L["Duration"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,21 +57,21 @@
                             @switch (r.State)
                             {
                                 case TaskRunState.Success:
-                                    <span class="badge badge--ok">@L["Success"]</span>
+                                    <span class="mat-pill mat-pill--ok">@L["Success"]</span>
                                     break;
                                 case TaskRunState.Failed:
-                                    <span class="badge badge--off">@L["Failed"]</span>
+                                    <span class="mat-pill mat-pill--error">@L["Failed"]</span>
                                     break;
                                 case TaskRunState.Cancelled:
-                                    <span class="badge badge--warn">@L["Cancelled"]</span>
+                                    <span class="mat-pill mat-pill--warn">@L["Cancelled"]</span>
                                     break;
                                 default:
-                                    <span class="badge badge--muted">@L["Running"]</span>
+                                    <span class="mat-pill mat-pill--busy">@L["Running"]</span>
                                     break;
                             }
                         </td>
-                        <td>@r.ItemsProcessed</td>
-                        <td>
+                        <td class="mat-num mat-mono">@r.ItemsProcessed</td>
+                        <td class="mat-num mat-mono">
                             @if (r.FinishedAt is DateTime finished)
                             {
                                 var d = finished - r.StartedAt;
@@ -95,31 +85,7 @@
                     </tr>
                 }
             </tbody>
-        </table>
-        <p class="runs-panel__more"><a href="/System/TaskRuns?Kind=@Model.Kind.ToString().ToLowerInvariant()">@L["All runs"]</a></p>
+        </mp-table>
+        <div class="mat-card__foot"><a href="/System/TaskRuns?Kind=@Model.Kind.ToString().ToLowerInvariant()">@L["All runs"]</a></div>
     }
-</section>
-
-<script>
-    // A run in progress: ask for the page in the background every few seconds and swap in the
-    // parts marked data-live, so the result shows up without a reload. Stops when the run ends.
-    (function () {
-        if (!document.querySelector(".runs-panel[data-running]")) { return; }
-        var tries = 0;
-        var timer = setInterval(function () {
-            if (++tries > 200) { clearInterval(timer); return; }
-            fetch(location.href, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } })
-                .then(function (r) { return r.ok ? r.text() : null; })
-                .then(function (html) {
-                    if (!html) { return; }
-                    var doc = new DOMParser().parseFromString(html, "text/html");
-                    document.querySelectorAll("[data-live]").forEach(function (el) {
-                        var fresh = doc.querySelector("[data-live=\"" + el.getAttribute("data-live") + "\"]");
-                        if (fresh) { el.replaceWith(fresh); }
-                    });
-                    if (!document.querySelector(".runs-panel[data-running]")) { clearInterval(timer); }
-                })
-                .catch(function () { });
-        }, 3000);
-    })();
-</script>
+</div>

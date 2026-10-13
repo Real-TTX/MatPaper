@@ -1,26 +1,37 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.Extensions.Localization;
+using MatPaper.Services;
 
 namespace MatPaper.Controls;
 
 /// <summary>
-/// Renders a horizontal tab bar (<c>&lt;nav class="tabbar"&gt;</c>) containing
-/// &lt;mp-tab&gt; links.
-/// Usage: &lt;mp-tabbar&gt; …&lt;mp-tab&gt;… &lt;/mp-tabbar&gt;
+/// Tabs that are links (the pages of one area that belong together, such as the tabs of the account): <c>&lt;nav class="mat-tabs"&gt;</c> holding
+/// &lt;mp-tab&gt; links; the current one carries <c>aria-current</c>. Tabs that switch panels of one page are the toolkit's <c>data-tabs</c> markup.
+/// Usage: &lt;mp-tabbar label="Account"&gt; …&lt;mp-tab&gt;… &lt;/mp-tabbar&gt;
 /// </summary>
 [HtmlTargetElement("mp-tabbar")]
 public sealed class TabBarTagHelper : TagHelper
 {
+    private readonly IStringLocalizer<SharedResource> _l;
+
+    public TabBarTagHelper(IStringLocalizer<SharedResource> l) => _l = l;
+
+    /// <summary>Names the tab bar for screen readers.</summary>
+    [HtmlAttributeName("label")]
+    public string? Label { get; set; }
+
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
         output.TagName = "nav";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.Attributes.SetAttribute("class", "tabbar");
+        output.Attributes.SetAttribute("class", Classes.Merge("mat-tabs", output.Attributes["class"]?.Value?.ToString()));
+        output.Attributes.SetAttribute("aria-label", Label ?? _l["Sections"].Value);
     }
 }
 
 /// <summary>
-/// A single tab: renders &lt;a class="tabbar__tab [is-active]" href="…"&gt;. The tab label
-/// comes from the <c>title</c> attribute, or from the child content when title is omitted.
+/// A single tab: renders &lt;a class="mat-tab [is-active]" href="…"&gt;. The tab label comes from the <c>title</c> attribute, or from the child
+/// content when title is omitted.
 /// Usage: &lt;mp-tab title="Details" href="/x" active="true" /&gt;
 /// </summary>
 [HtmlTargetElement("mp-tab")]
@@ -39,7 +50,7 @@ public sealed class TabTagHelper : TagHelper
     {
         output.TagName = "a";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.Attributes.SetAttribute("class", Active ? "tabbar__tab is-active" : "tabbar__tab");
+        output.Attributes.SetAttribute("class", Active ? "mat-tab is-active" : "mat-tab");
         output.Attributes.SetAttribute("href", Href);
         if (Active)
         {

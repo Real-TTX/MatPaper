@@ -2,43 +2,6 @@
 @model MatPaper.Pages.System.TaskRuns.IndexModel
 @{
     ViewData["Breadcrumb"] = L["System / Task history"].Value;
-}
-
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Task name"]' />
-    <mp-toolbar-select name="Kind" label='@L["Kind"]' value="@Model.Kind">
-        <option value="all">@L["All"]</option>
-        <option value="import">@L["Import"]</option>
-        <option value="export">@L["Export"]</option>
-        <option value="scan">@L["Storage search"]</option>
-        <option value="align">@L["Align to template"]</option>
-        <option value="importgroup">@L["Import group"]</option>
-    </mp-toolbar-select>
-    <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
-        <option value="all">@L["All"]</option>
-        <option value="Success">@L["Success"]</option>
-        <option value="Failed">@L["Failed"]</option>
-        <option value="Cancelled">@L["Cancelled"]</option>
-        <option value="Running">@L["Running"]</option>
-    </mp-toolbar-select>
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="started_desc">@L["Started (newest first)"]</option>
-        <option value="started_asc">@L["Started (oldest first)"]</option>
-    </mp-toolbar-select>
-</mp-toolbar>
-
-@functions {
-    string KindLabel(MatPaper.Data.TaskRunKind kind) => kind switch
-    {
-        MatPaper.Data.TaskRunKind.Import => L["Import"].Value,
-        MatPaper.Data.TaskRunKind.Export => L["Export"].Value,
-        MatPaper.Data.TaskRunKind.Align => L["Align to template"].Value,
-        MatPaper.Data.TaskRunKind.ImportGroup => L["Import group"].Value,
-        _ => L["Storage search"].Value
-    };
-}
-
-@{
     var kindLabel = Model.Kind switch
     {
         "import" => L["Import"].Value,
@@ -61,59 +24,93 @@
         new MatPaper.Services.FilterSpec("Kind", L["Kind"].Value, kindLabel),
         new MatPaper.Services.FilterSpec("Status", L["Status"].Value, statusLabel));
 }
-<partial name="_FilterChips" model="activeFilters" />
+@functions {
+    string KindLabel(MatPaper.Data.TaskRunKind kind) => kind switch
+    {
+        MatPaper.Data.TaskRunKind.Import => L["Import"].Value,
+        MatPaper.Data.TaskRunKind.Export => L["Export"].Value,
+        MatPaper.Data.TaskRunKind.Align => L["Align to template"].Value,
+        MatPaper.Data.TaskRunKind.ImportGroup => L["Import group"].Value,
+        _ => L["Storage search"].Value
+    };
+}
 
-<mp-list-bar count="Model.TotalCount" singular="{0} run" plural="{0} runs" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
+<div class="mat-list">
+    <mp-toolbar id="taskruns" label='@L["Task history"]' count="Model.TotalCount" singular="{0} run" plural="{0} runs">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Task name"]' />
+        <mp-toolbar-select name="Kind" label='@L["Kind"]' value="@Model.Kind">
+            <option value="all">@L["All"]</option>
+            <option value="import">@L["Import"]</option>
+            <option value="export">@L["Export"]</option>
+            <option value="scan">@L["Storage search"]</option>
+            <option value="align">@L["Align to template"]</option>
+            <option value="importgroup">@L["Import group"]</option>
+        </mp-toolbar-select>
+        <mp-toolbar-select name="Status" label='@L["Status"]' value="@Model.Status">
+            <option value="all">@L["All"]</option>
+            <option value="Success">@L["Success"]</option>
+            <option value="Failed">@L["Failed"]</option>
+            <option value="Cancelled">@L["Cancelled"]</option>
+            <option value="Running">@L["Running"]</option>
+        </mp-toolbar-select>
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="started_desc">@L["Started (newest first)"]</option>
+            <option value="started_asc">@L["Started (oldest first)"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-<mp-table item-count="Model.Rows.Count" empty-text='@L["No task runs recorded yet."]'>
-    <thead>
-        <tr>
-            <th>@L["Started"]</th>
-            <th>@L["Kind"]</th>
-            <th>@L["Task"]</th>
-            <th>@L["State"]</th>
-            <th>@L["Items"]</th>
-            <th>@L["Duration"]</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model.Rows)
-        {
+    <partial name="_FilterChips" model="activeFilters" />
+
+    <mp-table item-count="Model.Rows.Count" empty-text='@L["No task runs recorded yet."]' caption='@L["Task history"]'>
+        <thead>
             <tr>
-                <td><a href="/System/TaskRuns/Details?id=@r.Id">@Fmt.DateTime(r.StartedAt)</a></td>
-                <td>@KindLabel(r.Kind)</td>
-                <td>@r.TaskName</td>
-                <td>
-                    @switch (r.State)
-                    {
-                        case MatPaper.Data.TaskRunState.Success:
-                            <span class="badge badge--ok">@L["Success"]</span>
-                            break;
-                        case MatPaper.Data.TaskRunState.Failed:
-                            <span class="badge badge--off">@L["Failed"]</span>
-                            break;
-                        case MatPaper.Data.TaskRunState.Cancelled:
-                            <span class="badge badge--warn">@L["Cancelled"]</span>
-                            break;
-                        default:
-                            <span class="badge badge--muted">@L["Running"]</span>
-                            break;
-                    }
-                </td>
-                <td>@r.ItemsProcessed</td>
-                <td>
-                    @if (r.Duration is { } d)
-                    {
-                        @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
-                    }
-                    else
-                    {
-                        <span class="badge badge--muted">—</span>
-                    }
-                </td>
+                <th scope="col">@L["Started"]</th>
+                <th scope="col" class="mat-hide-sm">@L["Kind"]</th>
+                <th scope="col">@L["Task"]</th>
+                <th scope="col">@L["State"]</th>
+                <th scope="col" class="mat-num">@L["Items"]</th>
+                <th scope="col" class="mat-num mat-hide-sm">@L["Duration"]</th>
             </tr>
-        }
-    </tbody>
-</mp-table>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr data-row-href="/System/TaskRuns/Details?id=@r.Id">
+                    <td class="mat-mono"><a href="/System/TaskRuns/Details?id=@r.Id">@Fmt.DateTime(r.StartedAt)</a></td>
+                    <td class="mat-hide-sm">@KindLabel(r.Kind)</td>
+                    <td>@r.TaskName</td>
+                    <td>
+                        @switch (r.State)
+                        {
+                            case MatPaper.Data.TaskRunState.Success:
+                                <span class="mat-pill mat-pill--ok">@L["Success"]</span>
+                                break;
+                            case MatPaper.Data.TaskRunState.Failed:
+                                <span class="mat-pill mat-pill--error">@L["Failed"]</span>
+                                break;
+                            case MatPaper.Data.TaskRunState.Cancelled:
+                                <span class="mat-pill mat-pill--warn">@L["Cancelled"]</span>
+                                break;
+                            default:
+                                <span class="mat-pill mat-pill--busy">@L["Running"]</span>
+                                break;
+                        }
+                    </td>
+                    <td class="mat-num mat-mono">@r.ItemsProcessed</td>
+                    <td class="mat-num mat-mono mat-hide-sm">
+                        @if (r.Duration is { } d)
+                        {
+                            @($"{(int)d.TotalHours:00}:{d.Minutes:00}:{d.Seconds:00}")
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </mp-table>
 
-<mp-list-bar position="bottom" />
+    <mp-pager current-page="Model.PageNumber" total-pages="Model.TotalPages" total="Model.TotalCount" row-count="Model.Rows.Count" />
+</div>

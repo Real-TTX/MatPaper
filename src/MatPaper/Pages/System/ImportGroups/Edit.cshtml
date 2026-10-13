@@ -3,189 +3,197 @@
 @using MatPaper.Data
 @{
     ViewData["Breadcrumb"] = Model.IsEdit ? L["System / Import tasks / Group"].Value : L["System / Import tasks / New group"].Value;
+    ViewData["Heading"] = Model.IsEdit ? Model.Input.Name : L["New group"].Value;
+    ViewData["Width"] = "narrow";
 }
 
-<div data-tabs class="is-booting">
-<div class="tabs__bar" role="tablist">
-    <button type="button" class="tabs__tab" data-tab="general" role="tab"><span class="wizard__num">1</span>@L["General"]</button>
-    <button type="button" class="tabs__tab" data-tab="source" role="tab"><span class="wizard__num">2</span>@L["Source"]</button>
-    <button type="button" class="tabs__tab" data-tab="target" role="tab"><span class="wizard__num">3</span>@L["Target"]</button>
-    @if (Model.IsEdit)
-    {
-        <button type="button" class="tabs__tab" data-tab="rules" role="tab"><span class="wizard__num">4</span>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></button>
-    }
-</div>
-
-<form class="form form--wide" method="post"
-      data-browse-url="/System/ImportGroups/Edit?handler=Browse"
-      data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'
-      data-t-folders='@L["Folders"]' data-t-shares='@L["Shares"]' data-t-up='@L["One level up"]'
-      data-t-showing='@L["showing the first {0}"]' data-t-more='@L["scan stopped at {0} — there may be more"]'
-      data-t-show-more='@L["Show more"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
-    <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="ModelOnly" class="form-summary"></div>
-
-    <section class="form-section tabs__panel" data-tab-panel="general">
-        <h2 class="form-section__title">@L["Group"]</h2>
-        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoices"]' />
-        <mp-field asp-for="Input.IsEnabled" kind="checkbox" label='@L["Enabled"]' />
-        <mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' />
-    </section>
-
-    <section class="form-section tabs__panel" data-tab-panel="source" hidden>
-        <h2 class="form-section__title">@L["Source of all rules"]</h2>
-        <p class="form-help">@L["One connection and one folder for the whole group: the rules only say what to pick up. A mailbox is opened once per run for all rules."]</p>
-        <mp-field asp-for="Input.SourceType" kind="select" label='@L["Type"]' asp-items="Model.SourceTypeOptions" />
-
-        <div data-show-when-field="Input.SourceType" data-show-when-value="0,1">
-            <mp-picker asp-for="Input.MailConnectionId" label='@L["Saved connection"]' asp-items="Model.MailConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
-        </div>
-        <div data-show-when-field="Input.SourceType" data-show-when-value="0">
-            <div class="form-row">
-                <label asp-for="Input.MailFolder">@L["Mailbox folder"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.MailFolder" placeholder="INBOX" />
-                    <button class="btn btn--secondary" type="button" data-browse="mail-folders"
-                            data-browse-target="Input_MailFolder" data-browse-flat>@L["Show folders…"]</button>
-                </div>
-            </div>
-        </div>
-
-        <div data-show-when-field="Input.SourceType" data-show-when-value="3">
-            <mp-picker asp-for="Input.SmbConnectionId" label='@L["Saved connection"]' asp-items="Model.SmbConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
-            <div class="form-row">
-                <label asp-for="Input.SourceShare">@L["SMB share"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.SourceShare" placeholder="documents" />
-                    <button class="btn btn--secondary" type="button" data-browse="smb-shares"
-                            data-browse-target="Input_SourceShare" data-browse-flat data-browse-title='@L["Shares"]'>@L["List shares"]</button>
-                </div>
-                <span class="field-error" asp-validation-for="Input.SourceShare"></span>
-            </div>
-        </div>
-
-        <div data-show-when-field="Input.SourceType" data-show-when-value="2,3">
-            <div class="form-row">
-                <label asp-for="Input.SourcePath">@L["Folder"]</label>
-                <div class="input-with-action">
-                    <input class="form-control" asp-for="Input.SourcePath" placeholder="/mnt/scan" />
-                    <span data-show-when-field="Input.SourceType" data-show-when-value="2">
-                        <button class="btn btn--secondary" type="button" data-browse="local-folders"
-                                data-browse-target="Input_SourcePath" data-browse-root="/">@L["Browse…"]</button>
-                    </span>
-                    <span data-show-when-field="Input.SourceType" data-show-when-value="3">
-                        <button class="btn btn--secondary" type="button" data-browse="smb-folders"
-                                data-browse-target="Input_SourcePath">@L["Browse…"]</button>
-                    </span>
-                </div>
-                <span class="field-error" asp-validation-for="Input.SourcePath"></span>
-            </div>
-        </div>
-
-        <div data-show-when-field="Input.SourceType" data-show-when-value="0,1,2,3">
-            <mp-button-row>
-                <mp-button variant="secondary" type="submit" handler="Test">@L["Test connection"]</mp-button>
-            </mp-button-row>
-        </div>
-    </section>
-
-    <section class="form-section tabs__panel" data-tab-panel="target" hidden>
-        <h2 class="form-section__title">@L["Target of all rules"]</h2>
-        <p class="form-help">@L["What a rule leaves empty it takes from here. Switches and tags are added to the rule's own."]</p>
-        <mp-picker asp-for="Input.StorageLocationId" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" placeholder='@L["— default —"]' />
-        <mp-picker asp-for="Input.OwnerUserId" label='@L["Inbox of"]' asp-items="Model.UserOptions" placeholder='@L["— Task creator —"]' />
-        <mp-picker asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
-        <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
-        <mp-field asp-for="Input.IsCommon" kind="checkbox" label='@L["Common area (visible to everyone)"]' />
-        <mp-field asp-for="Input.SkipInbox" kind="checkbox" label='@L["Skip inbox (mark imported documents as reviewed)"]' />
-    </section>
-
-    <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-        <mp-button variant="secondary" href="@(Model.IsEdit ? "/System/ImportGroups/Details?id=" + Model.Id : "/System/ImportTasks")">@L["Back"]</mp-button>
-        <mp-button-spacer />
+<div data-tabs class="mat-stack">
+    <div class="mat-tabs" role="tablist" aria-label='@L["Group"]'>
+        <button type="button" class="mat-tab" role="tab" id="grp-tab-general" aria-controls="grp-panel-general" aria-selected="true">@L["General"]</button>
+        <button type="button" class="mat-tab" role="tab" id="grp-tab-source" aria-controls="grp-panel-source" aria-selected="false" tabindex="-1">@L["Source"]</button>
+        <button type="button" class="mat-tab" role="tab" id="grp-tab-target" aria-controls="grp-panel-target" aria-selected="false" tabindex="-1">@L["Target"]</button>
         @if (Model.IsEdit)
         {
-            <mp-button variant="danger" type="submit" handler="Delete"
-                       confirm='@L["Delete this group? Its rules stay as single rules."]'>@L["Delete"]</mp-button>
+            <button type="button" class="mat-tab" role="tab" id="grp-tab-rules" aria-controls="grp-panel-rules" aria-selected="false" tabindex="-1">@L["Rules"] <span class="mat-badge mat-badge--soft">@Model.Members.Count</span></button>
         }
-    </mp-button-row>
-</form>
+    </div>
 
-@if (Model.IsEdit)
-{
-    <section class="task-card task-card--wide tabs__panel" data-tab-panel="rules" hidden>
-        <h3>@L["Rules"] <span class="task-card__count">@Model.Members.Count</span></h3>
-        <p class="form-help">@L["They run from top to bottom. What a rule above takes, the ones below leave alone."]</p>
+    <form method="post" class="mat-form" novalidate
+          data-browse-url="/System/ImportGroups/Edit?handler=Browse"
+          data-t-loading='@L["Loading…"]' data-t-empty='@L["Nothing found."]'
+          data-t-folders='@L["Folders"]' data-t-shares='@L["Shares"]' data-t-up='@L["One level up"]'
+          data-t-showing='@L["showing the first {0}"]' data-t-more='@L["scan stopped at {0} — there may be more"]'
+          data-t-show-more='@L["Show more"]' data-t-request-failed='@L["The request failed — please reload the page."]'>
+        <input type="hidden" asp-for="Id" />
+        <partial name="_ValidationSummary" />
 
-        @if (Model.Members.Count == 0)
-        {
-            <p class="form-help">@L["No rules in this group yet."]</p>
-        }
-        else
-        {
-            <div class="table-scroll">
-                <table class="data-table group-rules">
-                    <thead><tr><th>#</th><th>@L["Name"]</th><th>@L["Last run"]</th><th class="is-actions"></th></tr></thead>
-                    <tbody>
-                        @for (var i = 0; i < Model.Members.Count; i++)
-                        {
-                            var m = Model.Members[i];
-                            <tr>
-                                <td>@(i + 1)</td>
-                                <td>
-                                    <a href="/System/ImportTasks/Details?id=@m.Id">@m.Name</a>
-                                    @if (!m.IsEnabled) { <span class="badge badge--warn">@L["Disabled"]</span> }
-                                </td>
-                                <td>
-                                    @if (m.LastState is TaskRunState state && m.LastStartedAt is DateTime started)
-                                    {
-                                        <span class="badge @(state == TaskRunState.Success ? "badge--ok" : state == TaskRunState.Failed ? "badge--off" : "badge--muted")">@state</span>
-                                        <span>&nbsp;@Fmt.DateTime(started)</span>
-                                    }
-                                    else { <span>—</span> }
-                                </td>
-                                <td class="is-actions group-rules__actions">
-                                    <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" asp-route-delta="-1" style="display:inline">
-                                        <button class="icon-btn" type="submit" title='@L["Move up"]' aria-label='@L["Move up"]' disabled="@(i == 0)">▲</button>
-                                    </form>
-                                    <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" asp-route-delta="1" style="display:inline">
-                                        <button class="icon-btn" type="submit" title='@L["Move down"]' aria-label='@L["Move down"]' disabled="@(i == Model.Members.Count - 1)">▼</button>
-                                    </form>
-                                    <a class="icon-btn" href="/System/ImportTasks/Edit?id=@m.Id" title='@L["Edit"]' aria-label='@L["Edit"]'>✎</a>
-                                    <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" style="display:inline">
-                                        <button class="icon-btn" type="submit" title='@L["Take out of the group"]' aria-label='@L["Take out of the group"]'>✕</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <div class="mat-tabpanel" role="tabpanel" id="grp-panel-general" aria-labelledby="grp-tab-general">
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Group"]</h2></div>
+                <div class="mat-card__body">
+                    <div class="mat-form__grid">
+                        <mp-field asp-for="Input.Name" label='@L["Name"]' placeholder='@L["e.g. Invoices"]' full="true" />
+                        <mp-field asp-for="Input.IsEnabled" kind="switch" label='@L["Enabled"]' full="true" />
+                        <div class="mat-field--full"><mp-schedule asp-for="Input.CronExpression" label='@L["Schedule"]' /></div>
+                    </div>
+                </div>
             </div>
-        }
-
-        <div class="group-add">
-            <a class="btn btn--primary" href="/System/ImportTasks/Edit?group=@Model.Id">@L["New rule in this group"]</a>
-            @if (Model.SingleRules.Count > 0)
-            {
-                <form method="post" asp-page-handler="Add" asp-route-id="@Model.Id" class="group-add__existing">
-                    <select class="form-control" name="ruleId" aria-label='@L["Add an existing rule"]'>
-                        @foreach (var r in Model.SingleRules)
-                        {
-                            <option value="@r.Id">@r.Name</option>
-                        }
-                    </select>
-                    <button class="btn btn--secondary" type="submit">@L["Add an existing rule"]</button>
-                </form>
-            }
         </div>
-    </section>
-}
+
+        <div class="mat-tabpanel" role="tabpanel" id="grp-panel-source" aria-labelledby="grp-tab-source" hidden>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Source of all rules"]</h2></div>
+                <div class="mat-card__body mat-stack">
+                    <p class="mat-muted">@L["One connection and one folder for the whole group: the rules only say what to pick up. A mailbox is opened once per run for all rules."]</p>
+                    <div class="mat-form__grid">
+                        <mp-field asp-for="Input.SourceType" kind="select" label='@L["Type"]' asp-items="Model.SourceTypeOptions" full="true" />
+
+                        <div class="mat-form__grid mat-field--full" data-show-if="Input.SourceType" data-show-value="0,1">
+                            <mp-picker asp-for="Input.MailConnectionId" label='@L["Saved connection"]' asp-items="Model.MailConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
+                        </div>
+                        <div class="mat-form__grid mat-field--full" data-show-if="Input.SourceType" data-show-value="0">
+                            <mp-field asp-for="Input.MailFolder" label='@L["Mailbox folder"]' placeholder="INBOX" full="true"
+                                      browse="mail-folders" browse-label='@L["Show folders…"]' />
+                        </div>
+
+                        <div class="mat-form__grid mat-field--full" data-show-if="Input.SourceType" data-show-value="3">
+                            <mp-picker asp-for="Input.SmbConnectionId" label='@L["Saved connection"]' asp-items="Model.SmbConnectionOptions" placeholder='@L["— Choose —"]' create="false" />
+                            <mp-field asp-for="Input.SourceShare" label='@L["SMB share"]' placeholder="documents"
+                                      browse="smb-shares" browse-label='@L["List shares"]' />
+                        </div>
+
+                        <div class="mat-form__grid mat-field--full" data-show-if="Input.SourceType" data-show-value="2">
+                            <mp-field asp-for="Input.SourcePath" label='@L["Folder"]' placeholder="/mnt/scan" full="true" mono="true"
+                                      browse="local-folders" browse-root="/" browse-label='@L["Browse…"]' />
+                        </div>
+                        <div class="mat-form__grid mat-field--full" data-show-if="Input.SourceType" data-show-value="3">
+                            <mp-field asp-for="Input.SourcePath" control-id="Input_SourcePath_smb" label='@L["Folder"]' placeholder="/mnt/scan" full="true" mono="true"
+                                      browse="smb-folders" browse-label='@L["Browse…"]' />
+                        </div>
+                    </div>
+                    <div data-show-if="Input.SourceType" data-show-value="0,1,2,3">
+                        <mp-button variant="secondary" handler="Test" icon="plug">@L["Test connection"]</mp-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mat-tabpanel" role="tabpanel" id="grp-panel-target" aria-labelledby="grp-tab-target" hidden>
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">@L["Target of all rules"]</h2></div>
+                <div class="mat-card__body mat-stack">
+                    <p class="mat-muted">@L["What a rule leaves empty it takes from here. Switches and tags are added to the rule's own."]</p>
+                    <div class="mat-form__grid">
+                        <mp-picker asp-for="Input.StorageLocationId" label='@L["Storage location"]' asp-items="Model.StorageLocationOptions" placeholder='@L["— default —"]' />
+                        <mp-picker asp-for="Input.OwnerUserId" label='@L["Inbox of"]' asp-items="Model.UserOptions" placeholder='@L["— Task creator —"]' />
+                        <mp-picker asp-for="Input.ProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— None —"]' />
+                        <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="Model.TagOptions" multiple="true" placeholder='@L["Add tags…"]' />
+                        <mp-field asp-for="Input.IsCommon" kind="switch" label='@L["Common area (visible to everyone)"]' full="true" />
+                        <mp-field asp-for="Input.SkipInbox" kind="switch" label='@L["Skip inbox (mark imported documents as reviewed)"]' full="true" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <mp-button-row>
+            <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+            <mp-button variant="secondary" href="@(Model.IsEdit ? "/System/ImportGroups/Details?id=" + Model.Id : "/System/ImportTasks")" icon="back">@L["Back"]</mp-button>
+            @if (Model.IsEdit)
+            {
+                <mp-button-spacer />
+                <mp-button variant="danger" icon="trash" handler="Delete"
+                           confirm='@L["Delete this group? Its rules stay as single rules."]' confirm-ok='@L["Delete"]'>@L["Delete"]</mp-button>
+            }
+        </mp-button-row>
+    </form>
+
+    @if (Model.IsEdit)
+    {
+        <div class="mat-tabpanel" role="tabpanel" id="grp-panel-rules" aria-labelledby="grp-tab-rules" hidden>
+            <div class="mat-card">
+                <div class="mat-card__head">
+                    <h2 class="mat-card__title">@L["Rules"]</h2>
+                    <span class="mat-pill mat-pill--plain">@Model.Members.Count</span>
+                </div>
+                <div class="mat-card__body mat-stack">
+                    <p class="mat-muted">@L["They run from top to bottom. What a rule above takes, the ones below leave alone."]</p>
+
+                    @if (Model.Members.Count == 0)
+                    {
+                        <p class="mat-muted">@L["No rules in this group yet."]</p>
+                    }
+                    else
+                    {
+                        <mp-table item-count="Model.Members.Count" caption='@L["Rules"]'>
+                            <thead>
+                                <tr><th scope="col" class="mat-num">#</th><th scope="col">@L["Name"]</th><th scope="col">@L["Last run"]</th><th scope="col"><span class="mat-sr-only">@L["Actions"]</span></th></tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < Model.Members.Count; i++)
+                                {
+                                    var m = Model.Members[i];
+                                    <tr>
+                                        <td class="mat-num mat-mono">@(i + 1)</td>
+                                        <td>
+                                            <div class="mat-table__name">
+                                                <a href="/System/ImportTasks/Details?id=@m.Id">@m.Name</a>
+                                                @if (!m.IsEnabled) { <span class="mat-pill mat-pill--warn">@L["Disabled"]</span> }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (m.LastState is TaskRunState state && m.LastStartedAt is DateTime started)
+                                            {
+                                                <span class="mat-pill @(state == TaskRunState.Success ? "mat-pill--ok" : state == TaskRunState.Failed ? "mat-pill--error" : "mat-pill--busy")">@(state == TaskRunState.Success ? L["Success"].Value : state == TaskRunState.Failed ? L["Failed"].Value : state == TaskRunState.Cancelled ? L["Cancelled"].Value : L["Running"].Value)</span>
+                                                <small class="mat-muted">@Fmt.DateTime(started)</small>
+                                            }
+                                            else { <span class="mat-muted">—</span> }
+                                        </td>
+                                        <td class="mat-table__cell-actions">
+                                            <div class="mat-table__actions">
+                                                <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" asp-route-delta="-1" class="mp-contents">
+                                                    <mp-icon-button icon="arrow-up" label='@L["Move up"]' type="submit" disabled="@(i == 0)" />
+                                                </form>
+                                                <form method="post" asp-page-handler="Move" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" asp-route-delta="1" class="mp-contents">
+                                                    <mp-icon-button icon="arrow-down" label='@L["Move down"]' type="submit" disabled="@(i == Model.Members.Count - 1)" />
+                                                </form>
+                                                <mp-icon-button icon="edit" label='@L["Edit"]' href='@($"/System/ImportTasks/Edit?id={m.Id}")' />
+                                                <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Id" asp-route-ruleId="@m.Id" class="mp-contents">
+                                                    <mp-icon-button icon="x" label='@L["Take out of the group"]' type="submit" confirm='@($"{L["Take out of the group"]}: {m.Name}?")' confirm-ok='@L["Take out of the group"]' />
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </mp-table>
+                    }
+
+                    <div class="mat-actions">
+                        <mp-button variant="primary" href="@($"/System/ImportTasks/Edit?group={Model.Id}")" icon="plus">@L["New rule in this group"]</mp-button>
+                        @if (Model.SingleRules.Count > 0)
+                        {
+                            <form method="post" asp-page-handler="Add" asp-route-id="@Model.Id" class="mat-form mat-form--inline">
+                                <div class="mat-field">
+                                    <label class="mat-label mat-sr-only" for="grp-add-rule">@L["Add an existing rule"]</label>
+                                    <select class="mat-select" id="grp-add-rule" name="ruleId">
+                                        @foreach (var r in Model.SingleRules)
+                                        {
+                                            <option value="@r.Id">@r.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="mat-field mat-field--auto"><mp-button variant="secondary" icon="plus">@L["Add an existing rule"]</mp-button></div>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 <partial name="_BrowseDialog" />
 
 @section Scripts {
     <script src="~/js/browse-dialog.js" asp-append-version="true"></script>
-    <script src="~/js/tabs.js" asp-append-version="true"></script>
 }

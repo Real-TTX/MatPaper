@@ -1,4 +1,4 @@
-/* MatUi feature-menu-action (7a08fa3863) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi feature-topbar-secondary (651deeda01) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -893,8 +893,9 @@ button.mat-nav__item:hover { background: var(--mat-surface-3); }
   margin-right: calc(var(--mat-space-2) * -1);
 }
 .mat-topbar__actions .mat-btn { position: relative; }
-/* A main action of the app (scan, add) is highlighted: a filled accent button instead of a ghost one. A filled button needs room around it and lines up with the edge of the content. */
-.mat-topbar__actions:has(> .mat-btn--primary) { gap: var(--mat-space-2); margin-right: 0; }
+/* The main action of the app (scan, add) is highlighted: a filled accent button instead of a ghost one, at the right end; a second action that should be seen but is not the main
+   one is a secondary icon button (a surface with a line), so that one icon only has the accent colour. A button with a fill or a line needs room around it and lines up with the edge of the content. */
+.mat-topbar__actions:has(> .mat-btn--primary, > .mat-btn--secondary) { gap: var(--mat-space-2); margin-right: 0; }
 .mat-topbar__badge {
   position: absolute; top: 3px; right: 3px;
   min-width: 16px; height: 16px;

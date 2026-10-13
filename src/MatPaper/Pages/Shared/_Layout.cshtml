@@ -198,14 +198,14 @@
                     </ol>
                 </nav>
                 <div class="mat-topbar__actions">
-                    @* The scan buttons are the main actions of the app, so they are filled with the accent (SHELL-17). *@
+                    @* Only the plus is in the accent colour, the main action of the app; the barcode beside it is a secondary icon button (SHELL-17). *@
                     @* Archive numbers switched on: scan the label of a paper with the camera and see its document. *@
                     @if (archiveNumbers)
                     {
-                        <button type="button" class="mat-btn mat-btn--primary mat-btn--icon" data-code-scan="open" aria-label='@L["Scan a label"]' data-tip='@L["Scan a label"]'>@Ui.Icon("scan-barcode")</button>
+                        <button type="button" class="mat-btn mat-btn--secondary mat-btn--icon" data-code-scan="open" aria-label='@L["Scan a label"]' data-tip='@L["Scan a label"]'>@Ui.Icon("scan-barcode")</button>
                     }
-                    @* Scan from anywhere: the camera of the phone is in reach there, the menu is not. *@
-                    <a class="mat-btn mat-btn--primary mat-btn--icon" href="/Documents/Upload?camera=true" aria-label='@L["Scan a document"]' data-tip='@L["Scan a document"]'>@Ui.Icon("camera")</a>
+                    @* Add or scan a document from anywhere: the camera of the phone is in reach there, the menu is not. *@
+                    <a class="mat-btn mat-btn--primary mat-btn--icon" href="/Documents/Upload?camera=true" aria-label='@L["Scan a document"]' data-tip='@L["Scan a document"]'>@Ui.Icon("plus")</a>
                 </div>
             </header>
 

@@ -399,3 +399,10 @@ html.mp-has-scanner, html.mp-has-scanner body { background: black; }
 
 /* ---- The colour of an accent next to its name (Account/Appearance): a bigger dot than in a list ---- */
 .mat-choice > .mp-dot--lg { width: 16px; height: 16px; margin-top: 2px; }
+
+/* ---- The folder browser (browse-dialog.js): a row is the name of a folder (a button that takes it) and an arrow that opens it ---- */
+.mp-browse__path { font-size: var(--mat-fs-sm); overflow-wrap: anywhere; }
+.mp-browse__list { max-height: 50vh; overflow: auto; }
+.mp-browse__pick { flex: 1 1 auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mp-browse__pick:hover { color: var(--mat-accent-text); text-decoration: underline; }
+.mp-browse__pick:focus-visible { outline: none; border-radius: var(--mat-radius-xs); box-shadow: var(--mat-focus-ring); }

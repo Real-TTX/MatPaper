@@ -49,7 +49,7 @@
         var holder = document.createElement("span");
         holder.innerHTML = window.MatPaper.icon(SPRITE[name] || name);
         var svg = holder.firstChild;
-        svg.classList.add("mp-mp-scn__icon");
+        svg.classList.add("mp-scn__icon");
         return svg;
     }
 

@@ -55,7 +55,7 @@ public static partial class Ui
     /// <summary>The logo tile of the app: its glyph on the flat accent colour.</summary>
     public static IHtmlContent Logo(string size = "md")
         => new HtmlString(
-            $"<span class=\"mat-logo mat-logo--{size}\" role=\"img\" aria-label=\"{App.Name}\">" +
+            $"<span class=\"mat-logo{(size is "md" or "" ? string.Empty : $" mat-logo--{size}")}\" role=\"img\" aria-label=\"{App.Name}\">" +
             $"<svg class=\"mat-icon\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#{SymbolId(App.Glyph)}\"></use></svg></span>");
 
     /// <summary>The first letters of a name, for an avatar.</summary>

@@ -5,12 +5,15 @@
 // dialog stacks them in a scroll area: swipe to move, pinch or the +/- buttons to zoom, double-tap
 // to jump between fit-width and 2x. Pages load lazily as they come into view.
 //
+// The dialog is the toolkit's (mat-dialog, full screen); its look is in matpaper.css (mp-viewer*). The icons come from the sprite of the page
+// (MatPaper.icon), the notes ("link copied") from MatPaper.toast, which shows above an open dialog.
+//
 //   MatPaperViewer.open({ token, title })       open it
 //   MatPaperViewer.isPhone()                    true on narrow screens (where it should be used)
 //   <button data-viewer-token="…" data-viewer-title="…">   opens it on click (phones only)
-//   MatPaperViewer.share({ token, title, host })   share a document from anywhere (not only from the viewer);
+//   MatPaperViewer.share({ token, title })      share a document from anywhere (not only from the viewer);
 //   <button data-doc-share data-doc-token="…" data-doc-title="…">   does it on click - the buttons beside the
-//   desktop preview use it; host = the dialog or page the "link copied" note appears in
+//   desktop preview use it
 (function () {
     "use strict";
 
@@ -35,47 +38,43 @@
         return (el && el.getAttribute("data-" + key)) || fallback;
     }
 
+    function iconButton(act, icon, label, tag) {
+        return '<' + (tag || 'button') + (tag === 'a' ? '' : ' type="button"') + ' class="mat-btn mat-btn--ghost mat-btn--icon" data-act="' + act + '" aria-label="' + label + '">' + window.MatPaper.icon(icon) + '</' + (tag || 'button') + '>';
+    }
+
     function build() {
+        var closeLabel = text("close", "Close");
         dialog = document.createElement("dialog");
-        dialog.className = "doc-viewer";
+        dialog.className = "mat-dialog mp-viewer";
+        dialog.setAttribute("aria-label", text("viewer", "Document"));
         dialog.innerHTML =
-            '<div class="doc-viewer__bar">' +
-            '<button type="button" class="doc-viewer__btn" data-act="close"></button>' +
-            '<span class="doc-viewer__title"></span>' +
-            '<button type="button" class="doc-viewer__btn" data-act="out">−</button>' +
-            '<button type="button" class="doc-viewer__btn" data-act="in">+</button>' +
-            '<button type="button" class="doc-viewer__btn" data-act="share"></button>' +
-            '<a class="doc-viewer__btn" data-act="download" data-viewer-download></a>' +
+            '<div class="mp-viewer__bar">' +
+            '<span class="mp-viewer__title"></span>' +
+            iconButton("out", "zoom-out", text("zoom-out", "Zoom out")) +
+            iconButton("in", "zoom-in", text("zoom-in", "Zoom in")) +
+            iconButton("share", "share-2", text("share", "Share")) +
+            iconButton("download", "download", text("download", "Download"), "a") +
+            '<button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-dialog__close" data-dialog-close autofocus aria-label="' + closeLabel + '">' + window.MatPaper.icon("x") + '</button>' +
             '</div>' +
-            '<div class="doc-viewer__scroll"><div class="doc-viewer__pages"></div></div>' +
-            '<div class="doc-viewer__page" aria-live="polite"></div>' +
-            '<div class="doc-viewer__toast" role="status" hidden></div>';
+            '<div class="mp-viewer__scroll"><div class="mp-viewer__pages"></div></div>' +
+            '<div class="mp-viewer__page" aria-live="polite"></div>';
         document.body.appendChild(dialog);
 
         parts = {
-            title: dialog.querySelector(".doc-viewer__title"),
-            scroll: dialog.querySelector(".doc-viewer__scroll"),
-            pages: dialog.querySelector(".doc-viewer__pages"),
-            indicator: dialog.querySelector(".doc-viewer__page"),
+            title: dialog.querySelector(".mp-viewer__title"),
+            scroll: dialog.querySelector(".mp-viewer__scroll"),
+            pages: dialog.querySelector(".mp-viewer__pages"),
+            indicator: dialog.querySelector(".mp-viewer__page"),
             download: dialog.querySelector('[data-act="download"]'),
-            share: dialog.querySelector('[data-act="share"]'),
-            toast: dialog.querySelector(".doc-viewer__toast"),
-            close: dialog.querySelector('[data-act="close"]')
+            share: dialog.querySelector('[data-act="share"]')
         };
-        parts.close.textContent = "✕";
-        parts.close.setAttribute("aria-label", text("close", "Close"));
-        parts.download.textContent = "⤓";
-        parts.download.setAttribute("aria-label", text("download", "Download"));
-        parts.share.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
-        parts.share.setAttribute("aria-label", text("share", "Share"));
-        parts.share.setAttribute("title", text("share", "Share"));
+        parts.download.setAttribute("data-viewer-download", "");
 
         dialog.addEventListener("click", function (event) {
             var act = event.target && event.target.closest ? event.target.closest("[data-act]") : null;
             if (!act) { return; }
             var name = act.getAttribute("data-act");
-            if (name === "close") { dialog.close(); }
-            else if (name === "in") { setZoom(zoom + 0.5); }
+            if (name === "in") { setZoom(zoom + 0.5); }
             else if (name === "out") { setZoom(zoom - 0.5); }
             else if (name === "share") { share(); }
             else if (name === "download" && isStandalone()) {
@@ -105,7 +104,6 @@
             current = null;
             if (observer) { observer.disconnect(); observer = null; }
             parts.pages.innerHTML = "";
-            document.documentElement.classList.remove("has-viewer");
         });
 
         parts.scroll.addEventListener("scroll", updateIndicator, { passive: true });
@@ -116,25 +114,9 @@
     // The file itself goes to another app (mail, messenger ...) through the phone's share sheet. Not every
     // browser can do that with a file; then a link that works for a few days is created and shared (or copied).
     var current = null;
-    var toastTimer = null;
 
-    function toast(message, host) {
-        var el = parts && parts.toast;
-        if (host) {
-            el = host.querySelector(":scope > .doc-viewer__toast");
-            if (!el) {
-                el = document.createElement("div");
-                el.className = "doc-viewer__toast" + (host === document.body ? " doc-viewer__toast--page" : "");
-                el.setAttribute("role", "status");
-                el.hidden = true;
-                host.appendChild(el);
-            }
-        }
-        if (!el) { return; }
-        el.textContent = message;
-        el.hidden = false;
-        if (toastTimer) { clearTimeout(toastTimer); }
-        toastTimer = setTimeout(function () { el.hidden = true; }, 3500);
+    function toast(message, tone) {
+        window.MatPaper.toast(message, { tone: tone });
     }
 
     function fileNameOf(response, fallback) {
@@ -158,8 +140,8 @@
         return typeof navigator.canShare === "function" && typeof navigator.share === "function" && typeof File === "function";
     }
 
-    function copyLink(url, days, host) {
-        var done = function () { toast(text("link-copied", "Link copied - valid for {0} days").replace("{0}", String(days)), host); };
+    function copyLink(url, days) {
+        var done = function () { toast(text("link-copied", "Link copied - valid for {0} days").replace("{0}", String(days)), "success"); };
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(done, function () { window.prompt(text("link", "Link"), url); });
         } else {
@@ -176,18 +158,18 @@
             .then(function (response) { return response.json().catch(function () { return null; }); })
             .then(function (result) {
                 if (!result || !result.ok) {
-                    toast(result && result.forbidden ? text("share-forbidden", "Only the owner can share this document.") : text("share-failed", "The document could not be shared."), shown.host);
+                    toast(result && result.forbidden ? text("share-forbidden", "Only the owner can share this document.") : text("share-failed", "The document could not be shared."), "danger");
                     return;
                 }
                 if (typeof navigator.share === "function") {
                     return navigator.share({ title: shown.title || "", url: result.url }).catch(function (error) {
                         if (error && error.name === "AbortError") { return; }
-                        copyLink(result.url, result.days, shown.host);
+                        copyLink(result.url, result.days);
                     });
                 }
-                copyLink(result.url, result.days, shown.host);
+                copyLink(result.url, result.days);
             })
-            .catch(function () { toast(text("share-failed", "The document could not be shared."), shown.host); });
+            .catch(function () { toast(text("share-failed", "The document could not be shared."), "danger"); });
     }
 
     function share() {
@@ -207,9 +189,10 @@
         shareLink(shown);
     }
 
+    // The zoom is a number the style sheet turns into the width of the pages (--mp-zoom).
     function setZoom(value) {
         zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
-        parts.pages.style.width = (zoom * 100) + "%";
+        parts.pages.style.setProperty("--mp-zoom", String(zoom));
     }
 
     // Two fingers: the pages grow or shrink around the point between them.
@@ -230,12 +213,10 @@
         parts.scroll.addEventListener("touchmove", function (e) {
             if (!start || e.touches.length !== 2) { return; }
             e.preventDefault();
-            var before = zoom;
             setZoom(start.zoom * distance(e.touches) / start.d);
             var ratio = zoom / start.zoom;
             parts.scroll.scrollLeft = (start.sl + start.fx) * ratio - start.fx;
             parts.scroll.scrollTop = (start.st + start.fy) * ratio - start.fy;
-            void before;
         }, { passive: false });
         parts.scroll.addEventListener("touchend", function (e) { if (e.touches.length < 2) { start = null; } }, { passive: true });
     }
@@ -244,23 +225,22 @@
         var imgs = parts.pages.querySelectorAll("img[data-page]");
         if (imgs.length === 0) { parts.indicator.textContent = ""; return; }
         var mid = parts.scroll.getBoundingClientRect().top + parts.scroll.clientHeight / 2;
-        var current = 1;
+        var shown = 1;
         for (var i = 0; i < imgs.length; i++) {
             var r = imgs[i].getBoundingClientRect();
-            if (r.top <= mid) { current = i + 1; }
+            if (r.top <= mid) { shown = i + 1; }
         }
-        parts.indicator.textContent = imgs.length > 1 ? text("page", "Page") + " " + current + " / " + imgs.length : "";
+        parts.indicator.textContent = imgs.length > 1 ? text("page", "Page") + " " + shown + " / " + imgs.length : "";
     }
 
     function addPage(n, src) {
         var img = document.createElement("img");
-        img.className = "doc-viewer__img";
+        img.className = "mp-viewer__img is-loading";
         img.alt = text("page", "Page") + " " + n;
         img.setAttribute("data-page", String(n));
         img.setAttribute("data-src", src);
-        // Until the picture is there the slot has roughly the height of an A4 page.
-        img.style.aspectRatio = "1 / 1.414";
-        img.addEventListener("load", function () { img.style.aspectRatio = ""; });
+        // Until the picture is there the slot has roughly the height of an A4 page (.is-loading).
+        img.addEventListener("load", function () { img.classList.remove("is-loading"); });
         parts.pages.appendChild(img);
         if (observer) { observer.observe(img); } else { img.src = src; }
     }
@@ -268,11 +248,11 @@
     function showMessage(message, token) {
         parts.pages.innerHTML = "";
         var box = document.createElement("div");
-        box.className = "doc-viewer__message";
+        box.className = "mp-viewer__message";
         var p = document.createElement("p");
         p.textContent = message;
         var a = document.createElement("a");
-        a.className = "btn btn--primary";
+        a.className = "mat-btn mat-btn--primary";
         a.href = "/Documents/" + token + "/download";
         a.textContent = text("download", "Download");
         box.appendChild(p);
@@ -280,7 +260,7 @@
         parts.pages.appendChild(box);
     }
 
-    function open(options) {
+    function open(options, opener) {
         if (!options || !options.token) { return; }
         if (!dialog) { build(); }
         var token = options.token;
@@ -310,8 +290,7 @@
             }, { root: parts.scroll, rootMargin: "100% 0px" });
         }
 
-        document.documentElement.classList.add("has-viewer");
-        dialog.showModal();
+        window.MatUi.dialog.open(dialog, opener);
 
         fetch("/Documents/" + token + "/pages", { credentials: "same-origin" })
             .then(function (r) { return r.ok ? r.json() : null; })
@@ -338,7 +317,7 @@
         if (!el || !(isPhone() || isStandalone())) { return; }
         event.preventDefault();
         event.stopImmediatePropagation();
-        open({ token: el.getAttribute("data-viewer-token"), title: el.getAttribute("data-viewer-title") || "" });
+        open({ token: el.getAttribute("data-viewer-token"), title: el.getAttribute("data-viewer-title") || "" }, el);
     }, true);
 
     // The buttons beside the desktop preview (the dialog of the document list, the document page).
@@ -346,14 +325,14 @@
         var el = event.target && event.target.closest ? event.target.closest("[data-doc-share]") : null;
         if (!el) { return; }
         event.preventDefault();
-        shareDocument({ token: el.getAttribute("data-doc-token"), title: el.getAttribute("data-doc-title") || "", file: null, host: el.closest("dialog") || document.body });
+        shareDocument({ token: el.getAttribute("data-doc-token"), title: el.getAttribute("data-doc-title") || "", file: null });
     });
 
     window.MatPaperViewer = {
         open: open,
         isPhone: isPhone,
         share: function (options) {
-            if (options && options.token) { shareDocument({ token: options.token, title: options.title || "", file: null, host: options.host || document.body }); }
+            if (options && options.token) { shareDocument({ token: options.token, title: options.title || "", file: null }); }
         }
     };
 })();

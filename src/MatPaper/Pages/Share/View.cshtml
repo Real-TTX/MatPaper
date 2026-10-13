@@ -4,18 +4,18 @@
     var title = Model.Document!.Title;
     ViewData["Title"] = title;
     ViewData["Breadcrumb"] = title;
-    // A document title is not a translatable path — keep it verbatim in the header.
+    // A document title is not a translatable path - keep it verbatim in the header.
     ViewData["BreadcrumbLiteral"] = true;
-    ViewData["ShellClass"] = "auth-shell--wide";
+    ViewData["ShellClass"] = "mp-auth--wide";
 }
 
-<div class="share-view">
-    <div class="share-view__header">
-        <h1 class="share-view__title">@title</h1>
-        <a class="btn btn--primary" href="/Share/@Model.Token/file?download=true">@L["Download"]</a>
+<div class="mat-stack">
+    <div class="mat-row mat-row--between">
+        <span class="mat-muted">@L["Shared with you"]</span>
+        <mp-button variant="primary" href="@($"/Share/{Model.Token}/file?download=true")" icon="download">@L["Download"]</mp-button>
     </div>
 
-    <div class="share-view__frame">
+    <div class="mp-share__frame">
         @if (Model.IsImage)
         {
             <img src="/Share/@Model.Token/file" alt="@title" />

@@ -66,8 +66,11 @@ public class QuickCreateModel : PageModel
     private static List<object> Describe(string? text, List<(long Id, string Name)> known)
         => CorrespondentSuggester.Suggest(text).Select(name =>
         {
+            // the toolkit's picker reads { value } for an entry that exists and { name } for a name it can create
             var hit = known.Cast<(long Id, string Name)?>().FirstOrDefault(k => CorrespondentSuggester.SameName(k!.Value.Name, name));
-            return (object)new { name, id = hit?.Id, existing = hit?.Name };
+            return hit is { } existing
+                ? (object)new { value = existing.Id.ToString(global::System.Globalization.CultureInfo.InvariantCulture), name = existing.Name }
+                : new { name };
         }).ToList();
 
     public async Task<IActionResult> OnPostAsync(string kind, string name)

@@ -12,27 +12,27 @@
         _ => L["Upload"].Value
     };
 }
-<span class="inbox-item__meta">
-    <span class="badge badge--muted">@originLabel</span>
+<span class="mp-inbox-item__meta">
+    <span class="mat-pill mat-pill--plain">@originLabel</span>
     @if (row.OcrState == OcrState.Pending)
     {
-        <span class="badge badge--muted">@L["Processing…"]</span>
+        <span class="mat-pill mat-pill--busy">@L["Processing…"]</span>
     }
     else if (row.OcrState == OcrState.Failed)
     {
-        <span class="badge badge--off">@L["OCR failed"]</span>
+        <span class="mat-pill mat-pill--error">@L["OCR failed"]</span>
     }
     else if (row.OcrState == OcrState.Deferred)
     {
-        <span class="badge badge--muted">@L["Not analyzed yet"]</span>
+        <span class="mat-pill mat-pill--plain">@L["Not analyzed yet"]</span>
     }
     @if (m.AsnEnabled && row.ArchiveSerialNumber is long asn)
     {
-        <span class="badge badge--muted" title='@L["Archive number"]'>@m.AsnText(asn)</span>
+        <span class="mat-pill mat-pill--plain mat-mono" data-tip='@L["Archive number"]'>@m.AsnText(asn)</span>
     }
     @if (m.IsAdmin && m.AllOwners && row.OwnerName != null)
     {
-        <span class="badge badge--muted">@row.OwnerName</span>
+        <span class="mat-pill mat-pill--plain">@row.OwnerName</span>
     }
-    <span title="@row.OriginalFileName">@Fmt.Date(row.AddedDate)</span>
+    <span class="mat-muted" title="@row.OriginalFileName">@Fmt.Date(row.AddedDate)</span>
 </span>

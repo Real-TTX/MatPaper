@@ -141,20 +141,32 @@ public sealed class ThemeService(AppConfig config, CurrentUser currentUser, AppD
             return fallback;
         }
 
-        var own = await db.Users
-            .AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => new { u.ThemeMode, u.ThemeScheme, u.ThemeAccent })
-            .FirstOrDefaultAsync(ct);
+        // The page of an error is drawn with this too: when the database is down the instance default is a fine look.
+        (string? ThemeMode, string? ThemeScheme, string? ThemeAccent)? own;
+        try
+        {
+            var row = await db.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => new { u.ThemeMode, u.ThemeScheme, u.ThemeAccent })
+                .FirstOrDefaultAsync(ct);
+            own = row is null ? null : (row.ThemeMode, row.ThemeScheme, row.ThemeAccent);
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            return fallback;
+        }
+
         if (own is null)
         {
             return fallback;
         }
 
+        var (mode, scheme, accent) = own.Value;
         return new ThemeChoice(
-            ThemeCatalog.IsMode(own.ThemeMode) ? own.ThemeMode! : fallback.Mode,
-            ThemeCatalog.IsScheme(own.ThemeScheme) ? own.ThemeScheme! : fallback.Scheme,
-            ThemeCatalog.IsAccent(own.ThemeAccent) ? own.ThemeAccent! : fallback.Accent,
-            UserHasMode: ThemeCatalog.IsMode(own.ThemeMode));
+            ThemeCatalog.IsMode(mode) ? mode! : fallback.Mode,
+            ThemeCatalog.IsScheme(scheme) ? scheme! : fallback.Scheme,
+            ThemeCatalog.IsAccent(accent) ? accent! : fallback.Accent,
+            UserHasMode: ThemeCatalog.IsMode(mode));
     }
 }

@@ -148,14 +148,14 @@ public sealed class PickerTagHelper : TagHelper
         foreach (SelectListItem item in items)
         {
             html.Append($"<button type=\"button\" class=\"mat-picker__option\" data-value=\"{Enc(item.Value)}\"");
-            if (item.Disabled) { html.Append(" disabled"); }
-            html.Append('>');
+            // a colour a user chose shows as a dot before the name (the toolkit's data-colour, COLOR-10)
             if (Colours is not null && item.Value is not null && Colours.TryGetValue(item.Value, out var colour) && !string.IsNullOrEmpty(colour))
             {
-                html.Append($"<span class=\"mat-dot\" data-colour=\"{Enc(colour)}\" aria-hidden=\"true\"></span>");
+                html.Append($" data-colour=\"{Enc(colour)}\"");
             }
 
-            html.Append(Enc(item.Text)).Append("</button>");
+            if (item.Disabled) { html.Append(" disabled"); }
+            html.Append('>').Append(Enc(item.Text)).Append("</button>");
         }
 
         html.Append("</div></div>");

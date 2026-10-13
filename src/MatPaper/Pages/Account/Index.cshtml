@@ -5,53 +5,80 @@
     Layout = "_Layout";
     ViewData["Breadcrumb"] = L["Account"].Value;
     ViewData["BreadcrumbLiteral"] = true;
+    ViewData["Width"] = "narrow";
+
+    var uiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 
-<partial name="_AccountTabs" model="@("profile")" />
+<div class="mat-stack">
+    <partial name="_AccountTabs" model='"profile"' />
 
-<form class="form" method="post" asp-page-handler="Profile">
-    @Html.AntiForgeryToken()
-    <section class="form-section">
-    <h2 class="form-section__title">@L["Profile"]</h2>
-    <dl class="task-facts">
-        <dt>@L["Username"]</dt>
-        <dd>@Model.Username</dd>
-        @if (!string.IsNullOrEmpty(Model.RoleName))
-        {
-            <dt>@L["Role"]</dt>
-            <dd>@Model.RoleName</dd>
-        }
-    </dl>
-    <mp-field asp-for="Profile.DisplayName" label='@L["Display name"]' autocomplete="name" />
-    <mp-field asp-for="Profile.Email" label='@L["Email"]' autocomplete="email" />
-    <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Save"]</mp-button>
-    </mp-button-row>
-    </section>
-</form>
+    <form method="post" asp-page-handler="Profile" class="mat-form" novalidate>
+        @{ ViewData["SummaryPrefix"] = "Profile"; }
+        <partial name="_ValidationSummary" />
 
-<form class="form" method="post" action="/Account/Language">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="returnUrl" value="/Account" />
-    <section class="form-section">
-        <h2 class="form-section__title">@L["Language"]</h2>
-        @{ var uiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName; }
-        <div class="lang-switch lang-switch--inline" role="group" aria-label='@L["Language"]'>
-            <button type="submit" name="culture" value="de-DE" class="lang-switch__btn@(uiCulture == "de" ? " is-active" : "")">Deutsch</button>
-            <button type="submit" name="culture" value="en-US" class="lang-switch__btn@(uiCulture == "en" ? " is-active" : "")">English</button>
+        <div class="mat-card">
+            <div class="mat-card__head">
+                <mp-icon name="user" />
+                <h2 class="mat-card__title">@L["Profile"]</h2>
+            </div>
+            <div class="mat-card__body mat-stack">
+                <dl class="mat-kv">
+                    <dt>@L["Username"]</dt>
+                    <dd>@Model.Username</dd>
+                    @if (!string.IsNullOrEmpty(Model.RoleName))
+                    {
+                        <dt>@L["Role"]</dt>
+                        <dd>@Model.RoleName</dd>
+                    }
+                </dl>
+                <div class="mat-form__grid">
+                    <mp-field asp-for="Profile.DisplayName" label='@L["Display name"]' autocomplete="name" />
+                    <mp-field asp-for="Profile.Email" kind="email" label='@L["Email"]' autocomplete="email" />
+                </div>
+            </div>
         </div>
-    </section>
-</form>
 
-<form class="form" method="post" asp-page-handler="Password">
-    @Html.AntiForgeryToken()
-    <section class="form-section">
-    <h2 class="form-section__title">@L["Change password"]</h2>
-    <mp-field asp-for="Password.Current" kind="password" label='@L["Current password"]' autocomplete="current-password" />
-    <mp-field asp-for="Password.New" kind="password" label='@L["New password"]' autocomplete="new-password" placeholder='@L["At least 8 characters"]' />
-    <mp-field asp-for="Password.Confirm" kind="password" label='@L["Confirm password"]' autocomplete="new-password" />
-    <mp-button-row>
-        <mp-button variant="primary" type="submit">@L["Change password"]</mp-button>
-    </mp-button-row>
-    </section>
-</form>
+        <mp-button-row>
+            <mp-button variant="primary" icon="save">@L["Save"]</mp-button>
+        </mp-button-row>
+    </form>
+
+    <form method="post" action="/Account/Language" class="mat-card">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="/Account" />
+        <div class="mat-card__head">
+            <mp-icon name="globe" />
+            <h2 class="mat-card__title">@L["Language"]</h2>
+        </div>
+        <div class="mat-card__body">
+            <div class="mat-seg" role="group" aria-label='@L["Language"]'>
+                <button type="submit" name="culture" value="de-DE" class="mat-seg__btn" aria-pressed="@(uiCulture == "de" ? "true" : "false")">Deutsch</button>
+                <button type="submit" name="culture" value="en-US" class="mat-seg__btn" aria-pressed="@(uiCulture == "en" ? "true" : "false")">English</button>
+            </div>
+        </div>
+    </form>
+
+    <form method="post" asp-page-handler="Password" class="mat-form" novalidate>
+        @{ ViewData["SummaryPrefix"] = "Password"; }
+        <partial name="_ValidationSummary" />
+
+        <div class="mat-card">
+            <div class="mat-card__head">
+                <mp-icon name="lock" />
+                <h2 class="mat-card__title">@L["Change password"]</h2>
+            </div>
+            <div class="mat-card__body mat-stack">
+                <mp-field asp-for="Password.Current" kind="password" label='@L["Current password"]' autocomplete="current-password" />
+                <div class="mat-form__grid">
+                    <mp-field asp-for="Password.New" kind="password" label='@L["New password"]' autocomplete="new-password" placeholder='@L["At least 8 characters"]' />
+                    <mp-field asp-for="Password.Confirm" kind="password" label='@L["Confirm password"]' autocomplete="new-password" />
+                </div>
+            </div>
+        </div>
+
+        <mp-button-row>
+            <mp-button variant="primary" icon="key">@L["Change password"]</mp-button>
+        </mp-button-row>
+    </form>
+</div>

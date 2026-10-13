@@ -6,195 +6,152 @@
     var row = Model.Row;
     var suffix = row.Id.ToString();
     var processing = row.OcrState == OcrState.Pending;
-    var failed = row.OcrState == OcrState.Failed;
     var deferred = row.OcrState == OcrState.Deferred;
     var found = !row.IsStaged;
     var ignored = m.ShowingIgnored;
     var selectedLocation = row.StorageLocationId ?? m.DefaultLocationId;
-
-    var originLabel = row.Origin switch
-    {
-        DocumentOrigin.Mail => L["E-mail"].Value,
-        DocumentOrigin.ImportFolder => L["Import folder"].Value,
-        DocumentOrigin.CameraScan => L["Camera scan"].Value,
-        DocumentOrigin.StorageScan => L["Found"].Value,
-        _ => L["Upload"].Value
-    };
+    var back = ignored ? "%2FInbox%3FState%3Dignored" : "%2FInbox";
+    var itemClass = "mat-card mp-inbox-item" + (processing ? " is-processing" : string.Empty) + (found ? " mp-inbox-item--found" : string.Empty);
 }
 
 @* An ignored row is read-only: the only thing to do with it is put it back into the
    inbox. It deliberately carries no Confirm form, no title field and no selection
    checkbox, so nothing can archive it or overwrite its metadata by accident. *@
 
-<article class="inbox-item @(processing ? "is-processing" : string.Empty) @(found ? "inbox-item--found" : string.Empty)"
-         data-doc-id="@row.Id" data-ocr="@row.OcrState.ToString().ToLowerInvariant()">
-    @if (!ignored)
-    {
-        <form method="post" asp-page-handler="Confirm"
-              asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"
-              asp-route-Folder="@m.Folder" asp-route-AllOwners="@m.AllOwners" asp-route-Sort="@m.Sort" asp-route-PageNumber="@m.PageNumber">
-            <input type="hidden" name="id" value="@row.Id" />
+<article class="@itemClass" data-doc-id="@row.Id" data-ocr="@row.OcrState.ToString().ToLowerInvariant()">
+    <div class="mat-card__body">
+        @if (!ignored)
+        {
+            <form method="post" asp-page-handler="Confirm" class="mp-inbox-form"
+                  asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"
+                  asp-route-Folder="@m.Folder" asp-route-AllOwners="@m.AllOwners" asp-route-Sort="@m.Sort" asp-route-PageNumber="@m.PageNumber">
+                <input type="hidden" name="id" value="@row.Id" />
 
-            <div class="inbox-item__head">
-                <label class="inbox-item__pick">
-                    <input type="checkbox" name="selectedIds" value="@row.Id" form="inbox-bulk"
-                           aria-label='@L["Select \"{0}\"", row.Title]' />
-                </label>
+                <div class="mp-inbox-item__head">
+                    <label class="mp-inbox-item__pick">
+                        <input type="checkbox" name="selectedIds" value="@row.Id" form="inbox-bulk" data-select-row
+                               aria-label='@L["Select \"{0}\"", row.Title]' />
+                    </label>
 
-                <partial name="_RowThumb" model="Model" />
+                    <partial name="_RowThumb" model="Model" />
 
-                <input class="form-control inbox-item__title" type="text" name="title" value="@row.Title" aria-label='@L["Title"]' />
+                    <input class="mat-input mp-inbox-item__title" type="text" name="title" value="@row.Title" aria-label='@L["Title"]' />
 
-                <partial name="_RowBadges" model="Model" />
-            </div>
+                    <partial name="_RowBadges" model="Model" />
+                </div>
 
-            <partial name="_RowPath" model="Model" />
+                <partial name="_RowPath" model="Model" />
 
-            @* Every field sits in a cell of one grid, labels on one line, controls of one height. *@
-            <div class="inbox-grid">
-                <div class="inbox-field inbox-field--corr">
+                @* Every field sits in a cell of one grid, labels on one line, controls of one height. *@
+                <div class="mp-inbox-grid">
                     <mp-picker asp-for="CorrespondentId" label='@L["Correspondent"]' asp-items="m.CorrespondentOptions"
                                value="@(row.CorrespondentId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]'
-                               suggest-doc="@(!processing && !deferred ? row.Id : (long?)null)" />
-                </div>
-                <div class="inbox-field">
+                               suggest-doc="@(!processing && !deferred ? row.Id : (long?)null)" class="mp-inbox-field--corr" />
                     <mp-picker asp-for="DocumentTypeId" label='@L["Type"]' asp-items="m.DocumentTypeOptions"
                                value="@(row.DocumentTypeId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                </div>
-                <div class="inbox-field">
-                    <div class="form-row">
-                        <label for="documentDate_@suffix">@L["Date"]</label>
-                        <input class="form-control" type="date" id="documentDate_@suffix" name="documentDate"
-                               value="@Fmt.InputDate(row.DocumentDate)" />
-                    </div>
-                </div>
+                    <mp-date name="documentDate" id="@($"documentDate_{suffix}")" value="row.DocumentDate" label='@L["Date"]' />
 
-                <button type="button" class="inbox-more-toggle" aria-expanded="false">
-                    <span>@L["More fields"]</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                </button>
+                    <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm mp-inbox-more-toggle" data-inbox-more aria-expanded="false">
+                        <span>@L["More fields"]</span>
+                        <mp-icon name="chevron-down" />
+                    </button>
 
-                <div class="inbox-more">
-                    <div class="inbox-field">
+                    <div class="mp-inbox-more">
                         <mp-picker asp-for="ProjectId" label='@L["Project"]' asp-items="m.ProjectOptions"
                                    value="@(row.ProjectId?.ToString())" id-suffix="@suffix" placeholder='@L["— None —"]' />
-                    </div>
-                    <div class="inbox-field inbox-field--wide">
                         <mp-picker asp-for="TagIds" label='@L["Tags"]' asp-items="m.TagItems" multiple="true"
-                                   value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder='@L["Add tags…"]' />
-                    </div>
+                                   value="@string.Join(",", row.TagIds)" id-suffix="@suffix" placeholder='@L["Add tags…"]' class="mp-inbox-field--wide" />
 
-                    @if (found)
-                    {
-                        <div class="inbox-field inbox-field--wide">
-                            <div class="form-row">
-                                <label>@L["Filing"]</label>
-                                <div class="checkbox-group inbox-radios">
-                                    <label class="form-check">
-                                        <input type="radio" name="mode" value="keep" checked />
-                                        <span>@L["Keep in place"]</span>
-                                    </label>
-                                    <label class="form-check">
-                                        <input type="radio" name="mode" value="refile" />
-                                        <span>@L["Re-file by template"]</span>
-                                    </label>
+                        @if (found)
+                        {
+                            <fieldset class="mat-field mat-fieldset mp-inbox-field--wide">
+                                <legend class="mat-label">@L["Filing"]</legend>
+                                <div class="mat-checks mat-checks--inline mp-inbox-radios">
+                                    <label class="mat-check"><input type="radio" name="mode" value="keep" checked /><span class="mat-check__text">@L["Keep in place"]</span></label>
+                                    <label class="mat-check"><input type="radio" name="mode" value="refile" /><span class="mat-check__text">@L["Re-file by template"]</span></label>
                                 </div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="inbox-field inbox-field--wide">
-                            <div class="form-row">
-                                <label for="storageLocationId_@suffix">@L["File to"]</label>
-                                <select class="form-control" id="storageLocationId_@suffix" name="storageLocationId">
+                                <span class="mat-error" aria-live="polite"></span>
+                            </fieldset>
+                        }
+                        else
+                        {
+                            <div class="mat-field mp-inbox-field--wide">
+                                <label class="mat-label" for="storageLocationId_@suffix">@L["File to"]</label>
+                                <select class="mat-select" id="storageLocationId_@suffix" name="storageLocationId">
                                     @foreach (var loc in m.StorageLocations)
                                     {
                                         <option value="@loc.Id" selected="@(loc.Id == selectedLocation)">@loc.Name</option>
                                     }
                                 </select>
+                                <span class="mat-error" aria-live="polite"></span>
                             </div>
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
+
+                <div class="mp-inbox-item__actions">
+                    <button class="mat-btn mat-btn--primary" type="submit" disabled="@(processing || (!found && !m.HasStorage))"
+                            title='@(processing ? L["Still processing"].Value : L["Apply the values above and take the document into the archive"].Value)'>
+                        @Ui.Icon("check")<span>@L["Take into archive"]</span>
+                    </button>
+
+                    <mp-button variant="secondary" icon="eye" class="mp-inbox-view-btn" href="@($"/Documents/{row.Token}/view")" target="_blank" rel="noopener"
+                               data-viewer-token="@row.Token" data-viewer-title="@row.Title"
+                               data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="@($"/Documents/Edit?id={row.Id}&returnUrl={back}")" data-doc-preview-share="true">@L["View"]</mp-button>
+                    <mp-button variant="secondary" icon="edit" href="@($"/Documents/Edit?id={row.Id}&returnUrl=%2FInbox")">@L["Open"]</mp-button>
+
+                    @if (deferred)
+                    {
+                        <button class="mat-btn mat-btn--secondary" type="submit" form="inbox-analyze-@row.Id">@Ui.Icon("sparkles")<span>@L["Analyze now"]</span></button>
+                    }
+
+                    <span class="mp-inbox-item__tools">
+                        @if (found)
+                        {
+                            <mp-icon-button icon="eye-off" label='@L["Ignore"]' type="submit" form="inbox-ignore-@row.Id" />
+                        }
+                        else
+                        {
+                            <mp-icon-button icon="shield" label='@L["Delete and block"]' type="submit" form="inbox-block-@row.Id"
+                                            confirm='@L["Delete this document and put it on the blocklist? It is skipped when it turns up again."]' confirm-ok='@L["Delete and block"]' />
+                            <mp-icon-button icon="trash" label='@L["Delete"]' type="submit" form="inbox-delete-@row.Id" variant="danger"
+                                            confirm='@L["Delete this document? The file in the staging area is deleted as well."]' confirm-ok='@L["Delete"]' />
+                        }
+                    </span>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="mp-inbox-item__head mp-inbox-item__head--plain">
+                <partial name="_RowThumb" model="Model" />
+                <span class="mp-inbox-item__title mp-inbox-item__title--static">@row.Title</span>
+                <partial name="_RowBadges" model="Model" />
             </div>
 
-            <div class="inbox-item__actions">
-                <button class="btn btn--primary" type="submit" disabled="@(processing || (!found && !m.HasStorage))"
-                        title='@(processing ? L["Still processing"].Value : L["Apply the values above and take the document into the archive"].Value)'>
-                    @L["Take into archive"]
-                </button>
+            <partial name="_RowPath" model="Model" />
 
-                <a class="btn btn--secondary inbox-view-btn" href="/Documents/@row.Token/view" target="_blank" rel="noopener"
-                   data-viewer-token="@row.Token" data-viewer-title="@row.Title"
-                   data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="/Documents/Edit?id=@row.Id&returnUrl=@(Model.Page.ShowingIgnored ? "%2FInbox%3FState%3Dignored" : "%2FInbox")" data-doc-preview-share="true">@L["View"]</a>
-                <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox">@L["Open"]</a>
-
+            <div class="mp-inbox-item__actions">
+                <button class="mat-btn mat-btn--secondary" type="submit" form="inbox-restore-@row.Id">@Ui.Icon("restore")<span>@L["Back to the inbox"]</span></button>
+                <mp-button variant="secondary" icon="eye" class="mp-inbox-view-btn" href="@($"/Documents/{row.Token}/view")" target="_blank" rel="noopener"
+                           data-viewer-token="@row.Token" data-viewer-title="@row.Title"
+                           data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="@($"/Documents/Edit?id={row.Id}&returnUrl={back}")" data-doc-preview-share="true">@L["View"]</mp-button>
+                <mp-button variant="secondary" icon="edit" href="@($"/Documents/Edit?id={row.Id}&returnUrl=%2FInbox%3FState%3Dignored")">@L["Open"]</mp-button>
                 @if (deferred)
                 {
-                    <button class="btn btn--secondary" type="submit" form="inbox-analyze-@row.Id">@L["Analyze now"]</button>
+                    <button class="mat-btn mat-btn--secondary" type="submit" form="inbox-analyze-@row.Id">@Ui.Icon("sparkles")<span>@L["Analyze now"]</span></button>
                 }
-
-                <span class="icon-actions inbox-item__tools">
-                    @if (found)
-                    {
-                        <button class="icon-btn" type="submit" form="inbox-ignore-@row.Id" title='@L["Ignore"]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                                <path d="M1 1l22 22" />
-                            </svg>
-                        </button>
-                    }
-                    else
-                    {
-                        <button class="icon-btn" type="submit" form="inbox-block-@row.Id" title='@L["Delete and block"]'
-                                data-confirm='@L["Delete this document and put it on the blocklist? It is skipped when it turns up again."]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" />
-                            </svg>
-                        </button>
-                        <button class="icon-btn icon-btn--danger" type="submit" form="inbox-delete-@row.Id" title='@L["Delete"]'
-                                data-confirm='@L["Delete this document? The file in the staging area is deleted as well."]'>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
-                            </svg>
-                        </button>
-                    }
-                </span>
             </div>
-        </form>
-    }
-    else
-    {
-        <div class="inbox-item__head inbox-item__head--plain">
-            <partial name="_RowThumb" model="Model" />
-            <span class="inbox-item__title inbox-item__title--static">@row.Title</span>
-            <partial name="_RowBadges" model="Model" />
-        </div>
+        }
 
-        <partial name="_RowPath" model="Model" />
-
-        <div class="inbox-item__actions">
-            <button class="btn btn--secondary" type="submit" form="inbox-restore-@row.Id">@L["Back to the inbox"]</button>
-            <a class="btn btn--secondary inbox-view-btn" href="/Documents/@row.Token/view" target="_blank" rel="noopener"
-               data-viewer-token="@row.Token" data-viewer-title="@row.Title"
-                   data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="/Documents/Edit?id=@row.Id&returnUrl=@(Model.Page.ShowingIgnored ? "%2FInbox%3FState%3Dignored" : "%2FInbox")" data-doc-preview-share="true">@L["View"]</a>
-            <a class="btn btn--secondary" href="/Documents/Edit?id=@row.Id&returnUrl=%2FInbox%3FState%3Dignored">@L["Open"]</a>
-            @if (deferred)
-            {
-                <button class="btn btn--secondary" type="submit" form="inbox-analyze-@row.Id">@L["Analyze now"]</button>
-            }
-        </div>
-    }
-
-    @foreach (var handler in new[] { "Delete", "Block", "Ignore", "Restore", "Analyze" })
-    {
-        <form method="post" id="inbox-@handler.ToLowerInvariant()-@row.Id" asp-page-handler="@handler"
-              asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"
-              asp-route-Folder="@m.Folder" asp-route-State="@(ignored ? "ignored" : null)"
-              asp-route-AllOwners="@m.AllOwners" asp-route-Sort="@m.Sort" asp-route-PageNumber="@m.PageNumber">
-            <input type="hidden" name="id" value="@row.Id" />
-        </form>
-    }
+        @foreach (var handler in new[] { "Delete", "Block", "Ignore", "Restore", "Analyze" })
+        {
+            <form method="post" id="inbox-@handler.ToLowerInvariant()-@row.Id" asp-page-handler="@handler"
+                  asp-route-Search="@m.Search" asp-route-Origin="@m.Origin" asp-route-LocationId="@m.LocationId"
+                  asp-route-Folder="@m.Folder" asp-route-State="@(ignored ? "ignored" : null)"
+                  asp-route-AllOwners="@m.AllOwners" asp-route-Sort="@m.Sort" asp-route-PageNumber="@m.PageNumber">
+                <input type="hidden" name="id" value="@row.Id" />
+            </form>
+        }
+    </div>
 </article>

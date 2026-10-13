@@ -1,4 +1,4 @@
-/* MatUi main-7898260 (7cea7d10ca) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
+/* MatUi feature-matpaper-needs (f9a9a509c3) - bundled from matui.tokens.css, matui.base.css, matui.shell.css, matui.controls.css, matui.forms.css, matui.pickers.css, matui.lists.css, matui.dialogs.css, matui.layout.css, matui.apps.css */
 /* ==========================================================================
    MatUi · tokens
    The single source of the look of every Mat app. Components use only these custom properties, never a raw colour.
@@ -10,6 +10,7 @@
    - An app sets ONE colour: `--mat-app-accent` (see matui.apps.css, on <html data-app="...">). Everything else (hover,
      tint, text colour, ring) is derived from it, in both modes. The derived accent tokens are declared for
      `:root` AND `[data-app]`, so a preview inside a page (<div data-app="matcad">) gets its own accent.
+   - Colour schemes (`data-scheme` on <html>, opt-in) are at the END of this file: they change surfaces only, never an accent token.
    ========================================================================== */
 
 :root {
@@ -33,6 +34,7 @@
   --mat-text: #1f1e1b;                     /* Primary text. */
   --mat-text-muted: #5d5b55;               /* Secondary text, labels, hints (AA on every surface). */
   --mat-text-faint: #85827a;               /* Placeholders and disabled text only. Never for information. */
+  --mat-accent-text-keep: 100%;            /* Share of the accent that its text colour keeps, the rest is --mat-text: a colour scheme lowers it where its surfaces need darker links. */
 
   /* ---- Status ---- */
   --mat-danger: #d92d4a;                   /* Errors and destructive actions. */
@@ -131,7 +133,7 @@
   --mat-accent-active: color-mix(in oklab, var(--mat-accent) 74%, black); /* Primary button pressed. */
   --mat-accent-soft: color-mix(in srgb, var(--mat-accent) 11%, transparent); /* Tint: hover of ghost items, selected row. */
   --mat-accent-soft-strong: color-mix(in srgb, var(--mat-accent) 19%, transparent); /* Stronger tint: active menu item. */
-  --mat-accent-text: var(--mat-app-accent-text, color-mix(in oklab, var(--mat-accent) 78%, black)); /* Accent as text or link on a surface (AA). */
+  --mat-accent-text: color-mix(in oklab, var(--mat-app-accent-text, color-mix(in oklab, var(--mat-accent) 78%, black)) var(--mat-accent-text-keep, 100%), var(--mat-text)); /* Accent as text or link on a surface (AA). */
   --mat-on-accent: var(--mat-app-on-accent, #ffffff); /* Text on --mat-accent. */
   --mat-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mat-accent) 42%, transparent); /* Keyboard focus ring. */
   --mat-selection: color-mix(in srgb, var(--mat-accent) 28%, transparent); /* Text selection. */
@@ -192,7 +194,7 @@
   --mat-accent-active: color-mix(in oklab, var(--mat-accent) 76%, white);
   --mat-accent-soft: color-mix(in srgb, var(--mat-accent) 16%, transparent);
   --mat-accent-soft-strong: color-mix(in srgb, var(--mat-accent) 26%, transparent);
-  --mat-accent-text: color-mix(in oklab, var(--mat-accent) 78%, white);
+  --mat-accent-text: color-mix(in oklab, color-mix(in oklab, var(--mat-accent) 78%, white) var(--mat-accent-text-keep, 100%), var(--mat-text));
   --mat-on-accent: #0b1020;
   --mat-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mat-accent) 50%, transparent);
   --mat-selection: color-mix(in srgb, var(--mat-accent) 36%, transparent);
@@ -241,10 +243,186 @@
     --mat-accent-active: color-mix(in oklab, var(--mat-accent) 76%, white);
     --mat-accent-soft: color-mix(in srgb, var(--mat-accent) 16%, transparent);
     --mat-accent-soft-strong: color-mix(in srgb, var(--mat-accent) 26%, transparent);
-    --mat-accent-text: color-mix(in oklab, var(--mat-accent) 78%, white);
+    --mat-accent-text: color-mix(in oklab, color-mix(in oklab, var(--mat-accent) 78%, white) var(--mat-accent-text-keep, 100%), var(--mat-text));
     --mat-on-accent: #0b1020;
     --mat-focus-ring: 0 0 0 3px color-mix(in srgb, var(--mat-accent) 50%, transparent);
     --mat-selection: color-mix(in srgb, var(--mat-accent) 36%, transparent);
+  }
+}
+
+/* ==========================================================================
+   Colour schemes (COLOR-09). Opt-in: <html data-scheme="paper|contrast|oled">. Absent, "standard" or any other value is the look above.
+   - A scheme changes SURFACES only: the backgrounds, the lines, the text colours, the status texts where AA needs it, the shadows, the dim layer and the
+     scrollbar. It never sets an accent token, so every combination of scheme, mode, accent and app works without a rule of its own. Where its surfaces need
+     darker links it lowers --mat-accent-text-keep, the share of the accent that the colour of a link keeps (the rest is --mat-text).
+   - Written like the dark set: the light values are the scheme on its own (also while the system is light), the dark values are written TWICE (explicit and
+     system) and a unit test keeps the two identical. A scheme sets the same tokens in light and in dark, so its light values never show through in dark.
+   - oled has no light values on purpose: in light mode it is the standard look.
+   - The selectors start with :root[data-scheme=...] so that they are not read as the dark values of the base tokens (:root[data-theme="dark"]).
+   ========================================================================== */
+
+/* ---- Scheme paper: warm, slightly yellowed surfaces ---- */
+:root[data-scheme="paper"] {
+  --mat-bg: #f3eee3;
+  --mat-bg-2: #ebe5d6;
+  --mat-surface: #fcf9f2;
+  --mat-surface-2: #f7f3ea;
+  --mat-surface-3: #f1ebdf;
+  --mat-glass: #f3eee3;
+  --mat-nav-bg: #ece6d8;
+  --mat-border: rgba(90, 60, 10, .19);
+  --mat-border-strong: rgba(90, 60, 10, .36);
+  --mat-text: #2b2620;
+  --mat-text-muted: #675d4f;
+  --mat-text-faint: #8c8170;
+  --mat-success-text: #0a7340;
+  --mat-accent-text-keep: 75%;
+}
+
+:root[data-scheme="paper"][data-theme="dark"] {
+  --mat-bg: #1b1814;
+  --mat-bg-2: #1f1c17;
+  --mat-surface: #23201a;
+  --mat-surface-2: #28251f;
+  --mat-surface-3: #2c2821;
+  --mat-glass: #1b1814;
+  --mat-nav-bg: #161310;
+  --mat-border: rgba(255, 240, 214, .10);
+  --mat-border-strong: rgba(255, 240, 214, .22);
+  --mat-text: #ece4d6;
+  --mat-text-muted: #ab9f8b;
+  --mat-text-faint: #7f7565;
+  --mat-success-text: #72efbb;
+  --mat-accent-text-keep: 85%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-scheme="paper"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #1b1814;
+    --mat-bg-2: #1f1c17;
+    --mat-surface: #23201a;
+    --mat-surface-2: #28251f;
+    --mat-surface-3: #2c2821;
+    --mat-glass: #1b1814;
+    --mat-nav-bg: #161310;
+    --mat-border: rgba(255, 240, 214, .10);
+    --mat-border-strong: rgba(255, 240, 214, .22);
+    --mat-text: #ece4d6;
+    --mat-text-muted: #ab9f8b;
+    --mat-text-faint: #7f7565;
+    --mat-success-text: #72efbb;
+    --mat-accent-text-keep: 85%;
+  }
+}
+
+/* ---- Scheme contrast: pure white and pure black, strong lines instead of shadows, near-black and near-white muted text ---- */
+:root[data-scheme="contrast"] {
+  --mat-bg: #ffffff;
+  --mat-bg-2: #f2f2f2;
+  --mat-surface: #ffffff;
+  --mat-surface-2: #f5f5f5;
+  --mat-surface-3: #ebebeb;
+  --mat-glass: #ffffff;
+  --mat-nav-bg: #ffffff;
+  --mat-overlay: rgba(0, 0, 0, .7);
+  --mat-border: #5c5c5c;
+  --mat-border-strong: #1f1f1f;
+  --mat-text: #000000;
+  --mat-text-muted: #333333;
+  --mat-text-faint: #595959;
+  --mat-danger-text: #8f0f26;
+  --mat-success-text: #07592f;
+  --mat-warning-text: #6e4000;
+  --mat-info-text: #0f3f9a;
+  --mat-shadow-1: none;
+  --mat-shadow-2: 0 0 0 1px #1f1f1f;
+  --mat-shadow-3: 0 0 0 1px #1f1f1f;
+  --mat-scroll-thumb: rgba(0, 0, 0, .6);
+  --mat-accent-text-keep: 90%;
+}
+
+:root[data-scheme="contrast"][data-theme="dark"] {
+  --mat-bg: #000000;
+  --mat-bg-2: #0d0d0d;
+  --mat-surface: #000000;
+  --mat-surface-2: #0f0f0f;
+  --mat-surface-3: #1c1c1c;
+  --mat-glass: #000000;
+  --mat-nav-bg: #000000;
+  --mat-overlay: rgba(0, 0, 0, .8);
+  --mat-border: #9a9a9a;
+  --mat-border-strong: #e6e6e6;
+  --mat-text: #ffffff;
+  --mat-text-muted: #d6d6d6;
+  --mat-text-faint: #b0b0b0;
+  --mat-danger-text: #ffc2cc;
+  --mat-success-text: #9ff7cf;
+  --mat-warning-text: #ffe08a;
+  --mat-info-text: #c9daff;
+  --mat-shadow-1: none;
+  --mat-shadow-2: 0 0 0 1px #e6e6e6;
+  --mat-shadow-3: 0 0 0 1px #e6e6e6;
+  --mat-scroll-thumb: rgba(255, 255, 255, .6);
+  --mat-accent-text-keep: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-scheme="contrast"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #000000;
+    --mat-bg-2: #0d0d0d;
+    --mat-surface: #000000;
+    --mat-surface-2: #0f0f0f;
+    --mat-surface-3: #1c1c1c;
+    --mat-glass: #000000;
+    --mat-nav-bg: #000000;
+    --mat-overlay: rgba(0, 0, 0, .8);
+    --mat-border: #9a9a9a;
+    --mat-border-strong: #e6e6e6;
+    --mat-text: #ffffff;
+    --mat-text-muted: #d6d6d6;
+    --mat-text-faint: #b0b0b0;
+    --mat-danger-text: #ffc2cc;
+    --mat-success-text: #9ff7cf;
+    --mat-warning-text: #ffe08a;
+    --mat-info-text: #c9daff;
+    --mat-shadow-1: none;
+    --mat-shadow-2: 0 0 0 1px #e6e6e6;
+    --mat-shadow-3: 0 0 0 1px #e6e6e6;
+    --mat-scroll-thumb: rgba(255, 255, 255, .6);
+    --mat-accent-text-keep: 100%;
+  }
+}
+
+/* ---- Scheme oled: dark mode only. A black page and menu, near-black surfaces (in light mode the standard look) ---- */
+:root[data-scheme="oled"][data-theme="dark"] {
+  --mat-bg: #000000;
+  --mat-bg-2: #050505;
+  --mat-surface: #0a0a0a;
+  --mat-surface-2: #101010;
+  --mat-surface-3: #161616;
+  --mat-glass: #000000;
+  --mat-nav-bg: #000000;
+  --mat-border: rgba(255, 255, 255, .12);
+  --mat-border-strong: rgba(255, 255, 255, .26);
+  --mat-text: #e8e8e8;
+  --mat-text-muted: #9c9c9c;
+  --mat-text-faint: #6b6b6b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-scheme="oled"]:not([data-theme="light"]):not([data-theme="dark"]) {
+    --mat-bg: #000000;
+    --mat-bg-2: #050505;
+    --mat-surface: #0a0a0a;
+    --mat-surface-2: #101010;
+    --mat-surface-3: #161616;
+    --mat-glass: #000000;
+    --mat-nav-bg: #000000;
+    --mat-border: rgba(255, 255, 255, .12);
+    --mat-border-strong: rgba(255, 255, 255, .26);
+    --mat-text: #e8e8e8;
+    --mat-text-muted: #9c9c9c;
+    --mat-text-faint: #6b6b6b;
   }
 }
 
@@ -956,6 +1134,12 @@ a.mat-card:hover, .mat-card--link:hover { border-color: var(--mat-text-faint); b
 
 .mat-tag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--mat-radius-xs); background: var(--mat-surface-3); color: var(--mat-text-muted); font-size: var(--mat-fs-xs); font-weight: 600; }
 
+/* A colour a user chose is a mark next to the name (COLOR-10): data-colour="#rrggbb" on a tag, a dot or an icon, which matui.js writes into --mat-swatch (and marks is-coloured). The text of a tag
+   stays muted and readable whatever the colour; a thin ring in the colour of the text keeps a white dot visible in light mode and a black one in dark mode. Without a valid colour: the neutral look. */
+.mat-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch, var(--mat-text-faint)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 35%, transparent); }
+.mat-tag[data-colour].is-coloured::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 35%, transparent); }
+.mat-icon[data-colour] { color: var(--mat-swatch); }
+
 .mat-chips { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); }
 .mat-chip {
   display: inline-flex; align-items: center; gap: var(--mat-space-2);
@@ -1572,6 +1756,28 @@ input[type="file"].mat-input { padding: 6px; }
   .mat-picker__search { padding: var(--mat-space-3) var(--mat-space-3) 0; }
   .mat-picker__search > .mat-icon { left: calc(var(--mat-space-3) + var(--mat-space-3)); top: calc(var(--mat-space-3) + (var(--mat-control-h) - 1.25em) / 2); }
 }
+
+/* ---- Select: create what is missing, and suggestions (FORM-16) ---- */
+/* "Create <text>" is the first row of the list, a suggested name another: the plus where a picture would be, the words in the colour of a link. While the request runs the row is busy
+   (aria-busy) and a ring turns where the plus was. A message under the search field says why it did not work. */
+.mat-picker__create, .mat-picker__option--new { color: var(--mat-accent-text); }
+.mat-picker__create .mat-picker__name, .mat-picker__option--new .mat-picker__name { font-weight: 650; }
+.mat-picker__create[hidden] { display: none; }
+.mat-picker__plus { flex: none; display: grid; place-items: center; width: 22px; height: 22px; }
+.mat-picker__option.is-busy { cursor: progress; opacity: .75; }
+.mat-picker__option.is-busy .mat-picker__plus > .mat-icon { display: none; }
+.mat-picker__option.is-busy .mat-picker__plus::after { content: ""; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: mat-spin .7s linear infinite; }
+.mat-picker__create-msg { margin: 0; padding: var(--mat-space-1) var(--mat-space-4) var(--mat-space-2); color: var(--mat-danger-text); }
+.mat-picker__create-msg[hidden] { display: none; }
+/* Suggestions: a group with its heading above the whole list, which has the heading "All". The closed button counts them in the colour of a link. */
+.mat-picker__group { display: flex; flex-direction: column; gap: 2px; }
+.mat-picker__group[hidden] { display: none; }
+.mat-picker__group-head { padding: var(--mat-space-2) var(--mat-space-3) var(--mat-space-1); font-size: var(--mat-fs-sm); font-weight: 650; color: var(--mat-text-muted); }
+.mat-picker__group-head--all { margin-top: var(--mat-space-2); }
+.mat-picker__group-head[hidden] { display: none; }
+.mat-picker__value.is-suggest { color: var(--mat-accent-text); }
+/* An option with a colour (data-colour, COLOR-10) has the dot before its name; the closed field shows it too. */
+.mat-picker__option[data-colour].is-coloured::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mat-swatch); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-text) 35%, transparent); }
 
 /* ---- Calendar: a date, a period ---- */
 .mat-cal { display: flex; flex-direction: column; gap: var(--mat-space-3); min-width: 0; }

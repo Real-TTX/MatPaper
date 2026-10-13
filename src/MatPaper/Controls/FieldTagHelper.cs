@@ -21,7 +21,7 @@ namespace MatPaper.Controls;
 /// Dependent visibility: <c>show-when-field</c> + <c>show-when-value</c> write the toolkit's <c>data-show-if</c> / <c>data-show-value</c> on the field; a
 /// field that is hidden is disabled and posts nothing (FORM-04).
 /// Folder picker (text kind): <c>browse</c> names the scope and <c>browse-label</c> the text of the button that opens the shared dialog for this input
-/// (browse-dialog.js).
+/// (browse-dialog.js). Buttons written as the content of the tag (text, number kinds) stand at the end of the input as one group with it.
 /// </summary>
 [HtmlTargetElement("mp-field", Attributes = ForAttributeName)]
 public sealed class FieldTagHelper : TagHelper
@@ -202,20 +202,28 @@ public sealed class FieldTagHelper : TagHelper
                 // The model value is passed explicitly: GenerateTextBox does NOT fall back to ModelExplorer.Model when value is null, so edit forms would render empty.
                 var textBox = _generator.GenerateTextBox(ViewContext, For.ModelExplorer, For.Name, value: For.Model, format: null, new Dictionary<string, object> { ["type"] = InputType(kind) });
                 string box = Render(textBox, "mat-input", required, id, error);
-                if (string.IsNullOrEmpty(Browse))
+
+                // Buttons written inside the tag stand at the end of the input, as one group with it (the camera that reads a number from a label).
+                string addon = (await output.GetChildContentAsync()).GetContent().Trim();
+                if (string.IsNullOrEmpty(Browse) && addon.Length == 0)
                 {
                     html.Append(box);
                 }
                 else
                 {
                     html.Append("<div class=\"mat-input-group\">").Append(box);
-                    html.Append($"<button type=\"button\" class=\"mat-btn mat-btn--secondary\" data-browse=\"{Enc(Browse)}\" data-browse-target=\"{Enc(id)}\"");
-                    if (!string.IsNullOrEmpty(BrowseRoot))
+                    if (!string.IsNullOrEmpty(Browse))
                     {
-                        html.Append($" data-browse-root=\"{Enc(BrowseRoot)}\"");
+                        html.Append($"<button type=\"button\" class=\"mat-btn mat-btn--secondary\" data-browse=\"{Enc(Browse)}\" data-browse-target=\"{Enc(id)}\"");
+                        if (!string.IsNullOrEmpty(BrowseRoot))
+                        {
+                            html.Append($" data-browse-root=\"{Enc(BrowseRoot)}\"");
+                        }
+
+                        html.Append($">{Ui.IconHtml("folder-open")}<span>{Enc(string.IsNullOrEmpty(BrowseLabel) ? "…" : BrowseLabel)}</span></button>");
                     }
 
-                    html.Append($">{Ui.IconHtml("folder-open")}<span>{Enc(string.IsNullOrEmpty(BrowseLabel) ? "…" : BrowseLabel)}</span></button></div>");
+                    html.Append(addon).Append("</div>");
                 }
 
                 break;

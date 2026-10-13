@@ -1239,4 +1239,58 @@
   <data name="Free: no document has this number yet." xml:space="preserve"><value>Frei: Noch kein Dokument hat diese Nummer.</value></data>
   <data name="Belongs to &quot;{0}&quot; already" xml:space="preserve"><value>Gehört schon zu „{0}“</value></data>
   <data name="No document has this number." xml:space="preserve"><value>Kein Dokument hat diese Nummer.</value></data>
+  <data name="{0} to {1} of {2}" xml:space="preserve"><value>{0} bis {1} von {2}</value></data>
+  <data name="{0} tools" xml:space="preserve"><value>{0}: Werkzeuge</value></data>
+  <data name="Add document" xml:space="preserve"><value>Dokument hinzufügen</value></data>
+  <data name="Administration" xml:space="preserve"><value>Verwaltung</value></data>
+  <data name="Archive" xml:space="preserve"><value>Archiv</value></data>
+  <data name="Automation" xml:space="preserve"><value>Automatisierung</value></data>
+  <data name="Change the search or the filters, or reset them." xml:space="preserve"><value>Ändere die Suche oder die Filter oder setze sie zurück.</value></data>
+  <data name="Clear search" xml:space="preserve"><value>Suche leeren</value></data>
+  <data name="Close the menu" xml:space="preserve"><value>Menü schließen</value></data>
+  <data name="Copied" xml:space="preserve"><value>Kopiert</value></data>
+  <data name="Copy" xml:space="preserve"><value>Kopieren</value></data>
+  <data name="Default order" xml:space="preserve"><value>Standardreihenfolge</value></data>
+  <data name="Document viewer" xml:space="preserve"><value>Dokumentansicht</value></data>
+  <data name="Drag &amp; drop files here, or click to choose" xml:space="preserve"><value>Dateien hierher ziehen oder zum Auswählen klicken</value></data>
+  <data name="Edit document type" xml:space="preserve"><value>Dokumenttyp bearbeiten</value></data>
+  <data name="Edit user" xml:space="preserve"><value>Benutzer bearbeiten</value></data>
+  <data name="Input" xml:space="preserve"><value>Eingabe</value></data>
+  <data name="MatPaper, start page" xml:space="preserve"><value>MatPaper, Startseite</value></data>
+  <data name="Menu" xml:space="preserve"><value>Menü</value></data>
+  <data name="Menus" xml:space="preserve"><value>Menüs</value></data>
+  <data name="needs attention" xml:space="preserve"><value>braucht Aufmerksamkeit</value></data>
+  <data name="Notice" xml:space="preserve"><value>Hinweis</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Only administrators can add this." xml:space="preserve"><value>Das dürfen nur Administratoren anlegen.</value></data>
+  <data name="Open the menu" xml:space="preserve"><value>Menü öffnen</value></data>
+  <data name="Organise" xml:space="preserve"><value>Ordnen</value></data>
+  <data name="Page {0} of {1}" xml:space="preserve"><value>Seite {0} von {1}</value></data>
+  <data name="Pagination" xml:space="preserve"><value>Seitenwahl</value></data>
+  <data name="People and places" xml:space="preserve"><value>Menschen und Orte</value></data>
+  <data name="Please check the form." xml:space="preserve"><value>Bitte prüfe das Formular.</value></data>
+  <data name="Please confirm" xml:space="preserve"><value>Bitte bestätigen</value></data>
+  <data name="Please enter a valid value." xml:space="preserve"><value>Bitte gib einen gültigen Wert ein.</value></data>
+  <data name="Please fill in this field." xml:space="preserve"><value>Bitte fülle dieses Feld aus.</value></data>
+  <data name="Press / on the page to open this dialog." xml:space="preserve"><value>Drücke / auf der Seite, um diesen Dialog zu öffnen.</value></data>
+  <data name="Reset everything" xml:space="preserve"><value>Alles zurücksetzen</value></data>
+  <data name="Reset the tools" xml:space="preserve"><value>Filter zurücksetzen</value></data>
+  <data name="Search for" xml:space="preserve"><value>Suchen nach</value></data>
+  <data name="Sections" xml:space="preserve"><value>Bereiche</value></data>
+  <data name="Shared with you" xml:space="preserve"><value>Mit dir geteilt</value></data>
+  <data name="Show account" xml:space="preserve"><value>Konto anzeigen</value></data>
+  <data name="Show or hide the password" xml:space="preserve"><value>Passwort anzeigen oder verbergen</value></data>
+  <data name="Skip to the content" xml:space="preserve"><value>Zum Inhalt springen</value></data>
+  <data name="Sort by" xml:space="preserve"><value>Sortieren nach</value></data>
+  <data name="Steps" xml:space="preserve"><value>Schritte</value></data>
+  <data name="The format is not valid." xml:space="preserve"><value>Das Format ist ungültig.</value></data>
+  <data name="The name is empty or too long." xml:space="preserve"><value>Der Name ist leer oder zu lang.</value></data>
+  <data name="Theme: {0}. Click for {1}." xml:space="preserve"><value>Darstellung: {0}. Klicken für {1}.</value></data>
+  <data name="Time" xml:space="preserve"><value>Zeit</value></data>
+  <data name="to review" xml:space="preserve"><value>zu prüfen</value></data>
+  <data name="Users, storage, automation and the settings of this instance." xml:space="preserve"><value>Benutzer, Speicher, Automatisierung und die Einstellungen dieser Instanz.</value></data>
+  <data name="Weekday" xml:space="preserve"><value>Wochentag</value></data>
+  <data name="Your documents, in order" xml:space="preserve"><value>Deine Dokumente, in Ordnung</value></data>
+  <data name="Zoom in" xml:space="preserve"><value>Vergrößern</value></data>
+  <data name="Zoom out" xml:space="preserve"><value>Verkleinern</value></data>
 </root>

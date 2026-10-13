@@ -25,274 +25,168 @@
         new MatPaper.Services.FilterSpec("AllOwners", L["Owned by"].Value, Model.IsAdmin && Model.AllOwners ? L["All"].Value : null));
 }
 
-<mp-toolbar>
-    <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title, file name or correspondent"]' />
-    <mp-toolbar-select name="Origin" label='@L["Origin"]' value="@(Model.Origin?.ToString() ?? string.Empty)">
-        <option value="">@L["All"]</option>
-        @foreach (var entry in originLabels)
-        {
-            <option value="@entry.Key">@entry.Value</option>
-        }
-    </mp-toolbar-select>
-    <mp-toolbar-select name="LocationId" label='@L["Location"]' value="@(Model.LocationId?.ToString() ?? string.Empty)">
-        <option value="">@L["All locations"]</option>
-        @foreach (var loc in Model.StorageLocations)
-        {
-            <option value="@loc.Id">@loc.Name</option>
-        }
-    </mp-toolbar-select>
-    <mp-toolbar-search name="Folder" value="@Model.Folder" label='@L["Folder"]' placeholder='@L["Path inside the location"]' />
-    <mp-toolbar-select name="State" label='@L["Status"]' value="@Model.State">
-        <option value="open">@L["Waiting"]</option>
-        <option value="ignored">@L["Ignored"]</option>
-    </mp-toolbar-select>
-    <mp-toolbar-select name="Sort" label='@L["Sort"]' value="@Model.Sort">
-        <option value="added">@L["Recently added"]</option>
-        <option value="oldest">@L["Oldest first"]</option>
-        <option value="date">@L["Document date"]</option>
-        <option value="title">@L["Title"]</option>
-    </mp-toolbar-select>
-    @if (Model.IsAdmin)
-    {
-        @* A filter is always a dropdown: whose documents the inbox shows. *@
-        <mp-toolbar-select name="AllOwners" label='@L["Owned by"]' value="@(Model.AllOwners ? "true" : "false")">
-            <option value="false">@L["Own"]</option>
-            <option value="true">@L["All"]</option>
+<div class="mat-list" data-selectable>
+    <mp-toolbar id="inbox" label='@L["Inbox"]' count="Model.TotalCount" singular="{0} document" plural="{0} documents" filter-size="md">
+        <mp-toolbar-search name="Search" value="@Model.Search" placeholder='@L["Title, file name or correspondent"]' />
+
+        <mp-toolbar-select name="Origin" label='@L["Origin"]' value="@(Model.Origin?.ToString() ?? string.Empty)">
+            <option value="">@L["All"]</option>
+            @foreach (var entry in originLabels)
+            {
+                <option value="@entry.Key">@entry.Value</option>
+            }
         </mp-toolbar-select>
-    }
-</mp-toolbar>
 
-<partial name="_FilterChips" model="activeFilters" />
+        <mp-toolbar-select name="LocationId" label='@L["Location"]' value="@(Model.LocationId?.ToString() ?? string.Empty)">
+            <option value="">@L["All locations"]</option>
+            @foreach (var loc in Model.StorageLocations)
+            {
+                <option value="@loc.Id">@loc.Name</option>
+            }
+        </mp-toolbar-select>
 
-@if (!Model.HasStorage && Model.TotalCount > 0)
-{
-    <div class="notice notice--warn">
-        @L["No storage location configured — documents can't be filed yet."]
+        <div class="mat-field">
+            <label class="mat-label" for="Folder">@L["Folder"]</label>
+            <input class="mat-input" type="text" id="Folder" name="Folder" value="@Model.Folder" placeholder='@L["Path inside the location"]' autocomplete="off" />
+        </div>
+
+        <mp-toolbar-select name="State" label='@L["Status"]' value="@Model.State">
+            <option value="open">@L["Waiting"]</option>
+            <option value="ignored">@L["Ignored"]</option>
+        </mp-toolbar-select>
+
         @if (Model.IsAdmin)
         {
-            <a href="/System/StorageLocations/Edit">@L["Create one"]</a>
+            @* A filter is always a dropdown: whose documents the inbox shows. *@
+            <mp-toolbar-select name="AllOwners" label='@L["Owned by"]' value="@(Model.AllOwners ? "true" : "false")">
+                <option value="false">@L["Own"]</option>
+                <option value="true">@L["All"]</option>
+            </mp-toolbar-select>
         }
-    </div>
-}
-@if (Model.TotalCount == 0)
-{
-    <div class="empty-state">
-        @if (activeFilters.Any)
-        {
-            @L["No document matches your filter."]<text> · </text><a href="@activeFilters.ClearAllUrl">@L["Clear all"]</a>
-        }
-        else
-        {
-            @(Model.ShowingIgnored ? L["Nothing ignored"] : L["Inbox empty"])<text> · </text>
-            <a href="/Documents/Upload">@L["Upload"]</a>
-            @if (Model.IsAdmin)
-            {
-                <text> · </text><a href="/System/StorageLocations">@L["Search storage for files"]</a>
-            }
-        }
-    </div>
-}
-else
-{
-    <mp-list-bar count="Model.TotalCount" singular="{0} document" plural="{0} documents" current-page="Model.PageNumber" total-pages="Model.TotalPages" />
 
-    @* Shown by the script below once processing is done but the user is mid-edit: it takes the
-       place of the first list entry instead of a bar above the list. *@
-    <div id="inbox-refresh" class="inbox-refresh" role="status" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></svg>
-        <strong>@L["Processing finished"]</strong>
-        <a class="btn btn--primary" href="">@L["Reload"]</a>
-    </div>
+        <mp-toolbar-sort value="@Model.Sort">
+            <option value="added">@L["Recently added"]</option>
+            <option value="oldest">@L["Oldest first"]</option>
+            <option value="date">@L["Document date"]</option>
+            <option value="title">@L["Title"]</option>
+        </mp-toolbar-sort>
+    </mp-toolbar>
 
-    @foreach (var row in Model.Rows)
+    <partial name="_FilterChips" model="activeFilters" />
+
+    @if (!Model.HasStorage && Model.TotalCount > 0)
     {
-        <partial name="_Row" model="new MatPaper.Pages.Inbox.IndexModel.RowContext(Model, row)" />
+        <div class="mat-alert mat-alert--warning" role="alert">
+            <mp-icon name="alert" />
+            <div class="mat-alert__body">
+                @L["No storage location configured — documents can't be filed yet."]
+                @if (Model.IsAdmin)
+                {
+                    <a href="/System/StorageLocations/Edit">@L["Create one"]</a>
+                }
+            </div>
+        </div>
     }
 
-    @if (!Model.ShowingIgnored)
+    @if (Model.TotalCount == 0)
     {
-        @* Only while something is ticked: what to do with the selection. The values to set sit in a dialog. *@
-        <form method="post" id="inbox-bulk" class="inbox-bulk" asp-page-handler="Bulk"
-              asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
-              asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
-              asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" asp-route-PageNumber="@Model.PageNumber">
-            <div class="selection-bar" role="region" aria-label='@L["Selection"]' hidden
-                 data-t-selected='@L["{0} selected"]' data-t-all-selected='@L["All {0} selected"]'>
-                <label class="selection-bar__all">
-                    <input type="checkbox" id="inbox-select-all" aria-label='@L["Select all"]' />
-                    <span class="selection-bar__count"></span>
-                </label>
-                @* More than one page: the whole list can be taken in one go (the same batch limit as before). *@
-                <button type="button" class="selection-bar__link" id="inbox-select-matching" hidden
-                        data-total="@Model.TotalCount" data-t-all='@L["Select all {0}"]' data-t-page='@L["Only this page"]'></button>
-                <input type="hidden" name="allMatching" id="inbox-all-matching" value="false" />
-                <span class="selection-bar__actions">
-                    <button type="button" class="btn btn--secondary" id="inbox-bulk-open" data-t-label='@L["Set values …"]'>@L["Set values …"]</button>
-                    <button class="btn btn--secondary" type="submit" name="action" value="analyze">@L["Analyze selected"]</button>
-                    <button class="btn btn--secondary" type="submit" name="action" value="ignore">@L["Ignore"]</button>
-                    <button class="btn btn--primary" type="submit" name="action" value="confirm">@L["Take into archive"]</button>
-                </span>
-            </div>
-
-            <dialog class="filter-dialog filter-dialog--bulk" id="inbox-bulk-dialog">
-                <div class="filter-dialog__head">
-                    <div>
-                        <h2 class="filter-dialog__title">@L["Apply to selection"]</h2>
-                        <div class="filter-dialog__sub">@L["What is left empty stays as it is."]</div>
-                    </div>
-                    <button type="button" class="icon-btn filter-dialog__close" data-close-dialog aria-label='@L["Close"]'>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-                    </button>
+        <div class="mat-empty">
+            <span class="mat-empty__icon"><mp-icon name="inbox" /></span>
+            @if (activeFilters.Any)
+            {
+                <div class="mat-empty__title">@L["No document matches your filter."]</div>
+                <mp-button variant="secondary" href="@activeFilters.ClearAllUrl" icon="x">@L["Clear all"]</mp-button>
+            }
+            else
+            {
+                <div class="mat-empty__title">@(Model.ShowingIgnored ? L["Nothing ignored"] : L["Inbox empty"])</div>
+                <div class="mat-row">
+                    <mp-button variant="primary" href="/Documents/Upload" icon="plus">@L["Upload"]</mp-button>
+                    @if (Model.IsAdmin)
+                    {
+                        <mp-button variant="secondary" href="/System/StorageLocations" icon="search">@L["Search storage for files"]</mp-button>
+                    }
                 </div>
-                <div class="filter-dialog__body">
-                    <mp-picker asp-for="BulkCorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions"
-                               placeholder='@L["— Unchanged —"]' />
-                    <mp-picker asp-for="BulkDocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions"
-                               placeholder='@L["— Unchanged —"]' />
-                    <mp-picker asp-for="BulkProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions"
-                               placeholder='@L["— Unchanged —"]' />
-                    <mp-picker asp-for="BulkTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true"
-                               placeholder='@L["Add tags…"]' />
-                    <div class="form-row">
-                        <label>@L["Filing"]</label>
-                        <div class="checkbox-group">
-                            <label class="form-check">
-                                <input type="radio" name="mode" value="keep" checked />
-                                <span>@L["Keep in place"]</span>
-                            </label>
-                            <label class="form-check">
-                                <input type="radio" name="mode" value="refile" />
-                                <span>@L["Re-file by template"]</span>
-                            </label>
+            }
+        </div>
+    }
+    else
+    {
+        @* Shown by inbox.js once processing is done but the user is mid-edit. *@
+        <div id="inbox-refresh" class="mat-alert mat-alert--info" role="status" hidden>
+            <mp-icon name="refresh" />
+            <div class="mat-alert__body"><strong>@L["Processing finished"]</strong></div>
+            <mp-button variant="primary" size="sm" href="">@L["Reload"]</mp-button>
+        </div>
+
+        <div class="mp-inbox-list" data-inbox>
+            @foreach (var row in Model.Rows)
+            {
+                <partial name="_Row" model="new MatPaper.Pages.Inbox.IndexModel.RowContext(Model, row)" />
+            }
+        </div>
+
+        <mp-pager current-page="Model.PageNumber" total-pages="Model.TotalPages" total="Model.TotalCount" row-count="Model.Rows.Count" />
+
+        @if (!Model.ShowingIgnored)
+        {
+            @* Only while something is ticked: what to do with the selection. The values to set sit in a dialog. *@
+            <form method="post" id="inbox-bulk" class="mp-inbox-bulk" asp-page-handler="Bulk"
+                  asp-route-Search="@Model.Search" asp-route-Origin="@Model.Origin" asp-route-LocationId="@Model.LocationId"
+                  asp-route-Folder="@Model.Folder" asp-route-State="@(Model.ShowingIgnored ? "ignored" : null)"
+                  asp-route-AllOwners="@Model.AllOwners" asp-route-Sort="@Model.Sort" asp-route-PageNumber="@Model.PageNumber">
+                <div class="mat-bulk" role="region" aria-label='@L["Selection"]' data-bulk-bar hidden>
+                    <label class="mat-check">
+                        <input type="checkbox" data-select-all aria-label='@L["Select all"]' />
+                        <span class="mat-check__text"><span>@Html.Raw(string.Format(L["{0} selected"].Value, "<span data-bulk-count></span>"))</span></span>
+                    </label>
+                    @* More than one page: the whole list can be taken in one go (the same batch limit as before). *@
+                    <button type="button" class="mat-btn mat-btn--ghost mat-btn--sm" id="inbox-select-matching" hidden
+                            data-total="@Model.TotalCount" data-t-all='@L["Select all {0}"]' data-t-page='@L["Only this page"]'></button>
+                    <input type="hidden" name="allMatching" id="inbox-all-matching" value="false" />
+                    <span class="mat-bulk__actions mat-row">
+                        <button type="button" class="mat-btn mat-btn--secondary mat-btn--sm" id="inbox-bulk-open" data-dialog-open="inbox-bulk-dialog" data-t-label='@L["Set values …"]'>@Ui.Icon("sliders")<span>@L["Set values …"]</span></button>
+                        <button class="mat-btn mat-btn--secondary mat-btn--sm" type="submit" name="action" value="analyze">@Ui.Icon("sparkles")<span>@L["Analyze selected"]</span></button>
+                        <button class="mat-btn mat-btn--secondary mat-btn--sm" type="submit" name="action" value="ignore">@Ui.Icon("eye-off")<span>@L["Ignore"]</span></button>
+                        <button class="mat-btn mat-btn--primary mat-btn--sm" type="submit" name="action" value="confirm">@Ui.Icon("check")<span>@L["Take into archive"]</span></button>
+                    </span>
+                </div>
+
+                <dialog class="mat-dialog mat-dialog--lg" id="inbox-bulk-dialog" aria-labelledby="inbox-bulk-title" data-static>
+                    <div class="mat-dialog__form">
+                        <div class="mat-dialog__head">
+                            @Ui.Icon("sliders")
+                            <h2 class="mat-dialog__title" id="inbox-bulk-title">@L["Apply to selection"]</h2>
+                            <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-dialog__close" data-dialog-close aria-label='@L["Close"]'>@Ui.Icon("x")</button>
+                        </div>
+                        <div class="mat-dialog__body mat-form">
+                            <p class="mat-muted">@L["What is left empty stays as it is."]</p>
+                            <div class="mat-form__grid">
+                                <mp-picker asp-for="BulkCorrespondentId" label='@L["Correspondent"]' asp-items="Model.CorrespondentOptions" placeholder='@L["— Unchanged —"]' />
+                                <mp-picker asp-for="BulkDocumentTypeId" label='@L["Type"]' asp-items="Model.DocumentTypeOptions" placeholder='@L["— Unchanged —"]' />
+                                <mp-picker asp-for="BulkProjectId" label='@L["Project"]' asp-items="Model.ProjectOptions" placeholder='@L["— Unchanged —"]' />
+                                <mp-picker asp-for="BulkTagIds" label='@L["Tags"]' asp-items="Model.TagItems" multiple="true" placeholder='@L["Add tags…"]' />
+                                <fieldset class="mat-field mat-fieldset mat-field--full">
+                                    <legend class="mat-legend">@L["Filing"]</legend>
+                                    <div class="mat-checks mat-checks--inline">
+                                        <label class="mat-check"><input type="radio" name="mode" value="keep" checked /><span class="mat-check__text">@L["Keep in place"]</span></label>
+                                        <label class="mat-check"><input type="radio" name="mode" value="refile" /><span class="mat-check__text">@L["Re-file by template"]</span></label>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="mat-dialog__foot">
+                            <div class="mat-btn-row mat-btn-row--plain">
+                                <button type="button" class="mat-btn mat-btn--primary" data-dialog-close>@Ui.Icon("check")<span>@L["Done"]</span></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="filter-dialog__foot">
-                    <span></span>
-                    <button type="button" class="btn btn--primary" data-close-dialog>@L["Done"]</button>
-                </div>
-            </dialog>
-        </form>
+                </dialog>
+            </form>
+        }
     }
-
-    <mp-list-bar position="bottom" />
-}
+</div>
 
 @section Scripts {
-    <script>
-        // Phones: project, tags and filing sit behind "More fields".
-        document.addEventListener("click", function (e) {
-            var btn = e.target.closest && e.target.closest(".inbox-more-toggle");
-            if (!btn) { return; }
-            var item = btn.closest(".inbox-item");
-            var open = item.classList.toggle("is-expanded");
-            btn.setAttribute("aria-expanded", open ? "true" : "false");
-        });
-    </script>
-    <script>
-        // While documents are still being processed (OCR), poll their state and reload
-        // once suggestions are available — unless the user has started editing a row.
-        (function () {
-            var pending = Array.prototype.map.call(
-                document.querySelectorAll('.inbox-item[data-ocr="pending"]'),
-                function (el) { return el.getAttribute("data-doc-id"); });
-            if (!pending.length) { return; }
-
-            var dirty = false;
-            document.addEventListener("input", function () { dirty = true; }, true);
-            document.addEventListener("change", function () { dirty = true; }, true);
-
-            function tick() {
-                var qs = pending.map(function (id) { return "ids=" + encodeURIComponent(id); }).join("&");
-                fetch("/Inbox?handler=Status&" + qs, { credentials: "same-origin", headers: { "Accept": "application/json" } })
-                    .then(function (r) { return r.ok ? r.json() : []; })
-                    .then(function (rows) {
-                        // A row the endpoint no longer returns is gone (deleted, reassigned):
-                        // treat that as done so the poll cannot run forever.
-                        var seen = {};
-                        rows.forEach(function (r) { seen[r.id] = r.state; });
-                        var done = pending.some(function (id) { return seen[id] === undefined || seen[id] !== "pending"; });
-                        if (!done) { setTimeout(tick, 3000); return; }
-                        if (!dirty) { location.reload(); return; }
-                        var note = document.getElementById("inbox-refresh");
-                        if (note) { note.hidden = false; }
-                    })
-                    .catch(function () { setTimeout(tick, 5000); });
-            }
-
-            setTimeout(tick, 3000);
-        })();
-
-        // The selection bar shows only while something is ticked; its box ticks or clears the whole page.
-        (function () {
-            var bar = document.querySelector(".selection-bar");
-            if (!bar) { return; }
-            var master = document.getElementById("inbox-select-all");
-            var count = bar.querySelector(".selection-bar__count");
-            var dialog = document.getElementById("inbox-bulk-dialog");
-
-            function boxes() { return Array.prototype.slice.call(document.querySelectorAll('input[name="selectedIds"]')); }
-
-            var matchingButton = document.getElementById("inbox-select-matching");
-            var matchingFlag = document.getElementById("inbox-all-matching");
-            var total = parseInt(matchingButton.getAttribute("data-total"), 10) || 0;
-            var matching = false;
-
-            function setMatching(on) {
-                matching = on;
-                matchingFlag.value = on ? "true" : "false";
-            }
-
-            function refresh() {
-                var all = boxes();
-                var n = all.filter(function (b) { return b.checked; }).length;
-                if (n < all.length) { setMatching(false); }
-                bar.hidden = n === 0;
-                document.documentElement.classList.toggle("has-selection", n > 0);
-                var shown = matching ? total : n;
-                count.textContent = (bar.getAttribute(matching ? "data-t-all-selected" : "data-t-selected") || "{0} selected").replace("{0}", String(shown));
-                master.checked = n > 0 && n === all.length;
-                master.indeterminate = n > 0 && n < all.length;
-                // the whole page is ticked and there is more behind it
-                matchingButton.hidden = !(all.length > 0 && n === all.length && total > all.length);
-                matchingButton.textContent = matching
-                    ? (matchingButton.getAttribute("data-t-page") || "Only this page")
-                    : (matchingButton.getAttribute("data-t-all") || "Select all {0}").replace("{0}", String(total));
-                all.forEach(function (b) {
-                    var card = b.closest(".inbox-item");
-                    if (card) { card.classList.toggle("is-selected", b.checked); }
-                });
-            }
-
-            document.addEventListener("change", function (event) {
-                if (event.target && event.target.name === "selectedIds") { setMatching(false); refresh(); }
-            });
-            master.addEventListener("change", function () {
-                setMatching(false);
-                boxes().forEach(function (b) { b.checked = master.checked; });
-                refresh();
-            });
-            matchingButton.addEventListener("click", function () { setMatching(!matching); refresh(); });
-
-            // the values to set for the selection
-            var openButton = document.getElementById("inbox-bulk-open");
-            if (dialog && openButton) {
-                openButton.addEventListener("click", function () { dialog.showModal(); });
-                dialog.addEventListener("click", function (event) {
-                    if (event.target === dialog || (event.target.closest && event.target.closest("[data-close-dialog]"))) { dialog.close(); }
-                });
-                dialog.addEventListener("close", function () {
-                    var set = 0;
-                    dialog.querySelectorAll(".mp-picker").forEach(function (picker) {
-                        var hidden = picker.querySelector(".mp-picker__value");
-                        if (hidden ? hidden.value !== "" : picker.querySelector(".mp-picker__chip")) { set++; }
-                    });
-                    var label = openButton.getAttribute("data-t-label") || "";
-                    openButton.textContent = set > 0 ? label.replace(" …", "") + " (" + set + ")" : label;
-                });
-            }
-
-            refresh();
-        })();
-    </script>
+    <script src="~/js/inbox.js" asp-append-version="true" defer></script>
 }

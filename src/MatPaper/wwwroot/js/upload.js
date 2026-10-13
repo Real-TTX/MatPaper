@@ -1,5 +1,6 @@
 // "Add document": drag & drop files and/or scan with the camera, then fill in what is known and add.
 // Falls back to a plain multipart form POST (files only) when JavaScript is off.
+// The drop zone is the toolkit's (mat-dropzone: the file input covers it, so a click, a drop and the keyboard all end in a change of the input).
 (function () {
     "use strict";
 
@@ -13,8 +14,6 @@
     function fill(template, value) { return template.replace("{0}", value); }
 
     var input = document.getElementById("Files");
-    var dropzone = document.getElementById("uploader-dropzone");
-    var browse = document.getElementById("uploader-browse");
     var list = document.getElementById("upload-list");
     var submit = document.getElementById("upload-submit");
     var details = document.getElementById("step-details");
@@ -28,8 +27,6 @@
     var nextId = 1;
     var uploading = false;
     var scan = null; // { files: [File], thumbs: [canvas], status, row }
-    var uploader = document.getElementById("uploader");
-    if (uploader) { uploader.classList.add("uploader--enhanced"); }
 
     function token() {
         var el = form.querySelector('input[name="__RequestVerificationToken"]');
@@ -55,7 +52,7 @@
         details.hidden = n === 0 && !uploading;
         if (!uploading) { submit.disabled = n === 0; }
         titleRow.hidden = n !== 1;
-        list.hidden = queue.length === 0;
+        list.hidden = queue.length === 0 && !(scan && scan.row);
     }
 
     function addFiles(fileList) {
@@ -68,21 +65,24 @@
         refresh();
     }
 
+    function rowHtml(removable) {
+        return '<div class="mp-upload-item__head">' +
+            '<span class="mp-upload-item__name"></span>' +
+            '<span class="mp-upload-item__size"></span>' +
+            (removable ? '<button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm mp-upload-item__remove">' + window.MatPaper.icon("x") + '</button>' : '') +
+            '</div>' +
+            '<div class="mat-meter mat-meter--sm"><div class="mat-meter__fill"></div></div>' +
+            '<div class="mp-upload-item__status"></div>';
+    }
+
     function renderRow(item) {
         var row = document.createElement("li");
-        row.className = "upload-item upload-item--queued";
-        row.innerHTML =
-            '<div class="upload-item__head">' +
-            '<span class="upload-item__name"></span>' +
-            '<span class="upload-item__size"></span>' +
-            '<button type="button" class="icon-btn upload-item__remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
-            '</div>' +
-            '<div class="upload-item__bar"><span class="upload-item__fill"></span></div>' +
-            '<div class="upload-item__status"></div>';
-        row.querySelector(".upload-item__name").textContent = item.file.name;
-        row.querySelector(".upload-item__size").textContent = formatSize(item.file.size);
-        row.querySelector(".upload-item__status").textContent = t("queued", "Queued");
-        var remove = row.querySelector(".upload-item__remove");
+        row.className = "mp-upload-item mp-upload-item--queued";
+        row.innerHTML = rowHtml(true);
+        row.querySelector(".mp-upload-item__name").textContent = item.file.name;
+        row.querySelector(".mp-upload-item__size").textContent = formatSize(item.file.size);
+        row.querySelector(".mp-upload-item__status").textContent = t("queued", "Queued");
+        var remove = row.querySelector(".mp-upload-item__remove");
         remove.setAttribute("aria-label", t("remove", "Remove"));
         remove.addEventListener("click", function () {
             queue.splice(queue.indexOf(item), 1);
@@ -94,16 +94,21 @@
     }
 
     function setProgress(row, pct) {
-        var fillBar = row.querySelector(".upload-item__fill");
-        if (fillBar) { fillBar.style.width = pct + "%"; }
+        var bar = row.querySelector(".mat-meter__fill");
+        if (bar) { bar.style.setProperty("--mat-meter", pct + "%"); }
     }
 
     function setStatus(holder, status, text, href, linkText, note) {
         holder.status = status;
-        holder.row.className = "upload-item upload-item--" + status;
-        var cell = holder.row.querySelector(".upload-item__status");
+        holder.row.className = "mp-upload-item mp-upload-item--" + status;
+        var bar = holder.row.querySelector(".mat-meter__fill");
+        if (bar) {
+            if (status === "created" || status === "duplicate") { bar.setAttribute("data-tone", "ok"); }
+            else if (status === "failed") { bar.setAttribute("data-tone", "error"); }
+        }
+        var cell = holder.row.querySelector(".mp-upload-item__status");
         cell.textContent = text;
-        var remove = holder.row.querySelector(".upload-item__remove");
+        var remove = holder.row.querySelector(".mp-upload-item__remove");
         if (remove && status !== "queued") { remove.hidden = true; }
         if (href) {
             cell.appendChild(document.createTextNode(" "));
@@ -115,7 +120,7 @@
         // what the server has to say about the archive numbers (read from a sticker on the paper)
         if (note) {
             var line = document.createElement("span");
-            line.className = "upload-note";
+            line.className = "mp-upload-note";
             line.textContent = note;
             cell.appendChild(line);
         }
@@ -131,7 +136,7 @@
         strip.innerHTML = "";
         scan.thumbs.forEach(function (th) {
             var c = document.createElement("canvas");
-            c.className = "add-doc__scan-thumb";
+            c.className = "mp-scan__thumb";
             c.width = th.width; c.height = th.height;
             c.getContext("2d").drawImage(th, 0, 0);
             strip.appendChild(c);
@@ -188,7 +193,7 @@
             };
             xhr.upload.onload = function () {
                 setProgress(holder.row, 100);
-                var cell = holder.row.querySelector(".upload-item__status");
+                var cell = holder.row.querySelector(".mp-upload-item__status");
                 if (cell) { cell.textContent = t("processing", "Processing …"); }
             };
             xhr.onload = function () {
@@ -246,24 +251,32 @@
         if (summary) { summary.remove(); }
     }
 
+    // What came of it: an alert above the buttons, with the way on to the inbox.
     function summarize(results) {
         function sum(key) { return results.reduce(function (n, i) { return n + ((i.docs && i.docs[key]) || 0); }, 0); }
         var created = sum("created");
         var dupes = sum("duplicates");
         var failed = sum("failed");
-        var summary = document.getElementById("upload-summary");
-        if (!summary) {
-            summary = document.createElement("div");
-            summary.id = "upload-summary";
-            summary.className = "form-summary";
-            document.querySelector(".add-doc__actions").parentNode.insertBefore(summary, document.querySelector(".add-doc__actions"));
-        }
+        clearSummary();
+        var summary = document.createElement("div");
+        summary.id = "upload-summary";
+        summary.className = "mat-alert mat-alert--" + (failed > 0 ? "warning" : "success");
+        summary.setAttribute("role", "status");
         var parts = [];
         if (created > 0) { parts.push(fill(t("summary-added", "{0} added"), created)); }
         if (dupes > 0) { parts.push(fill(t("summary-duplicates", "{0} duplicate(s) skipped"), dupes)); }
         if (failed > 0) { parts.push(fill(t("summary-failed", "{0} failed"), failed)); }
-        summary.innerHTML = parts.join(", ") +
-            (created > 0 ? '. <a href="' + inboxUrl + '">' + t("review-link", "Review them in your inbox →") + "</a>" : ".");
+        summary.innerHTML = window.MatPaper.icon(failed > 0 ? "alert" : "check-circle") + '<div class="mat-alert__body"></div>';
+        var body = summary.querySelector(".mat-alert__body");
+        body.appendChild(document.createTextNode(parts.join(", ") + (created > 0 ? ". " : ".")));
+        if (created > 0) {
+            var link = document.createElement("a");
+            link.href = inboxUrl;
+            link.textContent = t("review-link", "Review them in your inbox →");
+            body.appendChild(link);
+        }
+        var actions = form.querySelector(".mp-add__actions");
+        actions.parentNode.insertBefore(summary, actions);
     }
 
     async function runUploads() {
@@ -279,9 +292,6 @@
         var results = [];
 
         for (var i = 0; i < pending.length; i++) {
-            (function (item) {
-                item._m = m;
-            })(pending[i]);
             await send(ajaxUrl, function (data) { data.append("file", pending[i].file); addMeta(data, m); }, pending[i]);
             results.push(pending[i]);
         }
@@ -289,10 +299,9 @@
         if (hasScan) {
             // the scan gets a row of its own once it is being sent
             var row = document.createElement("li");
-            row.className = "upload-item upload-item--queued";
-            row.innerHTML = '<div class="upload-item__head"><span class="upload-item__name"></span><span class="upload-item__size"></span></div>' +
-                '<div class="upload-item__bar"><span class="upload-item__fill"></span></div><div class="upload-item__status"></div>';
-            row.querySelector(".upload-item__name").textContent = fill(t("scan-pages", "Scan: {0} page(s)"), scan.files.length);
+            row.className = "mp-upload-item mp-upload-item--queued";
+            row.innerHTML = rowHtml(false);
+            row.querySelector(".mp-upload-item__name").textContent = fill(t("scan-pages", "Scan: {0} page(s)"), scan.files.length);
             list.hidden = false;
             list.appendChild(row);
             scan.row = row;
@@ -312,21 +321,7 @@
         refresh();
     }
 
-    // ---- drag & drop + file picker ------------------------------------------
-
-    if (browse) { browse.addEventListener("click", function () { input.click(); }); }
-    if (dropzone) {
-        dropzone.addEventListener("click", function (e) { if (e.target === browse) { return; } input.click(); });
-        ["dragenter", "dragover"].forEach(function (evt) {
-            dropzone.addEventListener(evt, function (e) { e.preventDefault(); dropzone.classList.add("uploader__dropzone--active"); });
-        });
-        ["dragleave", "drop"].forEach(function (evt) {
-            dropzone.addEventListener(evt, function (e) { e.preventDefault(); dropzone.classList.remove("uploader__dropzone--active"); });
-        });
-        dropzone.addEventListener("drop", function (e) {
-            if (e.dataTransfer && e.dataTransfer.files) { addFiles(e.dataTransfer.files); }
-        });
-    }
+    // ---- file picker (the toolkit's zone passes a drop on to it) -------------
 
     input.addEventListener("change", function () {
         addFiles(input.files);

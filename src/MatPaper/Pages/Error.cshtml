@@ -1,13 +1,15 @@
 @page "/Error"
 @model MatPaper.Pages.ErrorModel
 @{
+    // An error must render even when the menu cannot be built (no session, no database): a visitor who is not signed in gets the plain card.
+    Layout = User.Identity?.IsAuthenticated == true ? "_Layout" : "_LayoutAuth";
     ViewData["Breadcrumb"] = Model.Title;
     ViewData["BreadcrumbLiteral"] = true;
+    ViewData["Heading"] = Model.Title;
 }
 
-<div class="error-page">
-    <div class="error-page__code">@Model.StatusCode</div>
-    <h1 class="error-page__title">@Model.Title</h1>
-    <p class="error-page__text">@Model.Message</p>
-    <a class="btn btn--primary" href="/">@L["Back to the dashboard"]</a>
+<div class="mat-empty mp-error">
+    <div class="mp-error__code" aria-hidden="true">@Model.StatusCode</div>
+    <p>@Model.Message</p>
+    <mp-button variant="primary" href="/" icon="home">@L["Back to the dashboard"]</mp-button>
 </div>

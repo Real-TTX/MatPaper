@@ -25,3 +25,7 @@ rotate-ccw
 zoom-in
 zoom-out
 maximize-2
+crop
+flashlight
+scan
+video

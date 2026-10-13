@@ -1,6 +1,7 @@
 // The preview of a document in a dialog (desktop): any element with data-doc-preview="<token of the document>" opens
 // it on click - the document list, the inbox. The dialog (Pages/Shared/_DocPreviewDialog.cshtml) shows the file in the
-// browser's own viewer and has the buttons edit, share, download, open in a tab and close.
+// browser's own viewer and has the buttons edit, share, download, open in a tab and close. The dialog is the toolkit's
+// (mat-dialog): it closes with the X, the backdrop and Escape, and gives the focus back to what opened it.
 //
 //   data-doc-preview="<token>"              the trigger (a button, or a link that keeps its href for the no-script case)
 //   data-doc-preview-title="<title>"        shown in the head of the dialog
@@ -39,7 +40,7 @@
         shareEl.setAttribute("data-doc-title", title);
 
         titleEl.textContent = title || dialog.getAttribute("data-t-preview") || "";
-        dialog.showModal();
+        if (window.MatUi) { window.MatUi.dialog.open(dialog, trigger); } else { dialog.showModal(); }
     }
 
     document.addEventListener("click", function (event) {
@@ -50,8 +51,6 @@
         open(trigger);
     });
 
-    document.getElementById("doc-preview-close").addEventListener("click", function () { dialog.close(); });
-    dialog.addEventListener("click", function (event) { if (event.target === dialog) { dialog.close(); } });
     // however it is closed (button, backdrop, Escape): the file is let go
     dialog.addEventListener("close", function () { frame.src = "about:blank"; });
 })();

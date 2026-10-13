@@ -252,7 +252,7 @@
             var button = closest(event.target, "[data-asn-next]");
             if (!button) { return; }
             var field = closest(button, ".mat-field");
-            var input = field && field.querySelector("input");
+            var input = button.hasAttribute("data-asn-target") ? doc.getElementById(button.getAttribute("data-asn-target")) : field && field.querySelector("input");
             if (!input) { return; }
             input.value = button.getAttribute("data-asn-next");
             input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -289,20 +289,58 @@
                 if (value) { root.setAttribute("data-accent", value); } else { root.removeAttribute("data-accent"); }
             }
         });
-    }
 
-    // ---- User colours (tags, projects): data-colour="#rrggbb" becomes the custom property --mat-swatch, the toolkit's way of showing a colour that is data
-    // (no inline style in the markup, rule CODE-02). SHIM: MatUi gets data-colour itself (feature C of the matpaper-needs branch of MatDesign); remove this with the next update.
-    function fillColours(scope) {
-        (scope || doc).querySelectorAll("[data-colour]").forEach(function (el) {
-            var value = el.getAttribute("data-colour");
-            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) { el.style.setProperty("--mat-swatch", value); }
+        // The browser's own memory (the toolkit's boot script applies it on a page without an account, the sign-in) follows what is saved on the account.
+        form.addEventListener("submit", function () {
+            function keep(part, key, allowed) {
+                var picked = form.querySelector('input[data-theme-part="' + part + '"]:checked');
+                var value = picked && picked.value ? picked.getAttribute("data-preview") : "";
+                if (value && (!allowed || allowed.indexOf(value) >= 0)) { localStorage.setItem(key, value); } else { localStorage.removeItem(key); }
+            }
+            try {
+                keep("mode", "mat-theme", ["light", "dark"]);
+                keep("scheme", "mat-scheme", ["paper", "contrast", "oled"]);
+                keep("accent", "mat-accent", null);
+            } catch (e) { /* storage unavailable */ }
         });
     }
-    window.MatPaperColours = { fill: fillColours };
+
+    // ---- Suggestions for the correspondent of a document: the picker carries data-mp-suggest-doc="<id of the document>"; the names its text suggests are asked
+    // for once for all the pickers of the page and handed to the toolkit, which shows them above the list ("Suggestions") and says on the closed field how many there are.
+    function wireSuggestions() {
+        var pickers = Array.prototype.slice.call(doc.querySelectorAll(".mat-picker[data-mp-suggest-doc]"));
+        if (pickers.length === 0 || !window.MatUi || !window.MatUi.picker || !window.MatUi.picker.suggest) { return; }
+        var ids = pickers.map(function (p) { return p.getAttribute("data-mp-suggest-doc"); }).filter(function (id, i, all) { return all.indexOf(id) === i; });
+        fetch("/QuickCreate?handler=SuggestMany&ids=" + ids.join(","), { credentials: "same-origin", headers: { Accept: "application/json" } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data || !data.documents) { return; }
+                pickers.forEach(function (p) {
+                    var items = data.documents[p.getAttribute("data-mp-suggest-doc")];
+                    if (items && items.length) { window.MatUi.picker.suggest(p, items); }
+                });
+            })
+            .catch(function () { /* no suggestions: the list is all there is */ });
+    }
+
+    // ---- What the other scripts of the app (viewer, drop, scanner ...) need from the page: an icon of the inlined sprite, and a note that is seen above an open dialog.
+    function icon(name) {
+        var prefix = doc.getElementById("mat-il-" + name) ? "mat-il-" : "mat-i-";
+        return '<svg class="mat-icon" aria-hidden="true" focusable="false"><use href="#' + prefix + name + '"></use></svg>';
+    }
+
+    // The toasts of the toolkit stand in the page, and a modal dialog covers the page (it is in the top layer): while one is open the host of the toasts moves into it.
+    function toast(message, options) {
+        var open = doc.querySelectorAll("dialog[open]");
+        var home = open.length > 0 ? open[open.length - 1] : doc.body;
+        window.MatUi.toast(message, options);
+        var host = doc.querySelector(".mat-toasts");
+        if (host && host.parentNode !== home) { home.appendChild(host); }
+    }
+
+    window.MatPaper = { icon: icon, toast: toast, text: text };
 
     function init() {
-        fillColours();
         cleanHandlerFromAddress();
         wireBusyForms();
         wireRowLinks();
@@ -313,6 +351,7 @@
         wireDownloadLinks();
         wireArchiveNumbers();
         wireAppearancePreview();
+        wireSuggestions();
         registerServiceWorker();
     }
 

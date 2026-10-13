@@ -12,7 +12,7 @@
     var authUiCulture = global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 }
 <!DOCTYPE html>
-<html lang="@authUiCulture" @Html.Raw(theme.RootAttributes)>
+<html lang="@authUiCulture" @Html.Raw(theme.RootAttributes) @Ui.RootTexts(L)>
 <partial name="_Head" model="theme" />
 <body>
     <a class="mat-skip" href="#main">@L["Skip to the content"]</a>

@@ -3,10 +3,12 @@
     The summary of a form (rules FORM-03, A11Y-04): an alert at the top with a link to every field that has an error. It lists the messages the server found
     (model validation) and it is the place where the script of the toolkit writes its own list (data-validation-summary); without errors it stays hidden.
     A message that belongs to no field (the sign-in failed, the password is wrong) is listed without a link.
+    A page with several forms says which errors belong to the one it is drawing: ViewData["SummaryPrefix"] = "Password" lists only the fields "Password.…".
 *@
 @{
+    var prefix = ViewData["SummaryPrefix"] as string;
     var errors = ViewData.ModelState
-        .Where(e => e.Value?.Errors.Count > 0)
+        .Where(e => e.Value?.Errors.Count > 0 && (string.IsNullOrEmpty(prefix) || e.Key == prefix || e.Key.StartsWith(prefix + ".", StringComparison.Ordinal)))
         .SelectMany(e => e.Value!.Errors.Where(error => !string.IsNullOrEmpty(error.ErrorMessage)).Select(error => (Field: e.Key, Message: error.ErrorMessage)))
         .ToList();
 }

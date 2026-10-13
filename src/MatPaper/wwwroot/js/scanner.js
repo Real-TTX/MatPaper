@@ -37,41 +37,20 @@
 
     var FILTERS = [["enhanced", "Enhanced"], ["color", "Original"], ["gray", "Gray"], ["bw", "B/W"]];
 
-    // ------------------------------------------------------------------ icons (stroke, currentColor)
+    // ------------------------------------------------------------------ icons (the sprite of the page, MatPaper.icon)
 
-    var ICONS = {
-        close: '<path d="M6 6l12 12M18 6L6 18"/>',
-        back: '<path d="M15 5l-7 7 7 7"/>',
-        torch: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
-        sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
-        auto: '<path d="M12 3l2.2 5.3L20 9l-4.3 3.7L17 18l-5-3-5 3 1.3-5.3L4 9l5.8-.7z"/>',
-        rotateCw: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
-        rotateCcw: '<path d="M4 11a8 8 0 1 1 2.3 5.7"/><path d="M4 4v7h7"/>',
-        crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M2 6h14a2 2 0 0 1 2 2v14"/>',
-        camera: '<path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/>',
-        plus: '<path d="M12 5v14M5 12h14"/>',
-        check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-        trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>',
-        left: '<path d="M14 6l-6 6 6 6"/>',
-        right: '<path d="M10 6l6 6-6 6"/>',
-        live: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
-        native: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><circle cx="12" cy="9.5" r="3"/><path d="M10.5 18h3"/>',
-        image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.7"/><path d="M4 18l5-5 4 4 3-3 4 4"/>',
-        detect: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M9 12h6"/>'
+    var SPRITE = {
+        close: "x", back: "back", torch: "flashlight", sliders: "sliders", auto: "sparkles", rotateCw: "rotate-cw", rotateCcw: "rotate-ccw",
+        crop: "crop", camera: "camera", plus: "plus", check: "check", trash: "trash", left: "chevron-left", right: "chevron-right",
+        live: "video", native: "smartphone", image: "image", detect: "scan"
     };
 
     function icon(name) {
-        var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        s.setAttribute("viewBox", "0 0 24 24");
-        s.setAttribute("fill", "none");
-        s.setAttribute("stroke", "currentColor");
-        s.setAttribute("stroke-width", "1.9");
-        s.setAttribute("stroke-linecap", "round");
-        s.setAttribute("stroke-linejoin", "round");
-        s.setAttribute("aria-hidden", "true");
-        s.setAttribute("class", "scn__icon");
-        s.innerHTML = ICONS[name] || "";
-        return s;
+        var holder = document.createElement("span");
+        holder.innerHTML = window.MatPaper.icon(SPRITE[name] || name);
+        var svg = holder.firstChild;
+        svg.classList.add("mp-mp-scn__icon");
+        return svg;
     }
 
     // ------------------------------------------------------------------ DOM helpers
@@ -87,45 +66,45 @@
         var b = el("button", cls);
         b.type = "button";
         if (iconName) { b.appendChild(icon(iconName)); }
-        if (label) { b.appendChild(el("span", "scn__label", label)); }
+        if (label) { b.appendChild(el("span", "mp-scn__label", label)); }
         if (aria || label) { b.setAttribute("aria-label", aria || label); }
         b.addEventListener("click", action);
         return b;
     }
 
     function build() {
-        root = el("div", "scn");
+        root = el("div", "mp-scn");
         root.setAttribute("role", "dialog");
         root.setAttribute("aria-label", t("title", "Scanner"));
 
         // ---------------- camera
-        var cam = el("div", "scn__view");
-        var camTop = el("div", "scn__top");
-        ui.closeBtn = btn("scn__tool", "close", "", close, t("close", "Close"));
-        ui.camTitle = el("div", "scn__heading", t("title", "Scanner"));
-        ui.modeBtn = btn("scn__tool", "live", "", toggleMode, t("mode", "Camera mode"));
-        ui.sensBtn = btn("scn__tool scn__tool--text", "sliders", "", cycleSensitivity, t("sensitivity", "Sensitivity"));
-        ui.sensLabel = el("span", "scn__label");
+        var cam = el("div", "mp-scn__view");
+        var camTop = el("div", "mp-scn__top");
+        ui.closeBtn = btn("mp-scn__tool", "close", "", close, t("close", "Close"));
+        ui.camTitle = el("div", "mp-scn__heading", t("title", "Scanner"));
+        ui.modeBtn = btn("mp-scn__tool", "live", "", toggleMode, t("mode", "Camera mode"));
+        ui.sensBtn = btn("mp-scn__tool mp-scn__tool--text", "sliders", "", cycleSensitivity, t("sensitivity", "Sensitivity"));
+        ui.sensLabel = el("span", "mp-scn__label");
         ui.sensBtn.appendChild(ui.sensLabel);
-        ui.torchBtn = btn("scn__tool", "torch", "", toggleTorch, t("torch", "Light"));
+        ui.torchBtn = btn("mp-scn__tool", "torch", "", toggleTorch, t("torch", "Light"));
         ui.torchBtn.hidden = true;
-        ui.autoBtn = btn("scn__tool scn__tool--text", "auto", t("auto", "Auto"), toggleAuto);
+        ui.autoBtn = btn("mp-scn__tool mp-scn__tool--text", "auto", t("auto", "Auto"), toggleAuto);
         camTop.append(ui.closeBtn, ui.camTitle, ui.modeBtn, ui.sensBtn, ui.torchBtn, ui.autoBtn);
 
-        ui.stage = el("div", "scn__stage scn__stage--camera");
-        ui.video = el("video", "scn__video");
+        ui.stage = el("div", "mp-scn__stage mp-scn__stage--camera");
+        ui.video = el("video", "mp-scn__video");
         ui.video.setAttribute("playsinline", "");
         ui.video.muted = true;
-        ui.overlay = el("canvas", "scn__overlay");
-        ui.hint = el("div", "scn__hint", t("hint", "Hold the camera over the page"));
-        ui.message = el("div", "scn__message");
+        ui.overlay = el("canvas", "mp-scn__overlay");
+        ui.hint = el("div", "mp-scn__hint", t("hint", "Hold the camera over the page"));
+        ui.message = el("div", "mp-scn__message");
         ui.message.hidden = true;
-        ui.nativePanel = el("div", "scn__native");
+        ui.nativePanel = el("div", "mp-scn__native");
         ui.nativePanel.append(
             icon("native"),
-            el("p", "scn__native-text", t("native-text", "The photo is taken with the camera app of your device - usually sharper, with autofocus.")),
-            btn("scn__action scn__action--primary scn__native-btn", "camera", t("native-shoot", "Take photo"), function () { ui.nativeInput.click(); }),
-            btn("scn__action scn__native-btn", "image", t("native-pick", "Choose photos"), function () { ui.pickInput.click(); }));
+            el("p", "mp-scn__native-text", t("native-text", "The photo is taken with the camera app of your device - usually sharper, with autofocus.")),
+            btn("mp-scn__action mp-scn__action--primary mp-scn__native-btn", "camera", t("native-shoot", "Take photo"), function () { ui.nativeInput.click(); }),
+            btn("mp-scn__action mp-scn__native-btn", "image", t("native-pick", "Choose photos"), function () { ui.pickInput.click(); }));
         ui.nativeInput = el("input");
         ui.nativeInput.type = "file"; ui.nativeInput.accept = "image/*"; ui.nativeInput.setAttribute("capture", "environment"); ui.nativeInput.hidden = true;
         ui.pickInput = el("input");
@@ -135,80 +114,80 @@
         });
         ui.stage.append(ui.video, ui.overlay, ui.nativePanel, ui.hint, ui.message, ui.nativeInput, ui.pickInput);
 
-        var camBottom = el("div", "scn__bottom scn__bottom--camera");
-        ui.pagesBtn = btn("scn__pagesbtn", "", "", showPages, t("pages", "Pages"));
-        ui.pagesThumb = el("canvas", "scn__pagesthumb");
-        ui.pagesCount = el("span", "scn__badge");
+        var camBottom = el("div", "mp-scn__bottom mp-scn__bottom--camera");
+        ui.pagesBtn = btn("mp-scn__pagesbtn", "", "", showPages, t("pages", "Pages"));
+        ui.pagesThumb = el("canvas", "mp-scn__pagesthumb");
+        ui.pagesCount = el("span", "mp-scn__badge");
         ui.pagesBtn.append(ui.pagesThumb, ui.pagesCount);
-        ui.shutter = btn("scn__shutter", "", "", function () { if (mode === "native") { ui.nativeInput.click(); } else { capture(false); } }, t("shoot", "Take photo"));
-        ui.shutter.appendChild(el("span", "scn__shutter-ring"));
-        ui.finishBtn = btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish);
+        ui.shutter = btn("mp-scn__shutter", "", "", function () { if (mode === "native") { ui.nativeInput.click(); } else { capture(false); } }, t("shoot", "Take photo"));
+        ui.shutter.appendChild(el("span", "mp-scn__shutter-ring"));
+        ui.finishBtn = btn("mp-scn__action mp-scn__action--primary", "check", t("finish", "Done"), finish);
         camBottom.append(ui.pagesBtn, ui.shutter, ui.finishBtn);
         cam.append(camTop, ui.stage, camBottom);
         ui.cameraView = cam;
 
         // ---------------- review
-        var rev = el("div", "scn__view");
-        var revTop = el("div", "scn__top");
-        ui.revBack = btn("scn__tool", "back", "", showCamera, t("camera", "Camera"));
-        ui.revTitle = el("div", "scn__heading");
-        revTop.append(ui.revBack, ui.revTitle, btn("scn__tool", "rotateCw", "", function () { turnPage(1); }, t("rotate", "Rotate")));
-        ui.reviewStage = el("div", "scn__stage");
-        ui.reviewCanvas = el("canvas", "scn__page");
-        ui.reviewNote = el("div", "scn__hint scn__hint--note");
+        var rev = el("div", "mp-scn__view");
+        var revTop = el("div", "mp-scn__top");
+        ui.revBack = btn("mp-scn__tool", "back", "", showCamera, t("camera", "Camera"));
+        ui.revTitle = el("div", "mp-scn__heading");
+        revTop.append(ui.revBack, ui.revTitle, btn("mp-scn__tool", "rotateCw", "", function () { turnPage(1); }, t("rotate", "Rotate")));
+        ui.reviewStage = el("div", "mp-scn__stage");
+        ui.reviewCanvas = el("canvas", "mp-scn__page");
+        ui.reviewNote = el("div", "mp-scn__hint mp-scn__hint--note");
         ui.reviewNote.hidden = true;
         ui.reviewStage.append(ui.reviewCanvas, ui.reviewNote);
-        ui.filterBar = el("div", "scn__filters");
+        ui.filterBar = el("div", "mp-scn__filters");
         FILTERS.forEach(function (f) {
-            var b = el("button", "scn__chip", t("f-" + f[0], f[1]));
+            var b = el("button", "mp-scn__chip", t("f-" + f[0], f[1]));
             b.type = "button";
             b.setAttribute("data-filter", f[0]);
             b.addEventListener("click", function () { setFilter(f[0]); });
             ui.filterBar.appendChild(b);
         });
-        var revBottom = el("div", "scn__bottom scn__bottom--actions");
+        var revBottom = el("div", "mp-scn__bottom mp-scn__bottom--actions");
         revBottom.append(
-            btn("scn__action", "camera", t("retake", "Retake"), retake),
-            btn("scn__action", "crop", t("crop", "Crop"), function () { showAdjust(current); }),
-            btn("scn__action", "plus", t("add-page", "Page"), showCamera),
-            btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish));
+            btn("mp-scn__action", "camera", t("retake", "Retake"), retake),
+            btn("mp-scn__action", "crop", t("crop", "Crop"), function () { showAdjust(current); }),
+            btn("mp-scn__action", "plus", t("add-page", "Page"), showCamera),
+            btn("mp-scn__action mp-scn__action--primary", "check", t("finish", "Done"), finish));
         rev.append(revTop, ui.reviewStage, ui.filterBar, revBottom);
         ui.reviewView = rev;
 
         // ---------------- adjust corners
-        var adj = el("div", "scn__view");
-        var adjTop = el("div", "scn__top");
-        adjTop.append(btn("scn__tool", "back", "", function () { showReview(current); }, t("back", "Back")),
-            ui.adjustTitle = el("div", "scn__heading", t("adjust", "Drag the corners onto the page")));
-        ui.adjustStage = el("div", "scn__stage");
-        ui.adjustWrap = el("div", "scn__adjust-wrap");
-        ui.adjustCanvas = el("canvas", "scn__page");
+        var adj = el("div", "mp-scn__view");
+        var adjTop = el("div", "mp-scn__top");
+        adjTop.append(btn("mp-scn__tool", "back", "", function () { showReview(current); }, t("back", "Back")),
+            ui.adjustTitle = el("div", "mp-scn__heading", t("adjust", "Drag the corners onto the page")));
+        ui.adjustStage = el("div", "mp-scn__stage");
+        ui.adjustWrap = el("div", "mp-scn__adjust-wrap");
+        ui.adjustCanvas = el("canvas", "mp-scn__page");
         ui.adjustSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        ui.adjustSvg.setAttribute("class", "scn__adjust-svg");
+        ui.adjustSvg.setAttribute("class", "mp-scn__adjust-svg");
         ui.adjustWrap.append(ui.adjustCanvas, ui.adjustSvg);
         ui.adjustStage.appendChild(ui.adjustWrap);
-        var adjBottom = el("div", "scn__bottom scn__bottom--actions");
+        var adjBottom = el("div", "mp-scn__bottom mp-scn__bottom--actions");
         adjBottom.append(
-            btn("scn__action", "detect", t("auto-corners", "Detect again"), redetect),
-            btn("scn__action", "rotateCcw", t("turn-left", "Left"), function () { turnSource(-1); }),
-            btn("scn__action", "rotateCw", t("turn-right", "Right"), function () { turnSource(1); }),
-            btn("scn__action scn__action--primary", "check", t("apply", "Apply"), function () { showReview(current); }));
+            btn("mp-scn__action", "detect", t("auto-corners", "Detect again"), redetect),
+            btn("mp-scn__action", "rotateCcw", t("turn-left", "Left"), function () { turnSource(-1); }),
+            btn("mp-scn__action", "rotateCw", t("turn-right", "Right"), function () { turnSource(1); }),
+            btn("mp-scn__action mp-scn__action--primary", "check", t("apply", "Apply"), function () { showReview(current); }));
         adj.append(adjTop, ui.adjustStage, adjBottom);
         ui.adjustView = adj;
 
         // ---------------- pages overview
-        var pg = el("div", "scn__view");
-        var pgTop = el("div", "scn__top");
-        pgTop.append(btn("scn__tool", "back", "", showCamera, t("camera", "Camera")), el("div", "scn__heading", t("pages", "Pages")));
-        ui.grid = el("div", "scn__grid");
-        var pgBottom = el("div", "scn__bottom scn__bottom--actions");
+        var pg = el("div", "mp-scn__view");
+        var pgTop = el("div", "mp-scn__top");
+        pgTop.append(btn("mp-scn__tool", "back", "", showCamera, t("camera", "Camera")), el("div", "mp-scn__heading", t("pages", "Pages")));
+        ui.grid = el("div", "mp-scn__grid");
+        var pgBottom = el("div", "mp-scn__bottom mp-scn__bottom--actions");
         pgBottom.append(
-            btn("scn__action", "plus", t("add-page", "Page"), showCamera),
-            btn("scn__action scn__action--primary", "check", t("finish", "Done"), finish));
+            btn("mp-scn__action", "plus", t("add-page", "Page"), showCamera),
+            btn("mp-scn__action mp-scn__action--primary", "check", t("finish", "Done"), finish));
         pg.append(pgTop, ui.grid, pgBottom);
         ui.pagesView = pg;
 
-        ui.busy = el("div", "scn__busy", t("working", "Working …"));
+        ui.busy = el("div", "mp-scn__busy", t("working", "Working …"));
         ui.busy.hidden = true;
 
         root.append(cam, rev, adj, pg, ui.busy);
@@ -230,10 +209,11 @@
     // ------------------------------------------------------------------ open / close
 
     // The status bar belongs to the scanner while it is open and goes back to the app when it closes. A phone
-    // paints the status bar from two places: the browser colour (theme-color) and the colour of the root element
-    // (the app's root has the header's colour, so it is light in the light theme). Both are black while the scanner
-    // is open - the root through html.has-scanner in the style sheet - and both are set explicitly on the way
-    // back, with a repaint, so nothing dark is left behind the status bar afterwards.
+    // paints the status bar from two places: the browser colour (theme-color) and the colour of the root element.
+    // Both are black while the scanner is open - the root through html.mp-has-scanner in the style sheet - and both
+    // are put back on the way out, with a repaint, so nothing dark is left behind the status bar afterwards.
+    var pageThemeColor = null;
+
     function themeColor(color) {
         // a new tag, not a changed attribute: some browsers only look again when the tag is inserted
         var old = document.querySelector('meta[name="theme-color"]');
@@ -245,14 +225,15 @@
 
     function barColor(scanning) {
         var html = document.documentElement;
-        var surface = getComputedStyle(html).getPropertyValue("--color-surface").trim() || "#ffffff";
         if (scanning) {
-            html.classList.add("has-scanner");
+            var current = document.querySelector('meta[name="theme-color"]');
+            pageThemeColor = current ? current.getAttribute("content") : null;
+            html.classList.add("mp-has-scanner");
             themeColor("#000000");
         } else {
-            html.classList.remove("has-scanner");
-            themeColor(surface);
-            html.style.backgroundColor = "var(--color-surface)";
+            html.classList.remove("mp-has-scanner");
+            if (pageThemeColor) { themeColor(pageThemeColor); }
+            html.style.backgroundColor = "var(--mat-bg)";
             void html.offsetHeight;
             html.style.removeProperty("background-color");
         }
@@ -688,12 +669,12 @@
         while (svg.firstChild) { svg.removeChild(svg.firstChild); }
         var poly = document.createElementNS(ns, "polygon");
         poly.setAttribute("points", page.quad.map(function (p) { return (p[0] * w) + "," + (p[1] * h); }).join(" "));
-        poly.setAttribute("class", "scn__poly");
+        poly.setAttribute("class", "mp-scn__poly");
         svg.appendChild(poly);
         page.quad.forEach(function (p, i) {
             var c = document.createElementNS(ns, "circle");
             c.setAttribute("cx", p[0] * w); c.setAttribute("cy", p[1] * h); c.setAttribute("r", 18);
-            c.setAttribute("class", "scn__handle");
+            c.setAttribute("class", "mp-scn__handle");
             c.addEventListener("pointerdown", function (event) { dragHandle(event, i); });
             svg.appendChild(c);
         });
@@ -749,19 +730,19 @@
         setView("pages");
         ui.grid.innerHTML = "";
         pages.forEach(function (page, i) {
-            var cell = el("div", "scn__cell");
+            var cell = el("div", "mp-scn__cell");
             var th = thumbOf(page, 360);
-            var img = el("canvas", "scn__thumb");
+            var img = el("canvas", "mp-scn__thumb");
             img.width = th.width; img.height = th.height;
             img.getContext("2d").drawImage(th, 0, 0);
             img.addEventListener("click", function () { showReview(i); });
-            var tools = el("div", "scn__cell-tools");
-            var left = btn("scn__mini", "left", "", function () { moveBy(i, -1); }, t("move-left", "Move left"));
-            var del = btn("scn__mini", "trash", "", function () { pages.splice(i, 1); if (pages.length) { showPages(); } else { showCamera(); } }, t("delete", "Delete"));
-            var right = btn("scn__mini", "right", "", function () { moveBy(i, 1); }, t("move-right", "Move right"));
+            var tools = el("div", "mp-scn__cell-tools");
+            var left = btn("mp-scn__mini", "left", "", function () { moveBy(i, -1); }, t("move-left", "Move left"));
+            var del = btn("mp-scn__mini", "trash", "", function () { pages.splice(i, 1); if (pages.length) { showPages(); } else { showCamera(); } }, t("delete", "Delete"));
+            var right = btn("mp-scn__mini", "right", "", function () { moveBy(i, 1); }, t("move-right", "Move right"));
             left.disabled = i === 0; right.disabled = i === pages.length - 1;
             tools.append(left, del, right);
-            cell.append(img, el("span", "scn__num", String(i + 1)), tools);
+            cell.append(img, el("span", "mp-scn__num", String(i + 1)), tools);
             ui.grid.appendChild(cell);
         });
     }

@@ -28,11 +28,7 @@
     var PHOTO_SIDE = 3200;    // a photo from the camera app is cut down to this
     var IGNORE_GONE = 1200;   // a turned-down label has to be out of sight this long before it counts again
 
-    var ICONS = {
-        close: '<path d="M6 6l12 12M18 6L6 18"/>',
-        torch: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
-        camera: '<path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/>'
-    };
+    var SPRITE = { close: "x", torch: "flashlight", camera: "camera" };
 
     var root = null, ui = {}, mode = "open", targetInput = null;
     var stream = null, track = null, timer = null, statusTimer = null, inFlight = 0, torchOn = false;
@@ -43,17 +39,11 @@
     // ------------------------------------------------------------------ DOM
 
     function icon(name) {
-        var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        s.setAttribute("viewBox", "0 0 24 24");
-        s.setAttribute("fill", "none");
-        s.setAttribute("stroke", "currentColor");
-        s.setAttribute("stroke-width", "1.9");
-        s.setAttribute("stroke-linecap", "round");
-        s.setAttribute("stroke-linejoin", "round");
-        s.setAttribute("aria-hidden", "true");
-        s.setAttribute("class", "scn__icon");
-        s.innerHTML = ICONS[name] || "";
-        return s;
+        var holder = document.createElement("span");
+        holder.innerHTML = window.MatPaper.icon(SPRITE[name] || name);
+        var svg = holder.firstChild;
+        svg.classList.add("mp-mp-scn__icon");
+        return svg;
     }
 
     function el(tag, cls, text) {
@@ -64,7 +54,7 @@
     }
 
     function tool(iconName, label, onClick) {
-        var b = el("button", "scn__tool");
+        var b = el("button", "mp-scn__tool");
         b.type = "button";
         if (iconName) { b.appendChild(icon(iconName)); }
         if (label) { b.appendChild(el("span", "", label)); b.setAttribute("aria-label", label); }
@@ -73,25 +63,25 @@
     }
 
     function button(cls, label, onClick) {
-        var b = el("button", "btn " + cls, label);
+        var b = el("button", "mat-btn " + cls, label);
         b.type = "button";
         b.addEventListener("click", onClick);
         return b;
     }
 
     function build() {
-        root = el("div", "scn scn--code");
+        root = el("div", "mp-scn mp-scn--code");
         root.hidden = true;
         root.setAttribute("role", "dialog");
         root.setAttribute("aria-modal", "true");
         root.setAttribute("aria-label", t("title", "Scan a label"));
 
-        var view = el("div", "scn__view");
-        var top = el("div", "scn__top");
+        var view = el("div", "mp-scn__view");
+        var top = el("div", "mp-scn__top");
         var close = tool("close", "", closeScanner);
         close.setAttribute("aria-label", t("close", "Close"));
         top.appendChild(close);
-        top.appendChild(el("div", "scn__heading", t("title", "Scan a label")));
+        top.appendChild(el("div", "mp-scn__heading", t("title", "Scan a label")));
         ui.zoom = tool("", "1×", cycleZoom);
         ui.zoom.setAttribute("aria-label", t("zoom", "Zoom"));
         ui.zoom.hidden = true;
@@ -101,31 +91,31 @@
         ui.torch.hidden = true;
         top.appendChild(ui.torch);
 
-        ui.stage = el("div", "code-scan__stage");
-        ui.frame = el("div", "code-scan__frame");
+        ui.stage = el("div", "mp-code__stage");
+        ui.frame = el("div", "mp-code__frame");
         ui.video = el("video");
         ui.video.setAttribute("playsinline", "");
         ui.video.setAttribute("muted", "");
         ui.video.muted = true;
         ui.video.autoplay = true;
         ui.frame.appendChild(ui.video);
-        ui.reticle = el("div", "code-scan__reticle");
+        ui.reticle = el("div", "mp-code__reticle");
         ui.frame.appendChild(ui.reticle);
         ui.stage.appendChild(ui.frame);
-        ui.status = el("div", "code-scan__status");
+        ui.status = el("div", "mp-code__status");
         ui.status.setAttribute("role", "status");
         ui.stage.appendChild(ui.status);
 
         // what was read: the number, the document, and the two ways on
-        ui.card = el("div", "code-scan__result");
+        ui.card = el("div", "mp-code__result");
         ui.card.hidden = true;
         ui.card.setAttribute("role", "alertdialog");
-        ui.asn = el("div", "code-scan__asn");
-        ui.doc = el("div", "code-scan__doc");
-        ui.sub = el("div", "code-scan__sub");
-        var actions = el("div", "code-scan__actions");
-        ui.again = button("btn--secondary", t("again", "Scan again"), again);
-        ui.primary = button("btn--primary", t("open", "Open"), proceed);
+        ui.asn = el("div", "mp-code__asn");
+        ui.doc = el("div", "mp-code__doc");
+        ui.sub = el("div", "mp-code__sub");
+        var actions = el("div", "mp-code__actions");
+        ui.again = button("mat-btn--secondary", t("again", "Scan again"), again);
+        ui.primary = button("mat-btn--primary", t("open", "Open"), proceed);
         actions.appendChild(ui.again);
         actions.appendChild(ui.primary);
         ui.card.appendChild(ui.asn);
@@ -134,7 +124,7 @@
         ui.card.appendChild(actions);
         ui.stage.appendChild(ui.card);
 
-        var bottom = el("div", "scn__bottom");
+        var bottom = el("div", "mp-scn__bottom");
         ui.photo = tool("camera", t("photo", "Take a photo"), function () { ui.file.click(); });
         bottom.appendChild(ui.photo);
         ui.file = el("input");
@@ -169,6 +159,8 @@
     }
 
     // The status bar of a phone belongs to the scanner while it is open (the same as the document scanner does).
+    var pageThemeColor = null;
+
     function themeColor(color) {
         var old = document.querySelector('meta[name="theme-color"]');
         var meta = document.createElement("meta");
@@ -179,14 +171,15 @@
 
     function barColor(scanning) {
         var html = document.documentElement;
-        var surface = getComputedStyle(html).getPropertyValue("--color-surface").trim() || "#ffffff";
         if (scanning) {
-            html.classList.add("has-scanner");
+            var current = document.querySelector('meta[name="theme-color"]');
+            pageThemeColor = current ? current.getAttribute("content") : null;
+            html.classList.add("mp-has-scanner");
             themeColor("#000000");
         } else {
-            html.classList.remove("has-scanner");
-            themeColor(surface);
-            html.style.backgroundColor = "var(--color-surface)";
+            html.classList.remove("mp-has-scanner");
+            if (pageThemeColor) { themeColor(pageThemeColor); }
+            html.style.backgroundColor = "var(--mat-bg)";
             void html.offsetHeight;
             html.style.removeProperty("background-color");
         }
@@ -220,7 +213,7 @@
     function status(text, kind, forMs) {
         window.clearTimeout(statusTimer);
         ui.status.textContent = text || "";
-        ui.status.className = "code-scan__status" + (kind ? " is-" + kind : "");
+        ui.status.className = "mp-code__status" + (kind ? " is-" + kind : "");
         if (text && forMs) { statusTimer = window.setTimeout(function () { if (state === "scanning") { status(t("hint", "Hold the label in the frame")); } }, forMs); }
     }
 
@@ -421,7 +414,7 @@
         last = res;
         lastSource = source;
         ui.asn.textContent = res.text;
-        ui.doc.className = "code-scan__doc";
+        ui.doc.className = "mp-code__doc";
         ui.sub.textContent = "";
         ui.primary.hidden = false;
         if (mode === "fill") {

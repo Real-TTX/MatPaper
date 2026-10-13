@@ -1,95 +1,30 @@
 <!DOCTYPE html>
-<html lang="de">
+<!-- The page of the service worker when the server cannot be reached: the toolkit and the style sheet of the app come from its cache, nothing else is needed. -->
+<html lang="de" data-app="matpaper">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#2f9e44" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#268538" />
   <title>MatPaper - Offline</title>
-  <style>
-    :root {
-      --green: #2f9e44;
-      --green-dark: #2b8a3e;
-      --bg: #f5f6f8;
-      --text: #212529;
-      --muted: #868e96;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 24px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-      max-width: 420px;
-      width: 100%;
-      padding: 40px 32px;
-      text-align: center;
-    }
-    .icon {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 20px;
-      border-radius: 50%;
-      background: rgba(47, 158, 68, 0.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .icon svg { width: 40px; height: 40px; stroke: var(--green); }
-    h1 {
-      font-size: 1.4rem;
-      margin: 0 0 12px;
-      color: var(--green-dark);
-    }
-    p {
-      margin: 0 0 8px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-    button {
-      margin-top: 24px;
-      background: var(--green);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 24px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover { background: var(--green-dark); }
-  </style>
+  <script src="/matui/matui.boot.js"></script>
+  <link rel="stylesheet" href="/matui/matui.css" />
+  <link rel="stylesheet" href="/css/matpaper.css" />
 </head>
 <body>
-  <main class="card">
-    <div class="icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 1l22 22" />
-        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
-        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
-        <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
-        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
-        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-        <line x1="12" y1="20" x2="12.01" y2="20" />
-      </svg>
+  <main class="mat-auth" id="main">
+    <div class="mat-auth__card">
+      <div class="mat-auth__brand">
+        <span class="mat-logo mat-logo--lg" role="img" aria-label="MatPaper">
+          <svg class="mat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+        </span>
+        <h1>MatPaper ist offline</h1>
+        <p class="mat-muted">Es besteht derzeit keine Verbindung zum Server.</p>
+      </div>
+      <p class="mat-muted">Bitte prüfe deine Internetverbindung und versuche es erneut.</p>
+      <a class="mat-btn mat-btn--primary mat-btn--block" href="/">Erneut versuchen</a>
+      <p class="mat-muted mat-small">MatPaper is offline. Check your connection and try again.</p>
     </div>
-    <h1>MatPaper ist offline</h1>
-    <p>Es besteht derzeit keine Verbindung zum Server.</p>
-    <p>Bitte pruefe deine Internetverbindung und versuche es erneut.</p>
-    <button type="button" onclick="location.reload()">Erneut versuchen</button>
   </main>
 </body>
 </html>

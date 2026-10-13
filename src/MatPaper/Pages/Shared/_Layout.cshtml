@@ -4,6 +4,7 @@
 @inject MatPaper.Services.CurrentUser CurrentUser
 @inject MatPaper.Services.ThemeService Themes
 @inject MatPaper.Services.MenuService MenuSvc
+@inject MatPaper.Services.PageRoutes Routes
 @inject MatPaper.Controls.Toolkit Toolkit
 @inject MatPaper.Configuration.AppConfig AppSettings
 @{
@@ -54,7 +55,7 @@
     }
 }
 <!DOCTYPE html>
-<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" @Html.Raw(theme.RootAttributes)@(Context.Request.Method == "POST" ? Html.Raw(" data-posted") : null)>
+<html lang="@(global::System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)" @Html.Raw(theme.RootAttributes) @Ui.RootTexts(L)@(Context.Request.Method == "POST" ? Html.Raw(" data-posted") : null)>
 <partial name="_Head" model="theme" />
 <body>
     <a class="mat-skip" href="#main">@L["Skip to the content"]</a>
@@ -179,7 +180,7 @@
                             <li><a href="/">@Ui.App.Name</a></li>
                             @for (var i = 0; i < crumbs.Count; i++)
                             {
-                                if (crumbsLinkable && i < crumbs.Count - 1)
+                                if (crumbsLinkable && i < crumbs.Count - 1 && Routes.Exists("/" + string.Join("/", pathParts.Take(i + 1))))
                                 {
                                     <li><a href="/@string.Join("/", pathParts.Take(i + 1))">@crumbs[i]</a></li>
                                 }
@@ -255,6 +256,7 @@
     }
 
     <div id="viewer-i18n" hidden data-close='@L["Close"]' data-download='@L["Download"]' data-page='@L["Page"]'
+         data-viewer='@L["Document viewer"]' data-zoom-in='@L["Zoom in"]' data-zoom-out='@L["Zoom out"]'
          data-date-placeholder='@L["Choose a date"]' data-date-today='@L["Today"]' data-date-clear='@L["Clear"]'
          data-date-prev='@L["Previous month"]' data-date-next='@L["Next month"]' data-date-month='@L["Month"]' data-date-year='@L["Year"]'
          data-dl-preparing='@L["Preparing the file …"]' data-dl-save='@L["Save or share"]'

@@ -108,6 +108,10 @@ public class EditModel : PageModel
     public List<TagOption> TagOptions { get; private set; } = new();
     public List<SelectListItem> TagItems { get; private set; } = new();
 
+    /// <summary>The colour of every tag and every project by id: the picker shows it as a dot before the name.</summary>
+    public Dictionary<string, string?> TagColours => TagOptions.ToDictionary(t => t.Id.ToString(), t => t.Color);
+    public Dictionary<string, string?> ProjectColours { get; private set; } = new();
+
     /// <summary>The archive number feature is switched on (System, Archive numbers): only then the page has anything of it.</summary>
     public bool AsnEnabled => _config.ArchiveNumbersEnabled;
 
@@ -1013,7 +1017,7 @@ public class EditModel : PageModel
             .Where(p => p.UpdateState != UpdateState.Deleted)
             .AccessibleTo(_currentUser)
             .OrderBy(p => p.Name)
-            .Select(p => new { p.Id, p.Name })
+            .Select(p => new { p.Id, p.Name, p.Color })
             .ToListAsync();
 
         var storageLocations = await _db.StorageLocations
@@ -1036,6 +1040,7 @@ public class EditModel : PageModel
             correspondents.Select(c => (c.Id, c.Name)), Input.CorrespondentId, "— None —");
         ProjectOptions = BuildOptions(
             projects.Select(p => (p.Id, p.Name)), Input.ProjectId, "— None —");
+        ProjectColours = projects.ToDictionary(p => p.Id.ToString(), p => (string?)p.Color);
         StorageLocationOptions = BuildOptions(
             storageLocations.Select(s => (s.Id, s.Name)), Input.StorageLocationId, "— Select —");
 

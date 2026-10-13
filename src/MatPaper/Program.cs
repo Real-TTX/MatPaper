@@ -76,6 +76,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<Fmt>();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<MenuService>();
+builder.Services.AddSingleton<PageRoutes>();
 builder.Services.AddSingleton<MatPaper.Controls.Toolkit>();
 builder.Services.AddSingleton<TaskTriggerQueue>();
 builder.Services.AddScoped<ConnectionService>();

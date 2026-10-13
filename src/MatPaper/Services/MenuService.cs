@@ -19,7 +19,15 @@ public sealed class MenuService(CurrentUser user, AppDbContext db, IStringLocali
         var pending = 0;
         if (user.UserId is long uid)
         {
-            pending = await db.Documents.InInboxOf(uid, user.IsAdmin).CountAsync(ct);
+            // The badge is no reason to lose the whole page (the page of an error is drawn with this menu): without the database it shows no number.
+            try
+            {
+                pending = await db.Documents.InInboxOf(uid, user.IsAdmin).CountAsync(ct);
+            }
+            catch (Exception) when (!ct.IsCancellationRequested)
+            {
+                pending = 0;
+            }
         }
 
         var menus = new List<NavSet> { Work(pending) };

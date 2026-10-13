@@ -4,9 +4,9 @@
 }
 @if (!row.IsStaged)
 {
-    <p class="inbox-item__path">
-        <span class="badge badge--muted">@(row.LocationName ?? L["Unknown"].Value)</span>
-        <code>@row.RelativePath</code>
-        <span class="form-help">@Fmt.Size(row.FileSize)@(row.FileModifiedUtc.HasValue ? " · " + Fmt.Date(row.FileModifiedUtc) : string.Empty)</span>
+    <p class="mp-inbox-item__path">
+        <span class="mat-pill mat-pill--plain">@(row.LocationName ?? L["Unknown"].Value)</span>
+        <span class="mat-mono">@row.RelativePath</span>
+        <small class="mat-muted">@Fmt.Size(row.FileSize)@(row.FileModifiedUtc.HasValue ? " · " + Fmt.Date(row.FileModifiedUtc) : string.Empty)</small>
     </p>
 }

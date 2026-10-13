@@ -2,68 +2,71 @@
 @model IndexModel
 @{
     ViewData["Breadcrumb"] = L["Dashboard"].Value;
+    ViewData["Heading"] = L["Dashboard"].Value;
 }
 
-<section class="kpi-grid">
-    <a class="kpi-card" href="/Inbox">
-        <div class="kpi-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-            </svg>
-        </div>
-        <div class="kpi-card__body">
-            <span class="kpi-card__value">@Model.PendingReviewCount</span>
-            <span class="kpi-card__label">@L["Needs review"]</span>
-        </div>
-    </a>
+<div class="mat-stack">
+    <div class="mat-grid mat-grid--2">
+        <a class="mat-card mp-linkcard" href="/Inbox">
+            <div class="mat-card__body mp-linkcard__body">
+                <span class="mp-linkcard__icon"><mp-icon name="inbox" /></span>
+                <span class="mat-stat">
+                    <span class="mat-stat__value">@Model.PendingReviewCount</span>
+                    <span class="mat-stat__label">@L["Needs review"]</span>
+                </span>
+            </div>
+        </a>
 
-    <a class="kpi-card" href="/Documents">
-        <div class="kpi-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-            </svg>
-        </div>
-        <div class="kpi-card__body">
-            <span class="kpi-card__value">@Model.DocumentCount</span>
-            <span class="kpi-card__label">@L["Documents"]</span>
-        </div>
-    </a>
-</section>
+        <a class="mat-card mp-linkcard" href="/Documents">
+            <div class="mat-card__body mp-linkcard__body">
+                <span class="mp-linkcard__icon"><mp-icon name="file-text" /></span>
+                <span class="mat-stat">
+                    <span class="mat-stat__value">@Model.DocumentCount</span>
+                    <span class="mat-stat__label">@L["Documents"]</span>
+                </span>
+            </div>
+        </a>
+    </div>
 
-<section class="dash-panel">
-    <h2 class="dash-panel__title">@L["Recent documents"]</h2>
-    @if (Model.Recent.Count == 0)
-    {
-        <p class="form-help">@L["No documents yet."] <a href="/Documents/Upload">@L["Upload your first document"]</a>.</p>
-    }
-    else
-    {
-        <div class="dash-recent">
-            @foreach (var d in Model.Recent)
-            {
-                <a class="dash-recent__item" href="/Documents/Edit?id=@d.Id">
-                    @if (d.ThumbnailPath != null)
-                    {
-                        <img class="dash-recent__thumb" src="/Documents/@d.Token/thumb" alt="" loading="lazy" />
-                    }
-                    else
-                    {
-                        <span class="dash-recent__thumb"></span>
-                    }
-                    <span class="dash-recent__body">
-                        <span class="dash-recent__title">@d.Title</span>
-                        <span class="dash-recent__meta">
-                            @(d.CorrespondentName ?? "—") · @(d.TypeName ?? "—") · @Fmt.Date(d.Date)
-                        </span>
-                    </span>
-                </a>
-            }
+    <div class="mat-card">
+        <div class="mat-card__head">
+            <mp-icon name="clock" />
+            <h2 class="mat-card__title">@L["Recent documents"]</h2>
         </div>
-    }
-</section>
-
-<footer class="app-footer">
-    MatPaper &middot; @L["Version"] @MatPaper.AppInfo.Version
-</footer>
+        @if (Model.Recent.Count == 0)
+        {
+            <div class="mat-empty">
+                <span class="mat-empty__icon"><mp-icon name="file-text" /></span>
+                <div class="mat-empty__title">@L["No documents yet."]</div>
+                <mp-button variant="primary" href="/Documents/Upload" icon="plus">@L["Upload your first document"]</mp-button>
+            </div>
+        }
+        else
+        {
+            <ul class="mat-listgroup mp-recent">
+                @foreach (var d in Model.Recent)
+                {
+                    <li>
+                        <a class="mat-listgroup__item" href="/Documents/Edit?id=@d.Id">
+                            <span class="mp-thumb" aria-hidden="true">
+                                @if (d.ThumbnailPath != null)
+                                {
+                                    <img src="/Documents/@d.Token/thumb" alt="" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <mp-icon name="file-text" />
+                                }
+                            </span>
+                            <span class="mat-listgroup__text">
+                                <strong>@d.Title</strong>
+                                <small>@(d.CorrespondentName ?? "—") · @(d.TypeName ?? "—") · @Fmt.Date(d.Date)</small>
+                            </span>
+                            <mp-icon name="chevron-right" />
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

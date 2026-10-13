@@ -55,17 +55,17 @@
     }
 
     function buildOverlay() {
-        overlay = element("div", "drop-overlay");
+        overlay = element("div", "mp-drop-overlay");
         overlay.setAttribute("aria-hidden", "true");
         if (usePopover) { overlay.setAttribute("popover", "manual"); } else { overlay.hidden = true; }
         overlay.innerHTML =
-            '<div class="drop-overlay__card">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 9l5-5 5 5" /><path d="M12 4v12" /></svg>' +
-            '<strong class="drop-overlay__title"></strong>' +
-            '<span class="drop-overlay__hint"></span>' +
+            '<div class="mp-drop-overlay__card">' +
+            window.MatPaper.icon("upload") +
+            '<strong class="mp-drop-overlay__title"></strong>' +
+            '<span class="mp-drop-overlay__hint"></span>' +
             '</div>';
-        overlay.querySelector(".drop-overlay__title").textContent = t("title", "Drop files to add them");
-        overlay.querySelector(".drop-overlay__hint").textContent = t("hint", "PDF, images, XML or ZIP - they land in your inbox");
+        overlay.querySelector(".mp-drop-overlay__title").textContent = t("title", "Drop files to add them");
+        overlay.querySelector(".mp-drop-overlay__hint").textContent = t("hint", "PDF, images, XML or ZIP - they land in your inbox");
         document.body.appendChild(overlay);
     }
 
@@ -191,36 +191,41 @@
     var running = false;
 
     function buildTray() {
-        tray = element("div", "drop-tray");
+        tray = element("div", "mp-drop-tray");
         tray.setAttribute("role", "status");
         tray.setAttribute("aria-live", "polite");
         if (usePopover) { tray.setAttribute("popover", "manual"); } else { tray.hidden = true; }
         tray.innerHTML =
-            '<div class="drop-tray__head"><strong class="drop-tray__title"></strong><span class="drop-tray__count"></span>' +
-            '<button type="button" class="icon-btn drop-tray__close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button></div>' +
-            '<ul class="drop-tray__list"></ul>' +
-            '<div class="drop-tray__foot" hidden></div>';
-        tray.querySelector(".drop-tray__close").setAttribute("aria-label", t("close", "Close"));
-        tray.querySelector(".drop-tray__close").addEventListener("click", function () { present(tray, false); });
+            '<div class="mp-drop-tray__head"><strong class="mp-drop-tray__title"></strong><span class="mp-drop-tray__count"></span>' +
+            '<button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm mp-drop-tray__close">' + window.MatPaper.icon("x") + '</button></div>' +
+            '<ul class="mp-drop-tray__list"></ul>' +
+            '<div class="mp-drop-tray__foot" hidden></div>';
+        tray.querySelector(".mp-drop-tray__close").setAttribute("aria-label", t("close", "Close"));
+        tray.querySelector(".mp-drop-tray__close").addEventListener("click", function () { present(tray, false); });
         document.body.appendChild(tray);
     }
 
     function rowFor(item) {
-        var row = element("li", "drop-tray__item drop-tray__item--queued");
-        row.innerHTML = '<div class="drop-tray__line"><span class="drop-tray__name"></span><span class="drop-tray__size"></span></div>' +
-            '<div class="drop-tray__bar"><span class="drop-tray__fill"></span></div><div class="drop-tray__status"></div>';
-        row.querySelector(".drop-tray__name").textContent = item.file.name;
-        row.querySelector(".drop-tray__name").title = item.file.name;
-        row.querySelector(".drop-tray__size").textContent = formatSize(item.file.size);
-        row.querySelector(".drop-tray__status").textContent = t("queued", "Queued");
+        var row = element("li", "mp-drop-tray__item mp-drop-tray__item--queued");
+        row.innerHTML = '<div class="mp-drop-tray__line"><span class="mp-drop-tray__name"></span><span class="mp-drop-tray__size"></span></div>' +
+            '<div class="mat-meter mat-meter--sm"><div class="mat-meter__fill"></div></div><div class="mp-drop-tray__status"></div>';
+        row.querySelector(".mp-drop-tray__name").textContent = item.file.name;
+        row.querySelector(".mp-drop-tray__name").title = item.file.name;
+        row.querySelector(".mp-drop-tray__size").textContent = formatSize(item.file.size);
+        row.querySelector(".mp-drop-tray__status").textContent = t("queued", "Queued");
         item.row = row;
         return row;
     }
 
     function setStatus(item, status, text, href, note) {
         item.status = status;
-        item.row.className = "drop-tray__item drop-tray__item--" + status;
-        var cell = item.row.querySelector(".drop-tray__status");
+        item.row.className = "mp-drop-tray__item mp-drop-tray__item--" + status;
+        var bar = item.row.querySelector(".mat-meter__fill");
+        if (bar) {
+            if (status === "created" || status === "duplicate") { bar.setAttribute("data-tone", "ok"); }
+            else if (status === "failed") { bar.setAttribute("data-tone", "error"); }
+        }
+        var cell = item.row.querySelector(".mp-drop-tray__status");
         cell.textContent = text;
         if (href) {
             var link = element("a", "", t("show-existing", "Show existing document"));
@@ -229,13 +234,13 @@
             cell.appendChild(link);
         }
         // what the server has to say about the archive numbers (read from a sticker on the paper)
-        if (note) { cell.appendChild(element("span", "upload-note", note)); }
+        if (note) { cell.appendChild(element("span", "mp-upload-note", note)); }
     }
 
     function updateHead() {
         var done = queue.filter(function (i) { return i.status !== "queued" && i.status !== "uploading"; }).length;
-        tray.querySelector(".drop-tray__title").textContent = running || done < queue.length ? t("adding", "Adding documents …") : t("done", "Done");
-        tray.querySelector(".drop-tray__count").textContent = done + " / " + queue.length;
+        tray.querySelector(".mp-drop-tray__title").textContent = running || done < queue.length ? t("adding", "Adding documents …") : t("done", "Done");
+        tray.querySelector(".mp-drop-tray__count").textContent = done + " / " + queue.length;
     }
 
     function enqueue(files, tooMany) {
@@ -243,18 +248,18 @@
         // a new drop after a finished one starts a fresh list
         if (!running && queue.every(function (i) { return i.status !== "queued" && i.status !== "uploading"; })) {
             queue = [];
-            tray.querySelector(".drop-tray__list").innerHTML = "";
-            tray.querySelector(".drop-tray__foot").hidden = true;
+            tray.querySelector(".mp-drop-tray__list").innerHTML = "";
+            tray.querySelector(".mp-drop-tray__foot").hidden = true;
         }
 
-        var list = tray.querySelector(".drop-tray__list");
+        var list = tray.querySelector(".mp-drop-tray__list");
         files.forEach(function (file) {
             var item = { file: file, status: "queued", row: null, docs: { created: 0, duplicates: 0, failed: 0 } };
             queue.push(item);
             list.appendChild(rowFor(item));
         });
         if (tooMany) {
-            var note = element("li", "drop-tray__note", fill(t("too-many", "Only the first {0} files are added."), MAX_FILES));
+            var note = element("li", "mp-drop-tray__note", fill(t("too-many", "Only the first {0} files are added."), MAX_FILES));
             list.appendChild(note);
         }
         present(tray, true);
@@ -280,16 +285,16 @@
             setStatus(item, "uploading", t("uploading", "Uploading…"));
             updateHead();
 
-            var fillBar = item.row.querySelector(".drop-tray__fill");
+            var fillBar = item.row.querySelector(".mat-meter__fill");
             xhr.upload.onprogress = function (e) {
-                if (e.lengthComputable) { fillBar.style.width = Math.round((e.loaded / e.total) * 100) + "%"; }
+                if (e.lengthComputable) { fillBar.style.setProperty("--mat-meter", Math.round((e.loaded / e.total) * 100) + "%"); }
             };
             xhr.upload.onload = function () {
-                fillBar.style.width = "100%";
-                item.row.querySelector(".drop-tray__status").textContent = t("processing", "Processing …");
+                fillBar.style.setProperty("--mat-meter", "100%");
+                item.row.querySelector(".mp-drop-tray__status").textContent = t("processing", "Processing …");
             };
             xhr.onload = function () {
-                fillBar.style.width = "100%";
+                fillBar.style.setProperty("--mat-meter", "100%");
                 var res = null;
                 try { res = JSON.parse(xhr.responseText); } catch (err) { res = null; }
                 if (xhr.status >= 200 && xhr.status < 300 && res) {
@@ -337,18 +342,18 @@
         if (dupes > 0) { parts.push(fill(t("summary-duplicates", "{0} duplicate(s) skipped"), dupes)); }
         if (failed > 0) { parts.push(fill(t("summary-failed", "{0} failed"), failed)); }
 
-        var foot = tray.querySelector(".drop-tray__foot");
+        var foot = tray.querySelector(".mp-drop-tray__foot");
         foot.innerHTML = "";
-        foot.appendChild(element("span", "drop-tray__summary", parts.join(", ")));
+        foot.appendChild(element("span", "mp-drop-tray__summary", parts.join(", ")));
         if (created > 0) {
             // on the inbox page the new documents are not in the list yet
             if (location.pathname.toLowerCase().indexOf("/inbox") === 0) {
-                var reload = element("button", "btn btn--primary", t("reload", "Reload"));
+                var reload = element("button", "mat-btn mat-btn--primary mat-btn--sm", t("reload", "Reload"));
                 reload.type = "button";
                 reload.addEventListener("click", function () { location.reload(); });
                 foot.appendChild(reload);
             } else {
-                var link = element("a", "btn btn--primary", t("to-inbox", "Review them in your inbox →"));
+                var link = element("a", "mat-btn mat-btn--primary mat-btn--sm", t("to-inbox", "Review them in your inbox →"));
                 link.href = inboxUrl;
                 foot.appendChild(link);
             }

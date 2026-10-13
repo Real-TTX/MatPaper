@@ -6,19 +6,16 @@
 @if (row.ThumbnailPath == null)
 {
     @* No preview: either nothing has read the file yet, or the type has no thumbnail. *@
-    <span class="inbox-item__thumb inbox-item__thumb--file" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" />
-        </svg>
-    </span>
+    <span class="mp-inbox-item__thumb mp-inbox-item__thumb--file" aria-hidden="true"><mp-icon name="file-text" /></span>
 }
 else
 {
     @* On a phone the page viewer opens (doc-viewer.js); elsewhere the preview dialog (doc-preview.js). The link stays
        for a click with a modifier key (a new tab) and for a browser without script. *@
-    <a class="inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'
+    <a class="mp-inbox-item__thumb" href="/Documents/@row.Token/view" target="_blank" rel="noopener" title='@L["Preview"]'
        data-viewer-token="@row.Token" data-viewer-title="@row.Title"
        data-doc-preview="@row.Token" data-doc-preview-title="@row.Title" data-doc-preview-edit="/Documents/Edit?id=@row.Id&returnUrl=@back" data-doc-preview-share="true">
-        <img src="/Documents/@row.Token/thumb" alt="" width="44" height="58" />
+        <img src="/Documents/@row.Token/thumb" alt="" width="52" height="68" />
+        <span class="mp-inbox-item__eye" aria-hidden="true"><mp-icon name="eye" /></span>
     </a>
 }

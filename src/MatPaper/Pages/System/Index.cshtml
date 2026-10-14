@@ -19,7 +19,7 @@
 <div class="mat-grid">
     @{ await Card("/System/Users", "user", L["Users"].Value, L["Manage local accounts and roles"].Value); }
     @{ await Card("/System/StorageLocations", "hard-drive", L["Storage locations"].Value, L["Manage storage locations and search them for files"].Value); }
-    @{ await Card("/System/DocumentTypes", "layers", L["Document types"].Value, L["Manage the document type vocabulary"].Value); }
+    @{ await Card("/System/DocumentTypes", "shapes",L["Document types"].Value, L["Manage the document type vocabulary"].Value); }
     @{ await Card("/System/Connections", "plug", L["Connections"].Value, L["Reusable connections for mailboxes, shares and cloud drives"].Value); }
     @{ await Card("/System/ImportTasks", "download", L["Import tasks"].Value, L["Scheduled imports from folders and mailboxes"].Value); }
     @{ await Card("/System/ExportTasks", "upload", L["Export tasks"].Value, L["Scheduled database and document backups"].Value); }

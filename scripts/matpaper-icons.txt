@@ -15,6 +15,9 @@ stamp
 scissors
 printer
 share-2
+contact-round
+folder-kanban
+shapes
 
 # camera and scanning
 camera

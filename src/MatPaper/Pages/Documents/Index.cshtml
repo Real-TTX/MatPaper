@@ -168,7 +168,7 @@
                         <td class="mat-hide-sm mp-hide-md">
                             @if (d.Project != null)
                             {
-                                <span class="mp-project"><mp-icon name="folder" data-colour="@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)" />@d.Project.Name</span>
+                                <span class="mp-project"><mp-icon name="folder-kanban" data-colour="@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)" />@d.Project.Name</span>
                             }
                             else
                             {
@@ -274,7 +274,7 @@
                         </div>
                         @if (d.Project != null)
                         {
-                            <span class="mp-project" data-tip='@L["Project"]'><mp-icon name="folder" data-colour="@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)" />@d.Project.Name</span>
+                            <span class="mp-project" data-tip='@L["Project"]'><mp-icon name="folder-kanban" data-colour="@(string.IsNullOrWhiteSpace(d.Project.Color) ? "#808080" : d.Project.Color)" />@d.Project.Name</span>
                         }
                         @if (docTags.Count > 0)
                         {

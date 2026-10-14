@@ -28,7 +28,7 @@
                 <tr data-row-href="/Projects/Edit?id=@project.Id">
                     <td>
                         <div class="mat-table__name">
-                            <mp-icon name="folder" data-colour="@(string.IsNullOrWhiteSpace(project.Color) ? "#808080" : project.Color)" />
+                            <mp-icon name="folder-kanban" data-colour="@(string.IsNullOrWhiteSpace(project.Color) ? "#808080" : project.Color)" />
                             <a href="/Documents?ProjectIds=@project.Id" data-tip='@L["Show documents"]'>@project.Name</a>
                             @if (project.IsCommon)
                             {

@@ -51,20 +51,20 @@ public sealed class MenuService(CurrentUser user, AppDbContext db, IStringLocali
         ]),
         new(l["Organise"].Value,
         [
-            new(l["Correspondents"].Value, "/Correspondents", "users"),
+            new(l["Correspondents"].Value, "/Correspondents", "contact-round"),
             new(l["Tags"].Value, "/Tags", "tag"),
-            new(l["Projects"].Value, "/Projects", "folder"),
+            new(l["Projects"].Value, "/Projects", "folder-kanban"),
         ]),
     ]);
 
     private NavSet Administration() => new(AdminId, l["Administration"].Value, "wrench",
     [
-        new(null, [new(l["Overview"].Value, "/System", "settings")]),
+        new(null, [new(l["Overview"].Value, "/System", "dashboard")]),
         new(l["People and places"].Value,
         [
             new(l["Users"].Value, "/System/Users", "user"),
             new(l["Storage locations"].Value, "/System/StorageLocations", "hard-drive"),
-            new(l["Document types"].Value, "/System/DocumentTypes", "layers"),
+            new(l["Document types"].Value, "/System/DocumentTypes", "shapes"),
         ]),
         new(l["Automation"].Value,
         [

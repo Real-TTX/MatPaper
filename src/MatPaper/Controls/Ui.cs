@@ -22,9 +22,6 @@ public static partial class Ui
 
         /// <summary>The accent as the toolkit registry has it; it colours the bar of the browser.</summary>
         public const string Accent = "#268538";
-
-        /// <summary>The glyph of the logo tile (a name of the toolkit's sprite).</summary>
-        public const string Glyph = "file-text";
     }
 
     /// <summary>The id of an icon's symbol in the inline sprite (<c>mat-i-NAME</c>, or <c>mat-il-NAME</c> for an icon of the library).</summary>
@@ -52,11 +49,18 @@ public static partial class Ui
         return $"<svg class=\"{cls}\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#{SymbolId(name)}\"></use></svg>";
     }
 
-    /// <summary>The logo tile of the app: its glyph on the flat accent colour.</summary>
+    /// <summary>
+    /// The logo of the app: a sheet with a paper clip on the accent green, drawn in three levels of detail (<c>wwwroot/icons</c>, made into PNGs by
+    /// <c>scripts/make-icons.js</c>). The menu takes the logo (<c>logo.svg</c>, size "sm" and "md"), the sign-in page and the offline page the illustration
+    /// with its shadow and more lines (<c>icon.svg</c>, size "lg" and "xl"), and the browser tab the plain favicon (<c>favicon.svg</c>, see <c>_Head</c>).
+    /// The tile is part of the picture, so it keeps its colours whatever accent a user has chosen.
+    /// </summary>
     public static IHtmlContent Logo(string size = "md")
-        => new HtmlString(
-            $"<span class=\"mat-logo{(size is "md" or "" ? string.Empty : $" mat-logo--{size}")}\" role=\"img\" aria-label=\"{App.Name}\">" +
-            $"<svg class=\"mat-icon\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#{SymbolId(App.Glyph)}\"></use></svg></span>");
+    {
+        var src = size is "lg" or "xl" ? "/icons/icon.svg" : "/icons/logo.svg";
+        var cls = size is "md" or "" ? "mat-logo mp-logo" : $"mat-logo mp-logo mat-logo--{size}";
+        return new HtmlString($"<span class=\"{cls}\"><img src=\"{src}\" alt=\"{App.Name}\"></span>");
+    }
 
     /// <summary>The first letters of a name, for an avatar.</summary>
     public static string Initials(string? name)

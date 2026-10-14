@@ -178,6 +178,10 @@ node <MatDesign>/tools/matui-check.js src/MatPaper/wwwroot/matui   # exit code 0
   `wwwroot/js`. No inline styles, scripts or handlers, no colour of its own (the camera view is the one dark exception).
 - **Icons** come from the sprite that the layout inlines once. The toolkit's own icons are used as they are; the few more MatPaper needs are
   listed in `scripts/matpaper-icons.txt` (names from the Lucide library of MatDesign) and written into `matui/matpaper-icons.svg`.
+- **Logo and app icon**: a sheet with a paper clip on the accent green, drawn in three levels of detail in `src/MatPaper/wwwroot/icons`:
+  `icon.svg` (the illustration: sign-in page, PWA icon of 512 px), `logo.svg` (the menu, 192 px) and `favicon.svg` (one bold shape for 16 and 32 px),
+  plus `maskable.svg`. The SVGs are the source; `node scripts/make-icons.js` (needs `playwright-core` and Edge or Chrome) draws the PNGs
+  (`icon-192`, `icon-512`, `maskable-512`, `apple-touch-icon`) and `favicon.ico` from them.
 - **Texts** are English resource keys with a German translation in `Resources/SharedResource.de.resx`; the words the toolkit script writes
   itself (dialog buttons, form messages, the theme button) are handed over as attributes of the `<html>` element.
 - **Theme**: mode, colour scheme and accent are attributes of `<html>` (`data-theme`, `data-scheme`, `data-accent`), written by the server from

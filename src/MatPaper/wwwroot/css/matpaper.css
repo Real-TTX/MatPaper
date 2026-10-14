@@ -13,6 +13,10 @@
 .mp-log { max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mp-path { overflow-wrap: anywhere; }
 
+/* ---- The logo is a picture with its own tile (a sheet with a paper clip), so the tile of the toolkit shows no accent behind it ---- */
+.mat-logo.mp-logo { background: none; }
+.mat-auth__brand .mat-logo--xl { width: 96px; height: 96px; }
+
 /* ---- The language switch under the card of a page without a menu ---- */
 .mp-lang { display: flex; justify-content: center; margin-top: var(--mat-space-4); }
 

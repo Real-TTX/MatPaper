@@ -1,13 +1,14 @@
 /* MatPaper service worker */
 // Bumped when shipped assets are removed or replaced, so the activate step drops the
 // old cache instead of keeping files that no longer exist.
-const CACHE_NAME = "matpaper-v5";
+const CACHE_NAME = "matpaper-v6";
 const APP_SHELL = [
   "/matui/matui.css",
   "/matui/matui.js",
   "/matui/matui.boot.js",
   "/css/matpaper.css",
   "/js/matpaper.js",
+  "/icons/icon.svg",
   "/offline.html"
 ];
 

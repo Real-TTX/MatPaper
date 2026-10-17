@@ -356,3 +356,64 @@ for task schedules) and the default language/theme, and shows version, data fold
 database. Changes are written to `/data/config/app.json` and apply immediately. A value pinned
 by an environment variable (`MATPAPER_PUBLIC_URL`, `MATPAPER_TZ`) is shown locked.
 Database, data folder and inbox folder are read at startup.
+
+### Environment variables
+
+| Variable | Meaning |
+|---|---|
+| `MATPAPER_DATA` | the data folder (default `/data`): `config/app.json`, keys, thumbnails, the inbox |
+| `MATPAPER_INBOX` | the inbox staging folder (default `{data}/inbox`), see "Data" |
+| `MATPAPER_TZ` | the time zone; wins over the settings page |
+| `MATPAPER_PUBLIC_URL` | the public address; wins over the settings page |
+| `APP_VERSION` | the version shown in the footer (set by the image build) |
+| `MAT_API_KEY` | the key of the platform API (`X-Api-Key` on `/api/*`); not set = only a token of MatIdentity is accepted. Mattiverse sets it |
+| `MATIDENTITY_AUTHORITY` | the address of MatIdentity (`https://id.example.com`). Set = sign-in through MatIdentity; not set = nothing changes |
+| `MATIDENTITY_CLIENT_ID` | the client of MatPaper in MatIdentity (default: `matpaper`) |
+| `MATIDENTITY_CLIENT_SECRET` | its secret |
+| `MATIDENTITY_INTERNAL_URL` | optional: where MatPaper reaches MatIdentity from inside Docker (`http://matidentity:2300`); the browser keeps using `MATIDENTITY_AUTHORITY` |
+
+None of the `MAT_*` / `MATIDENTITY_*` variables is required.
+
+## Platform API and sign-in through MatIdentity
+
+MatPaper follows the platform contract of the Mat apps (MatDesign `docs/PLATFORM.md`), so that Mattiverse (or any other
+consumer) can show it, watch it and set it up without knowing it beforehand. The shared package **MatPlatform** is a copy in
+`src/MatPaper/MatPlatform/` (MatDesign `node tools/matplatform-copy.js src/MatPaper`; never edit it here, `matplatform.version`
+names the version and the hashes); `src/MatPaper/Platform/PaperPlatform.cs` describes MatPaper and supplies the values through
+`InstanceStatusService` and `InstanceSettingsService`.
+
+| Endpoint | What |
+|---|---|
+| `GET /api` | the description (anonymous): pages *Overview* and *Settings*, the tiles, the fields, the links, the roles `admin` and `user` |
+| `GET /api/health` | `ok` / `degraded` (no active administrator yet) / `down` (the database cannot be read; HTTP 503). The Docker `HEALTHCHECK` calls it |
+| `GET /api/state[/{key}]` | the tiles: `documents` (managed, not deleted or ignored), `inbox` (waiting in all inboxes), `ocrQueue` (waiting for text recognition), `ocrFailed` (text recognition failed), `storage` (bytes of the documents), `lastDocument` (when the last one was added), `users` (active accounts) |
+| `GET`/`PUT /api/configure` | four settings of `app.json`: `publicUrl`, `timeZone`, `language` (`de-DE`/`en-US`), `archiveNumbers` (the feature on or off). A value pinned by `MATPAPER_PUBLIC_URL` / `MATPAPER_TZ` cannot be changed here; everything else stays on the System pages |
+| `POST /api/actions/{id}` | none: the actions are links (*Open*, *Inbox*, *Administration*) |
+
+Everything but `/api` and `/api/health` needs `X-Api-Key: <MAT_API_KEY>` or a bearer token of MatIdentity for MatPaper.
+They answer before the first setup too.
+
+**Sign-in through MatIdentity** is on as soon as `MATIDENTITY_AUTHORITY` is set: the sign-in page goes straight on to
+MatIdentity (authorization code with PKCE) and comes back signed in. Register the redirect address `<public address>/signin-oidc`
+and the signed-out address `<public address>/signout-callback-oidc` with the client. The local sign-in stays at
+`/Account/Login?local=1` (a way in when MatIdentity is down); after a sign-out (`?signedOut=1`) or a failure (`?ssoError=1`) the page
+does not sign in again by itself.
+
+- A person is found by the claim `sub` (`User.ExternalSubject`); the first sign-in creates the user (user name, display name, e-mail
+  from the claims, no local password).
+- An existing account with the same e-mail address is **not** entered by the address alone: the page asks to sign in once with that
+  account's password (`?local=1&link=1`, valid ten minutes, with *Cancel*); only then is it linked. Another account signing in there links
+  nothing; several accounts with the address, or one linked with another person, are refused; a deactivated account too.
+- The claim `role` (`admin` or `user`), when MatIdentity sends one, sets the role at every sign-in; the last active administrator is
+  never demoted. Without the claim MatPaper's own user management decides, as before.
+- The sign-out ends the session at MatIdentity too (the ID token is kept with the session).
+
+## Tests
+
+```bash
+dotnet test MatPaper.slnx
+```
+
+The tests that start the whole app need PostgreSQL: `MATPAPER_TEST_DB` is an admin connection string, e.g.
+`Host=localhost;Port=5432;Username=postgres;Password=matpaper` (every test class creates and drops a database of its own).
+Without it those tests are skipped and the rest runs alone. The CI runs all of them against a PostgreSQL service.

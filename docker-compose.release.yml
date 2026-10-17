@@ -14,6 +14,12 @@ services:
     # environment:
     #   MATPAPER_INBOX: /inbox
     #   MATPAPER_TZ: Europe/Berlin
+    #   # The Mat platform (README, "Platform API and sign-in through MatIdentity"); none of them is required:
+    #   MAT_API_KEY: ""                    # the key of /api/* (Mattiverse sets it)
+    #   MATIDENTITY_AUTHORITY: ""          # https://id.example.com: sign-in through MatIdentity
+    #   MATIDENTITY_CLIENT_ID: "matpaper"
+    #   MATIDENTITY_CLIENT_SECRET: ""
+    #   MATIDENTITY_INTERNAL_URL: ""       # http://matidentity:2300 inside Docker
     depends_on:
       - db
 

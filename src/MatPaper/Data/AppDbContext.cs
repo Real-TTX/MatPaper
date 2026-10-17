@@ -58,6 +58,16 @@ public class AppDbContext : DbContext
             .HasIndex(u => u.Username)
             .IsUnique();
 
+        // One local account per person of MatIdentity.
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.ExternalSubject)
+            .IsUnique()
+            .HasFilter("\"ExternalSubject\" IS NOT NULL");
+
+        modelBuilder.Entity<User>()
+            .Property(u => u.ExternalSubject)
+            .HasMaxLength(200);
+
         modelBuilder.Entity<UserSession>()
             .HasIndex(s => s.Token)
             .IsUnique();

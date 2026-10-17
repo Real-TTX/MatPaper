@@ -88,9 +88,14 @@ public class SignInService(AppDbContext db, IHttpContextAccessor http, PasswordH
         return user;
     }
 
-    public async Task SignInAsync(User user, bool isPersistent)
+    /// <summary>
+    /// Starts a session for <paramref name="user"/> and sets the cookie. <paramref name="identityToken"/> is the ID token of MatIdentity when the
+    /// session began there (kept with the session for the sign-out at MatIdentity). <paramref name="httpContext"/> is the request to sign in on
+    /// (default: the current one; the callback of MatIdentity hands its own).
+    /// </summary>
+    public async Task SignInAsync(User user, bool isPersistent, string? identityToken = null, HttpContext? httpContext = null)
     {
-        var context = http.HttpContext
+        var context = httpContext ?? http.HttpContext
             ?? throw new InvalidOperationException("No active HttpContext.");
 
         var now = DateTime.UtcNow;
@@ -111,6 +116,7 @@ public class SignInService(AppDbContext db, IHttpContextAccessor http, PasswordH
             ExpiresAt = expiresAt,
             LastSeenAt = now,
             UserAgent = string.IsNullOrEmpty(userAgent) ? null : userAgent,
+            IdentityToken = string.IsNullOrEmpty(identityToken) ? null : identityToken,
             CreateDate = now,
             CreateUserId = user.Id,
             UpdateDate = now,
@@ -143,6 +149,21 @@ public class SignInService(AppDbContext db, IHttpContextAccessor http, PasswordH
         };
 
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
+    }
+
+    /// <summary>The ID token of MatIdentity kept with the current session, or null (a local sign-in, or nobody signed in).</summary>
+    public async Task<string?> GetIdentityTokenAsync(CancellationToken ct = default)
+    {
+        var tokenValue = http.HttpContext?.User.FindFirstValue(AppClaims.SessionToken);
+        if (!Guid.TryParse(tokenValue, out var token))
+        {
+            return null;
+        }
+
+        return await db.UserSessions.AsNoTracking()
+            .Where(s => s.Token == token)
+            .Select(s => s.IdentityToken)
+            .FirstOrDefaultAsync(ct);
     }
 
     public async Task SignOutAsync()

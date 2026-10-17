@@ -1292,4 +1292,13 @@
   <data name="Your documents, in order" xml:space="preserve"><value>Deine Dokumente, in Ordnung</value></data>
   <data name="Zoom in" xml:space="preserve"><value>Vergrößern</value></data>
   <data name="Zoom out" xml:space="preserve"><value>Verkleinern</value></data>
+  <data name="Sign-in through MatIdentity failed" xml:space="preserve"><value>Anmeldung über MatIdentity fehlgeschlagen</value></data>
+  <data name="MatIdentity did not confirm the sign-in or cannot be reached right now. Try again, or sign in here with your user name and password." xml:space="preserve"><value>MatIdentity hat die Anmeldung nicht bestätigt oder ist gerade nicht erreichbar. Versuche es noch einmal oder melde dich hier mit Benutzername und Passwort an.</value></data>
+  <data name="Connect your account with MatIdentity" xml:space="preserve"><value>Konto mit MatIdentity verbinden</value></data>
+  <data name="An account with the address {0} exists here. Sign in once with its password to connect it with MatIdentity; after that, signing in through MatIdentity goes straight into this account." xml:space="preserve"><value>Hier gibt es schon ein Konto mit der Adresse {0}. Melde dich einmal mit seinem Passwort an, um es mit MatIdentity zu verbinden; danach führt die Anmeldung über MatIdentity direkt in dieses Konto.</value></data>
+  <data name="The request to connect an account with MatIdentity is valid for ten minutes only. Sign in through MatIdentity again to try once more." xml:space="preserve"><value>Die Anfrage, ein Konto mit MatIdentity zu verbinden, gilt nur zehn Minuten. Melde dich erneut über MatIdentity an, um es noch einmal zu versuchen.</value></data>
+  <data name="You are signed out, here and at MatIdentity." xml:space="preserve"><value>Du bist abgemeldet – hier und bei MatIdentity.</value></data>
+  <data name="Sign in with MatIdentity" xml:space="preserve"><value>Mit MatIdentity anmelden</value></data>
+  <data name="Cancel and do not connect" xml:space="preserve"><value>Abbrechen und nicht verbinden</value></data>
+  <data name="Your account is now connected with MatIdentity." xml:space="preserve"><value>Dein Konto ist jetzt mit MatIdentity verbunden.</value></data>
 </root>

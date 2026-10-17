@@ -11,7 +11,9 @@ using Microsoft.EntityFrameworkCore;
 using MatPaper;
 using MatPaper.Configuration;
 using MatPaper.Data;
+using MatPaper.Platform;
 using MatPaper.Services;
+using MatPlatform;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +52,7 @@ builder.Services.AddScoped<SignInService>();
 builder.Services.AddScoped<CurrentUser>();
 builder.Services.AddSingleton<SetupState>();
 builder.Services.AddScoped<SessionCookieEvents>();
+builder.Services.AddScoped<ExternalSignInService>();
 
 // Document ingest + processing pipeline.
 builder.Services.AddSingleton<DocumentProcessingQueue>();
@@ -86,6 +89,13 @@ builder.Services.AddScoped<ImportBrowser>();
 builder.Services.AddScoped<ExportRunner>();
 builder.Services.AddHostedService<TaskSchedulerService>();
 
+// The Mat platform contract (MatDesign docs/PLATFORM.md): /api, /api/health, /api/state, /api/configure with MAT_API_KEY or a token of MatIdentity.
+// The package MatPlatform (a copy in MatPlatform/) serves the endpoints; PaperPlatform describes MatPaper and supplies the values through these services.
+builder.Services.AddScoped<InstanceStatusService>();
+builder.Services.AddScoped<InstanceSettingsService>();
+var platformSettings = builder.AddMatPlatform<PaperPlatform>(PaperPlatform.Describe, options =>
+    options.DefaultLanguage = (appConfig.Display?.Culture ?? "de").StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "de");
+
 // Phase 7: share links + PDF generation.
 builder.Services.AddScoped<ShareLinkService>();
 builder.Services.AddSingleton<ImageToPdfService>();
@@ -112,6 +122,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         o.SlidingExpiration = true;
         o.ExpireTimeSpan = TimeSpan.FromDays(14);
         o.EventsType = typeof(SessionCookieEvents);
+    })
+    // Sign-in through MatIdentity, only when MATIDENTITY_AUTHORITY is set (nothing changes without it).
+    .AddMatIdentitySignIn<PaperIdentityUsers>(platformSettings, o =>
+    {
+        o.CookieScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        o.LoginPath = "/Account/Login";
+        o.AccessDeniedPath = "/Account/AccessDenied";
     });
 
 builder.Services.AddAuthorization(options =>
@@ -212,9 +229,11 @@ app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<SetupRedirectMiddleware>();
 app.UseAuthorization();
 app.MapRazorPages();
+app.MapMatPlatform();
 
 app.Run();

@@ -57,6 +57,14 @@ public class SetupRedirectMiddleware(RequestDelegate next, SetupState setupState
             return false;
         }
 
+        // The platform contract (/api, /api/health, ...) answers before the setup too: Mattiverse watches a fresh installation
+        // (its health says "no administrator" then), and the container health check calls /api/health.
+        if (value.Equals("/api", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         if (value.StartsWith("/css", StringComparison.OrdinalIgnoreCase)
             || value.StartsWith("/js", StringComparison.OrdinalIgnoreCase)
             || value.StartsWith("/lib", StringComparison.OrdinalIgnoreCase)

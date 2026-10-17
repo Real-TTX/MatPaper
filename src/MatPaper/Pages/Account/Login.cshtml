@@ -5,7 +5,52 @@
     ViewData["PageSub"] = L["Enter your credentials to continue."].Value;
 }
 
-<form method="post" class="mat-form" novalidate>
+@if (Model.SsoError)
+{
+    <div id="login-sso-error" class="mat-alert mat-alert--danger" role="alert">
+        <mp-icon name="x-circle" />
+        <div class="mat-alert__body">
+            <strong>@L["Sign-in through MatIdentity failed"]</strong><br />
+            @L["MatIdentity did not confirm the sign-in or cannot be reached right now. Try again, or sign in here with your user name and password."]
+        </div>
+    </div>
+}
+
+@if (Model.PendingLink is not null)
+{
+    <div id="login-link" class="mat-alert mat-alert--info" role="status">
+        <mp-icon name="link" />
+        <div class="mat-alert__body">
+            <strong>@L["Connect your account with MatIdentity"]</strong><br />
+            @L["An account with the address {0} exists here. Sign in once with its password to connect it with MatIdentity; after that, signing in through MatIdentity goes straight into this account.", Model.PendingLink.Email ?? Model.PendingLink.PreferredUserName ?? ""]
+        </div>
+    </div>
+}
+else if (Model.LinkExpired)
+{
+    <div id="login-link-expired" class="mat-alert mat-alert--info" role="status">
+        <mp-icon name="info" />
+        <div class="mat-alert__body">
+            @L["The request to connect an account with MatIdentity is valid for ten minutes only. Sign in through MatIdentity again to try once more."]
+        </div>
+    </div>
+}
+
+@if (Model.IdentityEnabled && Model.PendingLink is null)
+{
+    <div id="login-sso">
+        @if (Model.SignedOut)
+        {
+            <p class="mat-muted">@L["You are signed out, here and at MatIdentity."]</p>
+        }
+        <mp-button-row plain="true">
+            <mp-button id="lf-sso" variant="primary" icon="login" href="@Model.IdentitySignInUrl" block="true">@L["Sign in with MatIdentity"]</mp-button>
+        </mp-button-row>
+        <div class="mp-or" role="separator"><span>@L["or"]</span></div>
+    </div>
+}
+
+<form id="login-form" method="post" class="mat-form" novalidate>
     <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
     <partial name="_ValidationSummary" />
 
@@ -14,6 +59,16 @@
     <mp-field asp-for="Input.RememberMe" kind="checkbox" label='@L["Remember me"]' />
 
     <mp-button-row plain="true">
-        <mp-button variant="primary" icon="login" block="true">@L["Sign in"]</mp-button>
+        <mp-button variant="@(Model.IdentityEnabled && Model.PendingLink is null ? "secondary" : "primary")" icon="login" block="true">@L["Sign in"]</mp-button>
     </mp-button-row>
 </form>
+
+@if (Model.PendingLink is not null)
+{
+    <form id="login-link-cancel-form" method="post" asp-page-handler="CancelLink" class="mat-form" novalidate>
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+        <mp-button-row plain="true">
+            <mp-button id="login-link-cancel" variant="ghost" icon="x" block="true">@L["Cancel and do not connect"]</mp-button>
+        </mp-button-row>
+    </form>
+}

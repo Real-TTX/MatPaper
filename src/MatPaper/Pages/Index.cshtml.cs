@@ -9,11 +9,13 @@ public class IndexModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly CurrentUser _currentUser;
+    private readonly InboxService _inbox;
 
-    public IndexModel(AppDbContext db, CurrentUser currentUser)
+    public IndexModel(AppDbContext db, CurrentUser currentUser, InboxService inbox)
     {
         _db = db;
         _currentUser = currentUser;
+        _inbox = inbox;
     }
 
     public int DocumentCount { get; private set; }
@@ -30,10 +32,9 @@ public class IndexModel : PageModel
             .Where(d => d.UpdateState != UpdateState.Deleted)
             .AccessibleTo(_currentUser)
             .InArchive();
-        var uid = _currentUser.UserId;
 
         DocumentCount = await documents.CountAsync();
-        PendingReviewCount = await _db.Documents.InInboxOf(uid, _currentUser.IsAdmin).CountAsync();
+        PendingReviewCount = await _inbox.CountPendingAsync();
 
         Recent = await documents
             .AsNoTracking()

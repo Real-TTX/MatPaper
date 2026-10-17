@@ -1,6 +1,4 @@
 using MatPaper.Controls;
-using MatPaper.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Services;
@@ -10,7 +8,7 @@ namespace MatPaper.Services;
 /// administrator, the administration behind the switcher at the end of the menu (SHELL-15). The layout draws them; the badge of the inbox says how many
 /// documents wait there.
 /// </summary>
-public sealed class MenuService(CurrentUser user, AppDbContext db, IStringLocalizer<SharedResource> l)
+public sealed class MenuService(CurrentUser user, InboxService inbox, IStringLocalizer<SharedResource> l)
 {
     public const string WorkId = "work";
     public const string AdminId = "admin";
@@ -18,12 +16,12 @@ public sealed class MenuService(CurrentUser user, AppDbContext db, IStringLocali
     public async Task<IReadOnlyList<NavSet>> BuildAsync(CancellationToken ct = default)
     {
         var pending = 0;
-        if (user.UserId is long uid)
+        if (user.UserId is not null)
         {
             // The badge is no reason to lose the whole page (the page of an error is drawn with this menu): without the database it shows no number.
             try
             {
-                pending = await db.Documents.InInboxOf(uid, user.IsAdmin).CountAsync(ct);
+                pending = await inbox.CountPendingAsync(ct);
             }
             catch (Exception) when (!ct.IsCancellationRequested)
             {

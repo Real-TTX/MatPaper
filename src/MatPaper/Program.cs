@@ -57,6 +57,7 @@ builder.Services.AddSingleton<DocumentStorageService>();
 builder.Services.AddSingleton<TesseractOcrRunner>();
 builder.Services.AddSingleton<DocumentTextExtractor>();
 builder.Services.AddSingleton<ThumbnailService>();
+builder.Services.AddScoped<InboxService>();
 builder.Services.AddScoped<DocumentIngestService>();
 builder.Services.AddScoped<DocumentFilingService>();
 builder.Services.AddScoped<DocumentSidecarService>();

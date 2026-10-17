@@ -11,7 +11,44 @@ permissions:
   packages: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    # The tests that start the whole app need PostgreSQL (MATPAPER_TEST_DB); each test class creates and drops a database of its own there.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: matpaper
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore MatPaper.slnx
+
+      - name: Build
+        run: dotnet build MatPaper.slnx -c Release --no-restore
+
+      - name: Test
+        env:
+          MATPAPER_TEST_DB: Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=matpaper
+        # The GitHubActions logger shows every failed test as an annotation of the run.
+        run: dotnet test MatPaper.slnx -c Release --no-build --verbosity normal --logger GitHubActions
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -1,17 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="512" height="512" role="img" aria-label="MatPaper">
   <title>MatPaper</title>
-  <!-- Detail level 1, the illustration (the sign-in page, the PWA icon, the README): a sheet with a paper clip, the shadow and the lines drawn out. -->
+  <!-- Detail level 1, the illustration (the sign-in page, the PWA icon, the README): three folders in three tones, sheets in the back, the label and the shadow drawn out. -->
   <rect width="96" height="96" rx="21" fill="#268538" />
-  <ellipse cx="48" cy="85" rx="28" ry="3.5" fill="#1c6329" opacity=".35" />
-  <g transform="rotate(-5 47 49)">
-    <path d="M28 20H59L70 31V74a4 4 0 0 1-4 4H28a4 4 0 0 1-4-4V24a4 4 0 0 1 4-4z" fill="#ffffff" />
-    <path d="M59 20V31H70z" fill="#cfe3d3" />
-    <rect x="31" y="42" width="26" height="3.6" rx="1.8" fill="#a8c9b0" />
-    <rect x="31" y="50" width="32" height="3.6" rx="1.8" fill="#a8c9b0" />
-    <rect x="31" y="58" width="28" height="3.6" rx="1.8" fill="#a8c9b0" />
-    <rect x="31" y="66" width="16" height="3.6" rx="1.8" fill="#a8c9b0" />
+  <circle cx="48" cy="52" r="34" fill="#2f9a45" />
+  <ellipse cx="48" cy="86.5" rx="30" ry="3.2" fill="#1b5f28" opacity=".4" />
+  <g transform="rotate(-6 48 34)"><rect x="24" y="12" width="46" height="22" rx="3" fill="#d6eef2" /></g>
+  <g transform="rotate(4 48 34)">
+    <rect x="27" y="13" width="46" height="22" rx="3" fill="#ffffff" />
+    <rect x="34" y="19" width="22" height="3" rx="1.5" fill="#9ec7d1" />
+    <rect x="34" y="25" width="30" height="3" rx="1.5" fill="#9ec7d1" />
   </g>
-  <g transform="translate(15 5) rotate(8 12 12) scale(2.1)" fill="none" stroke="#3d8bd9" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-    <path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551" />
-  </g>
+  <rect x="14" y="26" width="68" height="40" rx="5" fill="#7cc6d4" />
+  <rect x="18" y="20" width="22" height="10" rx="3" fill="#7cc6d4" />
+  <rect x="17" y="27.5" width="62" height="2.5" rx="1.25" fill="#a6dbe6" />
+  <rect x="14" y="38" width="68" height="40" rx="5" fill="#2f6690" />
+  <rect x="40" y="32" width="22" height="10" rx="3" fill="#2f6690" />
+  <rect x="17" y="39.5" width="62" height="2.5" rx="1.25" fill="#4f86b3" />
+  <rect x="14" y="50" width="68" height="32" rx="5" fill="#7cc6d4" />
+  <rect x="60" y="44" width="22" height="10" rx="3" fill="#7cc6d4" />
+  <rect x="17" y="51.5" width="62" height="2.5" rx="1.25" fill="#a6dbe6" />
+  <rect x="22" y="62" width="28" height="10" rx="3" fill="#ffffff" />
+  <circle cx="28.5" cy="67" r="2.2" fill="#2f6690" />
+  <rect x="33" y="65.5" width="12" height="3" rx="1.5" fill="#9ec7d1" />
 </svg>

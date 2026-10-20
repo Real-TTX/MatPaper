@@ -50,7 +50,7 @@ public static partial class Ui
     }
 
     /// <summary>
-    /// The logo of the app: a sheet with a paper clip on the accent green, drawn in three levels of detail (<c>wwwroot/icons</c>, made into PNGs by
+    /// The logo of the app: three folders in three tones on the accent green, drawn in three levels of detail (<c>wwwroot/icons</c>, made into PNGs by
     /// <c>scripts/make-icons.js</c>). The menu takes the logo (<c>logo.svg</c>, size "sm" and "md"), the sign-in page and the offline page the illustration
     /// with its shadow and more lines (<c>icon.svg</c>, size "lg" and "xl"), and the browser tab the plain favicon (<c>favicon.svg</c>, see <c>_Head</c>).
     /// The tile is part of the picture, so it keeps its colours whatever accent a user has chosen.

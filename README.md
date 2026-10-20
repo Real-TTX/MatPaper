@@ -178,7 +178,7 @@ node <MatDesign>/tools/matui-check.js src/MatPaper/wwwroot/matui   # exit code 0
   `wwwroot/js`. No inline styles, scripts or handlers, no colour of its own (the camera view is the one dark exception).
 - **Icons** come from the sprite that the layout inlines once. The toolkit's own icons are used as they are; the few more MatPaper needs are
   listed in `scripts/matpaper-icons.txt` (names from the Lucide library of MatDesign) and written into `matui/matpaper-icons.svg`.
-- **Logo and app icon**: a sheet with a paper clip on the accent green, drawn in three levels of detail in `src/MatPaper/wwwroot/icons`:
+- **Logo and app icon**: three folders in three tones of teal and blue with a sheet in the back, on the accent green, drawn in three levels of detail in `src/MatPaper/wwwroot/icons`:
   `icon.svg` (the illustration: sign-in page, PWA icon of 512 px), `logo.svg` (the menu, 192 px) and `favicon.svg` (one bold shape for 16 and 32 px),
   plus `maskable.svg`. The SVGs are the source; `node scripts/make-icons.js` (needs `playwright-core` and Edge or Chrome) draws the PNGs
   (`icon-192`, `icon-512`, `maskable-512`, `apple-touch-icon`) and `favicon.ico` from them.

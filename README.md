@@ -395,7 +395,8 @@ They answer before the first setup too.
 
 **Sign-in through MatIdentity** is on as soon as `MATIDENTITY_AUTHORITY` is set: the sign-in page goes straight on to
 MatIdentity (authorization code with PKCE) and comes back signed in. Register the redirect address `<public address>/signin-oidc`
-and the signed-out address `<public address>/signout-callback-oidc` with the client. The local sign-in stays at
+and the signed-out address `<public address>/signout-callback-oidc` with the client, and as the back-channel logout address
+`<public address>/signout-backchannel`. The local sign-in stays at
 `/Account/Login?local=1` (a way in when MatIdentity is down); after a sign-out (`?signedOut=1`) or a failure (`?ssoError=1`) the page
 does not sign in again by itself.
 
@@ -407,6 +408,9 @@ does not sign in again by itself.
 - The claim `role` (`admin` or `user`), when MatIdentity sends one, sets the role at every sign-in; the last active administrator is
   never demoted. Without the claim MatPaper's own user management decides, as before.
 - The sign-out ends the session at MatIdentity too (the ID token is kept with the session).
+- The other way round, MatIdentity posts a signed logout token to `POST /signout-backchannel` when the person signs out there (or an
+  administrator ends their sessions): MatPaper deletes the sessions that began with that MatIdentity session (`sid`, kept with the
+  session), or with the subject alone every session of the linked user; their next request is signed out.
 
 ## Tests
 

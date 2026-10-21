@@ -10,5 +10,8 @@ public class UserSession : BaseEntity
 
     /// <summary>The ID token of MatIdentity for a session that began there; the sign-out ends that session at MatIdentity with it. Null for a local sign-in.</summary>
     public string? IdentityToken { get; set; }
+
+    /// <summary>The session at MatIdentity (claim <c>sid</c>) this session began with (or was linked in); a back-channel logout that names it deletes this session.</summary>
+    public string? IdentitySessionId { get; set; }
     public User? User { get; set; }
 }

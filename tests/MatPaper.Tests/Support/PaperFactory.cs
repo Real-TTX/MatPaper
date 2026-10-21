@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
 // The factories hand their settings to Program through environment variables (Program reads them before the host is built),
@@ -31,6 +32,10 @@ public class PaperFactory : WebApplicationFactory<Program>
     public const string ApiKey = "test-key-0123456789";
     public const string AdminUser = "admin";
     public const string AdminPassword = "Admin-Passw0rd!";
+
+    /// <summary>The key the imagined MatIdentity signs with (in the fixed OpenID configuration): for the logout tokens of the tests.</summary>
+    public static readonly SigningCredentials IdentityCredentials = new(
+        new RsaSecurityKey(System.Security.Cryptography.RSA.Create(2048)) { KeyId = "test-key" }, SecurityAlgorithms.RsaSha256);
 
     private readonly string _data = Path.Combine(Path.GetTempPath(), "matpaper-tests-" + Guid.NewGuid().ToString("N"));
     private readonly string _database = "matpaper_t_" + Guid.NewGuid().ToString("N")[..12];
@@ -105,6 +110,7 @@ public class PaperFactory : WebApplicationFactory<Program>
                 TokenEndpoint = _authority + "/connect/token",
                 EndSessionEndpoint = _authority + "/connect/logout",
             };
+            configuration.SigningKeys.Add(IdentityCredentials.Key);
 
             builder.ConfigureTestServices(services =>
             {

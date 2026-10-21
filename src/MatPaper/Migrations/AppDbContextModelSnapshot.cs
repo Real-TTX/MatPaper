@@ -1142,6 +1142,10 @@ namespace MatPaper.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("IdentitySessionId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("IdentityToken")
                         .HasColumnType("text");
 
@@ -1164,6 +1168,8 @@ namespace MatPaper.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IdentitySessionId");
 
                     b.HasIndex("Token")
                         .IsUnique();

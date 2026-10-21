@@ -72,6 +72,14 @@ public class AppDbContext : DbContext
             .HasIndex(s => s.Token)
             .IsUnique();
 
+        // The back-channel logout of MatIdentity finds the sessions of a sid.
+        modelBuilder.Entity<UserSession>()
+            .HasIndex(s => s.IdentitySessionId);
+
+        modelBuilder.Entity<UserSession>()
+            .Property(s => s.IdentitySessionId)
+            .HasMaxLength(200);
+
         modelBuilder.Entity<Document>()
             .HasIndex(d => d.Token)
             .IsUnique();

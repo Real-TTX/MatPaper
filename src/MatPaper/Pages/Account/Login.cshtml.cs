@@ -120,6 +120,7 @@ public class LoginModel : PageModel
 
         // A pending link of MatIdentity is only ever for the account that matched; it is deleted either way.
         string? identityToken = null;
+        string? identitySessionId = null;
         var linked = false;
         if (MatIdentityPendingLink.TakeFor(HttpContext, user.Id.ToString(CultureInfo.InvariantCulture)) is { } pending)
         {
@@ -132,6 +133,7 @@ public class LoginModel : PageModel
             {
                 user = linkedUser;
                 identityToken = pending.IdToken;
+                identitySessionId = pending.SessionId;
                 linked = true;
             }
             else
@@ -140,7 +142,7 @@ public class LoginModel : PageModel
             }
         }
 
-        await _signInService.SignInAsync(user, Input.RememberMe, identityToken);
+        await _signInService.SignInAsync(user, Input.RememberMe, identityToken, identitySessionId: identitySessionId);
 
         if (linked)
         {

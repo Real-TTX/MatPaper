@@ -91,9 +91,11 @@ public class SignInService(AppDbContext db, IHttpContextAccessor http, PasswordH
     /// <summary>
     /// Starts a session for <paramref name="user"/> and sets the cookie. <paramref name="identityToken"/> is the ID token of MatIdentity when the
     /// session began there (kept with the session for the sign-out at MatIdentity). <paramref name="httpContext"/> is the request to sign in on
-    /// (default: the current one; the callback of MatIdentity hands its own).
+    /// (default: the current one; the callback of MatIdentity hands its own). <paramref name="identitySessionId"/> is the session at MatIdentity
+    /// (claim <c>sid</c>), kept so that a back-channel logout of that session ends this one (<see cref="EndIdentitySessionsAsync"/>).
     /// </summary>
-    public async Task SignInAsync(User user, bool isPersistent, string? identityToken = null, HttpContext? httpContext = null)
+    public async Task SignInAsync(
+        User user, bool isPersistent, string? identityToken = null, HttpContext? httpContext = null, string? identitySessionId = null)
     {
         var context = httpContext ?? http.HttpContext
             ?? throw new InvalidOperationException("No active HttpContext.");
@@ -117,6 +119,7 @@ public class SignInService(AppDbContext db, IHttpContextAccessor http, PasswordH
             LastSeenAt = now,
             UserAgent = string.IsNullOrEmpty(userAgent) ? null : userAgent,
             IdentityToken = string.IsNullOrEmpty(identityToken) ? null : identityToken,
+            IdentitySessionId = string.IsNullOrEmpty(identitySessionId) ? null : identitySessionId,
             CreateDate = now,
             CreateUserId = user.Id,
             UpdateDate = now,
@@ -164,6 +167,30 @@ public class SignInService(AppDbContext db, IHttpContextAccessor http, PasswordH
             .Where(s => s.Token == token)
             .Select(s => s.IdentityToken)
             .FirstOrDefaultAsync(ct);
+    }
+
+    /// <summary>
+    /// MatIdentity signed a person out (back-channel logout): with <paramref name="identitySessionId"/> the sessions that began with that session at
+    /// MatIdentity are deleted, with <paramref name="subject"/> alone every session of the user linked to it. An unknown sid or subject deletes nothing
+    /// (no error). The next request of a deleted session is signed out (<see cref="SessionCookieEvents"/>). Answers the number of sessions ended.
+    /// </summary>
+    public async Task<int> EndIdentitySessionsAsync(string? subject, string? identitySessionId, CancellationToken ct = default)
+    {
+        IQueryable<UserSession> sessions;
+        if (!string.IsNullOrEmpty(identitySessionId))
+        {
+            sessions = db.UserSessions.Where(s => s.IdentitySessionId == identitySessionId);
+        }
+        else if (!string.IsNullOrEmpty(subject))
+        {
+            sessions = db.UserSessions.Where(s => s.User!.ExternalSubject == subject);
+        }
+        else
+        {
+            return 0;
+        }
+
+        return await sessions.ExecuteDeleteAsync(ct);
     }
 
     public async Task SignOutAsync()

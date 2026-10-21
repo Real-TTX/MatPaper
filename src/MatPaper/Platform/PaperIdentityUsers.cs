@@ -10,12 +10,14 @@ namespace MatPaper.Platform;
 /// in with MatPaper's own cookie and session, like a local sign-in, keeping the ID token with the session for the sign-out at MatIdentity.
 /// An account with the same e-mail address is not entered by the address: the answer is <see cref="MatIdentitySignInResult.LinkRequired"/>, and
 /// the sign-in page links it after its password (<see cref="MatIdentityPendingLink"/>, <c>Pages/Account/Login</c>).
+/// When MatIdentity signs the person out (back-channel logout, <see cref="IMatIdentitySessions"/>), <see cref="SignInService.EndIdentitySessionsAsync"/>
+/// deletes their sessions here.
 /// </summary>
 public sealed class PaperIdentityUsers(
     ExternalSignInService externalSignIn,
     SignInService signIn,
     SetupState setupState,
-    ILogger<PaperIdentityUsers> logger) : IMatIdentityUsers
+    ILogger<PaperIdentityUsers> logger) : IMatIdentityUsers, IMatIdentitySessions
 {
     public async Task<MatIdentitySignInResult> SignInAsync(MatIdentityPerson person, HttpContext http, CancellationToken ct)
     {
@@ -32,10 +34,16 @@ public sealed class PaperIdentityUsers(
             return MatIdentitySignInResult.Refused(result.Error ?? "refused");
         }
 
-        await signIn.SignInAsync(user, isPersistent: true, person.IdToken, http);
+        await signIn.SignInAsync(user, isPersistent: true, person.IdToken, http, person.SessionId);
         setupState.HasUsers = true;
         logger.LogInformation("User {UserId} ({Username}) signed in through MatIdentity", user.Id, user.Username);
 
         return MatIdentitySignInResult.Success();
+    }
+
+    public async Task EndSessionsAsync(string? subject, string? sessionId, CancellationToken ct)
+    {
+        var ended = await signIn.EndIdentitySessionsAsync(subject, sessionId, ct);
+        logger.LogInformation("MatIdentity signed out {Subject} (sid {SessionId}): {Count} session(s) ended", subject, sessionId, ended);
     }
 }

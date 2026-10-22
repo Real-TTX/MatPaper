@@ -15,9 +15,9 @@
 [data-app="matdock"]     { --mat-app-accent: #1d78be; }
 [data-app="matos"]       { --mat-app-accent: #8558ec; }
 [data-app="matcad"]      { --mat-app-accent: #2f6feb; }
-[data-app="matddns"]     { --mat-app-accent: #4173d1; }
+[data-app="matddns"]     { --mat-app-accent: #204db6; }
 [data-app="matfile"]     { --mat-app-accent: #3472d8; }
-[data-app="matmail"]     { --mat-app-accent: #1a56db; }
+[data-app="matmail"]     { --mat-app-accent: #475569; }
 [data-app="matpaper"]    { --mat-app-accent: #268538; }
 [data-app="matplay"]     { --mat-app-accent: #00819b; }
 [data-app="matsplit"]    { --mat-app-accent: #bf5610; }
@@ -33,6 +33,8 @@
 [data-app="matbiz"]      { --mat-app-accent: #1b6ec2; }
 [data-app="matgate"]     { --mat-app-accent: #0a7d57; }
 [data-app="matdesign"]   { --mat-app-accent: #d6336c; }
+[data-app="matidentity"] { --mat-app-accent: #a21a50; }
+[data-app="matsmtp"]     { --mat-app-accent: #f5b800; --mat-app-on-accent: #0b1020; --mat-app-accent-text: #8a6100; }
 
 /* ---- A free choice of colour: matui.js (MatUi.accent.custom) writes --mat-custom-accent and --mat-custom-on-accent ---- */
 [data-accent="custom"] { --mat-app-accent: var(--mat-custom-accent, #5b5fe6); --mat-app-on-accent: var(--mat-custom-on-accent, #ffffff); --mat-app-accent-text: initial; }

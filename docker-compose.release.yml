@@ -1,5 +1,7 @@
 # The simple setup from the README ("Quick start"): the prebuilt image plus PostgreSQL.
 # docker compose -f docker-compose.release.yml up -d   ->  http://localhost:4994
+# No variable is needed: MatPaper does its whole job without them. Mattiverse connects the rest by itself (see README,
+# "Platform API and sign-in through MatIdentity"); without it, the ones under "environment:" below are optional.
 services:
   matpaper:
     image: ghcr.io/real-ttx/matpaper:latest
@@ -16,6 +18,8 @@ services:
     #   MATPAPER_TZ: Europe/Berlin
     #   # The Mat platform (README, "Platform API and sign-in through MatIdentity"); none of them is required:
     #   MAT_API_KEY: ""                    # the key of /api/* (Mattiverse sets it)
+    #   MAT_PUBLIC_URL: ""                 # https://paper.example.com: the public address, locked on System -> Settings while set
+    #   MAT_FRAME_ANCESTORS: ""            # origins that may show MatPaper in a frame (Mattiverse)
     #   MATIDENTITY_AUTHORITY: ""          # https://id.example.com: sign-in through MatIdentity
     #   MATIDENTITY_CLIENT_ID: "matpaper"
     #   MATIDENTITY_CLIENT_SECRET: ""

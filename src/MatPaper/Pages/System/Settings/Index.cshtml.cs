@@ -1,6 +1,7 @@
 using System.Globalization;
 using MatPaper.Configuration;
 using MatPaper.Services;
+using MatPlatform;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -14,12 +15,13 @@ namespace MatPaper.Pages.System.Settings;
 /// Instance settings that used to live only in /data/config/app.json: the public address (needed
 /// for the OAuth redirect URI), the display/schedule time zone and the default UI language. A save
 /// writes app.json first and applies the values to the running app only once that succeeded, so
-/// file and runtime never disagree. Values pinned by an environment variable are shown read-only.
+/// file and runtime never disagree. Values pinned by an environment variable are shown read-only: the public address by <c>MAT_PUBLIC_URL</c>
+/// (a broker such as Mattiverse sets it; it wins) or <c>MATPAPER_PUBLIC_URL</c>, the time zone by <c>MATPAPER_TZ</c>; the stored value stays as it is.
 /// Database, data and inbox folders are startup-only and therefore informational.
 /// </summary>
 public class IndexModel : PageModel
 {
-    private const string PublicUrlEnvVar = "MATPAPER_PUBLIC_URL";
+    private const string PublicUrlEnvVar = InstanceSettingsService.PublicUrlEnvVar;
     private const string InboxEnvVar = "MATPAPER_INBOX";
 
     private readonly AppConfig _config;
@@ -34,6 +36,7 @@ public class IndexModel : PageModel
         Fmt fmt,
         OAuthService oauth,
         IOptions<RequestLocalizationOptions> localization,
+        MatPlatformSettings platform,
         ILogger<IndexModel> logger,
         IStringLocalizer<SharedResource> l)
     {
@@ -43,6 +46,7 @@ public class IndexModel : PageModel
         _localization = localization.Value;
         _logger = logger;
         _l = l;
+        PublicUrlFromPlatform = platform.AppPublicUrl;
     }
 
     [BindProperty]
@@ -63,6 +67,9 @@ public class IndexModel : PageModel
     public List<SelectListItem> ThemeModeOptions => ThemeCatalog.Modes.Select(o => new SelectListItem(_l[o.Label].Value, o.Id)).ToList();
     public List<SelectListItem> ThemeSchemeOptions => ThemeCatalog.Schemes.Select(o => new SelectListItem(_l[o.Label].Value, o.Id)).ToList();
     public List<SelectListItem> ThemeAccentOptions => ThemeCatalog.Accents.Select(o => new SelectListItem(_l[o.Label].Value, o.Id)).ToList();
+
+    /// <summary>The public address of <c>MAT_PUBLIC_URL</c> (set by a broker such as Mattiverse), or null; it wins over <see cref="PublicUrlFromEnv"/>.</summary>
+    public string? PublicUrlFromPlatform { get; }
 
     /// <summary>Value of the environment variable that pins a field, or null when it is editable.</summary>
     public string? PublicUrlFromEnv { get; } = EnvValue(PublicUrlEnvVar);
@@ -99,7 +106,7 @@ public class IndexModel : PageModel
         SetBreadcrumb();
 
         // Fields pinned by the environment are not posted (disabled); keep the file's value.
-        var publicUrl = PublicUrlFromEnv is null ? NormalizePublicUrl(Input.PublicBaseUrl) : _config.OAuth?.PublicBaseUrl;
+        var publicUrl = PublicUrlFromPlatform is null && PublicUrlFromEnv is null ? NormalizePublicUrl(Input.PublicBaseUrl) : _config.OAuth?.PublicBaseUrl;
         var timeZone = TimeZoneFromEnv is null ? Input.TimeZone?.Trim() : _config.Display?.TimeZone;
         var culture = SupportedCulture(Input.Culture);
 

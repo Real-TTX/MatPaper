@@ -5,14 +5,16 @@ using MatPlatform;
 namespace MatPaper.Platform;
 
 /// <summary>
-/// MatPaper as an app of the platform contract (MatDesign docs/PLATFORM.md), on the shared package MatPlatform (the folder <c>MatPlatform/</c>, a copy):
-/// how Mattiverse shows it (<see cref="Describe"/>: tiles, the few settings, links), what its values are and whether it is well.
-/// The values come from <see cref="InstanceStatusService"/> and <see cref="InstanceSettingsService"/> (no DbContext here: this is the web layer).
-/// Texts are German, or English when the caller asks for it with <c>Accept-Language</c>.
+/// MatPaper as an app of the platform contract (MatDesign docs/PLATFORM.md, contract 2), on the shared package MatPlatform (the folder <c>MatPlatform/</c>, a copy):
+/// how Mattiverse shows it (<see cref="Describe(MatPlatformBuilder, string?)"/>: tiles, the few settings, links), what it consumes (the sign-in through MatIdentity,
+/// optional; MatPaper uses no other app), what it adds to a shell (the launcher MatPaper with three views of its menu, two widgets for administrators), what its
+/// values are and whether it is well. The values come from <see cref="InstanceStatusService"/> and <see cref="InstanceSettingsService"/> (no DbContext here: this
+/// is the web layer). Texts are German, or English when the caller asks for it with <c>Accept-Language</c>.
 /// </summary>
 public sealed class PaperPlatform(
     InstanceStatusService status,
-    InstanceSettingsService settings) : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformHealth
+    InstanceSettingsService settings,
+    MatPlatformSettings platform) : IMatPlatformState, IMatPlatformConfiguration, IMatPlatformHealth
 {
     /// <summary>The id of MatPaper in the platform (MatDesign AppRegistry, and the default client id in MatIdentity).</summary>
     public const string AppId = "matpaper";
@@ -28,8 +30,17 @@ public sealed class PaperPlatform(
         ["archiveNumbers"] = nameof(InstanceSettings.ArchiveNumbers),
     };
 
-    /// <summary>The MatApiDefinition of MatPaper (<c>GET /api</c>); <c>auth</c> and <c>endpoints</c> are filled in by MatPlatform.</summary>
-    public static void Describe(MatPlatformBuilder o)
+    /// <summary>The page of the Connections area (<c>&lt;mat-connections /&gt;</c>); <c>/System/Connections</c> are MatPaper's own connections (shares, mailboxes, cloud drives).</summary>
+    public const string ConnectionsPage = "/System/AppConnections";
+
+    /// <summary>The MatApiDefinition of MatPaper (<c>GET /api</c>) without <c>MAT_PUBLIC_URL</c>.</summary>
+    public static void Describe(MatPlatformBuilder o) => Describe(o, null);
+
+    /// <summary>
+    /// The MatApiDefinition of MatPaper (<c>GET /api</c>); <c>auth</c> and <c>endpoints</c> are filled in by MatPlatform. <paramref name="publicUrl"/> is the value of
+    /// <c>MAT_PUBLIC_URL</c>: while it is set, the field <c>publicUrl</c> is fixed.
+    /// </summary>
+    public static void Describe(MatPlatformBuilder o, string? publicUrl)
     {
         var T = o.T;
 
@@ -41,9 +52,33 @@ public sealed class PaperPlatform(
             "/icons/icon.svg",
             Accent);
 
+        // What MatPaper uses of other apps: only the sign-in through MatIdentity, set by its variables (MATIDENTITY_*). It sends no mail and uses no other app.
+        o.Consumes(MatCapabilities.IdentityOidc, optional: true);
+
+        // What MatPaper adds to the home screen of a shell (Mattiverse): the app with the first views of its menu, and two widgets for administrators
+        // (the numbers of the whole installation, from the tiles of /api/state).
+        o.Launcher("documents", "MatPaper", "/icons/logo.svg", "/");
+        o.QuickAction("documents", T("Dokument hinzufügen", "Add document"), "plus", url: "/Documents/Upload");
+        o.QuickAction("documents", T("Posteingang", "Inbox"), "layers", url: "/Inbox");
+        o.QuickAction("documents", T("Dokumente", "Documents"), "file-text", url: "/Documents");
+        o.Widget(new MatWidget("archive", T("Archiv", "Archive"), MatWidgetKinds.Tiles, "medium")
+        {
+            Items = ["documents", "storage", "lastDocument"],
+            Icon = "file-text",
+            Url = "/Documents",
+            Audience = MatAudience.Admin,
+        });
+        o.Widget(new MatWidget("inbox", T("Posteingang", "Inbox"), MatWidgetKinds.Tiles, "medium")
+        {
+            Items = ["inbox", "ocrQueue", "ocrFailed"],
+            Icon = "layers",
+            Url = "/Inbox",
+            Audience = MatAudience.Admin,
+        });
+
         o.Page("overview", T("Übersicht", "Overview"), "dashboard",
             MatSection.Tiles("documents", "inbox", "ocrQueue", "ocrFailed", "storage", "lastDocument", "users"),
-            MatSection.Actions("open", "openInbox", "openAdmin"));
+            MatSection.Actions("open", "openInbox", "openAdmin", "openConnections"));
         o.Page("settings", T("Einstellungen", "Settings"), "settings",
             MatSection.Form(T("Allgemein", "General"), "publicUrl", "timeZone", "language"),
             MatSection.Form(T("Archivnummern", "Archive numbers"), "archiveNumbers"));
@@ -56,12 +91,17 @@ public sealed class PaperPlatform(
         o.Tile("lastDocument", T("Letztes Dokument hinzugefügt", "Last document added"), "time", icon: "upload");
         o.Tile("users", T("Aktive Benutzer", "Active users"), icon: "users");
 
-        o.Field(new MatField("publicUrl", T("Öffentliche Adresse", "Public address"), "url")
+        var address = new MatField("publicUrl", T("Öffentliche Adresse", "Public address"), "url")
         {
             Placeholder = "https://paper.example.com",
             Hint = T(
                 "Unter dieser Adresse ist MatPaper erreichbar; nötig für die Anmeldung bei Google und Microsoft (Verbindungen). Leer: keine.",
                 "The address MatPaper is reached at; needed for signing in to Google and Microsoft (connections). Empty: none."),
+        };
+        o.Field(publicUrl is null ? address : address with
+        {
+            Fixed = true,
+            Hint = T("Festgelegt durch MAT_PUBLIC_URL (Mattiverse); hier lässt sie sich nicht ändern.", "Set by MAT_PUBLIC_URL (Mattiverse); it cannot be changed here."),
         });
         o.Field(new MatField("timeZone", T("Zeitzone", "Time zone"), "text")
         {
@@ -86,6 +126,7 @@ public sealed class PaperPlatform(
         o.LinkAction("open", T("MatPaper öffnen", "Open MatPaper"), "external", "/");
         o.LinkAction("openInbox", T("Posteingang", "Inbox"), "layers", "/Inbox");
         o.LinkAction("openAdmin", T("Verwaltung", "Administration"), "settings", "/System");
+        o.LinkAction("openConnections", T("App-Verbindungen", "App connections"), "plug", ConnectionsPage);
 
         o.Role("admin", T("Administrator", "Administrator"));
         o.Role("user", T("Benutzer", "User"));
@@ -147,6 +188,9 @@ public sealed class PaperPlatform(
         {
             switch (key)
             {
+                case "publicUrl" when platform.AppPublicUrl is not null:
+                    errors[key] = call.T("Festgelegt durch MAT_PUBLIC_URL.", "Set by MAT_PUBLIC_URL.");
+                    break;
                 case "publicUrl" when value.ValueKind == JsonValueKind.String:
                     publicUrl = value.GetString()!;
                     break;
@@ -189,8 +233,8 @@ public sealed class PaperPlatform(
                     "Die Einstellungen konnten nicht gespeichert werden: app.json ist nicht beschreibbar. Nichts wurde geändert.",
                     "The settings could not be saved: app.json is not writable. Nothing was changed."),
                 ("publicUrl", SettingsProblem.Pinned) => call.T(
-                    "Die Adresse ist durch die Umgebungsvariable MATPAPER_PUBLIC_URL festgelegt.",
-                    "The address is set by the environment variable MATPAPER_PUBLIC_URL."),
+                    $"Die Adresse ist durch die Umgebungsvariable {settings.PublicUrlPinnedBy} festgelegt.",
+                    $"The address is set by the environment variable {settings.PublicUrlPinnedBy}."),
                 ("timeZone", SettingsProblem.Pinned) => call.T(
                     "Die Zeitzone ist durch die Umgebungsvariable MATPAPER_TZ festgelegt.",
                     "The time zone is set by the environment variable MATPAPER_TZ."),

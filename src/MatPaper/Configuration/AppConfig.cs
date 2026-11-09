@@ -59,7 +59,8 @@ public class OAuthConfig
     /// "https://papers.example.com". The OAuth redirect URI is this plus
     /// "/System/Connections/OAuthCallback" and must be registered verbatim with Google
     /// and Microsoft. Behind a reverse proxy the app cannot discover it reliably, so it
-    /// is configured here. The environment variable MATPAPER_PUBLIC_URL overrides it.
+    /// is configured here. The environment variables MAT_PUBLIC_URL (set by a broker such as
+    /// Mattiverse) and MATPAPER_PUBLIC_URL override it (InstanceSettingsService.PublicUrlOf).
     /// </summary>
     public string? PublicBaseUrl { get; set; }
 }
@@ -114,7 +115,10 @@ public class AppConfig
     /// <summary>The barcode settings as the engine takes them (the defaults when app.json has none).</summary>
     public BarcodeOptions ResolveBarcodeOptions() => (Barcodes ?? new BarcodeConfig()).ToOptions();
 
-    /// <summary>Effective public base URL: env MATPAPER_PUBLIC_URL → config → null.</summary>
+    /// <summary>
+    /// Public base URL of MatPaper's own settings: env MATPAPER_PUBLIC_URL → config → null. MAT_PUBLIC_URL of the platform comes before both
+    /// (the address in force is InstanceSettingsService.PublicUrlOf).
+    /// </summary>
     public string? ResolvePublicBaseUrl()
     {
         var fromEnv = Environment.GetEnvironmentVariable("MATPAPER_PUBLIC_URL");

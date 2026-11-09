@@ -1,0 +1,14 @@
+@page "/System/AppConnections"
+@model MatPaper.Pages.System.AppConnections.IndexModel
+@{
+    ViewData["Breadcrumb"] = "System / App connections";
+    ViewData["PageSub"] = L["What MatPaper uses of other apps and adds to a home screen"].Value;
+    ViewData["Width"] = "narrow";
+}
+
+<div class="mat-stack">
+    @* the Connections area of MatPlatform, the same in every Mat app: its forms post to /api/connections/form and come back here *@
+    <mat-connections />
+
+    <p class="mat-muted">@L["Mailboxes, shares and cloud drives have a page of their own:"] <a href="/System/Connections">@L["Connections"]</a></p>
+</div>

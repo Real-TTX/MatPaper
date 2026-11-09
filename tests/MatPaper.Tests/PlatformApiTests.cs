@@ -11,7 +11,7 @@ namespace MatPaper.Tests;
 /// <summary>The platform contract of MatDesign docs/PLATFORM.md as MatPaper answers it: shapes, status codes, access (the whole app, PostgreSQL).</summary>
 public sealed class PlatformApiTests(PaperFactory site) : IClassFixture<PaperFactory>
 {
-    private static readonly string[] Protected = ["/api/state", "/api/state/documents", "/api/configure"];
+    private static readonly string[] Protected = ["/api/state", "/api/state/documents", "/api/configure", "/api/connections"];
 
     [DbFact]
     public async Task Health_answers_without_a_key()
@@ -42,7 +42,8 @@ public sealed class PlatformApiTests(PaperFactory site) : IClassFixture<PaperFac
 
         using var doc = JsonDocument.Parse(text);
         var root = doc.RootElement;
-        Assert.Equal(1, root.GetProperty("contract").GetInt32());
+        Assert.Equal(2, root.GetProperty("contract").GetInt32());
+        Assert.True(root.TryGetProperty("contributes", out _));
         Assert.Equal("matpaper", root.GetProperty("app").GetProperty("id").GetString());
         Assert.Equal("#268538", root.GetProperty("app").GetProperty("accent").GetString());
         Assert.True(root.GetProperty("auth").GetProperty("apiKey").GetBoolean());
@@ -257,6 +258,7 @@ public sealed class PlatformWithoutKeyTests(NoKeyFactory site) : IClassFixture<N
         client.DefaultRequestHeaders.Add("X-Api-Key", PaperFactory.ApiKey);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/state")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/configure")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/connections")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/actions/nothing", null)).StatusCode);
 
         using var doc = JsonDocument.Parse(await client.GetStringAsync("/api"));

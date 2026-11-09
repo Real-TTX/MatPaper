@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Collections.Concurrent;
 using MatPaper.Configuration;
 using MatPaper.Data;
+using MatPlatform;
 using Microsoft.Extensions.Localization;
 
 namespace MatPaper.Services;
@@ -61,6 +62,7 @@ public sealed class OAuthService
     private readonly IHttpClientFactory _httpFactory;
     private readonly SecretProtector _secrets;
     private readonly AppConfig _config;
+    private readonly MatPlatformSettings _platform;
     private readonly ILogger<OAuthService> _logger;
 
     // Messages are rendered in the current UI culture: the request's language for the editor's
@@ -70,22 +72,23 @@ public sealed class OAuthService
     // access token cache keyed by connection id; refreshed shortly before expiry.
     private readonly ConcurrentDictionary<long, OAuthTokens> _accessCache = new();
 
-    public OAuthService(IHttpClientFactory httpFactory, SecretProtector secrets, AppConfig config, ILogger<OAuthService> logger, IStringLocalizer<SharedResource> l)
+    public OAuthService(IHttpClientFactory httpFactory, SecretProtector secrets, AppConfig config, MatPlatformSettings platform, ILogger<OAuthService> logger, IStringLocalizer<SharedResource> l)
     {
         _l = l;
         _httpFactory = httpFactory;
         _secrets = secrets;
         _config = config;
+        _platform = platform;
         _logger = logger;
     }
 
     public static OAuthProviderInfo? Info(OAuthProvider provider) =>
         Providers.TryGetValue(provider, out var info) ? info : null;
 
-    /// <summary>The redirect URI to register with the provider, or null if no public URL is configured.</summary>
+    /// <summary>The redirect URI to register with the provider (at the public address in force, <c>MAT_PUBLIC_URL</c> first), or null if no public URL is configured.</summary>
     public string? RedirectUri()
     {
-        var baseUrl = _config.ResolvePublicBaseUrl();
+        var baseUrl = InstanceSettingsService.PublicUrlOf(_config, _platform);
         return baseUrl is null ? null : baseUrl + CallbackPath;
     }
 

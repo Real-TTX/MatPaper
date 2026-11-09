@@ -25,7 +25,7 @@ namespace MatPaper.Tests.Support;
 /// <c>MATPAPER_TEST_DB</c> (the app creates and migrates it at the start, the factory drops it), with the first administrator
 /// (<see cref="AdminUser"/>) unless <c>seedAdmin</c> is false. The background workers (text recognition, import/export schedules) stay off.
 /// <see cref="ApiKey"/> is <c>MAT_API_KEY</c> unless <c>withKey</c> is false; with an <c>authority</c> the sign-in through MatIdentity is on,
-/// with a fixed OpenID configuration so that no MatIdentity has to run (the tests look at the redirects).
+/// with a fixed OpenID configuration so that no MatIdentity has to run (the tests look at the redirects); a <c>publicUrl</c> is <c>MAT_PUBLIC_URL</c>.
 /// </summary>
 public class PaperFactory : WebApplicationFactory<Program>
 {
@@ -48,7 +48,7 @@ public class PaperFactory : WebApplicationFactory<Program>
     {
     }
 
-    protected PaperFactory(bool withKey, string? authority, bool reachable = true, bool seedAdmin = true)
+    protected PaperFactory(bool withKey, string? authority, bool reachable = true, bool seedAdmin = true, string? publicUrl = null)
     {
         _authority = authority;
         _reachable = reachable;
@@ -81,6 +81,7 @@ public class PaperFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable(MatPlatformSettings.ClientIdVariable, null);
         Environment.SetEnvironmentVariable(MatPlatformSettings.ClientSecretVariable, authority is null ? null : "test-secret");
         Environment.SetEnvironmentVariable(MatPlatformSettings.InternalUrlVariable, null);
+        Environment.SetEnvironmentVariable(MatPlatformSettings.PublicUrlVariable, publicUrl);
     }
 
     public string DataFolder => _data;
@@ -187,6 +188,12 @@ public class PaperFactory : WebApplicationFactory<Program>
 
 /// <summary>Without <c>MAT_API_KEY</c>: the protected endpoints answer 401 to everyone.</summary>
 public sealed class NoKeyFactory() : PaperFactory(withKey: false, authority: null);
+
+/// <summary>With <c>MAT_PUBLIC_URL</c>, as a broker (Mattiverse) sets it: the public address is fixed.</summary>
+public sealed class PublicUrlFactory() : PaperFactory(withKey: true, authority: null, publicUrl: PublicUrlFactory.Address + "/")
+{
+    public const string Address = "https://paper.example.com";
+}
 
 /// <summary>A fresh installation: nobody has set it up yet (no user).</summary>
 public sealed class FreshFactory() : PaperFactory(withKey: true, authority: null, seedAdmin: false);

@@ -1301,4 +1301,8 @@
   <data name="Sign in with MatIdentity" xml:space="preserve"><value>Mit MatIdentity anmelden</value></data>
   <data name="Cancel and do not connect" xml:space="preserve"><value>Abbrechen und nicht verbinden</value></data>
   <data name="Your account is now connected with MatIdentity." xml:space="preserve"><value>Dein Konto ist jetzt mit MatIdentity verbunden.</value></data>
+  <data name="App connections" xml:space="preserve"><value>App-Verbindungen</value></data>
+  <data name="What MatPaper uses of other apps and adds to a home screen" xml:space="preserve"><value>Was MatPaper von anderen Apps nutzt und einem Home-Screen hinzufügt</value></data>
+  <data name="Mailboxes, shares and cloud drives have a page of their own:" xml:space="preserve"><value>Postfächer, Freigaben und Cloud-Speicher haben eine eigene Seite:</value></data>
+  <data name="Set by the variable MAT_PUBLIC_URL (Mattiverse sets it); it cannot be changed here." xml:space="preserve"><value>Festgelegt durch die Variable MAT_PUBLIC_URL (Mattiverse setzt sie); hier lässt sie sich nicht ändern.</value></data>
 </root>

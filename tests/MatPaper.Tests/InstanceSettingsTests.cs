@@ -24,6 +24,7 @@ public sealed class InstanceSettingsTests : IDisposable
     private readonly AppConfig _config = new();
     private readonly Fmt _fmt;
     private readonly IOptions<RequestLocalizationOptions> _localization = Options.Create(new RequestLocalizationOptions());
+    private readonly MatPlatformSettings _platform = new() { AppId = PaperPlatform.AppId };
     private readonly InstanceSettingsService _settings;
 
     public InstanceSettingsTests()
@@ -33,7 +34,7 @@ public sealed class InstanceSettingsTests : IDisposable
         Environment.SetEnvironmentVariable("MATPAPER_TZ", null);
         Environment.SetEnvironmentVariable(InstanceSettingsService.PublicUrlEnvVar, null);
         _fmt = new Fmt(_config);
-        _settings = new InstanceSettingsService(_config, _fmt, _localization, NullLogger<InstanceSettingsService>.Instance);
+        _settings = Settings(_platform);
     }
 
     public void Dispose()
@@ -129,11 +130,48 @@ public sealed class InstanceSettingsTests : IDisposable
         Assert.Equal("Europe/Vienna", _settings.Get().TimeZone);
     }
 
+    [Fact]
+    public async Task MAT_PUBLIC_URL_is_the_address_in_force_and_the_stored_one_stays()
+    {
+        Assert.Empty(_settings.Save(new InstanceSettingsChange("https://own.example.com"), "test"));
+
+        // A broker (Mattiverse) sets MAT_PUBLIC_URL: it wins, also over MATPAPER_PUBLIC_URL, and cannot be changed here.
+        Environment.SetEnvironmentVariable(InstanceSettingsService.PublicUrlEnvVar, "https://pinned.example.com");
+        var broker = new MatPlatformSettings { AppId = PaperPlatform.AppId, AppPublicUrl = "https://paper.example.com" };
+        var settings = Settings(broker);
+        Assert.Equal("https://paper.example.com", settings.Get().PublicBaseUrl);
+        Assert.Equal(MatPlatformSettings.PublicUrlVariable, settings.PublicUrlPinnedBy);
+        Assert.Equal("https://paper.example.com", InstanceSettingsService.PublicUrlOf(_config, broker));
+
+        Assert.Equal(SettingsProblem.Pinned, settings.Save(new InstanceSettingsChange("https://other.example.com"), "test")[nameof(InstanceSettings.PublicBaseUrl)]);
+        Assert.Empty(settings.Save(new InstanceSettingsChange("https://paper.example.com", ArchiveNumbers: true), "test"));
+        Assert.Equal("https://own.example.com", AppConfigLoader.Load(_data).OAuth.PublicBaseUrl);
+
+        // The platform refuses the field and answers the address in force.
+        var platform = Platform(settings, broker);
+        var english = new MatPlatformCall(new DefaultHttpContext(), "en", "mattiverse");
+        Assert.Equal("https://paper.example.com", (await platform.GetConfigurationAsync(english, CancellationToken.None))["publicUrl"]);
+        var refused = await platform.ConfigureAsync(Json(new { publicUrl = "https://other.example.com" }), english, CancellationToken.None);
+        Assert.Equal("Set by MAT_PUBLIC_URL.", refused["publicUrl"]);
+
+        // Without the variable the stored address comes back (MATPAPER_PUBLIC_URL, then app.json).
+        Assert.Equal(InstanceSettingsService.PublicUrlEnvVar, _settings.PublicUrlPinnedBy);
+        Assert.Equal("https://pinned.example.com", _settings.Get().PublicBaseUrl);
+        Environment.SetEnvironmentVariable(InstanceSettingsService.PublicUrlEnvVar, null);
+        Assert.Null(_settings.PublicUrlPinnedBy);
+        Assert.Equal("https://own.example.com", _settings.Get().PublicBaseUrl);
+    }
+
+    private InstanceSettingsService Settings(MatPlatformSettings platform)
+        => new(_config, _fmt, _localization, platform, NullLogger<InstanceSettingsService>.Instance);
+
     /// <summary>The platform class with a status service whose database is never asked (no query in these tests).</summary>
-    private PaperPlatform Platform()
+    private PaperPlatform Platform() => Platform(_settings, _platform);
+
+    private static PaperPlatform Platform(InstanceSettingsService settings, MatPlatformSettings platform)
     {
         var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql("Host=127.0.0.1;Port=1;Database=none").Options);
-        return new PaperPlatform(new InstanceStatusService(db, NullLogger<InstanceStatusService>.Instance), _settings);
+        return new PaperPlatform(new InstanceStatusService(db, NullLogger<InstanceStatusService>.Instance), settings, platform);
     }
 
     private static IReadOnlyDictionary<string, JsonElement> Json(object values)

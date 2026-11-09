@@ -67,6 +67,7 @@ public sealed class MenuService(CurrentUser user, InboxService inbox, IStringLoc
         new(l["Automation"].Value,
         [
             new(l["Connections"].Value, "/System/Connections", "plug"),
+            new(l["App connections"].Value, "/System/AppConnections", "plug"),
             new(l["Import tasks"].Value, "/System/ImportTasks", "download"),
             new(l["Export tasks"].Value, "/System/ExportTasks", "upload"),
             new(l["Task history"].Value, "/System/TaskRuns", "clock"),

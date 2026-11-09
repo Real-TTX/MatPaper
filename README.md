@@ -340,7 +340,7 @@ MatPaper app — you register your own with Google Cloud or Azure, enter its cli
 secret in the connection and press *Connect*:
 
 1. Set the **public address** of your instance under System → Settings (or with
-   `MATPAPER_PUBLIC_URL`). The page then shows the **redirect URI**
+   `MATPAPER_PUBLIC_URL`; Mattiverse sets it with `MAT_PUBLIC_URL`). The page then shows the **redirect URI**
    (`<address>/System/Connections/OAuthCallback`); register exactly that with Google/Azure.
 2. Google: publish the Cloud project as *In production*, otherwise the authorization expires
    after seven days. Scopes: `https://mail.google.com/` (mail) or `…/auth/drive` (Drive).
@@ -354,7 +354,8 @@ Where an app password is simpler (e.g. Gmail with 2-factor), choose the password
 System → Settings edits the public address, the time zone (used for every displayed time and
 for task schedules) and the default language/theme, and shows version, data folder and
 database. Changes are written to `/data/config/app.json` and apply immediately. A value pinned
-by an environment variable (`MATPAPER_PUBLIC_URL`, `MATPAPER_TZ`) is shown locked.
+by an environment variable (`MAT_PUBLIC_URL`, `MATPAPER_PUBLIC_URL`, `MATPAPER_TZ`) is shown locked;
+what was saved on the page stays in `app.json` and is used again when the variable goes.
 Database, data folder and inbox folder are read at startup.
 
 ### Environment variables
@@ -367,31 +368,45 @@ Database, data folder and inbox folder are read at startup.
 | `MATPAPER_PUBLIC_URL` | the public address; wins over the settings page |
 | `APP_VERSION` | the version shown in the footer (set by the image build) |
 | `MAT_API_KEY` | the key of the platform API (`X-Api-Key` on `/api/*`); not set = only a token of MatIdentity is accepted. Mattiverse sets it |
+| `MAT_PUBLIC_URL` | the public address as a broker (Mattiverse) sets it; wins over `MATPAPER_PUBLIC_URL` and the settings page, where it is shown locked (also in `/api/configure`) |
+| `MAT_FRAME_ANCESTORS` | the origins that may show MatPaper in a frame, separated by spaces (Mattiverse sets its own addresses); not set = nothing changes |
 | `MATIDENTITY_AUTHORITY` | the address of MatIdentity (`https://id.example.com`). Set = sign-in through MatIdentity; not set = nothing changes |
 | `MATIDENTITY_CLIENT_ID` | the client of MatPaper in MatIdentity (default: `matpaper`) |
 | `MATIDENTITY_CLIENT_SECRET` | its secret |
 | `MATIDENTITY_INTERNAL_URL` | optional: where MatPaper reaches MatIdentity from inside Docker (`http://matidentity:2300`); the browser keeps using `MATIDENTITY_AUTHORITY` |
 
-None of the `MAT_*` / `MATIDENTITY_*` variables is required.
+None of the `MAT_*` / `MATIDENTITY_*` variables is required: MatPaper does its whole job without them.
 
 ## Platform API and sign-in through MatIdentity
 
-MatPaper follows the platform contract of the Mat apps (MatDesign `docs/PLATFORM.md`), so that Mattiverse (or any other
-consumer) can show it, watch it and set it up without knowing it beforehand. The shared package **MatPlatform** is a copy in
-`src/MatPaper/MatPlatform/` (MatDesign `node tools/matplatform-copy.js src/MatPaper`; never edit it here, `matplatform.version`
-names the version and the hashes); `src/MatPaper/Platform/PaperPlatform.cs` describes MatPaper and supplies the values through
-`InstanceStatusService` and `InstanceSettingsService`.
+MatPaper follows the platform contract of the Mat apps (MatDesign `docs/PLATFORM.md`, contract 2: the Mat app model), so that
+Mattiverse (or any other consumer) can show it, watch it and set it up without knowing it beforehand. The shared package
+**MatPlatform** (2.2.1) is a copy in `src/MatPaper/MatPlatform/` (MatDesign `node tools/matplatform-copy.js src/MatPaper`; never
+edit it here, `matplatform.version` names the version and the hashes); `src/MatPaper/Platform/PaperPlatform.cs` describes MatPaper
+and supplies the values through `InstanceStatusService` and `InstanceSettingsService`.
 
 | Endpoint | What |
 |---|---|
-| `GET /api` | the description (anonymous): pages *Overview* and *Settings*, the tiles, the fields, the links, the roles `admin` and `user` |
+| `GET /api` | the description (anonymous): pages *Overview* and *Settings*, the tiles, the fields, the links, the roles `admin` and `user`, what MatPaper consumes and what it adds to a home screen |
 | `GET /api/health` | `ok` / `degraded` (no active administrator yet) / `down` (the database cannot be read; HTTP 503). The Docker `HEALTHCHECK` calls it |
 | `GET /api/state[/{key}]` | the tiles: `documents` (managed, not deleted or ignored), `inbox` (waiting in all inboxes), `ocrQueue` (waiting for text recognition), `ocrFailed` (text recognition failed), `storage` (bytes of the documents), `lastDocument` (when the last one was added), `users` (active accounts) |
-| `GET`/`PUT /api/configure` | four settings of `app.json`: `publicUrl`, `timeZone`, `language` (`de-DE`/`en-US`), `archiveNumbers` (the feature on or off). A value pinned by `MATPAPER_PUBLIC_URL` / `MATPAPER_TZ` cannot be changed here; everything else stays on the System pages |
-| `POST /api/actions/{id}` | none: the actions are links (*Open*, *Inbox*, *Administration*) |
+| `GET`/`PUT /api/configure` | four settings of `app.json`: `publicUrl`, `timeZone`, `language` (`de-DE`/`en-US`), `archiveNumbers` (the feature on or off). A value pinned by `MAT_PUBLIC_URL` (then `fixed`) / `MATPAPER_PUBLIC_URL` / `MATPAPER_TZ` cannot be changed here; everything else stays on the System pages |
+| `POST /api/actions/{id}` | none: the actions are links (*Open*, *Inbox*, *Administration*, *App connections*) |
+| `GET /api/connections` | what MatPaper uses of other apps and how each is set, what it offers (nothing) and what it adds to a home screen; secrets only as `{"isSet": true}` |
 
 Everything but `/api` and `/api/health` needs `X-Api-Key: <MAT_API_KEY>` or a bearer token of MatIdentity for MatPaper.
 They answer before the first setup too.
+
+**What MatPaper uses of other apps** is only the sign-in through MatIdentity (the capability `identity.oidc`, optional, set by
+the `MATIDENTITY_*` variables below). It sends no mail and needs no other app. **System → App connections** (administrators
+only) is the Connections area every Mat app has: what MatPaper uses, whether it is set *By the variables* or *Not connected
+(optional)*, and what it adds to a home screen. Mattiverse shows the same in its tab *Connections*. Not to be mixed up with **System →
+Connections**, MatPaper's own connections to shares, mailboxes and cloud drives.
+
+**What MatPaper adds to a home screen** (the home screen of Mattiverse; without a shell this costs nothing and the menu stays the
+way in): the icon *MatPaper* (the dashboard) with the menu *Add document*, *Inbox* and *Documents*, and for administrators two
+widgets with the numbers of the whole installation: *Archive* (documents, storage used, last document added) and *Inbox* (waiting
+in the inboxes, waiting for text recognition, text recognition failed).
 
 **Sign-in through MatIdentity** is on as soon as `MATIDENTITY_AUTHORITY` is set: the sign-in page goes straight on to
 MatIdentity (authorization code with PKCE) and comes back signed in. Register the redirect address `<public address>/signin-oidc`

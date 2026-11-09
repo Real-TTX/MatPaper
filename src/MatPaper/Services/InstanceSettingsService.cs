@@ -1,5 +1,6 @@
 using System.Globalization;
 using MatPaper.Configuration;
+using MatPlatform;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 
@@ -13,11 +14,14 @@ public sealed record InstanceSettings(string? PublicBaseUrl, string TimeZone, st
 /// (System, Settings) and the archive number feature as a whole (System, Archive numbers). They live in <c>app.json</c> like on those pages:
 /// a change is checked, written to the file first and only then applied to the running app, so file and runtime never disagree.
 /// A value pinned by an environment variable (<c>MATPAPER_PUBLIC_URL</c>, <c>MATPAPER_TZ</c>) is shown as it is in effect and cannot be changed here.
+/// A broker such as Mattiverse may set the public address too (<c>MAT_PUBLIC_URL</c>, <see cref="MatPlatformSettings.AppPublicUrl"/>): it wins over both, and the
+/// stored address stays as it is (it comes back when the variable goes).
 /// </summary>
 public sealed class InstanceSettingsService(
     AppConfig config,
     Fmt fmt,
     IOptions<RequestLocalizationOptions> localization,
+    MatPlatformSettings platform,
     ILogger<InstanceSettingsService> logger)
 {
     public const string PublicUrlEnvVar = "MATPAPER_PUBLIC_URL";
@@ -26,10 +30,26 @@ public sealed class InstanceSettingsService(
     public static readonly IReadOnlyList<string> Languages = ["de-DE", "en-US"];
 
     public InstanceSettings Get() => new(
-        Env(PublicUrlEnvVar) ?? config.OAuth?.PublicBaseUrl,
+        PublicUrlOf(config, platform),
         Env(Fmt.TimeZoneEnvVar) ?? config.Display?.TimeZone ?? fmt.ZoneName,
         config.Display?.Culture ?? Languages[0],
         config.ArchiveNumbersEnabled);
+
+    /// <summary>
+    /// The public address in force: <c>MAT_PUBLIC_URL</c> (a broker), else <c>MATPAPER_PUBLIC_URL</c>, else the one of the settings page (<c>app.json</c>);
+    /// null = none. The OAuth redirect address is built from it.
+    /// </summary>
+    public static string? PublicUrlOf(AppConfig config, MatPlatformSettings platform)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(platform);
+        return platform.AppPublicUrl ?? config.ResolvePublicBaseUrl();
+    }
+
+    /// <summary>The variable that sets the public address (<c>MAT_PUBLIC_URL</c> before <c>MATPAPER_PUBLIC_URL</c>), or null while the settings page sets it.</summary>
+    public string? PublicUrlPinnedBy => platform.AppPublicUrl is not null ? MatPlatformSettings.PublicUrlVariable
+        : IsPinned(PublicUrlEnvVar) ? PublicUrlEnvVar
+        : null;
 
     /// <summary>True when the environment variable <paramref name="name"/> pins the value.</summary>
     public static bool IsPinned(string name) => Env(name) is not null;
@@ -52,11 +72,11 @@ public sealed class InstanceSettingsService(
             {
                 errors[nameof(InstanceSettings.PublicBaseUrl)] = SettingsProblem.Invalid;
             }
-            else if (IsPinned(PublicUrlEnvVar) && normalized != current.PublicBaseUrl)
+            else if (PublicUrlPinnedBy is not null && normalized != current.PublicBaseUrl)
             {
                 errors[nameof(InstanceSettings.PublicBaseUrl)] = SettingsProblem.Pinned;
             }
-            else if (!IsPinned(PublicUrlEnvVar))
+            else if (PublicUrlPinnedBy is null)
             {
                 publicUrl = normalized;
             }

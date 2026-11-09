@@ -13,7 +13,15 @@
         <div class="mat-card">
             <div class="mat-card__head"><h2 class="mat-card__title">@L["Public address"]</h2></div>
             <div class="mat-card__body mat-stack">
-                @if (Model.PublicUrlFromEnv is not null)
+                @if (Model.PublicUrlFromPlatform is not null)
+                {
+                    <div class="mat-field">
+                        <label class="mat-label" for="locked-public-url">@L["Public address"]</label>
+                        <input class="mat-input" id="locked-public-url" type="text" value="@Model.PublicUrlFromPlatform" disabled />
+                        <span class="mat-hint">@L["Set by the variable MAT_PUBLIC_URL (Mattiverse sets it); it cannot be changed here."]</span>
+                    </div>
+                }
+                else if (Model.PublicUrlFromEnv is not null)
                 {
                     <div class="mat-field">
                         <label class="mat-label" for="locked-public-url">@L["Public address"]</label>

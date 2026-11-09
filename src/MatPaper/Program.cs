@@ -89,12 +89,19 @@ builder.Services.AddScoped<ImportBrowser>();
 builder.Services.AddScoped<ExportRunner>();
 builder.Services.AddHostedService<TaskSchedulerService>();
 
-// The Mat platform contract (MatDesign docs/PLATFORM.md): /api, /api/health, /api/state, /api/configure with MAT_API_KEY or a token of MatIdentity.
-// The package MatPlatform (a copy in MatPlatform/) serves the endpoints; PaperPlatform describes MatPaper and supplies the values through these services.
+// The Mat platform contract (MatDesign docs/PLATFORM.md, contract 2): /api, /api/health, /api/state, /api/configure, /api/connections with MAT_API_KEY or a
+// token of MatIdentity, what MatPaper consumes (identity.oidc, set by the MATIDENTITY_* variables) and what it adds to a shell (launcher, widgets). The package
+// MatPlatform (a copy in MatPlatform/) serves the endpoints and the Connections area (System → App connections, administrators only; the bindings it keeps
+// are in {data}/matplatform); PaperPlatform describes MatPaper and supplies the values through these services. MAT_PUBLIC_URL fixes the public address.
 builder.Services.AddScoped<InstanceStatusService>();
 builder.Services.AddScoped<InstanceSettingsService>();
-var platformSettings = builder.AddMatPlatform<PaperPlatform>(PaperPlatform.Describe, options =>
-    options.DefaultLanguage = (appConfig.Display?.Culture ?? "de").StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "de");
+var publicUrl = MatPlatformSettings.From(builder.Configuration, PaperPlatform.AppId).AppPublicUrl;
+var platformSettings = builder.AddMatPlatform<PaperPlatform>(o => PaperPlatform.Describe(o, publicUrl), options =>
+{
+    options.DefaultLanguage = (appConfig.Display?.Culture ?? "de").StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "de";
+    options.DataDirectory = dataDir;
+    options.ConnectionsAccess = http => Task.FromResult(http.User.IsInRole(ExternalSignInService.AdminRole));
+});
 
 // Phase 7: share links + PDF generation.
 builder.Services.AddScoped<ShareLinkService>();

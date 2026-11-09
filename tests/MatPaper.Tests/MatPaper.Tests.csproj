@@ -11,8 +11,9 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="GitHubActionsTestLogger" Version="3.0.5" />
-    <!-- The app resolves Entity Framework 10.0.13 (through its design package, which does not flow here); Npgsql alone would bring 10.0.4. -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
+    <!-- The app resolves the newest Entity Framework 10 (its design package is 10.*, which does not flow here; Npgsql alone would bring 10.0.4): the same floating
+         version here, else a newer one in the app breaks the build of the tests (CS1705, as with 10.0.14). -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.*" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <!-- Newer than what Mvc.Testing brings along (10.0.11 has known vulnerabilities). -->
